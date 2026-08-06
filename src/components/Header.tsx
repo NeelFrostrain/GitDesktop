@@ -18,7 +18,8 @@ import {
   Upload,
   X,
   LogOut,
-  ExternalLink
+  ExternalLink,
+  Search
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { BranchInfo, RepoStatus, PullResult } from '../types/git';
@@ -72,6 +73,8 @@ export const Header: React.FC = () => {
       .then(setBranches)
       .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }));
   }, [activeRepoPath, status?.current_branch]);
+
+
 
   const repoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || activeRepoPath
@@ -287,9 +290,13 @@ export const Header: React.FC = () => {
     );
   };
 
-  const filteredBranches = branches.filter((b) =>
-    b.name.toLowerCase().includes(branchSearch.toLowerCase())
-  );
+  const filteredBranches = branches.filter((b) => {
+    if (b.name === 'origin/HEAD' || b.name === 'HEAD' || b.name.endsWith('/HEAD')) {
+      return false;
+    }
+    if (!branchSearch.trim()) return true;
+    return b.name.toLowerCase().includes(branchSearch.toLowerCase().trim());
+  });
 
   return (
     <header className="h-12 bg-base-0 border-b border-border px-3 flex items-center justify-between select-none z-30 relative">
@@ -402,29 +409,46 @@ export const Header: React.FC = () => {
 
           {isBranchDropdownOpen && (
             <div className="absolute left-0 top-full mt-1.5 w-72 bg-base-2 border border-border rounded-md shadow-2xl p-2 z-50">
-              <input
-                type="text"
-                placeholder="Filter branches..."
-                value={branchSearch}
-                onChange={(e) => setBranchSearch(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange mb-2"
-              />
+              <div className="relative mb-2">
+                <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Filter branches..."
+                  value={branchSearch}
+                  onChange={(e) => setBranchSearch(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                />
+                {branchSearch && (
+                  <button
+                    onClick={() => setBranchSearch('')}
+                    className="absolute right-2 top-2 text-text-muted hover:text-text-primary p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
 
               <div className="max-h-48 overflow-y-auto mb-2 space-y-0.5">
-                {filteredBranches.map((b) => (
-                  <button
-                    key={b.name}
-                    onClick={() => handleSwitchBranch(b.name)}
-                    className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between ${
-                      b.is_current
-                        ? 'bg-gitlab-orange/20 text-gitlab-orange font-semibold'
-                        : 'text-text-primary hover:bg-base-3'
-                    }`}
-                  >
-                    <span className="truncate">{b.name}</span>
-                    {b.is_current && <Check className="w-3.5 h-3.5" />}
-                  </button>
-                ))}
+                {filteredBranches.length === 0 ? (
+                  <div className="px-3 py-3 text-xs text-text-muted italic text-center">
+                    No branches found matching "{branchSearch}"
+                  </div>
+                ) : (
+                  filteredBranches.map((b) => (
+                    <button
+                      key={b.name}
+                      onClick={() => handleSwitchBranch(b.name)}
+                      className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between transition ${
+                        b.is_current
+                          ? 'bg-gitlab-orange/20 text-gitlab-orange font-semibold'
+                          : 'text-text-primary hover:bg-base-3'
+                      }`}
+                    >
+                      <span className="truncate">{b.name}</span>
+                      {b.is_current && <Check className="w-3.5 h-3.5 text-gitlab-orange flex-shrink-0 ml-1" />}
+                    </button>
+                  ))
+                )}
               </div>
 
               {!isCreatingBranch ? (
