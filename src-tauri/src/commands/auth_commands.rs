@@ -150,9 +150,23 @@ pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
 
     if let Some(tok) = token {
         if !tok.trim().is_empty() {
-            let client = GitLabClient::new(server_url, tok, None)?;
+            let client = GitLabClient::new(server_url.clone(), tok.clone(), None)?;
             match client.get_current_user().await {
-                Ok(user) => Ok(Some(user)),
+                Ok(user) => {
+                    let account_id = keyring::make_account_id(&user.username, &server_url);
+                    let account = SavedAccount {
+                        id: account_id,
+                        server_url: server_url.clone(),
+                        token: tok,
+                        name: user.name.clone(),
+                        username: user.username.clone(),
+                        email: user.email.clone(),
+                        avatar_url: user.avatar_url.clone(),
+                        is_active: true,
+                    };
+                    let _ = keyring::add_or_update_account(account);
+                    Ok(Some(user))
+                }
                 Err(_) => Ok(None),
             }
         } else {
