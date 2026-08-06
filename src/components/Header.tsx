@@ -16,7 +16,9 @@ import {
   Lock,
   Globe,
   Upload,
-  X
+  X,
+  LogOut,
+  ExternalLink
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { BranchInfo, RepoStatus, PullResult } from '../types/git';
@@ -29,6 +31,7 @@ export const Header: React.FC = () => {
     status,
     setStatus,
     user,
+    setUser,
     setIsRepoModalOpen,
     setActiveModalTab,
     isFetching,
@@ -47,6 +50,7 @@ export const Header: React.FC = () => {
   const [branches, setBranches] = useState<BranchInfo[]>([]);
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [branchSearch, setBranchSearch] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [isCreatingBranch, setIsCreatingBranch] = useState(false);
@@ -434,20 +438,94 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        <button
-          onClick={() => {
-            setActiveModalTab('login');
-            setIsRepoModalOpen(true);
-          }}
-          className="flex items-center gap-2 px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded transition text-xs"
-        >
-          {user?.avatar_url ? (
-            <img src={user.avatar_url} alt="Avatar" className="w-4 h-4 rounded-full" />
-          ) : (
-            <User className="w-3.5 h-3.5 text-gitlab-orange" />
+        <div className="relative">
+          <button
+            onClick={() => {
+              if (!user) {
+                setActiveModalTab('login');
+                setIsRepoModalOpen(true);
+              } else {
+                setIsProfileDropdownOpen(!isProfileDropdownOpen);
+              }
+            }}
+            className="flex items-center gap-2 px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded transition text-xs"
+          >
+            {user?.avatar_url ? (
+              <img src={user.avatar_url} alt="Avatar" className="w-4 h-4 rounded-full" />
+            ) : (
+              <User className="w-3.5 h-3.5 text-gitlab-orange" />
+            )}
+            <span className="text-text-primary font-medium text-xs">{user ? user.username : 'Sign In'}</span>
+            <ChevronDown className="w-3 h-3 text-text-muted" />
+          </button>
+
+          {isProfileDropdownOpen && user && (
+            <div className="absolute right-0 top-full mt-1.5 w-64 bg-base-2 border border-border rounded-lg shadow-2xl p-3 z-50 space-y-3">
+              {/* User Metadata Header */}
+              <div className="flex items-center gap-3 pb-2 border-b border-border">
+                {user.avatar_url ? (
+                  <img src={user.avatar_url} alt="Avatar" className="w-9 h-9 rounded-full border border-border" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center">
+                    <User className="w-5 h-5 text-gitlab-orange" />
+                  </div>
+                )}
+                <div className="truncate min-w-0">
+                  <div className="text-xs font-bold text-text-primary truncate">{user.name}</div>
+                  <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
+                </div>
+              </div>
+
+              {/* Account Server Info */}
+              <div className="text-[11px] text-text-muted flex items-center gap-1.5 px-1 font-mono">
+                <Globe className="w-3.5 h-3.5 text-gitlab-teal flex-shrink-0" />
+                <span className="truncate">{user.server_url}</span>
+              </div>
+
+              {/* Actions */}
+              <div className="space-y-1 pt-1 border-t border-border">
+                <button
+                  onClick={async () => {
+                    setIsProfileDropdownOpen(false);
+                    if (user.web_url) {
+                      try { await openUrl(user.web_url); } catch { window.open(user.web_url, '_blank'); }
+                    }
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 flex items-center justify-between transition"
+                >
+                  <span>View Profile on GitLab</span>
+                  <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsProfileDropdownOpen(false);
+                    setActiveModalTab('repos');
+                    setIsRepoModalOpen(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 flex items-center justify-between transition"
+                >
+                  <span>Manage Repositories</span>
+                  <FolderGit2 className="w-3.5 h-3.5 text-gitlab-orange" />
+                </button>
+
+                <button
+                  onClick={async () => {
+                    setIsProfileDropdownOpen(false);
+                    try {
+                      await invoke('logout_gitlab');
+                    } catch {}
+                    setUser(null);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-red-400 hover:bg-red-950/40 hover:text-red-300 flex items-center justify-between transition mt-1"
+                >
+                  <span>Sign Out</span>
+                  <LogOut className="w-3.5 h-3.5 text-red-400" />
+                </button>
+              </div>
+            </div>
           )}
-          <span className="text-text-primary font-medium text-xs">{user ? user.username : 'Sign In'}</span>
-        </button>
+        </div>
       </div>
 
       {/* Publish Repository Modal */}

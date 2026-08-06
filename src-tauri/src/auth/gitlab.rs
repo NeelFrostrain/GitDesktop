@@ -289,7 +289,15 @@ impl GitLabClient {
             "{}/api/v4/projects?membership=true&order_by=updated_at&per_page=20&page={}",
             self.server_url, page
         );
-        let resp = self.client.get(&url).send().await?;
+        let mut resp = self.client.get(&url).send().await?;
+
+        if !resp.status().is_success() {
+            let fallback_url = format!(
+                "{}/api/v4/projects?order_by=updated_at&per_page=20&page={}",
+                self.server_url, page
+            );
+            resp = self.client.get(&fallback_url).send().await?;
+        }
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
@@ -303,10 +311,26 @@ impl GitLabClient {
             .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(1);
 
-        let projects: Vec<GitLabProject> = resp
+        let mut projects: Vec<GitLabProject> = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse projects JSON: {}", e)))?;
+
+        if projects.is_empty() {
+            let fallback_url = format!(
+                "{}/api/v4/projects?min_access_level=10&order_by=updated_at&per_page=20&page={}",
+                self.server_url, page
+            );
+            if let Ok(fb_resp) = self.client.get(&fallback_url).send().await {
+                if fb_resp.status().is_success() {
+                    if let Ok(fb_projects) = fb_resp.json::<Vec<GitLabProject>>().await {
+                        if !fb_projects.is_empty() {
+                            projects = fb_projects;
+                        }
+                    }
+                }
+            }
+        }
 
         Ok(PagedResult {
             items: projects,

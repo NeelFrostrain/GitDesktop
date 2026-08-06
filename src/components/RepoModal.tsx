@@ -31,10 +31,11 @@ export const RepoModal: React.FC = () => {
     isRepoModalOpen,
     setIsRepoModalOpen,
     setActiveRepoPath,
+    activeModalTab,
+    setActiveModalTab,
     setError,
   } = useGitStore();
 
-  const [activeModalTab, setActiveModalTab] = useState<'login' | 'repos'>('login');
   const [serverUrl, setServerUrl] = useState('https://gitlab.com');
   const [patToken, setPatToken] = useState('');
   const [customCaPem, setCustomCaPem] = useState('');
@@ -204,18 +205,34 @@ export const RepoModal: React.FC = () => {
     }
   };
 
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isRepoModalOpen && activeModalTab === 'repos' && user) {
+      fetchRepositories(1);
+    }
+  }, [isRepoModalOpen, activeModalTab, user]);
+
   const fetchRepositories = async (page: number) => {
     setIsLoadingProjects(true);
+    setFetchError(null);
     try {
       const result = await invoke<PagedResult<GitLabProject>>('fetch_user_repositories', {
         serverUrl: user?.server_url || serverUrl,
         page,
       });
-      setProjects(result.items);
-      setCurrentPage(result.page);
-      setTotalPages(result.total_pages);
+      if (result && Array.isArray(result.items)) {
+        setProjects(result.items);
+        setCurrentPage(result.page || 1);
+        setTotalPages(result.total_pages || 1);
+      } else {
+        setProjects([]);
+        setCurrentPage(1);
+        setTotalPages(1);
+      }
     } catch (err: any) {
-      setError({ code: err.code || 'NETWORK_ERROR', message: err.message || String(err) });
+      setFetchError(err.message || String(err));
+      setProjects([]);
     } finally {
       setIsLoadingProjects(false);
     }
@@ -246,32 +263,40 @@ export const RepoModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 select-none">
-      <div className="bg-github-dark-sidebar border border-github-dark-border rounded-lg shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+    <div
+      onClick={() => setIsRepoModalOpen(false)}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
+      >
         {/* Modal Header */}
-        <div className="h-12 bg-github-dark-header border-b border-github-dark-border px-4 flex items-center justify-between">
+        <div className="h-12 bg-base-3 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <FolderGit2 className="w-5 h-5 text-github-dark-accent" />
-            <h2 className="text-sm font-semibold text-github-dark-heading">
+            <div className="p-1.5 bg-gitlab-orange/20 border border-gitlab-orange/40 rounded-md">
+              <FolderGit2 className="w-4 h-4 text-gitlab-orange" />
+            </div>
+            <h2 className="text-sm font-bold text-text-primary">
               GitLab Integration & Repositories
             </h2>
           </div>
           <button
             onClick={() => setIsRepoModalOpen(false)}
-            className="p-1 rounded text-gray-400 hover:text-white hover:bg-github-dark-hover"
+            className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-base-3"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex border-b border-github-dark-border bg-github-dark-header/40 px-4">
+        <div className="flex border-b border-border bg-base-2/40 px-4">
           <button
             onClick={() => setActiveModalTab('login')}
             className={`py-2 px-3 text-xs font-semibold border-b-2 transition ${
               activeModalTab === 'login'
-                ? 'border-github-dark-accent text-github-dark-heading'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? 'border-gitlab-orange text-text-primary'
+                : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >
             Account & Auth
@@ -283,8 +308,8 @@ export const RepoModal: React.FC = () => {
             }}
             className={`py-2 px-3 text-xs font-semibold border-b-2 transition ${
               activeModalTab === 'repos'
-                ? 'border-github-dark-accent text-github-dark-heading'
-                : 'border-transparent text-gray-400 hover:text-white'
+                ? 'border-gitlab-orange text-text-primary'
+                : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >
             Remote Repositories
@@ -292,35 +317,35 @@ export const RepoModal: React.FC = () => {
         </div>
 
         {/* Tab Body */}
-        <div className="p-6 flex-1 overflow-y-auto">
+        <div className="p-6 flex-1 overflow-y-auto bg-base-1">
           {activeModalTab === 'login' && (
             <div className="space-y-6">
               {user ? (
                 /* Authenticated User Card */
-                <div className="p-5 bg-github-dark-header border border-github-dark-border rounded-lg space-y-4">
+                <div className="p-5 bg-base-2 border border-border rounded-lg space-y-4 shadow-sm">
                   <div className="flex items-center gap-4">
                     {user.avatar_url ? (
-                      <img src={user.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full border border-github-dark-border" />
+                      <img src={user.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full border border-border" />
                     ) : (
-                      <div className="w-14 h-14 rounded-full bg-github-dark-accent/20 border border-github-dark-accent flex items-center justify-center">
-                        <User className="w-7 h-7 text-github-dark-accent" />
+                      <div className="w-14 h-14 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center">
+                        <User className="w-7 h-7 text-gitlab-orange" />
                       </div>
                     )}
                     <div className="space-y-1">
-                      <h3 className="text-base font-bold text-github-dark-heading">{user.name}</h3>
-                      <p className="text-xs text-gray-400 font-mono">@{user.username}</p>
-                      {user.email && <p className="text-xs text-gray-400">{user.email}</p>}
+                      <h3 className="text-base font-bold text-text-primary">{user.name}</h3>
+                      <p className="text-xs text-text-muted font-mono">@{user.username}</p>
+                      {user.email && <p className="text-xs text-text-muted">{user.email}</p>}
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-github-dark-border flex items-center justify-between text-xs">
+                  <div className="pt-3 border-t border-border flex items-center justify-between text-xs">
                     <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-github-dark-accent" />
-                      <span className="font-mono text-gray-300">{user.server_url}</span>
+                      <Globe className="w-4 h-4 text-gitlab-teal" />
+                      <span className="font-mono text-text-secondary">{user.server_url}</span>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/50 rounded flex items-center gap-1.5 font-medium"
+                      className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/50 rounded flex items-center gap-1.5 font-medium transition"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Sign Out
@@ -338,18 +363,18 @@ export const RepoModal: React.FC = () => {
                   )}
 
                   <div>
-                    <label className="block text-xs font-semibold text-github-dark-heading mb-1">
+                    <label className="block text-xs font-semibold text-text-primary mb-1">
                       GitLab Instance URL
                     </label>
                     <div className="relative">
-                      <Globe className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                      <Globe className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
                       <input
                         type="url"
                         required
                         value={serverUrl}
                         onChange={(e) => setServerUrl(e.target.value)}
                         placeholder="https://gitlab.com or https://gitlab.mycompany.com"
-                        className="w-full pl-9 pr-3 py-2 bg-github-dark-bg border border-github-dark-border rounded text-xs text-github-dark-heading focus:outline-none focus:border-github-dark-accent"
+                        className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
                       />
                     </div>
                   </div>
@@ -398,22 +423,22 @@ export const RepoModal: React.FC = () => {
                   {/* PAT Form */}
                   <form onSubmit={handlePatLogin} className="space-y-3">
                     <div>
-                      <label className="block text-xs font-semibold text-github-dark-heading mb-1">
+                      <label className="block text-xs font-semibold text-text-primary mb-1">
                         Personal Access Token (PAT)
                       </label>
                       <div className="relative">
-                        <Key className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                        <Key className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
                         <input
                           type="password"
                           required
                           value={patToken}
                           onChange={(e) => setPatToken(e.target.value)}
                           placeholder="glpat-..."
-                          className="w-full pl-9 pr-3 py-2 bg-github-dark-bg border border-github-dark-border rounded text-xs text-github-dark-heading focus:outline-none focus:border-github-dark-accent font-mono"
+                          className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange font-mono"
                         />
                       </div>
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        Requires <span className="font-mono text-white">api</span> and <span className="font-mono text-white">read_user</span> scopes.
+                      <p className="text-[11px] text-text-muted mt-1">
+                        Requires <span className="font-mono text-text-primary">api</span> and <span className="font-mono text-text-primary">read_user</span> scopes.
                       </p>
                     </div>
 
@@ -421,7 +446,7 @@ export const RepoModal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setShowCustomCa(!showCustomCa)}
-                        className="text-xs text-github-dark-accent hover:underline flex items-center gap-1 font-medium"
+                        className="text-xs text-gitlab-orange hover:underline flex items-center gap-1 font-medium"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
                         {showCustomCa ? 'Hide Custom CA Certificate' : 'Self-hosted? Add Custom CA Certificate (PEM)'}
@@ -432,7 +457,7 @@ export const RepoModal: React.FC = () => {
                           placeholder="-----BEGIN CERTIFICATE-----"
                           value={customCaPem}
                           onChange={(e) => setCustomCaPem(e.target.value)}
-                          className="w-full mt-2 p-2 bg-github-dark-bg border border-github-dark-border rounded text-[11px] font-mono text-github-dark-heading focus:outline-none focus:border-github-dark-accent resize-none"
+                          className="w-full mt-2 p-2 bg-base-0 border border-border rounded text-[11px] font-mono text-text-primary focus:outline-none focus:border-gitlab-orange resize-none"
                         />
                       )}
                     </div>
@@ -440,7 +465,7 @@ export const RepoModal: React.FC = () => {
                     <button
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-2 bg-github-dark-sidebar hover:bg-github-dark-hover border border-github-dark-border text-github-dark-heading font-semibold rounded text-xs transition shadow-sm"
+                      className="w-full py-2 bg-base-2 hover:bg-base-3 border border-border text-text-primary font-semibold rounded text-xs transition shadow-sm"
                     >
                       {isAuthenticating ? 'Validating Token...' : 'Sign In with Personal Access Token'}
                     </button>
@@ -453,57 +478,77 @@ export const RepoModal: React.FC = () => {
           {activeModalTab === 'repos' && (
             <div className="space-y-4">
               {!user ? (
-                <div className="text-center py-8 text-gray-400 text-xs">
+                <div className="text-center py-8 text-text-muted text-xs">
                   Please log in under the "Account & Auth" tab to fetch remote projects.
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-github-dark-heading uppercase tracking-wider">
+                    <span className="text-xs font-semibold text-text-primary uppercase tracking-wider">
                       Your GitLab Repositories (Page {currentPage} of {totalPages})
                     </span>
                     <div className="flex items-center gap-2">
                       <button
                         disabled={currentPage <= 1 || isLoadingProjects}
                         onClick={() => fetchRepositories(currentPage - 1)}
-                        className="p-1 bg-github-dark-header border border-github-dark-border rounded text-gray-400 disabled:opacity-40"
+                        className="p-1 bg-base-2 border border-border rounded text-text-muted hover:text-text-primary disabled:opacity-40"
                       >
                         <ChevronLeft className="w-4 h-4" />
                       </button>
                       <button
                         disabled={currentPage >= totalPages || isLoadingProjects}
                         onClick={() => fetchRepositories(currentPage + 1)}
-                        className="p-1 bg-github-dark-header border border-github-dark-border rounded text-gray-400 disabled:opacity-40"
+                        className="p-1 bg-base-2 border border-border rounded text-text-muted hover:text-text-primary disabled:opacity-40"
                       >
                         <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
 
-                  {isLoadingProjects ? (
-                    <div className="py-8 text-center text-xs text-gray-400">Fetching projects from GitLab...</div>
-                  ) : projects.length === 0 ? (
-                    <div className="py-8 text-center text-xs text-gray-500">No projects found.</div>
+                  {fetchError ? (
+                    <div className="p-4 bg-red-950/30 border border-red-500/30 rounded-md text-xs text-red-300 space-y-2 text-center">
+                      <p>{fetchError}</p>
+                      <button
+                        onClick={() => fetchRepositories(currentPage)}
+                        className="px-3 py-1 bg-gitlab-orange text-white rounded text-xs font-semibold hover:bg-orange-600 transition"
+                      >
+                        Retry Fetching
+                      </button>
+                    </div>
+                  ) : isLoadingProjects ? (
+                    <div className="py-8 text-center text-xs text-text-muted animate-pulse">
+                      Fetching projects from GitLab...
+                    </div>
+                  ) : (projects || []).length === 0 ? (
+                    <div className="py-8 text-center text-xs text-text-muted space-y-2">
+                      <p>No remote projects found on {user?.server_url || 'GitLab'}.</p>
+                      <button
+                        onClick={() => fetchRepositories(1)}
+                        className="px-3 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-primary transition"
+                      >
+                        Refresh Repositories
+                      </button>
+                    </div>
                   ) : (
                     <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                      {projects.map((p) => (
+                      {(projects || []).map((p) => (
                         <div
                           key={p.id}
-                          className="p-3 bg-github-dark-header border border-github-dark-border rounded-md flex items-center justify-between hover:border-github-dark-accent/50 transition"
+                          className="p-3 bg-base-2 border border-border rounded-md flex items-center justify-between hover:border-gitlab-orange/50 transition"
                         >
                           <div className="space-y-1 max-w-md">
-                            <div className="text-xs font-semibold text-github-dark-heading truncate">
+                            <div className="text-xs font-semibold text-text-primary truncate">
                               {p.path_with_namespace}
                             </div>
-                            <div className="text-[11px] text-gray-400 font-mono truncate">{p.http_url_to_repo}</div>
+                            <div className="text-[11px] text-text-muted font-mono truncate">{p.http_url_to_repo}</div>
                           </div>
 
                           <button
                             disabled={isCloning}
                             onClick={() => handleCloneProject(p)}
-                            className="px-3 py-1.5 bg-github-dark-sidebar hover:bg-github-dark-hover border border-github-dark-border rounded text-xs font-medium text-github-dark-heading flex items-center gap-1.5 transition"
+                            className="px-3 py-1.5 bg-base-1 hover:bg-base-3 border border-border rounded text-xs font-medium text-text-primary flex items-center gap-1.5 transition"
                           >
-                            <Download className="w-3.5 h-3.5 text-github-dark-accent" />
+                            <Download className="w-3.5 h-3.5 text-gitlab-orange" />
                             Clone to Computer
                           </button>
                         </div>
@@ -512,7 +557,7 @@ export const RepoModal: React.FC = () => {
                   )}
 
                   {isCloning && (
-                    <div className="p-3 bg-github-dark-accent/10 border border-github-dark-accent/30 rounded text-xs text-github-dark-accent">
+                    <div className="p-3 bg-gitlab-orange/10 border border-gitlab-orange/30 rounded text-xs text-gitlab-orange">
                       Cloning repository to <span className="font-mono">{clonePath}</span>...
                     </div>
                   )}
