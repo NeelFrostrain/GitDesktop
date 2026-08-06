@@ -12,7 +12,15 @@ import {
 import { useGitStore } from '../store/useGitStore';
 
 export const HomeDashboard: React.FC = () => {
-  const { user, setIsRepoModalOpen, setCurrentNavView } = useGitStore();
+  const { 
+    user, 
+    setIsRepoModalOpen, 
+    setCurrentNavView,
+    recentRepos,
+    activeRepoPath,
+    setActiveRepoPath,
+    removeRecentRepo
+  } = useGitStore();
   const [showBanner, setShowBanner] = useState(true);
 
   const getInitials = (name: string) => {
@@ -191,18 +199,54 @@ export const HomeDashboard: React.FC = () => {
 
         {/* Quick Access Side Card */}
         <div className="bg-base-2 border border-border rounded-lg p-4 space-y-3 h-fit">
-          <h2 className="text-[14px] font-semibold text-text-primary">Quick access</h2>
-          <div className="flex bg-base-3 border border-border rounded-md p-0.5 text-[12px]">
-            <button className="flex-1 py-1 rounded-sm bg-base-2 text-text-primary font-medium text-center">
-              Recently viewed
-            </button>
-            <button className="flex-1 py-1 rounded-sm text-text-muted text-center hover:text-text-primary">
-              Projects
-            </button>
+          <div className="flex items-center justify-between">
+            <h2 className="text-[14px] font-semibold text-text-primary">Saved Repositories</h2>
+            <span className="text-[10px] text-gitlab-orange font-mono font-semibold">{recentRepos.length}</span>
           </div>
-          <p className="text-[12px] text-text-muted leading-relaxed">
-            Work items, merge requests, and wiki pages you visit will appear here.
-          </p>
+
+          <div className="space-y-1 max-h-60 overflow-y-auto pr-1">
+            {recentRepos.length === 0 ? (
+              <p className="text-[12px] text-text-muted leading-relaxed italic">
+                No saved repositories yet. Open or clone a repository to save it here.
+              </p>
+            ) : (
+              recentRepos.map((rPath) => {
+                const rName = rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
+                const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === rPath.replace(/\\/g, '/');
+
+                return (
+                  <div
+                    key={rPath}
+                    onClick={() => setActiveRepoPath(rPath)}
+                    className={`p-2 rounded-md cursor-pointer text-xs flex items-center justify-between group transition border ${
+                      isActive
+                        ? 'bg-gitlab-orange/20 border-gitlab-orange/50 text-gitlab-orange font-semibold'
+                        : 'bg-base-3 border-border hover:border-text-muted text-text-primary'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                      <FolderGit2 className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-gitlab-orange' : 'text-gitlab-teal'}`} />
+                      <div className="truncate min-w-0">
+                        <div className="font-medium truncate">{rName}</div>
+                        <div className="text-[10px] text-text-faint font-mono truncate">{rPath}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeRecentRepo(rPath);
+                      }}
+                      className="p-1 text-text-faint hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                      title="Remove from saved repositories"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
           <button
             onClick={() => setIsRepoModalOpen(true)}
             className="w-full py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-[12px] text-text-primary font-medium transition flex items-center justify-center gap-1.5"

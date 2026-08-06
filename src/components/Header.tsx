@@ -28,6 +28,8 @@ export const Header: React.FC = () => {
   const {
     activeRepoPath,
     setActiveRepoPath,
+    recentRepos,
+    removeRecentRepo,
     status,
     setStatus,
     user,
@@ -305,19 +307,68 @@ export const Header: React.FC = () => {
           </button>
 
           {isRepoDropdownOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-64 bg-base-2 border border-border rounded-md shadow-2xl py-1 z-50">
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-text-faint uppercase tracking-wider">
-                Current Repository
+            <div className="absolute left-0 top-full mt-1.5 w-72 bg-base-2 border border-border rounded-md shadow-2xl py-1 z-50">
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-text-faint uppercase tracking-wider flex items-center justify-between border-b border-border">
+                <span>Recent Repositories</span>
+                <span className="text-[9px] text-gitlab-orange">{recentRepos.length} saved</span>
               </div>
-              <div className="px-3 py-2 text-xs text-text-primary font-medium border-b border-border flex items-center justify-between">
-                <span className="truncate">{repoName}</span>
-                {activeRepoPath && <Check className="w-3.5 h-3.5 text-gitlab-orange" />}
+
+              <div className="max-h-52 overflow-y-auto border-b border-border space-y-0.5 px-1 py-1">
+                {recentRepos.length === 0 ? (
+                  <div className="px-3 py-3 text-xs text-text-muted italic text-center">
+                    No saved repositories yet.
+                  </div>
+                ) : (
+                  recentRepos.map((rPath) => {
+                    const rName = rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
+                    const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === rPath.replace(/\\/g, '/');
+
+                    return (
+                      <div
+                        key={rPath}
+                        className={`w-full px-2 py-1.5 rounded text-xs flex items-center justify-between group transition ${
+                          isActive
+                            ? 'bg-gitlab-orange/20 text-gitlab-orange font-semibold'
+                            : 'text-text-primary hover:bg-base-3'
+                        }`}
+                      >
+                        <button
+                          onClick={() => {
+                            setActiveRepoPath(rPath);
+                            setIsRepoDropdownOpen(false);
+                          }}
+                          className="flex-1 text-left truncate flex items-center gap-2"
+                        >
+                          <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-gitlab-orange' : 'text-text-muted'}`} />
+                          <div className="truncate min-w-0">
+                            <div className="truncate text-xs">{rName}</div>
+                            <div className="text-[10px] text-text-faint font-mono truncate">{rPath}</div>
+                          </div>
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {isActive && <Check className="w-3.5 h-3.5 text-gitlab-orange flex-shrink-0 ml-1" />}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeRecentRepo(rPath);
+                            }}
+                            className="p-1 text-text-faint hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                            title="Remove from recent list"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
+
               <button
                 onClick={handleOpenLocalRepo}
                 className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
               >
-                <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
+                <FolderGit2 className="w-3.5 h-3.5 text-gitlab-teal" />
                 Add Existing Local Repository...
               </button>
               <button
@@ -328,8 +379,8 @@ export const Header: React.FC = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
               >
-                <Plus className="w-3.5 h-3.5 text-text-muted" />
-                Clone Repository from GitLab...
+                <Plus className="w-3.5 h-3.5 text-gitlab-orange" />
+                Clone Repository...
               </button>
             </div>
           )}
