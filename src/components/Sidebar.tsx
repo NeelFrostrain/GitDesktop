@@ -50,6 +50,32 @@ export const Sidebar: React.FC = () => {
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
 
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('gitlab_sidebar_width');
+    return saved ? parseInt(saved, 10) : 260;
+  });
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const newWidth = Math.max(160, Math.min(500, moveEvent.clientX));
+      setSidebarWidth(newWidth);
+      localStorage.setItem('gitlab_sidebar_width', newWidth.toString());
+    };
+
+    const onMouseUp = () => {
+      setIsResizing(false);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
   const handleOpenLocalFolder = async () => {
     try {
       const selected = await invoke<string | null>('select_folder_cmd');
@@ -107,7 +133,10 @@ export const Sidebar: React.FC = () => {
     const canCommit = Boolean(commitSummary.trim() && stagedFiles.length > 0 && !isCommitting);
 
     return (
-      <aside className="w-[220px] bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20">
+      <aside
+        style={{ width: sidebarWidth }}
+        className="bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20 relative flex-shrink-0"
+      >
         {/* Top Header */}
         <div className="p-3 border-b border-border flex items-center justify-between">
           <button
@@ -282,15 +311,24 @@ export const Sidebar: React.FC = () => {
             )}
           </div>
         )}
+
+        {/* Resizable Drag Border Handle */}
+        <div
+          onMouseDown={startResizing}
+          className={`absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-gitlab-orange/80 transition-colors z-30 ${
+            isResizing ? 'bg-gitlab-orange w-1.5' : 'bg-transparent'
+          }`}
+          title="Drag to resize sidebar width"
+        />
       </aside>
     );
   }
 
-  // Repository-focused Left Sidebar (180px fixed)
-  const sidebarWidth = isCollapsed ? 'w-14' : 'w-[180px]';
-
   return (
-    <aside className={`${sidebarWidth} bg-base-0 border-r border-border flex flex-col h-screen select-none transition-all duration-150 text-[13px] z-20`}>
+    <aside
+      style={{ width: isCollapsed ? 56 : Math.min(sidebarWidth, 320) }}
+      className="bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20 relative flex-shrink-0"
+    >
       {/* Top GitLab Logo Mark */}
       <div className="h-12 px-4 flex items-center gap-2 border-b border-transparent">
         <svg className="w-6 h-6 text-gitlab-orange flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
@@ -382,6 +420,17 @@ export const Sidebar: React.FC = () => {
           {!isCollapsed && <span>Collapse sidebar</span>}
         </button>
       </div>
+
+      {/* Resizable Drag Border Handle */}
+      {!isCollapsed && (
+        <div
+          onMouseDown={startResizing}
+          className={`absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-gitlab-orange/80 transition-colors z-30 ${
+            isResizing ? 'bg-gitlab-orange w-1.5' : 'bg-transparent'
+          }`}
+          title="Drag to resize sidebar width"
+        />
+      )}
     </aside>
   );
 };

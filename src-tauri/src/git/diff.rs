@@ -45,49 +45,67 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
         });
     }
 
+    let parse_diff = |diff: &git2::Diff| -> (bool, Vec<DiffLine>) {
+        let mut is_binary = false;
+        let mut lines = Vec::new();
+
+        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+            let origin = line.origin();
+            if origin == 'B' {
+                is_binary = true;
+                return true;
+            }
+
+            let line_type = match origin {
+                '+' => "addition",
+                '-' => "deletion",
+                ' ' => "context",
+                'F' | 'H' => "header",
+                _ => "context",
+            };
+
+            let content = String::from_utf8_lossy(line.content()).to_string();
+
+            lines.push(DiffLine {
+                line_type: line_type.to_string(),
+                old_line_num: line.old_lineno(),
+                new_line_num: line.new_lineno(),
+                content,
+            });
+
+            true
+        });
+
+        (is_binary, lines)
+    };
+
     let mut opts = DiffOptions::new();
     opts.pathspec(file_path);
 
+    let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
+
     let diff = if staged {
-        let head_tree = match repo.head().and_then(|h| h.peel_to_tree()) {
-            Ok(tree) => Some(tree),
-            Err(_) => None,
-        };
-        let index = repo.index()?;
-        repo.diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut opts))?
+        let index = repo.index().ok();
+        repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts)).ok()
     } else {
-        repo.diff_index_to_workdir(None, Some(&mut opts))?
+        repo.diff_index_to_workdir(None, Some(&mut opts)).ok()
     };
 
-    let mut is_binary = false;
-    let mut lines = Vec::new();
+    let (mut is_binary, mut lines) = if let Some(ref d) = diff {
+        parse_diff(d)
+    } else {
+        (false, Vec::new())
+    };
 
-    diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
-        let origin = line.origin();
-        if origin == 'B' {
-            is_binary = true;
-            return false;
+    if lines.is_empty() {
+        if let Ok(fallback_diff) = repo.diff_tree_to_workdir(head_tree.as_ref(), Some(&mut opts)) {
+            let (fb_bin, fb_lines) = parse_diff(&fallback_diff);
+            if !fb_lines.is_empty() {
+                is_binary = fb_bin;
+                lines = fb_lines;
+            }
         }
-
-        let line_type = match origin {
-            '+' => "addition",
-            '-' => "deletion",
-            ' ' => "context",
-            'F' | 'H' => "header",
-            _ => "context",
-        };
-
-        let content = String::from_utf8_lossy(line.content()).to_string();
-
-        lines.push(DiffLine {
-            line_type: line_type.to_string(),
-            old_line_num: line.old_lineno(),
-            new_line_num: line.new_lineno(),
-            content,
-        });
-
-        true
-    })?;
+    }
 
     Ok(DiffResult {
         file_path: file_path.to_string(),
@@ -119,7 +137,7 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
         let origin = line.origin();
         if origin == 'B' {
             is_binary = true;
-            return false;
+            return true;
         }
 
         let line_type = match origin {
