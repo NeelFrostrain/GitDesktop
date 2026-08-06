@@ -12,29 +12,90 @@ pub struct PullResult {
     pub commits_pulled: usize,
 }
 
-fn prepare_git_command(repo_path: &str) -> Command {
-    let mut cmd = Command::new("git");
-    cmd.current_dir(repo_path);
+use base64::{engine::general_purpose::STANDARD, Engine};
 
-    if let Ok(Some(token)) = keyring::get_token() {
-        let t = token.trim();
-        if !t.is_empty() {
-            cmd.arg("-c")
-               .arg(format!("http.extraHeader=Authorization: Bearer {}", t));
+struct GitAuthInfo {
+    token: Option<String>,
+    authenticated_url: Option<String>,
+}
+
+fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
+    let token = keyring::get_token().unwrap_or(None).filter(|t| !t.trim().is_empty());
+
+    let repo = match Repository::open(repo_path) {
+        Ok(r) => r,
+        Err(_) => return GitAuthInfo { token, authenticated_url: None },
+    };
+
+    let remote_name = if repo.find_remote("origin").is_ok() {
+        "origin"
+    } else if repo.find_remote("upstream").is_ok() {
+        "upstream"
+    } else {
+        "origin"
+    };
+
+    let current_url = repo.find_remote(remote_name).ok().and_then(|r| r.url().map(String::from));
+
+    let authenticated_url = if let (Some(url), Some(ref t)) = (&current_url, &token) {
+        if url.starts_with("https://") {
+            let url_without_scheme = &url["https://".len()..];
+            let clean_host_and_path = if let Some(idx) = url_without_scheme.find('@') {
+                &url_without_scheme[idx + 1..]
+            } else {
+                url_without_scheme
+            };
+            Some(format!("https://oauth2:{}@{}", t, clean_host_and_path))
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    if let (Some(ref auth_url), Some(ref orig_url)) = (&authenticated_url, &current_url) {
+        if auth_url != orig_url {
+            let _ = Command::new("git")
+                .arg("remote")
+                .arg("set-url")
+                .arg(remote_name)
+                .arg(auth_url)
+                .current_dir(repo_path)
+                .output();
         }
     }
 
-    cmd
+    GitAuthInfo { token, authenticated_url }
 }
 
 pub fn fetch_remote(repo_path: &str) -> Result<(), AppError> {
-    let mut cmd = prepare_git_command(repo_path);
+    let auth_info = get_git_auth_info(repo_path);
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+
+    if let Some(ref t) = auth_info.token {
+        let auth_str = format!("oauth2:{}", t);
+        let encoded = STANDARD.encode(auth_str.as_bytes());
+        cmd.arg("-c")
+           .arg(format!("http.extraHeader=Authorization: Basic {}", encoded))
+           .arg("-c")
+           .arg("credential.helper=");
+    }
+
     cmd.arg("fetch").arg("--all").arg("--prune");
 
     let output = cmd.output()?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
+            if auth_info.token.is_none() {
+                return Err(AppError::Auth(
+                    "Authentication Required: Please sign in to your GitLab account in Account & Auth to fetch remote.".to_string()
+                ));
+            }
+        }
         return Err(AppError::Git(format!("Fetch failed: {}", stderr.trim())));
     }
 
@@ -42,21 +103,65 @@ pub fn fetch_remote(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn push_to_remote(repo_path: &str, branch_name: &str) -> Result<(), AppError> {
-    let mut cmd = prepare_git_command(repo_path);
-    cmd.arg("push").arg("origin").arg(branch_name);
+    let auth_info = get_git_auth_info(repo_path);
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+
+    if let Some(ref t) = auth_info.token {
+        let auth_str = format!("oauth2:{}", t);
+        let encoded = STANDARD.encode(auth_str.as_bytes());
+        cmd.arg("-c")
+           .arg(format!("http.extraHeader=Authorization: Basic {}", encoded))
+           .arg("-c")
+           .arg("credential.helper=");
+    }
+
+    cmd.arg("push").arg("-u");
+
+    if let Some(ref auth_url) = auth_info.authenticated_url {
+        cmd.arg(auth_url).arg(branch_name);
+    } else {
+        cmd.arg("origin").arg(branch_name);
+    }
 
     let output = cmd.output()?;
 
     if !output.status.success() {
-        let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
-        return Err(AppError::Git(format!("Failed to push to remote: {}", err_msg.trim())));
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        
+        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
+            if auth_info.token.is_none() {
+                return Err(AppError::Auth(
+                    "Authentication Required: Please sign in to your GitLab account in Account & Auth to push to remote.".to_string()
+                ));
+            }
+            return Err(AppError::Auth(
+                "Access Denied: Stored token does not have push permissions for this repository. Please re-login in Account & Auth.".to_string()
+            ));
+        }
+
+        return Err(AppError::Git(format!("Failed to push to remote: {}", stderr.trim())));
     }
 
     Ok(())
 }
 
 pub fn pull_from_remote(repo_path: &str, _branch_name: &str) -> Result<PullResult, AppError> {
-    let mut cmd = prepare_git_command(repo_path);
+    let auth_info = get_git_auth_info(repo_path);
+
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+
+    if let Some(ref t) = auth_info.token {
+        let auth_str = format!("oauth2:{}", t);
+        let encoded = STANDARD.encode(auth_str.as_bytes());
+        cmd.arg("-c")
+           .arg(format!("http.extraHeader=Authorization: Basic {}", encoded))
+           .arg("-c")
+           .arg("credential.helper=");
+    }
+
     cmd.arg("pull").arg("--no-rebase");
 
     let output = cmd.output()?;

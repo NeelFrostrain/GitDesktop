@@ -6,6 +6,17 @@
   body {
     @apply bg-base-0 text-text-primary antialiased font-sans select-none overflow-hidden text-[13px];
   }
+
+  /* Fix: Tauri WebView applies dark system :active style to buttons without bg. */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  button:focus-visible {
+    outline: 2px solid #FC6D26;
+    outline-offset: 1px;
+  }
 }
 
 /* Custom titlebar window drag rules */

@@ -373,7 +373,7 @@ export const Header: React.FC = () => {
 
               <button
                 onClick={handleOpenLocalRepo}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
               >
                 <FolderGit2 className="w-3.5 h-3.5 text-gitlab-teal" />
                 Add Existing Local Repository...
@@ -384,7 +384,7 @@ export const Header: React.FC = () => {
                   setActiveModalTab('repos');
                   setIsRepoModalOpen(true);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
               >
                 <Plus className="w-3.5 h-3.5 text-gitlab-orange" />
                 Clone Repository...
@@ -566,7 +566,7 @@ export const Header: React.FC = () => {
                       try { await openUrl(user.web_url); } catch { window.open(user.web_url, '_blank'); }
                     }
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 flex items-center justify-between transition"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
                 >
                   <span>View Profile on GitLab</span>
                   <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
@@ -579,7 +579,7 @@ export const Header: React.FC = () => {
                     setActiveModalTab('repos');
                     setIsRepoModalOpen(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 flex items-center justify-between transition"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
                 >
                   <span>Manage Repositories</span>
                   <FolderGit2 className="w-3.5 h-3.5 text-gitlab-orange" />

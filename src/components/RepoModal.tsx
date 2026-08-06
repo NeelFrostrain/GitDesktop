@@ -36,7 +36,9 @@ export const RepoModal: React.FC = () => {
     setError,
   } = useGitStore();
 
-  const [serverUrl, setServerUrl] = useState('https://gitlab.com');
+  const [serverUrl, setServerUrl] = useState(() => {
+    return localStorage.getItem('git_desktop_server_url') || 'https://gitlab.com';
+  });
   const [patToken, setPatToken] = useState('');
   const [customCaPem, setCustomCaPem] = useState('');
   const [showCustomCa, setShowCustomCa] = useState(false);
@@ -158,11 +160,13 @@ export const RepoModal: React.FC = () => {
     setLoginError(null);
 
     try {
+      const cleanUrl = serverUrl.trim().replace(/\/+$/, '') || 'https://gitlab.com';
       const loggedUser = await invoke<GitLabUser>('login_gitlab_pat', {
-        serverUrl,
+        serverUrl: cleanUrl,
         token: patToken,
         customCaPem: customCaPem || null,
       });
+      localStorage.setItem('git_desktop_server_url', cleanUrl);
       setUser(loggedUser);
       setActiveModalTab('repos');
       fetchRepositories(1);
@@ -177,11 +181,14 @@ export const RepoModal: React.FC = () => {
     setIsOauthLoading(true);
     setLoginError(null);
     try {
+      const cleanUrl = serverUrl.trim().replace(/\/+$/, '') || 'https://gitlab.com';
+      localStorage.setItem('git_desktop_server_url', cleanUrl);
       const pkce = await invoke<PkcePair>('generate_pkce_cmd');
       sessionStorage.setItem('oauth_verifier', String(pkce.verifier));
+      sessionStorage.setItem('oauth_server_url', cleanUrl);
 
       await invoke('start_oauth_login', {
-        serverUrl,
+        serverUrl: cleanUrl,
         challenge: pkce.challenge,
         verifier: pkce.verifier,
         clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
@@ -378,10 +385,10 @@ export const RepoModal: React.FC = () => {
                     type="button"
                     onClick={handleOAuthLogin}
                     disabled={isOauthLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-[#FC6D26] hover:bg-[#e2591c] text-white font-medium py-2.5 rounded-md transition shadow-md text-xs"
+                    className="w-full flex items-center justify-center gap-2 bg-[#FC6D26] hover:bg-[#e2591c] disabled:bg-[#FC6D26]/50 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-md transition shadow-md text-xs"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    {isOauthLoading ? "Opening browser for GitLab sign in..." : "Sign in with GitLab (Browser PKCE)"}
+                    {isOauthLoading ? 'Opening browser for GitLab sign in...' : 'Sign in with GitLab (Browser PKCE)'}
                   </button>
 
                   {isOauthLoading && (
@@ -459,7 +466,7 @@ export const RepoModal: React.FC = () => {
                     <button
                       type="submit"
                       disabled={isAuthenticating}
-                      className="w-full py-2 bg-base-2 hover:bg-base-3 border border-border text-text-primary font-semibold rounded text-xs transition shadow-sm"
+                      className="w-full py-2 bg-base-2 hover:bg-base-3 disabled:opacity-50 disabled:cursor-not-allowed border border-border text-text-primary font-semibold rounded text-xs transition shadow-sm"
                     >
                       {isAuthenticating ? 'Validating Token...' : 'Sign In with Personal Access Token'}
                     </button>
