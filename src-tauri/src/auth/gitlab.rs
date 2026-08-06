@@ -66,7 +66,7 @@ pub async fn listen_for_oauth_callback(
         .and_then(|url| url.query_pairs().find(|(k, _)| k == "code").map(|(_, v)| v.to_string()))
         .ok_or_else(|| AppError::Auth("Authorization code missing from callback request".to_string()))?;
 
-    let html_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0d0d14;color:#f0f0f3;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;'><div><h2 style='color:#fc6d26;margin-bottom:8px;'>GitLab Desktop Authorized!</h2><p style='color:#c8c8ce;'>Authentication was successful. You can close this tab and return to the app.</p></div></body></html>";
+    let html_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0d0d14;color:#f0f0f3;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;'><div><h2 style='color:#fc6d26;margin-bottom:8px;'>Git Desktop Authorized!</h2><p style='color:#c8c8ce;'>Authentication was successful. You can close this tab and return to the app.</p></div></body></html>";
     let _ = stream.write_all(html_response.as_bytes()).await;
     let _ = stream.flush().await;
 

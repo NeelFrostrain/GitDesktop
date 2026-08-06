@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { 
   FileText, 
@@ -16,10 +16,18 @@ import {
   ChevronRight,
   FileCode,
   Copy,
-  Check
+  Check,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { DiffResult, CommitDetails, DiffLine } from '../types/git';
+
+const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp', 'avif', 'icns']);
+
+function isImageFile(filePath: string): boolean {
+  const ext = filePath.split('.').pop()?.toLowerCase() || '';
+  return IMAGE_EXTENSIONS.has(ext);
+}
 
 const CopyButton: React.FC<{ text: string; label?: string; className?: string }> = ({ text, label, className = '' }) => {
   const [copied, setCopied] = useState(false);
@@ -244,6 +252,10 @@ export const DiffViewer: React.FC = () => {
   const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
   const [loadingHistoryFiles, setLoadingHistoryFiles] = useState<Record<string, boolean>>({});
   const [openFiles, setOpenFiles] = useState<Record<string, boolean>>({});
+
+  // Image Zoom & Scale State for Preview
+  const [imageZoom, setImageZoom] = useState<number | 'fit'>('fit');
+  const [pixelatedMode, setPixelatedMode] = useState(true);
 
   // Fetch diff when selected file changes in Changes tab
   useEffect(() => {
@@ -496,16 +508,149 @@ export const DiffViewer: React.FC = () => {
       );
     }
 
-    if (diff.is_binary) {
+    if (diff.is_binary || isImageFile(selectedFile)) {
+      const ext = selectedFile.split('.').pop()?.toLowerCase() || '';
+      const isImg = isImageFile(selectedFile);
+
+      if (isImg) {
+        const fullPath = activeRepoPath ? `${activeRepoPath}/${selectedFile}`.replace(/\\/g, '/') : '';
+        const fileUrl = fullPath ? convertFileSrc(fullPath) : '';
+
+        const getZoomStyle = () => {
+          if (imageZoom === 'fit') {
+            return {
+              minWidth: '280px',
+              minHeight: '280px',
+              maxWidth: '85%',
+              maxHeight: '70vh',
+              objectFit: 'contain' as const,
+            };
+          }
+          return {
+            width: `${imageZoom * 100}%`,
+            maxWidth: 'none',
+          };
+        };
+
+        return (
+          <div className="h-full flex flex-col bg-base-0">
+            {/* Header Bar matching UI Theme */}
+            <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-2 truncate">
+                <ImageIcon className="w-4 h-4 text-gitlab-orange flex-shrink-0" />
+                <span className="font-mono text-xs text-text-primary font-medium truncate">
+                  {selectedFile}
+                </span>
+                <CopyButton text={selectedFile} />
+              </div>
+
+              {/* Zoom & Scaling Controls */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1 bg-base-2 border border-border rounded p-0.5">
+                  <button
+                    onClick={() => setImageZoom('fit')}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                      imageZoom === 'fit' ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    Auto Fit
+                  </button>
+                  <button
+                    onClick={() => setImageZoom(1)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                      imageZoom === 1 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    1x
+                  </button>
+                  <button
+                    onClick={() => setImageZoom(2)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                      imageZoom === 2 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    2x
+                  </button>
+                  <button
+                    onClick={() => setImageZoom(4)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                      imageZoom === 4 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    4x
+                  </button>
+                  <button
+                    onClick={() => setImageZoom(8)}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
+                      imageZoom === 8 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    8x
+                  </button>
+                </div>
+
+                <button
+                  onClick={() => setPixelatedMode(!pixelatedMode)}
+                  className={`px-2 py-0.5 rounded border text-[11px] font-mono transition ${
+                    pixelatedMode
+                      ? 'bg-gitlab-orange/20 border-gitlab-orange/50 text-gitlab-orange font-medium'
+                      : 'bg-base-2 border-border text-text-muted'
+                  }`}
+                  title="Toggle crisp pixel rendering"
+                >
+                  {pixelatedMode ? 'Crisp' : 'Smooth'}
+                </button>
+              </div>
+            </div>
+
+            {/* Direct Viewport (No Inner Background Boxes) */}
+            <div className="flex-1 w-full h-full p-8 flex items-center justify-center overflow-auto bg-base-0">
+              <img
+                src={fileUrl}
+                alt={selectedFile}
+                className="transition-all duration-150 drop-shadow-2xl"
+                style={{
+                  ...getZoomStyle(),
+                  imageRendering: pixelatedMode ? 'pixelated' : 'auto',
+                }}
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+              />
+            </div>
+
+            {/* Footer Metadata Bar */}
+            <div className="h-8 bg-base-1 border-t border-border px-4 flex items-center justify-between text-xs font-mono text-text-muted flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="font-medium text-text-primary">Image File</span>
+                <span>•</span>
+                <span>{(diff.file_size_bytes / 1024).toFixed(1)} KB</span>
+                <span>•</span>
+                <span className="uppercase text-gitlab-orange font-semibold">{ext}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>Scale:</span>
+                <span className="text-gitlab-teal font-medium">
+                  {imageZoom === 'fit' ? 'Auto Fit (280px+)' : `${imageZoom * 100}%`}
+                </span>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div className="h-full flex flex-col items-center justify-center text-center p-6">
-          <Binary className="w-12 h-12 text-github-dark-accent mb-3" />
+        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#1c2128]">
+          <Binary className="w-12 h-12 text-gitlab-orange mb-3" />
           <h3 className="text-base font-semibold text-github-dark-heading mb-1">
-            Binary File Detected
+            Binary File Detected ({ext.toUpperCase()})
           </h3>
-          <p className="text-xs text-gray-400 max-w-md">
+          <p className="text-xs text-gray-400 max-w-md mb-2">
             Binary files cannot be rendered as text diffs.
           </p>
+          <span className="text-xs font-mono text-gitlab-teal px-2.5 py-1 bg-base-1 border border-border rounded">
+            File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
+          </span>
         </div>
       );
     }
@@ -711,7 +856,26 @@ export const DiffViewer: React.FC = () => {
                           Fetching file changes...
                         </div>
                       ) : fileDiff ? (
-                        fileDiff.lines.length > 0 ? (
+                        isImageFile(file) ? (
+                          <div className="p-4 flex flex-col items-center justify-center bg-[#0d1117]">
+                            <div
+                              className="rounded overflow-hidden flex items-center justify-center p-3 border border-border/50 max-w-full"
+                              style={{
+                                backgroundImage: `radial-gradient(#30363d 1px, transparent 0)`,
+                                backgroundSize: '12px 12px',
+                                backgroundColor: '#010409',
+                              }}
+                            >
+                              <img
+                                src={convertFileSrc(`${activeRepoPath}/${file}`.replace(/\\/g, '/'))}
+                                alt={file}
+                                className="max-h-64 max-w-full object-contain rounded shadow"
+                                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                              />
+                            </div>
+                            <span className="mt-2 text-[11px] font-mono text-text-muted">Image Preview ({file.split('.').pop()?.toUpperCase()})</span>
+                          </div>
+                        ) : fileDiff.lines.length > 0 ? (
                           renderDiffContent(fileDiff.lines)
                         ) : (
                           <div className="p-4 text-xs text-text-muted font-mono text-center">

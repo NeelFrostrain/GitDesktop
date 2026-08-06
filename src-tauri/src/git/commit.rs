@@ -51,8 +51,8 @@ pub fn commit_changes(
     let tree = repo.find_tree(tree_id)?;
 
     let config = repo.config()?;
-    let name = config.get_string("user.name").unwrap_or_else(|_| "GitLab Desktop User".to_string());
-    let email = config.get_string("user.email").unwrap_or_else(|_| "user@gitlab.local".to_string());
+    let name = config.get_string("user.name").unwrap_or_else(|_| "Git Desktop User".to_string());
+    let email = config.get_string("user.email").unwrap_or_else(|_| "user@git.local".to_string());
 
     let signature = Signature::now(&name, &email)?;
 

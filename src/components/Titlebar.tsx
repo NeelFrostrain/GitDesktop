@@ -87,12 +87,10 @@ export const Titlebar: React.FC = () => {
       className="titlebar-drag h-9 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default"
     >
       {/* Left: GitLab Logo & App Name */}
-      <div data-tauri-drag-region className="flex items-center gap-2.5 pointer-events-none">
-        <svg className="w-4 h-4 text-gitlab-orange flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 5.5 2a.43.43 0 0 1 .4.28l2.25 6.94h7.7l2.25-6.94a.43.43 0 0 1 .4-.28.42.42 0 0 1 .79.16l2.44 7.51 1.22 3.78a.84.84 0 0 1-.3.94z" />
-        </svg>
+      <div data-tauri-drag-region className="flex items-center gap-2 pointer-events-none">
+        <img src="/favicon.png" alt="GitLab Logo" className="w-4 h-4 rounded-sm flex-shrink-0" />
         <span className="font-semibold text-text-primary tracking-tight">
-          GitLab Desktop
+          Git Desktop
         </span>
       </div>
 

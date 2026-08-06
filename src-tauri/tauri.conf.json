@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "GitLab Desktop",
+  "productName": "Git Desktop",
   "version": "0.1.0",
   "identifier": "com.gitlab.desktop",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "GitLab Desktop",
+        "title": "Git Desktop",
         "width": 1280,
         "height": 800,
         "minWidth": 900,
@@ -41,8 +41,10 @@
     "targets": "all",
     "icon": [
       "icons/32x32.png",
+      "icons/64x64.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
+      "icons/icon.png",
       "icons/icon.icns",
       "icons/icon.ico"
     ]
