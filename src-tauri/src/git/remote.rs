@@ -16,7 +16,6 @@ use base64::{engine::general_purpose::STANDARD, Engine};
 
 struct GitAuthInfo {
     token: Option<String>,
-    authenticated_url: Option<String>,
 }
 
 fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
@@ -24,7 +23,7 @@ fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
 
     let repo = match Repository::open(repo_path) {
         Ok(r) => r,
-        Err(_) => return GitAuthInfo { token, authenticated_url: None },
+        Err(_) => return GitAuthInfo { token },
     };
 
     let remote_name = if repo.find_remote("origin").is_ok() {
@@ -65,7 +64,7 @@ fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
         }
     }
 
-    GitAuthInfo { token, authenticated_url }
+    GitAuthInfo { token }
 }
 
 pub fn fetch_remote(repo_path: &str) -> Result<(), AppError> {
@@ -117,13 +116,14 @@ pub fn push_to_remote(repo_path: &str, branch_name: &str) -> Result<(), AppError
            .arg("credential.helper=");
     }
 
-    cmd.arg("push").arg("-u");
-
-    if let Some(ref auth_url) = auth_info.authenticated_url {
-        cmd.arg(auth_url).arg(branch_name);
-    } else {
-        cmd.arg("origin").arg(branch_name);
-    }
+    // Always push to "origin" by name (NOT the URL) so that:
+    //   git push -u origin <branch>
+    // correctly sets the upstream tracking ref (branch.<name>.remote=origin,
+    // branch.<name>.merge=refs/heads/<name>). Passing a URL instead of a remote
+    // name prevents -u from configuring tracking, so status would keep showing
+    // "Push N commits" even after a successful push.
+    // Auth credentials are already baked into remote.origin.url by get_git_auth_info.
+    cmd.arg("push").arg("-u").arg("origin").arg(branch_name);
 
     let output = cmd.output()?;
 

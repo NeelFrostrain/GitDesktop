@@ -144,22 +144,41 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
 
 fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usize), AppError> {
     let local_branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
-    let upstream = match local_branch.upstream() {
-        Ok(u) => u,
-        Err(_) => return Ok((0, 0)),
-    };
 
     let local_oid = local_branch
         .get()
         .target()
         .ok_or_else(|| AppError::Git("Local branch target missing".to_string()))?;
-    let upstream_oid = upstream
-        .get()
-        .target()
-        .ok_or_else(|| AppError::Git("Upstream branch target missing".to_string()))?;
 
-    let (ahead, behind) = repo.graph_ahead_behind(local_oid, upstream_oid)?;
-    Ok((ahead, behind))
+    // Try the upstream tracking branch first
+    let upstream_oid = if let Ok(upstream) = local_branch.upstream() {
+        upstream.get().target()
+    } else {
+        // Fall back: look for origin/<branch> ref directly
+        let origin_ref = format!("refs/remotes/origin/{}", branch_name);
+        repo.find_reference(&origin_ref).ok().and_then(|r| r.target())
+    };
+
+    match upstream_oid {
+        Some(oid) => {
+            let (ahead, behind) = repo.graph_ahead_behind(local_oid, oid)?;
+            Ok((ahead, behind))
+        }
+        // No remote ref at all — branch has never been pushed.
+        // Count commits on this branch to decide: if there are any local commits, show as ahead.
+        None => {
+            // Walk from HEAD; if repo has ANY commits, show it as needing to be pushed
+            let mut revwalk = repo.revwalk()?;
+            revwalk.push(local_oid)?;
+            let count = revwalk.count();
+            // If there are commits at all, show as ahead of remote (unpushed)
+            if count > 0 {
+                Ok((count, 0))
+            } else {
+                Ok((0, 0))
+            }
+        }
+    }
 }
 
 #[cfg(test)]

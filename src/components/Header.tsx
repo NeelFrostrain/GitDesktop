@@ -373,7 +373,7 @@ export const Header: React.FC = () => {
 
               <button
                 onClick={handleOpenLocalRepo}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
               >
                 <FolderGit2 className="w-3.5 h-3.5 text-gitlab-teal" />
                 Add Existing Local Repository...
@@ -384,7 +384,7 @@ export const Header: React.FC = () => {
                   setActiveModalTab('repos');
                   setIsRepoModalOpen(true);
                 }}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
               >
                 <Plus className="w-3.5 h-3.5 text-gitlab-orange" />
                 Clone Repository...
@@ -557,7 +557,6 @@ export const Header: React.FC = () => {
                 <span className="truncate">{user.server_url}</span>
               </div>
 
-              {/* Actions */}
               <div className="space-y-1 pt-1 border-t border-border">
                 <button
                   onClick={async () => {
@@ -566,7 +565,7 @@ export const Header: React.FC = () => {
                       try { await openUrl(user.web_url); } catch { window.open(user.web_url, '_blank'); }
                     }
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
                 >
                   <span>View Profile on GitLab</span>
                   <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
@@ -579,7 +578,7 @@ export const Header: React.FC = () => {
                     setActiveModalTab('repos');
                     setIsRepoModalOpen(true);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
                 >
                   <span>Manage Repositories</span>
                   <FolderGit2 className="w-3.5 h-3.5 text-gitlab-orange" />
@@ -593,7 +592,7 @@ export const Header: React.FC = () => {
                     } catch {}
                     setUser(null);
                   }}
-                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-red-400 hover:bg-red-950/40 hover:text-red-300 flex items-center justify-between transition mt-1"
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs text-red-400 bg-base-2 hover:bg-red-950/40 active:bg-red-950/40 hover:text-red-300 flex items-center justify-between transition mt-1"
                 >
                   <span>Sign Out</span>
                   <LogOut className="w-3.5 h-3.5 text-red-400" />
