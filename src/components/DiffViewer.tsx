@@ -164,17 +164,59 @@ function buildSplitRows(lines: DiffLine[]): SplitRow[] {
       i++;
     }
 
-    const maxLen = Math.max(delChunk.length, addChunk.length);
-    for (let j = 0; j < maxLen; j++) {
-      const del = delChunk[j];
-      const add = addChunk[j];
-      rows.push({
-        type: 'code',
-        oldNum: del?.old_line_num ?? undefined,
-        oldContent: del?.content,
-        newNum: add?.new_line_num ?? undefined,
-        newContent: add?.content,
-      });
+    const delCount = delChunk.length;
+    const addCount = addChunk.length;
+
+    if (delCount === addCount) {
+      for (let j = 0; j < delCount; j++) {
+        rows.push({
+          type: 'code',
+          oldNum: delChunk[j].old_line_num ?? undefined,
+          oldContent: delChunk[j].content,
+          newNum: addChunk[j].new_line_num ?? undefined,
+          newContent: addChunk[j].content,
+        });
+      }
+    } else if (delCount > addCount) {
+      const unalignedDels = delCount - addCount;
+      for (let j = 0; j < unalignedDels; j++) {
+        rows.push({
+          type: 'code',
+          oldNum: delChunk[j].old_line_num ?? undefined,
+          oldContent: delChunk[j].content,
+          newNum: undefined,
+          newContent: undefined,
+        });
+      }
+      for (let j = 0; j < addCount; j++) {
+        const delIndex = unalignedDels + j;
+        rows.push({
+          type: 'code',
+          oldNum: delChunk[delIndex].old_line_num ?? undefined,
+          oldContent: delChunk[delIndex].content,
+          newNum: addChunk[j].new_line_num ?? undefined,
+          newContent: addChunk[j].content,
+        });
+      }
+    } else {
+      for (let j = 0; j < delCount; j++) {
+        rows.push({
+          type: 'code',
+          oldNum: delChunk[j].old_line_num ?? undefined,
+          oldContent: delChunk[j].content,
+          newNum: addChunk[j].new_line_num ?? undefined,
+          newContent: addChunk[j].content,
+        });
+      }
+      for (let j = delCount; j < addCount; j++) {
+        rows.push({
+          type: 'code',
+          oldNum: undefined,
+          oldContent: undefined,
+          newNum: addChunk[j].new_line_num ?? undefined,
+          newContent: addChunk[j].content,
+        });
+      }
     }
   }
 
@@ -306,7 +348,7 @@ export const DiffViewer: React.FC = () => {
     if (diffViewMode === 'split') {
       const splitRows = buildSplitRows(lines);
       return (
-        <div className="w-full font-mono text-[12px] leading-6 select-text overflow-x-auto">
+        <div className="w-full font-mono text-[12px] leading-6 select-text">
           {splitRows.map((row, idx) => {
             if (row.type === 'header') {
               return (
@@ -316,34 +358,57 @@ export const DiffViewer: React.FC = () => {
               );
             }
 
-            const isDel = row.oldContent !== undefined && row.newContent === undefined;
-            const isAdd = row.oldContent === undefined && row.newContent !== undefined;
+            const isOldEmpty = row.oldContent === undefined;
+            const isNewEmpty = row.newContent === undefined;
+            const isDel = !isOldEmpty && isNewEmpty;
+            const isAdd = isOldEmpty && !isNewEmpty;
+            const isModified = !isOldEmpty && !isNewEmpty && row.oldContent !== row.newContent;
 
             return (
-              <div key={idx} className="flex border-b border-border/20 min-w-max">
+              <div key={idx} className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono">
                 {/* Left Side (Old) */}
-                <div className={`w-1/2 flex border-r border-border/40 ${isDel ? 'bg-red-950/40 text-red-300' : 'bg-base-0'}`}>
-                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
+                <div
+                  className={`w-1/2 min-w-0 flex border-r border-border/40 ${
+                    isDel
+                      ? 'bg-red-950/40 text-red-300'
+                      : isModified
+                      ? 'bg-red-950/30 text-red-300'
+                      : isOldEmpty
+                      ? 'bg-base-1/20'
+                      : 'bg-base-0 text-text-primary'
+                  }`}
+                >
+                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
                     {row.oldNum ?? ''}
                   </div>
                   <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-red-400 flex-shrink-0">
-                    {isDel ? '-' : ''}
+                    {!isOldEmpty && (isDel || isModified) ? '-' : ''}
                   </div>
-                  <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
-                    {row.oldContent !== undefined ? highlightCodeLine(row.oldContent) : ''}
+                  <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">
+                    {row.oldContent !== undefined ? highlightCodeLine(row.oldContent) : '\u00A0'}
                   </div>
                 </div>
 
                 {/* Right Side (New) */}
-                <div className={`w-1/2 flex ${isAdd ? 'bg-green-950/40 text-green-300' : 'bg-base-0'}`}>
-                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
+                <div
+                  className={`w-1/2 min-w-0 flex ${
+                    isAdd
+                      ? 'bg-green-950/40 text-green-300'
+                      : isModified
+                      ? 'bg-green-950/30 text-green-300'
+                      : isNewEmpty
+                      ? 'bg-base-1/20'
+                      : 'bg-base-0 text-text-primary'
+                  }`}
+                >
+                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
                     {row.newNum ?? ''}
                   </div>
                   <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-green-400 flex-shrink-0">
-                    {isAdd ? '+' : ''}
+                    {!isNewEmpty && (isAdd || isModified) ? '+' : ''}
                   </div>
-                  <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
-                    {row.newContent !== undefined ? highlightCodeLine(row.newContent) : ''}
+                  <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">
+                    {row.newContent !== undefined ? highlightCodeLine(row.newContent) : '\u00A0'}
                   </div>
                 </div>
               </div>
@@ -376,7 +441,7 @@ export const DiffViewer: React.FC = () => {
           }
 
           return (
-            <div key={idx} className={`flex border-b border-border/20 ${lineBg}`}>
+            <div key={idx} className={`flex w-full border-b border-border/20 ${lineBg}`}>
               <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
                 {line.old_line_num ?? ''}
               </div>
@@ -386,7 +451,7 @@ export const DiffViewer: React.FC = () => {
               <div className="w-6 px-1 py-0.5 text-center select-none font-bold flex-shrink-0">
                 {prefix}
               </div>
-              <div className={`flex-1 px-2 py-0.5 whitespace-pre ${textColor}`}>
+              <div className={`flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all ${textColor}`}>
                 {line.line_type === 'header' ? line.content : highlightCodeLine(line.content)}
               </div>
             </div>

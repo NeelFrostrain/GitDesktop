@@ -498,7 +498,8 @@ export const Header: React.FC = () => {
                 </button>
 
                 <button
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setIsProfileDropdownOpen(false);
                     setActiveModalTab('repos');
                     setIsRepoModalOpen(true);

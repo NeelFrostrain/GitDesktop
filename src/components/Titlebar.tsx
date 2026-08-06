@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, Copy, X, Search } from 'lucide-react';
 
@@ -11,8 +12,8 @@ export const Titlebar: React.FC = () => {
       try {
         const maximized = await appWindow.isMaximized();
         setIsMaximized(maximized);
-      } catch {
-        // Fallback for non-Tauri envs
+      } catch (err) {
+        console.warn('Failed to check if window is maximized:', err);
       }
     };
     checkMaximized();
@@ -24,8 +25,8 @@ export const Titlebar: React.FC = () => {
           const maximized = await appWindow.isMaximized();
           setIsMaximized(maximized);
         });
-      } catch {
-        // Ignore
+      } catch (err) {
+        console.warn('Failed to setup resize listener:', err);
       }
     };
     setupListener();
@@ -35,37 +36,71 @@ export const Titlebar: React.FC = () => {
     };
   }, []);
 
-  const handleMinimize = () => {
-    appWindow.minimize();
+  const handleMinimize = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      await invoke('minimize_window');
+    } catch {
+      try {
+        await appWindow.minimize();
+      } catch (err) {
+        console.error('Failed to minimize window:', err);
+      }
+    }
   };
 
-  const handleToggleMaximize = async () => {
-    await appWindow.toggleMaximize();
-    const maximized = await appWindow.isMaximized();
-    setIsMaximized(maximized);
+  const handleToggleMaximize = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      const isNowMaximized = await invoke<boolean>('toggle_maximize_window');
+      setIsMaximized(isNowMaximized);
+    } catch {
+      try {
+        await appWindow.toggleMaximize();
+        const maximized = await appWindow.isMaximized();
+        setIsMaximized(maximized);
+      } catch (err) {
+        console.error('Failed to toggle maximize window:', err);
+      }
+    }
   };
 
-  const handleClose = () => {
-    appWindow.close();
+  const handleClose = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      await invoke('close_window');
+    } catch {
+      try {
+        await appWindow.close();
+      } catch (err) {
+        console.error('Failed to close window:', err);
+      }
+    }
   };
 
   return (
     <header
       data-tauri-drag-region
-      className="h-9 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0"
+      className="titlebar-drag h-9 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default"
     >
       {/* Left: GitLab Logo & App Name */}
-      <div data-tauri-drag-region className="flex items-center gap-2.5">
+      <div data-tauri-drag-region className="flex items-center gap-2.5 pointer-events-none">
         <svg className="w-4 h-4 text-gitlab-orange flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
           <path d="M22.65 14.39L12 22.13 1.35 14.39a.84.84 0 0 1-.3-.94l1.22-3.78 2.44-7.51A.42.42 0 0 1 5.5 2a.43.43 0 0 1 .4.28l2.25 6.94h7.7l2.25-6.94a.43.43 0 0 1 .4-.28.42.42 0 0 1 .79.16l2.44 7.51 1.22 3.78a.84.84 0 0 1-.3.94z" />
         </svg>
-        <span data-tauri-drag-region className="font-semibold text-text-primary tracking-tight">
+        <span className="font-semibold text-text-primary tracking-tight">
           GitLab Desktop
         </span>
       </div>
 
       {/* Center: GitLab Web Style Search Pill */}
-      <div data-tauri-drag-region className="flex-1 max-w-md mx-4 flex items-center justify-center">
+      <div
+        className="titlebar-no-drag flex-1 max-w-md mx-4 flex items-center justify-center"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="w-full flex items-center gap-2 px-3 py-1 bg-base-1 border border-border rounded-md text-text-muted hover:border-border-strong cursor-text transition">
           <Search className="w-3.5 h-3.5 text-text-faint" />
           <span className="flex-1 text-[11px] truncate">Search or go to...</span>
@@ -76,35 +111,42 @@ export const Titlebar: React.FC = () => {
       </div>
 
       {/* Right: Window Action Buttons */}
-      <div className="flex items-center gap-0.5">
+      <div
+        className="titlebar-no-drag flex items-center gap-0.5 z-50"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <button
+          type="button"
           onClick={handleMinimize}
-          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-base-2 hover:text-text-primary transition"
+          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title="Minimize"
         >
-          <Minus className="w-3.5 h-3.5" />
+          <Minus className="w-3.5 h-3.5 pointer-events-none" />
         </button>
 
         <button
+          type="button"
           onClick={handleToggleMaximize}
-          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-base-2 hover:text-text-primary transition"
+          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title={isMaximized ? "Restore" : "Maximize"}
         >
           {isMaximized ? (
-            <Copy className="w-3 h-3 rotate-180" />
+            <Copy className="w-3 h-3 rotate-180 pointer-events-none" />
           ) : (
-            <Square className="w-3 h-3" />
+            <Square className="w-3 h-3 pointer-events-none" />
           )}
         </button>
 
         <button
+          type="button"
           onClick={handleClose}
-          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-red-600 hover:text-white transition"
+          className="w-8 h-6 flex items-center justify-center rounded text-text-muted hover:bg-red-600 hover:text-white transition cursor-pointer"
           title="Close"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-3.5 h-3.5 pointer-events-none" />
         </button>
       </div>
     </header>
   );
 };
+

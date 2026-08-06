@@ -6,6 +6,7 @@ pub mod commands;
 use commands::auth_commands::*;
 use commands::git_commands::*;
 use commands::repo_commands::*;
+use commands::window_commands::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,6 +24,9 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            minimize_window,
+            toggle_maximize_window,
+            close_window,
             select_folder_cmd,
             generate_pkce_cmd,
             login_gitlab_pat,

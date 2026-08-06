@@ -8,6 +8,15 @@
   }
 }
 
+/* Custom titlebar window drag rules */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
 /* Custom scrollbar styling matching GitLab Web */
 ::-webkit-scrollbar {
   width: 6px;

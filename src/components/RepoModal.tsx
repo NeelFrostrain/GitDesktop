@@ -263,14 +263,8 @@ export const RepoModal: React.FC = () => {
   };
 
   return (
-    <div
-      onClick={() => setIsRepoModalOpen(false)}
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]"
-      >
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
+      <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="h-12 bg-base-3 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
