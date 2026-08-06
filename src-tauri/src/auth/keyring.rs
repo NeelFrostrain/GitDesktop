@@ -1,4 +1,4 @@
-﻿use std::fs;
+use std::fs;
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 use crate::error::AppError;
@@ -100,6 +100,18 @@ pub fn add_or_update_account(account: SavedAccount) -> Result<(), AppError> {
         *existing = SavedAccount { is_active: was_active, ..account };
     } else {
         store.accounts.push(SavedAccount { is_active: should_activate, ..account });
+    }
+    write_local_store(&store);
+    Ok(())
+}
+
+pub fn update_account_profile(account_id: &str, name: &str, email: Option<String>) -> Result<(), AppError> {
+    let mut store = read_local_store();
+    if let Some(acct) = store.accounts.iter_mut().find(|a| a.id == account_id) {
+        if !name.trim().is_empty() {
+            acct.name = name.trim().to_string();
+        }
+        acct.email = email.map(|e| e.trim().to_string()).filter(|e| !e.is_empty());
     }
     write_local_store(&store);
     Ok(())
