@@ -37,6 +37,7 @@ pub fn run() {
             publish_repository,
             get_repo_status,
             get_file_diff,
+            get_commit_file_diff,
             stage_files,
             unstage_files,
             commit_changes,

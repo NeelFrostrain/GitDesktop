@@ -27,6 +27,17 @@ pub async fn get_file_diff(
 }
 
 #[command]
+pub async fn get_commit_file_diff(
+    repo_path: String,
+    sha: String,
+    file_path: String,
+) -> Result<DiffResult, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::diff::get_commit_file_diff(&repo_path, &sha, &file_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn stage_files(repo_path: String, files: Vec<String>) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || commit_mod::stage_files(&repo_path, files))
         .await

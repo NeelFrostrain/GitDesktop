@@ -12,10 +12,75 @@ import {
   CheckCircle,
   Clock,
   User,
-  GitCommit
+  ChevronDown,
+  ChevronRight,
+  FileCode
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
-import { DiffResult, CommitDetails } from '../types/git';
+import { DiffResult, CommitDetails, DiffLine } from '../types/git';
+
+interface SplitRow {
+  type: 'header' | 'code';
+  headerText?: string;
+  oldNum?: number;
+  oldContent?: string;
+  newNum?: number;
+  newContent?: string;
+}
+
+function buildSplitRows(lines: DiffLine[]): SplitRow[] {
+  const rows: SplitRow[] = [];
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    if (line.line_type === 'header') {
+      rows.push({ type: 'header', headerText: line.content });
+      i++;
+      continue;
+    }
+
+    if (line.line_type === 'context') {
+      rows.push({
+        type: 'code',
+        oldNum: line.old_line_num ?? undefined,
+        oldContent: line.content,
+        newNum: line.new_line_num ?? undefined,
+        newContent: line.content,
+      });
+      i++;
+      continue;
+    }
+
+    const delChunk: DiffLine[] = [];
+    const addChunk: DiffLine[] = [];
+
+    while (i < lines.length && lines[i].line_type === 'deletion') {
+      delChunk.push(lines[i]);
+      i++;
+    }
+    while (i < lines.length && lines[i].line_type === 'addition') {
+      addChunk.push(lines[i]);
+      i++;
+    }
+
+    const maxLen = Math.max(delChunk.length, addChunk.length);
+    for (let j = 0; j < maxLen; j++) {
+      const del = delChunk[j];
+      const add = addChunk[j];
+      rows.push({
+        type: 'code',
+        oldNum: del?.old_line_num ?? undefined,
+        oldContent: del?.content,
+        newNum: add?.new_line_num ?? undefined,
+        newContent: add?.content,
+      });
+    }
+  }
+
+  return rows;
+}
 
 export const DiffViewer: React.FC = () => {
   const {
@@ -33,6 +98,11 @@ export const DiffViewer: React.FC = () => {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Expanded file diffs in History tab
+  const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
+  const [loadingHistoryFiles, setLoadingHistoryFiles] = useState<Record<string, boolean>>({});
+  const [openFiles, setOpenFiles] = useState<Record<string, boolean>>({});
 
   // Fetch diff when selected file changes in Changes tab
   useEffect(() => {
@@ -59,6 +129,8 @@ export const DiffViewer: React.FC = () => {
   useEffect(() => {
     if (!activeRepoPath || !selectedCommitSha || activeTab !== 'history') {
       setCommitDetails(null);
+      setExpandedHistoryFiles({});
+      setOpenFiles({});
       return;
     }
 
@@ -67,10 +139,43 @@ export const DiffViewer: React.FC = () => {
       repoPath: activeRepoPath,
       sha: selectedCommitSha,
     })
-      .then(setCommitDetails)
+      .then((details) => {
+        setCommitDetails(details);
+        // Expand first file by default for convenience
+        if (details.changed_files.length > 0) {
+          const firstFile = details.changed_files[0];
+          setOpenFiles({ [firstFile]: true });
+          fetchCommitFileDiff(selectedCommitSha, firstFile);
+        }
+      })
       .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }))
       .finally(() => setIsLoading(false));
   }, [activeRepoPath, selectedCommitSha, activeTab]);
+
+  const fetchCommitFileDiff = async (sha: string, filePath: string) => {
+    if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
+    setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
+    try {
+      const res = await invoke<DiffResult>('get_commit_file_diff', {
+        repoPath: activeRepoPath,
+        sha,
+        filePath,
+      });
+      setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
+    } catch (err: any) {
+      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    } finally {
+      setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
+    }
+  };
+
+  const toggleFileExpansion = (filePath: string) => {
+    const nextState = !openFiles[filePath];
+    setOpenFiles((prev) => ({ ...prev, [filePath]: nextState }));
+    if (nextState && selectedCommitSha && !expandedHistoryFiles[filePath]) {
+      fetchCommitFileDiff(selectedCommitSha, filePath);
+    }
+  };
 
   const repoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || activeRepoPath
@@ -97,6 +202,98 @@ export const DiffViewer: React.FC = () => {
   };
 
   const isCurrentBranchPushed = (status?.ahead || 0) === 0;
+
+  const renderDiffContent = (lines: DiffLine[]) => {
+    if (diffViewMode === 'split') {
+      const splitRows = buildSplitRows(lines);
+      return (
+        <div className="w-full font-mono text-[12px] leading-6 select-text overflow-x-auto">
+          {splitRows.map((row, idx) => {
+            if (row.type === 'header') {
+              return (
+                <div key={idx} className="bg-github-dark-header text-github-dark-accent font-semibold px-4 py-1 border-b border-github-dark-border text-xs">
+                  {row.headerText}
+                </div>
+              );
+            }
+
+            const isDel = row.oldContent !== undefined && row.newContent === undefined;
+            const isAdd = row.oldContent === undefined && row.newContent !== undefined;
+
+            return (
+              <div key={idx} className="flex border-b border-github-dark-border/20 min-w-max">
+                {/* Left Side (Old) */}
+                <div className={`w-1/2 flex border-r border-github-dark-border/40 ${isDel ? 'bg-red-950/40 text-red-300' : 'bg-transparent'}`}>
+                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                    {row.oldNum ?? ''}
+                  </div>
+                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-red-400">
+                    {isDel ? '-' : ''}
+                  </div>
+                  <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
+                    {row.oldContent ?? ''}
+                  </div>
+                </div>
+
+                {/* Right Side (New) */}
+                <div className={`w-1/2 flex ${isAdd ? 'bg-green-950/40 text-green-300' : 'bg-transparent'}`}>
+                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                    {row.newNum ?? ''}
+                  </div>
+                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-green-400">
+                    {isAdd ? '+' : ''}
+                  </div>
+                  <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
+                    {row.newContent ?? ''}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Unified View
+    return (
+      <div className="w-full font-mono text-[12px] leading-6 select-text">
+        {lines.map((line, idx) => {
+          let lineBg = 'hover:bg-github-dark-hover/30';
+          let textColor = 'text-github-dark-text';
+          let prefix = ' ';
+
+          if (line.line_type === 'addition') {
+            lineBg = 'bg-green-950/40 text-green-300';
+            textColor = 'text-green-300';
+            prefix = '+';
+          } else if (line.line_type === 'deletion') {
+            lineBg = 'bg-red-950/40 text-red-300';
+            textColor = 'text-red-300';
+            prefix = '-';
+          } else if (line.line_type === 'header') {
+            lineBg = 'bg-github-dark-header text-github-dark-accent font-semibold';
+          }
+
+          return (
+            <div key={idx} className={`flex border-b border-github-dark-border/20 ${lineBg}`}>
+              <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                {line.old_line_num ?? ''}
+              </div>
+              <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                {line.new_line_num ?? ''}
+              </div>
+              <div className="w-6 px-1 py-0.5 text-center select-none font-bold">
+                {prefix}
+              </div>
+              <div className={`flex-1 px-2 py-0.5 whitespace-pre ${textColor}`}>
+                {line.content}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   // Render Diff for Changes Tab
   const renderChangesDiff = () => {
@@ -127,7 +324,7 @@ export const DiffViewer: React.FC = () => {
             Large File Warning
           </h3>
           <p className="text-xs text-gray-400 max-w-md">
-            File <span className="font-mono text-white">{selectedFile}</span> exceeds the maximum diff preview limit ({(diff.file_size_bytes / (1024 * 1024)).toFixed(2)} MB). Diffs are suppressed for performance.
+            File <span className="font-mono text-white">{selectedFile}</span> exceeds the maximum diff preview limit.
           </p>
         </div>
       );
@@ -183,47 +380,11 @@ export const DiffViewer: React.FC = () => {
         </div>
 
         {/* Diff Line Viewer */}
-        <div className="flex-1 overflow-auto bg-[#1c2128] font-mono text-[12px] leading-6 select-text">
+        <div className="flex-1 overflow-auto bg-[#1c2128]">
           {diff.lines.length === 0 ? (
-            <div className="p-6 text-gray-500 text-center">No textual line changes detected.</div>
+            <div className="p-6 text-gray-500 text-center font-mono text-xs">No textual line changes detected.</div>
           ) : (
-            diff.lines.map((line, idx) => {
-              let lineBg = 'hover:bg-github-dark-hover/30';
-              let textColor = 'text-github-dark-text';
-              let prefix = ' ';
-
-              if (line.line_type === 'addition') {
-                lineBg = 'bg-green-950/40 text-green-300';
-                textColor = 'text-green-300';
-                prefix = '+';
-              } else if (line.line_type === 'deletion') {
-                lineBg = 'bg-red-950/40 text-red-300';
-                textColor = 'text-red-300';
-                prefix = '-';
-              } else if (line.line_type === 'header') {
-                lineBg = 'bg-github-dark-header text-github-dark-accent font-semibold';
-              }
-
-              return (
-                <div key={idx} className={`flex border-b border-github-dark-border/20 ${lineBg}`}>
-                  {/* Line numbers */}
-                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
-                    {line.old_line_num ?? ''}
-                  </div>
-                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
-                    {line.new_line_num ?? ''}
-                  </div>
-                  {/* Line prefix */}
-                  <div className="w-6 px-1 py-0.5 text-center select-none font-bold">
-                    {prefix}
-                  </div>
-                  {/* Line content */}
-                  <div className={`flex-1 px-2 py-0.5 whitespace-pre ${textColor}`}>
-                    {line.content}
-                  </div>
-                </div>
-              );
-            })
+            renderDiffContent(diff.lines)
           )}
         </div>
       </div>
@@ -252,16 +413,44 @@ export const DiffViewer: React.FC = () => {
     if (!commitDetails) return null;
 
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col overflow-hidden">
         {/* Commit Header Card */}
-        <div className="p-6 bg-github-dark-header border-b border-github-dark-border space-y-4">
-          <div className="flex items-start justify-between">
-            <h2 className="text-base font-semibold text-github-dark-heading leading-snug">
+        <div className="p-5 bg-github-dark-header border-b border-github-dark-border space-y-3">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-sm font-semibold text-github-dark-heading leading-relaxed whitespace-pre-wrap">
               {commitDetails.commit.message}
             </h2>
-            <span className="font-mono text-xs px-2.5 py-1 bg-github-dark-sidebar border border-github-dark-border rounded text-github-dark-accent font-medium">
-              {commitDetails.commit.short_sha}
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 bg-github-dark-sidebar border border-github-dark-border rounded p-0.5">
+                <button
+                  onClick={() => setDiffViewMode('unified')}
+                  className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 ${
+                    diffViewMode === 'unified'
+                      ? 'bg-github-dark-accent text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Unified View"
+                >
+                  <AlignJustify className="w-3.5 h-3.5" />
+                  Unified
+                </button>
+                <button
+                  onClick={() => setDiffViewMode('split')}
+                  className={`px-2 py-0.5 rounded text-xs flex items-center gap-1 ${
+                    diffViewMode === 'split'
+                      ? 'bg-github-dark-accent text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  title="Split View"
+                >
+                  <Columns className="w-3.5 h-3.5" />
+                  Split
+                </button>
+              </div>
+              <span className="font-mono text-xs px-2.5 py-1 bg-github-dark-sidebar border border-github-dark-border rounded text-github-dark-accent font-medium">
+                {commitDetails.commit.short_sha}
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-4 text-xs text-github-dark-text">
@@ -277,22 +466,63 @@ export const DiffViewer: React.FC = () => {
           </div>
         </div>
 
-        {/* Changed Files Section */}
-        <div className="flex-1 p-6 overflow-y-auto space-y-3">
+        {/* Changed Files with Accordion Diffs */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-github-dark-bg">
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
             Changed Files ({commitDetails.changed_files.length})
           </div>
 
-          <div className="space-y-1">
-            {commitDetails.changed_files.map((file) => (
-              <div
-                key={file}
-                className="px-3 py-2 bg-github-dark-sidebar border border-github-dark-border rounded text-xs font-mono text-github-dark-heading flex items-center gap-2"
-              >
-                <GitCommit className="w-3.5 h-3.5 text-github-dark-accent" />
-                <span>{file}</span>
-              </div>
-            ))}
+          <div className="space-y-2">
+            {commitDetails.changed_files.map((file) => {
+              const isOpen = Boolean(openFiles[file]);
+              const fileDiff = expandedHistoryFiles[file];
+              const isFileLoading = Boolean(loadingHistoryFiles[file]);
+
+              return (
+                <div
+                  key={file}
+                  className="border border-github-dark-border rounded-md overflow-hidden bg-github-dark-sidebar"
+                >
+                  {/* File Accordion Header */}
+                  <button
+                    onClick={() => toggleFileExpansion(file)}
+                    className="w-full px-3 py-2 text-xs font-mono text-github-dark-heading hover:bg-github-dark-hover flex items-center justify-between text-left transition"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      {isOpen ? (
+                        <ChevronDown className="w-3.5 h-3.5 text-github-dark-accent flex-shrink-0" />
+                      ) : (
+                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      )}
+                      <FileCode className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                      <span className="truncate">{file}</span>
+                    </div>
+                    {isFileLoading && (
+                      <span className="text-[11px] text-gray-400 animate-pulse">Loading diff...</span>
+                    )}
+                  </button>
+
+                  {/* Expanded File Diff Body */}
+                  {isOpen && (
+                    <div className="border-t border-github-dark-border bg-[#1c2128]">
+                      {isFileLoading ? (
+                        <div className="p-4 text-xs text-gray-400 font-mono text-center">
+                          Fetching file changes...
+                        </div>
+                      ) : fileDiff ? (
+                        fileDiff.lines.length > 0 ? (
+                          renderDiffContent(fileDiff.lines)
+                        ) : (
+                          <div className="p-4 text-xs text-gray-500 font-mono text-center">
+                            No textual changes to display.
+                          </div>
+                        )
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

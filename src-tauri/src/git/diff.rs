@@ -97,3 +97,56 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
         file_size_bytes,
     })
 }
+
+pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Result<DiffResult, AppError> {
+    let repo = Repository::open(repo_path)
+        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
+    let oid = git2::Oid::from_str(sha)
+        .map_err(|_| AppError::Validation(format!("Invalid commit SHA: {}", sha)))?;
+    let commit = repo.find_commit(oid)?;
+    let commit_tree = commit.tree()?;
+    let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
+
+    let mut opts = DiffOptions::new();
+    opts.pathspec(file_path);
+
+    let diff = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), Some(&mut opts))?;
+
+    let mut is_binary = false;
+    let mut lines = Vec::new();
+
+    diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+        let origin = line.origin();
+        if origin == 'B' {
+            is_binary = true;
+            return false;
+        }
+
+        let line_type = match origin {
+            '+' => "addition",
+            '-' => "deletion",
+            ' ' => "context",
+            'F' | 'H' => "header",
+            _ => "context",
+        };
+
+        let content = String::from_utf8_lossy(line.content()).to_string();
+
+        lines.push(DiffLine {
+            line_type: line_type.to_string(),
+            old_line_num: line.old_lineno(),
+            new_line_num: line.new_lineno(),
+            content,
+        });
+
+        true
+    })?;
+
+    Ok(DiffResult {
+        file_path: file_path.to_string(),
+        lines,
+        is_binary,
+        is_large_file: false,
+        file_size_bytes: 0,
+    })
+}
