@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use git2::{Repository, StatusOptions, Status};
 use std::path::Path;
+use std::process::Command;
 use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
@@ -143,43 +144,63 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
 }
 
 fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usize), AppError> {
-    let local_branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
+    let repo_path = repo.workdir()
+        .or_else(|| repo.path().parent())
+        .ok_or_else(|| AppError::Git("Cannot determine repo workdir".to_string()))?;
 
-    let local_oid = local_branch
-        .get()
-        .target()
-        .ok_or_else(|| AppError::Git("Local branch target missing".to_string()))?;
+    // Use system git rev-list --count which reads actual on-disk refs (never stale).
+    // This is more reliable than libgit2's in-memory ref cache after a push/fetch.
+    let remote_ref = format!("origin/{}", branch_name);
 
-    // Try the upstream tracking branch first
-    let upstream_oid = if let Ok(upstream) = local_branch.upstream() {
-        upstream.get().target()
-    } else {
-        // Fall back: look for origin/<branch> ref directly
-        let origin_ref = format!("refs/remotes/origin/{}", branch_name);
-        repo.find_reference(&origin_ref).ok().and_then(|r| r.target())
-    };
+    // Check if the remote ref exists at all
+    let ref_exists = Command::new("git")
+        .args(["show-ref", "--quiet", "--verify", &format!("refs/remotes/{}", remote_ref)])
+        .current_dir(repo_path)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
 
-    match upstream_oid {
-        Some(oid) => {
-            let (ahead, behind) = repo.graph_ahead_behind(local_oid, oid)?;
-            Ok((ahead, behind))
-        }
-        // No remote ref at all — branch has never been pushed.
-        // Count commits on this branch to decide: if there are any local commits, show as ahead.
-        None => {
-            // Walk from HEAD; if repo has ANY commits, show it as needing to be pushed
-            let mut revwalk = repo.revwalk()?;
-            revwalk.push(local_oid)?;
-            let count = revwalk.count();
-            // If there are commits at all, show as ahead of remote (unpushed)
-            if count > 0 {
-                Ok((count, 0))
-            } else {
-                Ok((0, 0))
-            }
-        }
+    if !ref_exists {
+        // Branch has never been pushed — count all local commits as "ahead"
+        let output = Command::new("git")
+            .args(["rev-list", "--count", "HEAD"])
+            .current_dir(repo_path)
+            .output()
+            .unwrap_or_else(|_| std::process::Output {
+                status: std::process::ExitStatus::default(),
+                stdout: b"0\n".to_vec(),
+                stderr: vec![],
+            });
+        let count: usize = String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .parse()
+            .unwrap_or(0);
+        return Ok((count, 0));
     }
+
+    // Count commits in local branch not in remote
+    let ahead_out = Command::new("git")
+        .args(["rev-list", "--count", &format!("{}..HEAD", remote_ref)])
+        .current_dir(repo_path)
+        .output()?;
+    let ahead: usize = String::from_utf8_lossy(&ahead_out.stdout)
+        .trim()
+        .parse()
+        .unwrap_or(0);
+
+    // Count commits in remote not in local branch
+    let behind_out = Command::new("git")
+        .args(["rev-list", "--count", &format!("HEAD..{}", remote_ref)])
+        .current_dir(repo_path)
+        .output()?;
+    let behind: usize = String::from_utf8_lossy(&behind_out.stdout)
+        .trim()
+        .parse()
+        .unwrap_or(0);
+
+    Ok((ahead, behind))
 }
+
 
 #[cfg(test)]
 mod tests {

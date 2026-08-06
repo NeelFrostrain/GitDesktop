@@ -14,10 +14,17 @@ import { GitLabUser } from './types/gitlab';
 import { RepoStatus } from './types/git';
 
 export const App: React.FC = () => {
-  const { setUser, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
+  const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
 
   useEffect(() => {
-    // Attempt session restoration from secure OS keyring
+    // Load accounts list
+    invoke<any[]>('list_accounts_cmd')
+      .then((accounts) => {
+        if (accounts) setAccounts(accounts);
+      })
+      .catch(() => {});
+
+    // Attempt session restoration from active account
     invoke<GitLabUser | null>('get_current_user')
       .then((user) => {
         if (user) setUser(user);

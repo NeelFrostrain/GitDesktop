@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { GitLabUser } from '../types/gitlab';
+import { GitLabUser, SavedAccount } from '../types/gitlab';
 import { RepoStatus, AppError } from '../types/git';
 
 export type NavView = 'home' | 'projects' | 'groups' | 'work-items' | 'merge-requests' | 'todos' | 'workspace';
@@ -34,6 +34,7 @@ export interface GitState {
   activeRepoPath: string | null;
   recentRepos: string[];
   user: GitLabUser | null;
+  accounts: SavedAccount[];
   status: RepoStatus | null;
   selectedFile: string | null;
   stagedFiles: string[];
@@ -44,7 +45,7 @@ export interface GitState {
   diffViewMode: 'unified' | 'split';
   currentNavView: NavView;
   isRepoModalOpen: boolean;
-  activeModalTab: 'login' | 'repos';
+  activeModalTab: 'accounts' | 'login' | 'repos';
   isFetching: boolean;
   isPushing: boolean;
   isPulling: boolean;
@@ -55,6 +56,7 @@ export interface GitState {
   addRecentRepo: (path: string) => void;
   removeRecentRepo: (path: string) => void;
   setUser: (user: GitLabUser | null) => void;
+  setAccounts: (accounts: SavedAccount[]) => void;
   setStatus: (status: RepoStatus | null) => void;
   setSelectedFile: (file: string | null) => void;
   toggleStageFile: (file: string) => void;
@@ -66,10 +68,10 @@ export interface GitState {
   setDiffViewMode: (mode: 'unified' | 'split') => void;
   setCurrentNavView: (view: NavView) => void;
   setIsRepoModalOpen: (open: boolean) => void;
-  setActiveModalTab: (tab: 'login' | 'repos') => void;
+  setActiveModalTab: (tab: 'accounts' | 'login' | 'repos') => void;
   setIsFetching: (fetching: boolean) => void;
   setIsPushing: (pushing: boolean) => void;
-  setIsPulling: (pulling: boolean) => void;
+  setIsPulling: (pushing: boolean) => void;
   setLastFetchedTimestamp: (time: number | null) => void;
   setError: (error: AppError | null) => void;
 }
@@ -78,6 +80,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   activeRepoPath: getCachedActiveRepoPath(),
   recentRepos: getCachedRecentRepos(),
   user: getCachedUser(),
+  accounts: [],
   status: null,
   selectedFile: null,
   stagedFiles: [],
@@ -88,7 +91,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   diffViewMode: 'unified',
   currentNavView: getCachedActiveRepoPath() ? 'workspace' : 'home',
   isRepoModalOpen: false,
-  activeModalTab: 'login',
+  activeModalTab: 'accounts',
   isFetching: false,
   isPushing: false,
   isPulling: false,
@@ -155,6 +158,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     }
     set((state) => ({ user, error: user ? null : state.error }));
   },
+  setAccounts: (accounts) => set({ accounts }),
   setStatus: (status) => {
     const currentStaged = status ? status.files.filter(f => f.staged).map(f => f.path) : [];
     set({ status, stagedFiles: currentStaged });

@@ -5,7 +5,7 @@ use crate::auth::gitlab::{
     GitLabClient, GitLabUser, PkcePair, generate_pkce, exchange_code_for_token,
     listen_for_oauth_callback, DEFAULT_CLIENT_ID, DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
 };
-use crate::auth::keyring;
+use crate::auth::keyring::{self, SavedAccount};
 
 #[command]
 pub async fn generate_pkce_cmd() -> Result<PkcePair, AppError> {
@@ -28,6 +28,19 @@ pub async fn login_gitlab_pat(
     let client = GitLabClient::new(server_url.clone(), token.clone(), custom_ca_pem)?;
     let user = client.get_current_user().await?;
 
+    let account_id = keyring::make_account_id(&user.username, &server_url);
+    let account = SavedAccount {
+        id: account_id,
+        server_url: server_url.clone(),
+        token: token.clone(),
+        name: user.name.clone(),
+        username: user.username.clone(),
+        email: user.email.clone(),
+        avatar_url: user.avatar_url.clone(),
+        is_active: true,
+    };
+    keyring::add_or_update_account(account)?;
+    keyring::switch_active_account(&keyring::make_account_id(&user.username, &server_url))?;
     keyring::save_token(&token)?;
     keyring::save_server_url(&server_url)?;
 
@@ -111,6 +124,19 @@ pub async fn complete_oauth_login(
     let client = GitLabClient::new(server_url.clone(), token.clone(), None)?;
     let user = client.get_current_user().await?;
 
+    let account_id = keyring::make_account_id(&user.username, &server_url);
+    let account = SavedAccount {
+        id: account_id.clone(),
+        server_url: server_url.clone(),
+        token: token.clone(),
+        name: user.name.clone(),
+        username: user.username.clone(),
+        email: user.email.clone(),
+        avatar_url: user.avatar_url.clone(),
+        is_active: true,
+    };
+    keyring::add_or_update_account(account)?;
+    keyring::switch_active_account(&account_id)?;
     keyring::save_token(&token)?;
     keyring::save_server_url(&server_url)?;
 
@@ -141,4 +167,37 @@ pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
 pub async fn logout_gitlab() -> Result<(), AppError> {
     keyring::delete_token()?;
     Ok(())
+}
+
+#[command]
+pub async fn list_accounts_cmd() -> Result<Vec<keyring::SavedAccount>, AppError> {
+    Ok(keyring::list_accounts())
+}
+
+#[command]
+pub async fn switch_account_cmd(account_id: String) -> Result<Option<GitLabUser>, AppError> {
+    keyring::switch_active_account(&account_id)?;
+    // Return the new active user profile
+    if let Some(acct) = keyring::get_active_account() {
+        let server_url = acct.server_url.clone();
+        let token = acct.token.clone();
+        match GitLabClient::new(server_url, token, None) {
+            Ok(client) => match client.get_current_user().await {
+                Ok(user) => return Ok(Some(user)),
+                Err(_) => {}
+            },
+            Err(_) => {}
+        }
+    }
+    Ok(None)
+}
+
+#[command]
+pub async fn remove_account_cmd(account_id: String) -> Result<(), AppError> {
+    keyring::remove_account(&account_id)
+}
+
+#[command]
+pub async fn set_repo_account_cmd(repo_path: String, account_id: String) -> Result<(), AppError> {
+    keyring::set_account_for_repo(&repo_path, &account_id)
 }

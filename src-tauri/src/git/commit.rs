@@ -1,6 +1,7 @@
 use git2::{Repository, IndexAddOption, Signature};
 use std::path::Path;
 use crate::error::AppError;
+use crate::auth::keyring;
 
 pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
     let repo = Repository::open(repo_path)
@@ -51,8 +52,19 @@ pub fn commit_changes(
     let tree = repo.find_tree(tree_id)?;
 
     let config = repo.config()?;
-    let name = config.get_string("user.name").unwrap_or_else(|_| "Git Desktop User".to_string());
-    let email = config.get_string("user.email").unwrap_or_else(|_| "user@git.local".to_string());
+
+    // Use the account associated with this repo (or the global active account),
+    // falling back to local git config, then to defaults.
+    let (name, email) = if let Some(acct) = keyring::get_account_for_repo(repo_path) {
+        let email = acct.email.unwrap_or_else(|| {
+            config.get_string("user.email").unwrap_or_else(|_| format!("{}@git.local", acct.username))
+        });
+        (acct.name, email)
+    } else {
+        let name = config.get_string("user.name").unwrap_or_else(|_| "Git Desktop User".to_string());
+        let email = config.get_string("user.email").unwrap_or_else(|_| "user@git.local".to_string());
+        (name, email)
+    };
 
     let signature = Signature::now(&name, &email)?;
 

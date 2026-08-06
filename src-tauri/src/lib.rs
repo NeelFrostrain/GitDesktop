@@ -53,6 +53,10 @@ pub fn run() {
             list_branches,
             checkout_branch,
             create_branch,
+            list_accounts_cmd,
+            switch_account_cmd,
+            remove_account_cmd,
+            set_repo_account_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

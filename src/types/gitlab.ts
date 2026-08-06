@@ -8,6 +8,17 @@ export interface GitLabUser {
   server_url: string;
 }
 
+export interface SavedAccount {
+  id: string;
+  server_url: string;
+  token: string;
+  name: string;
+  username: string;
+  email: string | null;
+  avatar_url: string | null;
+  is_active: boolean;
+}
+
 export interface GitLabProject {
   id: number;
   name: string;
