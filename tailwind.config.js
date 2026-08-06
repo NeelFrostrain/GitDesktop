@@ -8,40 +8,41 @@ export default {
     extend: {
       colors: {
         base: {
-          0: '#0a0a10',
-          1: '#0d0d14',
-          2: '#17171f',
-          3: '#1a1a24',
+          0: '#171719', // Main app near-black background
+          1: '#1f1e24', // Card & Panel background
+          2: '#28272d', // Table header / elevated card
+          3: '#33323a', // Hover & active state
         },
         border: {
-          DEFAULT: '#26262e',
-          strong: '#2c2c36',
+          DEFAULT: '#36353d',
+          strong: '#46454e',
         },
         text: {
-          primary: '#f0f0f3',
-          secondary: '#c8c8ce',
-          muted: '#8a8a92',
-          faint: '#7a7a85',
+          primary: '#e1e0e5',
+          secondary: '#bfbee2',
+          muted: '#8f8e9a',
+          faint: '#6e6d78',
         },
         gitlab: {
           orange: '#fc6d26',
-          purple: '#534ab7',
-          purpleLight: '#eeedfe',
-          teal: '#0f6e56',
+          purple: '#7b58cf',
+          purpleLight: '#3a2d6b',
+          teal: '#108548',
+          blue: '#1f75cb',
         },
         github: {
           dark: {
-            bg: '#0d0d14',
-            sidebar: '#0a0a10',
-            header: '#17171f',
-            border: '#26262e',
-            hover: '#1a1a24',
-            accent: '#539bf5',
-            success: '#0f6e56',
-            danger: '#e5534b',
-            warning: '#c69026',
-            text: '#c8c8ce',
-            heading: '#f0f0f3',
+            bg: '#171719',
+            sidebar: '#1f1e24',
+            header: '#28272d',
+            border: '#36353d',
+            hover: '#33323a',
+            accent: '#1f75cb',
+            success: '#108548',
+            danger: '#dd2b0e',
+            warning: '#c17d10',
+            text: '#e1e0e5',
+            heading: '#ffffff',
           }
         }
       }

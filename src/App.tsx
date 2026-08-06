@@ -8,6 +8,7 @@ import { DiffViewer } from './components/DiffViewer';
 import { RepoModal } from './components/RepoModal';
 import { ConflictView } from './components/ConflictView';
 import { Header } from './components/Header';
+import { Titlebar } from './components/Titlebar';
 import { useGitStore } from './store/useGitStore';
 import { GitLabUser } from './types/gitlab';
 import { RepoStatus } from './types/git';
@@ -34,8 +35,8 @@ export const App: React.FC = () => {
         setUser(event.payload);
         useGitStore.setState({ isRepoModalOpen: false, error: null });
       }
-    }).then((un) => {
-      unlistenEvent = un;
+    }).then((fn) => {
+      unlistenEvent = fn;
     });
 
     onOpenUrl((urls: string[]) => {
@@ -88,17 +89,22 @@ export const App: React.FC = () => {
   const isWorkspace = currentNavView === 'workspace' && Boolean(activeRepoPath);
 
   return (
-    <div className="flex h-screen w-screen bg-base-1 text-text-primary overflow-hidden select-none font-sans min-w-[960px]">
-      {/* Left rail navigation */}
-      <Sidebar />
+    <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans min-w-[960px]">
+      {/* Top Custom Titlebar */}
+      <Titlebar />
 
-      {/* Main app body */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
-        {/* GitHub Desktop Header Bar */}
-        <Header />
-        <ConflictView />
-        <div className="flex-1 flex min-h-0 overflow-hidden">
-          {isWorkspace ? <DiffViewer /> : <HomeDashboard />}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left rail navigation */}
+        <Sidebar />
+
+        {/* Main app body */}
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          {/* Header Bar */}
+          <Header />
+          <ConflictView />
+          <div className="flex-1 flex min-h-0 overflow-hidden">
+            {isWorkspace ? <DiffViewer /> : <HomeDashboard />}
+          </div>
         </div>
       </div>
 

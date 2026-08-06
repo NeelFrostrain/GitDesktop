@@ -81,6 +81,9 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
 
     let mut opts = DiffOptions::new();
     opts.pathspec(file_path);
+    opts.include_untracked(true);
+    opts.show_untracked_content(true);
+    opts.recurse_untracked_dirs(true);
 
     let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
 
@@ -104,6 +107,22 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
                 is_binary = fb_bin;
                 lines = fb_lines;
             }
+        }
+    }
+
+    // Direct disk fallback for untracked newly created files
+    if lines.is_empty() && full_path.exists() && full_path.is_file() {
+        if let Ok(content) = fs::read_to_string(&full_path) {
+            lines = content
+                .lines()
+                .enumerate()
+                .map(|(idx, l)| DiffLine {
+                    line_type: "addition".to_string(),
+                    old_line_num: None,
+                    new_line_num: Some((idx + 1) as u32),
+                    content: l.to_string(),
+                })
+                .collect();
         }
     }
 

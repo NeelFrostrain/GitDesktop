@@ -4,11 +4,11 @@
 
 @layer base {
   body {
-    @apply bg-base-1 text-text-primary antialiased font-sans select-none overflow-hidden text-[13px];
+    @apply bg-base-0 text-text-primary antialiased font-sans select-none overflow-hidden text-[13px];
   }
 }
 
-/* Custom scrollbar styling */
+/* Custom scrollbar styling matching GitLab Web */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -19,10 +19,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #26262e;
-  border-radius: 3px;
+  background: #36353d;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2c2c36;
+  background: #46454e;
 }

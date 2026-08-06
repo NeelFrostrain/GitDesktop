@@ -53,6 +53,57 @@ const CopyButton: React.FC<{ text: string; label?: string; className?: string }>
   );
 };
 
+const HIGHLIGHT_KEYWORDS = new Set([
+  'const', 'let', 'var', 'function', 'return', 'export', 'import', 'from', 'default',
+  'type', 'interface', 'async', 'await', 'if', 'else', 'for', 'while', 'switch', 'case',
+  'break', 'try', 'catch', 'pub', 'fn', 'struct', 'enum', 'impl', 'use', 'mod', 'mut',
+  'ref', 'match', 'self', 'Self', 'true', 'false', 'null', 'undefined', 'None', 'Some',
+  'Ok', 'Err', 'new', 'delete', 'void', 'typeof', 'instanceof', 'as'
+]);
+
+function highlightCodeLine(text: string): React.ReactNode {
+  if (!text) return text;
+
+  const commentIdx = text.indexOf('//');
+  if (commentIdx !== -1) {
+    const codePart = text.substring(0, commentIdx);
+    const commentPart = text.substring(commentIdx);
+    return (
+      <>
+        {highlightCodeLine(codePart)}
+        <span className="text-gray-500 italic">{commentPart}</span>
+      </>
+    );
+  }
+
+  const regex = /(".*?"|'.*?'|`.*?`|\b\d+\b|\b[a-zA-Z_]\w*\b|[^\s\w]+|\s+)/g;
+  const matches = text.match(regex);
+
+  if (!matches) return text;
+
+  return matches.map((token, i) => {
+    if ((token.startsWith('"') && token.endsWith('"')) ||
+        (token.startsWith("'") && token.endsWith("'")) ||
+        (token.startsWith('`') && token.endsWith('`'))) {
+      return <span key={i} className="text-amber-300">{token}</span>;
+    }
+
+    if (/^\d+$/.test(token)) {
+      return <span key={i} className="text-orange-300">{token}</span>;
+    }
+
+    if (HIGHLIGHT_KEYWORDS.has(token)) {
+      return <span key={i} className="text-pink-400 font-medium">{token}</span>;
+    }
+
+    if (/^[A-Z][a-zA-Z0-9_]*$/.test(token)) {
+      return <span key={i} className="text-cyan-300 font-medium">{token}</span>;
+    }
+
+    return <span key={i}>{token}</span>;
+  });
+}
+
 interface SplitRow {
   type: 'header' | 'code';
   headerText?: string;
@@ -60,6 +111,18 @@ interface SplitRow {
   oldContent?: string;
   newNum?: number;
   newContent?: string;
+}
+
+function isVerbosePatchHeader(content: string): boolean {
+  const trimmed = content.trim();
+  return (
+    trimmed.startsWith('diff --git') ||
+    trimmed.startsWith('new file mode') ||
+    trimmed.startsWith('deleted file mode') ||
+    trimmed.startsWith('index ') ||
+    trimmed.startsWith('--- ') ||
+    trimmed.startsWith('+++ ')
+  );
 }
 
 function buildSplitRows(lines: DiffLine[]): SplitRow[] {
@@ -70,7 +133,9 @@ function buildSplitRows(lines: DiffLine[]): SplitRow[] {
     const line = lines[i];
 
     if (line.line_type === 'header') {
-      rows.push({ type: 'header', headerText: line.content });
+      if (!isVerbosePatchHeader(line.content)) {
+        rows.push({ type: 'header', headerText: line.content });
+      }
       i++;
       continue;
     }
@@ -245,7 +310,7 @@ export const DiffViewer: React.FC = () => {
           {splitRows.map((row, idx) => {
             if (row.type === 'header') {
               return (
-                <div key={idx} className="bg-github-dark-header text-github-dark-accent font-semibold px-4 py-1 border-b border-github-dark-border text-xs">
+                <div key={idx} className="bg-base-2 text-gitlab-blue font-semibold px-4 py-0.5 border-y border-border/50 text-[11px] font-mono">
                   {row.headerText}
                 </div>
               );
@@ -255,30 +320,30 @@ export const DiffViewer: React.FC = () => {
             const isAdd = row.oldContent === undefined && row.newContent !== undefined;
 
             return (
-              <div key={idx} className="flex border-b border-github-dark-border/20 min-w-max">
+              <div key={idx} className="flex border-b border-border/20 min-w-max">
                 {/* Left Side (Old) */}
-                <div className={`w-1/2 flex border-r border-github-dark-border/40 ${isDel ? 'bg-red-950/40 text-red-300' : 'bg-transparent'}`}>
-                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                <div className={`w-1/2 flex border-r border-border/40 ${isDel ? 'bg-red-950/40 text-red-300' : 'bg-base-0'}`}>
+                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
                     {row.oldNum ?? ''}
                   </div>
-                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-red-400">
+                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-red-400 flex-shrink-0">
                     {isDel ? '-' : ''}
                   </div>
                   <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
-                    {row.oldContent ?? ''}
+                    {row.oldContent !== undefined ? highlightCodeLine(row.oldContent) : ''}
                   </div>
                 </div>
 
                 {/* Right Side (New) */}
-                <div className={`w-1/2 flex ${isAdd ? 'bg-green-950/40 text-green-300' : 'bg-transparent'}`}>
-                  <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+                <div className={`w-1/2 flex ${isAdd ? 'bg-green-950/40 text-green-300' : 'bg-base-0'}`}>
+                  <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
                     {row.newNum ?? ''}
                   </div>
-                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-green-400">
+                  <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-green-400 flex-shrink-0">
                     {isAdd ? '+' : ''}
                   </div>
                   <div className="flex-1 px-2 py-0.5 whitespace-pre overflow-hidden text-ellipsis">
-                    {row.newContent ?? ''}
+                    {row.newContent !== undefined ? highlightCodeLine(row.newContent) : ''}
                   </div>
                 </div>
               </div>
@@ -289,11 +354,13 @@ export const DiffViewer: React.FC = () => {
     }
 
     // Unified View
+    const filteredLines = lines.filter((l) => !(l.line_type === 'header' && isVerbosePatchHeader(l.content)));
+
     return (
       <div className="w-full font-mono text-[12px] leading-6 select-text">
-        {lines.map((line, idx) => {
-          let lineBg = 'hover:bg-github-dark-hover/30';
-          let textColor = 'text-github-dark-text';
+        {filteredLines.map((line, idx) => {
+          let lineBg = 'hover:bg-base-3/30';
+          let textColor = 'text-text-primary';
           let prefix = ' ';
 
           if (line.line_type === 'addition') {
@@ -305,22 +372,22 @@ export const DiffViewer: React.FC = () => {
             textColor = 'text-red-300';
             prefix = '-';
           } else if (line.line_type === 'header') {
-            lineBg = 'bg-github-dark-header text-github-dark-accent font-semibold';
+            lineBg = 'bg-base-2 text-gitlab-blue font-semibold text-[11px] py-0.5';
           }
 
           return (
-            <div key={idx} className={`flex border-b border-github-dark-border/20 ${lineBg}`}>
-              <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+            <div key={idx} className={`flex border-b border-border/20 ${lineBg}`}>
+              <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
                 {line.old_line_num ?? ''}
               </div>
-              <div className="w-12 px-2 py-0.5 text-right text-gray-500 select-none border-r border-github-dark-border/30 bg-github-dark-sidebar/40">
+              <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0">
                 {line.new_line_num ?? ''}
               </div>
-              <div className="w-6 px-1 py-0.5 text-center select-none font-bold">
+              <div className="w-6 px-1 py-0.5 text-center select-none font-bold flex-shrink-0">
                 {prefix}
               </div>
               <div className={`flex-1 px-2 py-0.5 whitespace-pre ${textColor}`}>
-                {line.content}
+                {line.line_type === 'header' ? line.content : highlightCodeLine(line.content)}
               </div>
             </div>
           );
@@ -533,8 +600,8 @@ export const DiffViewer: React.FC = () => {
         </div>
 
         {/* Changed Files with Accordion Diffs */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-github-dark-bg">
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-base-0">
+          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider">
             Changed Files ({commitDetails.changed_files.length})
           </div>
 
@@ -547,42 +614,42 @@ export const DiffViewer: React.FC = () => {
               return (
                 <div
                   key={file}
-                  className="border border-github-dark-border rounded-md overflow-hidden bg-github-dark-sidebar"
+                  className="border border-border rounded-lg overflow-hidden bg-base-1 shadow-sm"
                 >
                   {/* File Accordion Header */}
                   <button
                     onClick={() => toggleFileExpansion(file)}
-                    className="w-full px-3 py-2 text-xs font-mono text-github-dark-heading hover:bg-github-dark-hover flex items-center justify-between text-left transition"
+                    className="w-full px-3.5 py-2.5 text-xs font-mono text-text-primary hover:bg-base-2 flex items-center justify-between text-left transition"
                   >
                     <div className="flex items-center gap-2 truncate">
                       {isOpen ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-github-dark-accent flex-shrink-0" />
+                        <ChevronDown className="w-3.5 h-3.5 text-gitlab-orange flex-shrink-0" />
                       ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        <ChevronRight className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
                       )}
-                      <FileCode className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                      <FileCode className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
                       <span className="truncate">{file}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <CopyButton text={file} />
                       {isFileLoading && (
-                        <span className="text-[11px] text-gray-400 animate-pulse">Loading diff...</span>
+                        <span className="text-[11px] text-text-muted animate-pulse">Loading diff...</span>
                       )}
                     </div>
                   </button>
 
                   {/* Expanded File Diff Body */}
                   {isOpen && (
-                    <div className="border-t border-github-dark-border bg-[#1c2128]">
+                    <div className="border-t border-border bg-base-0">
                       {isFileLoading ? (
-                        <div className="p-4 text-xs text-gray-400 font-mono text-center">
+                        <div className="p-4 text-xs text-text-muted font-mono text-center">
                           Fetching file changes...
                         </div>
                       ) : fileDiff ? (
                         fileDiff.lines.length > 0 ? (
                           renderDiffContent(fileDiff.lines)
                         ) : (
-                          <div className="p-4 text-xs text-gray-500 font-mono text-center">
+                          <div className="p-4 text-xs text-text-muted font-mono text-center">
                             No textual changes to display.
                           </div>
                         )
