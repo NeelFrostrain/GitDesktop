@@ -23,6 +23,7 @@ import {
   Save
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useLogStore } from '../store/useLogStore';
 import { GitLabUser, GitLabProject, PagedResult, SavedAccount } from '../types/gitlab';
 
 interface PkcePair {
@@ -86,8 +87,11 @@ export const RepoModal: React.FC = () => {
       await loadAccounts();
       const activeUser = await invoke<GitLabUser | null>('get_current_user');
       if (activeUser) setUser(activeUser);
+      useLogStore.getState().addLog('success', 'Auth', `Updated profile info for account '${accountId}'.`);
     } catch (err: any) {
-      setError({ code: 'AUTH_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: 'AUTH_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Auth', `Failed to update account info: ${msg}`, msg);
     }
   };
 
@@ -98,6 +102,7 @@ export const RepoModal: React.FC = () => {
   }, [isRepoModalOpen]);
 
   const handleSwitchAccount = async (accountId: string) => {
+    useLogStore.getState().addLog('info', 'Auth', `Switching active account to '${accountId}'...`);
     try {
       const switchedUser = await invoke<GitLabUser | null>('switch_account_cmd', { accountId });
       if (switchedUser) {
@@ -107,19 +112,26 @@ export const RepoModal: React.FC = () => {
         await invoke('set_repo_account_cmd', { repoPath: activeRepoPath, accountId });
       }
       await loadAccounts();
+      useLogStore.getState().addLog('success', 'Auth', `Switched active account to '${accountId}'.`);
     } catch (err: any) {
-      setError({ code: 'AUTH_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: 'AUTH_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Auth', `Failed to switch account: ${msg}`, msg);
     }
   };
 
   const handleRemoveAccount = async (accountId: string) => {
+    useLogStore.getState().addLog('info', 'Auth', `Removing account '${accountId}'...`);
     try {
       await invoke('remove_account_cmd', { accountId });
       await loadAccounts();
       const activeUser = await invoke<GitLabUser | null>('get_current_user');
       setUser(activeUser);
+      useLogStore.getState().addLog('success', 'Auth', `Removed account '${accountId}'.`);
     } catch (err: any) {
-      setError({ code: 'AUTH_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: 'AUTH_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Auth', `Failed to remove account: ${msg}`, msg);
     }
   };
 

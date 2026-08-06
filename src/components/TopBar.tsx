@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Plus, CheckSquare, User, GitPullRequest } from 'lucide-react';
+import { Search, Plus, User, GitPullRequest, Terminal } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useLogStore } from '../store/useLogStore';
 
 export const TopBar: React.FC = () => {
   const { user, setIsRepoModalOpen, setCurrentNavView } = useGitStore();
+  const { logs, setIsLogModalOpen } = useLogStore();
   const [searchQuery, setSearchQuery] = useState('');
 
   const getInitials = (name: string) => {
@@ -55,12 +57,16 @@ export const TopBar: React.FC = () => {
         </button>
 
         <button
-          onClick={() => setCurrentNavView('todos')}
+          onClick={() => setIsLogModalOpen(true)}
           className="p-1.5 rounded-md hover:bg-base-2 text-text-secondary hover:text-text-primary transition flex items-center gap-1"
-          title="To-Do List"
+          title="View Activity & System Logs"
         >
-          <CheckSquare className="w-4 h-4" />
-          <span className="text-[11px] font-mono text-text-muted">0</span>
+          <Terminal className="w-4 h-4 text-gitlab-orange" />
+          {logs.length > 0 && (
+            <span className="text-[11px] font-mono text-gitlab-orange font-bold px-1 bg-gitlab-orange/10 rounded">
+              {logs.length}
+            </span>
+          )}
         </button>
 
         <div className="h-4 w-px bg-border mx-1" />

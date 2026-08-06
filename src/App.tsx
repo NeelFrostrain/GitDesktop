@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar';
 import { HomeDashboard } from './components/HomeDashboard';
 import { DiffViewer } from './components/DiffViewer';
 import { RepoModal } from './components/RepoModal';
+import { LogModal } from './components/LogModal';
 import { ConflictView } from './components/ConflictView';
 import { Header } from './components/Header';
 import { Titlebar } from './components/Titlebar';
@@ -116,6 +117,7 @@ export const App: React.FC = () => {
       </div>
 
       <RepoModal />
+      <LogModal />
     </div>
   );
 };

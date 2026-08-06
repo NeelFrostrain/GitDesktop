@@ -8,11 +8,17 @@ use crate::git::history::{
 use crate::git::commit as commit_mod;
 use crate::git::remote as remote_mod;
 
+use crate::auth::keyring;
+
 #[command]
 pub async fn get_repo_status(repo_path: String) -> Result<RepoStatus, AppError> {
-    tokio::task::spawn_blocking(move || status_fn(&repo_path))
-        .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+    let path = repo_path.clone();
+    tokio::task::spawn_blocking(move || {
+        let _ = keyring::sync_git_config_for_repo(&path);
+        status_fn(&path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 #[command]

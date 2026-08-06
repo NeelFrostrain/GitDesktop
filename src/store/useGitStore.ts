@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { GitLabUser, SavedAccount } from '../types/gitlab';
 import { RepoStatus, AppError } from '../types/git';
+import { useLogStore } from './useLogStore';
 
 export type NavView = 'home' | 'projects' | 'groups' | 'work-items' | 'merge-requests' | 'todos' | 'workspace';
 
@@ -104,10 +105,12 @@ export const useGitStore = create<GitState>((set, get) => ({
         localStorage.setItem('active_repo_path', path);
       } catch {}
       get().addRecentRepo(path);
+      useLogStore.getState().addLog('info', 'Repo', `Opened repository at '${path}'`);
     } else {
       try {
         localStorage.removeItem('active_repo_path');
       } catch {}
+      useLogStore.getState().addLog('info', 'Repo', `Closed active repository`);
     }
 
     set({ 
@@ -137,6 +140,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     try {
       localStorage.setItem('recent_repos', JSON.stringify(updated));
     } catch {}
+    useLogStore.getState().addLog('info', 'Repo', `Removed repository '${normalized}' from recent list`);
 
     const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === normalized;
     if (isActive) {
@@ -151,10 +155,12 @@ export const useGitStore = create<GitState>((set, get) => ({
       try {
         localStorage.setItem('cached_gitlab_user', JSON.stringify(user));
       } catch {}
+      useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name})`);
     } else {
       try {
         localStorage.removeItem('cached_gitlab_user');
       } catch {}
+      useLogStore.getState().addLog('info', 'Auth', `User session logged out`);
     }
     set((state) => ({ user, error: user ? null : state.error }));
   },
@@ -163,31 +169,63 @@ export const useGitStore = create<GitState>((set, get) => ({
     const currentStaged = status ? status.files.filter(f => f.staged).map(f => f.path) : [];
     set({ status, stagedFiles: currentStaged });
   },
-  setSelectedFile: (file) => set({ selectedFile: file }),
+  setSelectedFile: (file) => {
+    if (file) {
+      useLogStore.getState().addLog('info', 'Git', `Selected file '${file}' for diff inspection`);
+    }
+    set({ selectedFile: file });
+  },
   toggleStageFile: (file) => {
     const { stagedFiles } = get();
-    if (stagedFiles.includes(file)) {
+    const isStaged = stagedFiles.includes(file);
+    if (isStaged) {
+      useLogStore.getState().addLog('info', 'Git', `Unstaged file '${file}'`);
       set({ stagedFiles: stagedFiles.filter(f => f !== file) });
     } else {
+      useLogStore.getState().addLog('info', 'Git', `Staged file '${file}'`);
       set({ stagedFiles: [...stagedFiles, file] });
     }
   },
   setAllStaged: (staged) => {
     const { status } = get();
     if (!status) return;
+    if (staged) {
+      useLogStore.getState().addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
+    } else {
+      useLogStore.getState().addLog('info', 'Git', `Unstaged all files`);
+    }
     set({ stagedFiles: staged ? status.files.map(f => f.path) : [] });
   },
-  setSelectedCommitSha: (sha) => set({ selectedCommitSha: sha }),
+  setSelectedCommitSha: (sha) => {
+    if (sha) {
+      useLogStore.getState().addLog('info', 'Git', `Inspecting details for commit ${sha.slice(0, 8)}`);
+    }
+    set({ selectedCommitSha: sha });
+  },
   setCommitSummary: (commitSummary) => set({ commitSummary }),
   setCommitDescription: (commitDescription) => set({ commitDescription }),
-  setActiveTab: (activeTab) => set({ activeTab }),
-  setDiffViewMode: (diffViewMode) => set({ diffViewMode }),
-  setCurrentNavView: (currentNavView) => set({ currentNavView }),
+  setActiveTab: (activeTab) => {
+    useLogStore.getState().addLog('info', 'System', `Switched workspace tab to '${activeTab}'`);
+    set({ activeTab });
+  },
+  setDiffViewMode: (diffViewMode) => {
+    useLogStore.getState().addLog('info', 'System', `Changed diff layout view to '${diffViewMode}' mode`);
+    set({ diffViewMode });
+  },
+  setCurrentNavView: (currentNavView) => {
+    useLogStore.getState().addLog('info', 'System', `Navigated to view '${currentNavView}'`);
+    set({ currentNavView });
+  },
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
   setActiveModalTab: (activeModalTab) => set({ activeModalTab }),
   setIsFetching: (isFetching) => set({ isFetching }),
   setIsPushing: (isPushing) => set({ isPushing }),
   setIsPulling: (isPulling) => set({ isPulling }),
   setLastFetchedTimestamp: (lastFetchedTimestamp) => set({ lastFetchedTimestamp }),
-  setError: (error) => set({ error }),
+  setError: (error) => {
+    if (error) {
+      useLogStore.getState().addLog('error', 'System', `Error [${error.code}]: ${error.message}`, error.message);
+    }
+    set({ error });
+  },
 }));

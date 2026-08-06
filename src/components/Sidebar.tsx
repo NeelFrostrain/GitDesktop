@@ -18,6 +18,7 @@ import {
   GitCommit
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useLogStore } from '../store/useLogStore';
 import { FileStatus, CommitInfo, RepoStatus } from '../types/git';
 
 export const Sidebar: React.FC = () => {
@@ -95,19 +96,25 @@ export const Sidebar: React.FC = () => {
     const handleCommit = async () => {
       if (!activeRepoPath || !commitSummary.trim()) return;
       setIsCommitting(true);
+      const summaryText = commitSummary.trim();
+      const count = stagedFiles.length;
+      useLogStore.getState().addLog('info', 'Git', `Creating commit '${summaryText}' with ${count} file(s)...`);
       try {
         await invoke('stage_files', { repoPath: activeRepoPath, files: stagedFiles });
         await invoke('commit_changes', {
           repoPath: activeRepoPath,
-          summary: commitSummary,
+          summary: summaryText,
           description: commitDescription || null,
         });
         setCommitSummary('');
         setCommitDescription('');
         const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
         setStatus(newStatus);
+        useLogStore.getState().addLog('success', 'Git', `Successfully created commit: '${summaryText}'`);
       } catch (err: any) {
-        setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+        const msg = err.message || String(err);
+        setError({ code: err.code || 'GIT_ERROR', message: msg });
+        useLogStore.getState().addLog('error', 'Git', `Commit failed: ${msg}`, msg);
       } finally {
         setIsCommitting(false);
       }

@@ -23,6 +23,7 @@ import {
   Users
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useLogStore } from '../store/useLogStore';
 import { BranchInfo, RepoStatus, PullResult } from '../types/git';
 import { GitLabProject } from '../types/gitlab';
 
@@ -100,13 +101,17 @@ export const Header: React.FC = () => {
     if (!activeRepoPath) return;
     setIsFetching(true);
     setError(null);
+    useLogStore.getState().addLog('info', 'Git', `Fetching origin for repository '${repoName}'...`);
     try {
       await invoke('fetch_remote', { repoPath: activeRepoPath });
       const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
       setStatus(newStatus);
       setLastFetchedTimestamp(Date.now());
+      useLogStore.getState().addLog('success', 'Git', `Successfully fetched latest changes from origin.`);
     } catch (err: any) {
-      setError({ code: err.code || 'NETWORK_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: err.code || 'NETWORK_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Git', `Fetch failed: ${msg}`, msg);
     } finally {
       setIsFetching(false);
     }
@@ -116,12 +121,18 @@ export const Header: React.FC = () => {
     if (!activeRepoPath || !status?.current_branch) return;
     setIsPushing(true);
     setError(null);
+    const branchName = status.current_branch;
+    const aheadCount = status.ahead || 1;
+    useLogStore.getState().addLog('info', 'Git', `Pushing ${aheadCount} commit(s) to origin/${branchName}...`);
     try {
-      await invoke('push_to_remote', { repoPath: activeRepoPath, branch: status.current_branch });
+      await invoke('push_to_remote', { repoPath: activeRepoPath, branch: branchName });
       const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
       setStatus(newStatus);
+      useLogStore.getState().addLog('success', 'Git', `Successfully pushed ${aheadCount} commit(s) to origin/${branchName}.`);
     } catch (err: any) {
-      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: err.code || 'GIT_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Git', `Push failed to origin/${branchName}: ${msg}`, msg);
     } finally {
       setIsPushing(false);
     }
@@ -131,23 +142,28 @@ export const Header: React.FC = () => {
     if (!activeRepoPath || !status?.current_branch) return;
     setIsPulling(true);
     setError(null);
+    const branchName = status.current_branch;
+    useLogStore.getState().addLog('info', 'Git', `Pulling commits from origin/${branchName}...`);
     try {
       const result = await invoke<PullResult>('pull_from_remote', {
         repoPath: activeRepoPath,
-        branch: status.current_branch,
+        branch: branchName,
       });
 
       const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
       setStatus(newStatus);
 
       if (!result.success && result.conflicts.length > 0) {
-        setError({
-          code: 'GIT_CONFLICT_ERROR',
-          message: `Merge conflicts detected in ${result.conflicts.length} files. Please resolve conflicts below.`,
-        });
+        const msg = `Merge conflicts detected in ${result.conflicts.length} files.`;
+        setError({ code: 'GIT_CONFLICT_ERROR', message: msg });
+        useLogStore.getState().addLog('warning', 'Git', `Pull completed with ${result.conflicts.length} conflicts.`, msg);
+      } else {
+        useLogStore.getState().addLog('success', 'Git', `Successfully pulled commits from origin/${branchName}.`);
       }
     } catch (err: any) {
-      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+      const msg = err.message || String(err);
+      setError({ code: err.code || 'GIT_ERROR', message: msg });
+      useLogStore.getState().addLog('error', 'Git', `Pull failed: ${msg}`, msg);
     } finally {
       setIsPulling(false);
     }
@@ -157,6 +173,7 @@ export const Header: React.FC = () => {
     if (!activeRepoPath || !publishName.trim()) return;
     setIsPublishing(true);
     setPublishError(null);
+    useLogStore.getState().addLog('info', 'Repo', `Publishing repository '${publishName}' to GitLab...`);
     try {
       await invoke<GitLabProject>('publish_repository', {
         repoPath: activeRepoPath,
@@ -169,8 +186,11 @@ export const Header: React.FC = () => {
       setError(null);
       const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
       setStatus(newStatus);
+      useLogStore.getState().addLog('success', 'Repo', `Successfully published repository '${publishName}' to GitLab.`);
     } catch (err: any) {
-      setPublishError(err.message || String(err));
+      const msg = err.message || String(err);
+      setPublishError(msg);
+      useLogStore.getState().addLog('error', 'Repo', `Failed to publish repository '${publishName}': ${msg}`, msg);
     } finally {
       setIsPublishing(false);
     }

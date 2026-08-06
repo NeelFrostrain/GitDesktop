@@ -189,6 +189,22 @@ pub fn get_account_for_repo(repo_path: &str) -> Option<SavedAccount> {
     get_active_account()
 }
 
+pub fn sync_git_config_for_repo(repo_path: &str) -> Result<(), AppError> {
+    if let Some(acct) = get_account_for_repo(repo_path) {
+        if let Ok(repo) = git2::Repository::open(repo_path) {
+            if let Ok(mut config) = repo.config() {
+                let _ = config.set_str("user.name", &acct.name);
+                if let Some(ref email) = acct.email {
+                    let _ = config.set_str("user.email", email);
+                } else {
+                    let _ = config.set_str("user.email", &format!("{}@git.local", acct.username));
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn set_account_for_repo(repo_path: &str, account_id: &str) -> Result<(), AppError> {
     let file = get_repo_accounts_file();
     let mut map: RepoAccountMap = fs::read_to_string(&file)
@@ -199,6 +215,7 @@ pub fn set_account_for_repo(repo_path: &str, account_id: &str) -> Result<(), App
     if let Ok(content) = serde_json::to_string_pretty(&map) {
         let _ = fs::write(file, content);
     }
+    let _ = sync_git_config_for_repo(repo_path);
     Ok(())
 }
 

@@ -122,3 +122,25 @@ pub async fn publish_repository(
 
     Ok(project)
 }
+
+#[command]
+pub fn log_action_cmd(
+    level: String,
+    category: String,
+    message: String,
+    details: Option<String>,
+) {
+    let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+    let details_str = match details {
+        Some(d) if !d.trim().is_empty() => format!(" | Details: {}", d.trim()),
+        _ => "".to_string(),
+    };
+    println!(
+        "[{}] [{}] [{}] {}{}",
+        timestamp,
+        level.to_uppercase(),
+        category,
+        message,
+        details_str
+    );
+}
