@@ -135,7 +135,7 @@ export const Sidebar: React.FC = () => {
     return (
       <aside
         style={{ width: sidebarWidth }}
-        className="bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20 relative flex-shrink-0"
+        className="bg-base-0 border-r border-border flex flex-col h-full select-none text-[13px] z-20 relative flex-shrink-0"
       >
         {/* Top Header */}
         <div className="p-3 border-b border-border flex items-center justify-between">
@@ -246,7 +246,7 @@ export const Sidebar: React.FC = () => {
             </div>
 
             {/* Commit Box */}
-            <div className="p-3 border-t border-border bg-base-1 space-y-2">
+            <div className="p-3 border-t border-border bg-base-1 space-y-2 flex-shrink-0">
               <input
                 type="text"
                 placeholder="Commit summary (required)"
@@ -327,7 +327,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       style={{ width: isCollapsed ? 56 : Math.min(sidebarWidth, 320) }}
-      className="bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20 relative flex-shrink-0"
+      className="bg-base-0 border-r border-border flex flex-col h-full select-none text-[13px] z-20 relative flex-shrink-0"
     >
       {/* Top GitLab Logo Mark */}
       <div className="h-12 px-4 flex items-center gap-2 border-b border-transparent">
