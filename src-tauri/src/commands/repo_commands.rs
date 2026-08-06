@@ -1,0 +1,74 @@
+use tauri::command;
+use tauri_plugin_dialog::DialogExt;
+use crate::error::AppError;
+use crate::auth::gitlab::{GitLabClient, GitLabProject, PagedResult, MergeRequest};
+use crate::auth::keyring;
+use crate::git::remote;
+
+fn get_authenticated_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
+    let token = keyring::get_token()?.ok_or_else(|| {
+        AppError::Auth("Not authenticated with GitLab. Please log in first.".to_string())
+    })?;
+
+    let server_url = match server_override {
+        Some(url) if !url.trim().is_empty() => url,
+        _ => keyring::get_server_url()?.unwrap_or_else(|| "https://gitlab.com".to_string()),
+    };
+
+    GitLabClient::new(server_url, token, None)
+}
+
+#[command]
+pub async fn select_folder_cmd(app: tauri::AppHandle) -> Result<Option<String>, AppError> {
+    let (tx, rx) = tokio::sync::oneshot::channel();
+
+    app.dialog()
+        .file()
+        .set_title("Select Local Git Repository")
+        .pick_folder(move |folder_path| {
+            let _ = tx.send(folder_path);
+        });
+
+    let res = rx.await.map_err(|e| AppError::Unknown(e.to_string()))?;
+    Ok(res.and_then(|f| f.into_path().ok()).map(|p| p.to_string_lossy().to_string()))
+}
+
+#[command]
+pub async fn fetch_user_repositories(
+    server_url: Option<String>,
+    page: Option<u32>,
+) -> Result<PagedResult<GitLabProject>, AppError> {
+    let client = get_authenticated_client(server_url)?;
+    let p = page.unwrap_or(1);
+    client.fetch_projects(p).await
+}
+
+#[command]
+pub async fn clone_repository(remote_url: String, local_path: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        remote::clone_repository(&remote_url, &local_path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_open_merge_requests(
+    project_id: String,
+    server_url: Option<String>,
+) -> Result<Vec<MergeRequest>, AppError> {
+    let client = get_authenticated_client(server_url)?;
+    client.get_open_merge_requests(&project_id).await
+}
+
+#[command]
+pub async fn create_merge_request(
+    project_id: String,
+    source_branch: String,
+    target_branch: String,
+    title: String,
+    server_url: Option<String>,
+) -> Result<MergeRequest, AppError> {
+    let client = get_authenticated_client(server_url)?;
+    client.create_merge_request(&project_id, &source_branch, &target_branch, &title).await
+}

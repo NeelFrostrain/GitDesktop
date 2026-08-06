@@ -1,0 +1,424 @@
+import React, { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { 
+  GitBranch, 
+  FolderGit2, 
+  RefreshCw, 
+  ArrowUp, 
+  ArrowDown, 
+  Plus, 
+  ChevronDown, 
+  User, 
+  Check, 
+  GitPullRequest,
+  AlertCircle,
+  LayoutDashboard,
+  Code2
+} from 'lucide-react';
+import { useGitStore } from '../store/useGitStore';
+import { BranchInfo, RepoStatus, PullResult } from '../types/git';
+
+export const Header: React.FC = () => {
+  const {
+    activeRepoPath,
+    setActiveRepoPath,
+    status,
+    setStatus,
+    user,
+    setIsRepoModalOpen,
+    isFetching,
+    setIsFetching,
+    isPushing,
+    setIsPushing,
+    isPulling,
+    setIsPulling,
+    lastFetchedTimestamp,
+    setLastFetchedTimestamp,
+    setError,
+    error,
+    currentNavView,
+    setCurrentNavView,
+  } = useGitStore();
+
+  const [branches, setBranches] = useState<BranchInfo[]>([]);
+  const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
+  const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
+  const [branchSearch, setBranchSearch] = useState('');
+  const [newBranchName, setNewBranchName] = useState('');
+  const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+
+  // Fetch branches when active repo changes
+  useEffect(() => {
+    if (!activeRepoPath) return;
+    invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath })
+      .then(setBranches)
+      .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }));
+  }, [activeRepoPath, status?.current_branch]);
+
+  const repoName = activeRepoPath
+    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || activeRepoPath
+    : 'No Repository';
+
+  const handleOpenLocalRepo = async () => {
+    try {
+      const selected = await invoke<string | null>('select_folder_cmd');
+      if (selected) {
+        setActiveRepoPath(selected);
+        setCurrentNavView('workspace');
+        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: selected });
+        setStatus(res);
+        setIsRepoDropdownOpen(false);
+      }
+    } catch (err: any) {
+      setError({ code: err.code || 'FILESYSTEM_ERROR', message: err.message || String(err) });
+    }
+  };
+
+  const handleFetch = async () => {
+    if (!activeRepoPath) return;
+    setIsFetching(true);
+    setError(null);
+    try {
+      await invoke('fetch_remote', { repoPath: activeRepoPath });
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+      setLastFetchedTimestamp(Date.now());
+    } catch (err: any) {
+      setError({ code: err.code || 'NETWORK_ERROR', message: err.message || String(err) });
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handlePush = async () => {
+    if (!activeRepoPath || !status?.current_branch) return;
+    setIsPushing(true);
+    setError(null);
+    try {
+      await invoke('push_to_remote', { repoPath: activeRepoPath, branch: status.current_branch });
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+    } catch (err: any) {
+      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    } finally {
+      setIsPushing(false);
+    }
+  };
+
+  const handlePull = async () => {
+    if (!activeRepoPath || !status?.current_branch) return;
+    setIsPulling(true);
+    setError(null);
+    try {
+      const result = await invoke<PullResult>('pull_from_remote', {
+        repoPath: activeRepoPath,
+        branch: status.current_branch,
+      });
+
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+
+      if (!result.success && result.conflicts.length > 0) {
+        setError({
+          code: 'GIT_CONFLICT_ERROR',
+          message: `Merge conflicts detected in ${result.conflicts.length} files. Please resolve conflicts below.`,
+        });
+      }
+    } catch (err: any) {
+      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    } finally {
+      setIsPulling(false);
+    }
+  };
+
+  const handleSwitchBranch = async (branchName: string) => {
+    if (!activeRepoPath) return;
+    try {
+      await invoke('checkout_branch', { repoPath: activeRepoPath, branch: branchName });
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+      setIsBranchDropdownOpen(false);
+    } catch (err: any) {
+      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    }
+  };
+
+  const handleCreateBranch = async () => {
+    if (!activeRepoPath || !newBranchName.trim()) return;
+    try {
+      await invoke('create_branch', { repoPath: activeRepoPath, branch: newBranchName.trim() });
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+      setNewBranchName('');
+      setIsCreatingBranch(false);
+      setIsBranchDropdownOpen(false);
+    } catch (err: any) {
+      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    }
+  };
+
+  const handleCreateMergeRequest = async () => {
+    if (!user || !status?.current_branch) return;
+    const mrUrl = `${user.server_url}/${repoName}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${status.current_branch}`;
+    try {
+      await openUrl(mrUrl);
+    } catch {
+      window.open(mrUrl, '_blank');
+    }
+  };
+
+  const renderFetchPushButton = () => {
+    if (!activeRepoPath) {
+      return (
+        <button disabled className="px-3 py-1.5 bg-base-2 text-text-faint rounded border border-border cursor-not-allowed text-xs font-medium flex items-center gap-1.5">
+          <RefreshCw className="w-3.5 h-3.5" />
+          Fetch origin
+        </button>
+      );
+    }
+
+    if (isFetching || isPushing || isPulling) {
+      return (
+        <button disabled className="px-3 py-1.5 bg-base-2 text-text-primary rounded border border-border cursor-wait text-xs font-medium flex items-center gap-2">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin text-gitlab-orange" />
+          {isFetching ? 'Fetching origin...' : isPushing ? 'Pushing commits...' : 'Pulling commits...'}
+        </button>
+      );
+    }
+
+    const ahead = status?.ahead || 0;
+    const behind = status?.behind || 0;
+
+    if (behind > 0) {
+      return (
+        <button
+          onClick={handlePull}
+          className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition text-xs font-medium flex items-center gap-1.5 shadow-sm"
+        >
+          <ArrowDown className="w-3.5 h-3.5" />
+          Pull {behind} commit{behind > 1 ? 's' : ''}
+        </button>
+      );
+    }
+
+    if (ahead > 0) {
+      return (
+        <button
+          onClick={handlePush}
+          className="px-3 py-1.5 bg-gitlab-teal text-white rounded hover:bg-teal-600 transition text-xs font-medium flex items-center gap-1.5 shadow-sm"
+        >
+          <ArrowUp className="w-3.5 h-3.5" />
+          Push {ahead} commit{ahead > 1 ? 's' : ''}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center gap-2">
+        <button
+          onClick={handleFetch}
+          className="px-3 py-1.5 bg-base-2 text-text-primary hover:bg-base-3 border border-border rounded transition text-xs font-medium flex items-center gap-1.5"
+        >
+          <RefreshCw className="w-3.5 h-3.5 text-gitlab-orange" />
+          Fetch origin
+        </button>
+        {lastFetchedTimestamp && (
+          <span className="text-[11px] text-text-muted font-normal hidden lg:inline">
+            {Math.floor((Date.now() - lastFetchedTimestamp) / 1000 / 60)}m ago
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const filteredBranches = branches.filter((b) =>
+    b.name.toLowerCase().includes(branchSearch.toLowerCase())
+  );
+
+  return (
+    <header className="h-12 bg-base-0 border-b border-border px-3 flex items-center justify-between select-none z-30 relative">
+      {/* Left: GitHub Desktop Repository & Branch Selector */}
+      <div className="flex items-center gap-2">
+        {/* Repository Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
+            className="flex items-center gap-2 px-2.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-primary font-medium transition"
+          >
+            <FolderGit2 className="w-3.5 h-3.5 text-gitlab-orange" />
+            <span className="max-w-[150px] truncate">{repoName}</span>
+            <ChevronDown className="w-3 h-3 text-text-muted" />
+          </button>
+
+          {isRepoDropdownOpen && (
+            <div className="absolute left-0 top-full mt-1.5 w-64 bg-base-2 border border-border rounded-md shadow-2xl py-1 z-50">
+              <div className="px-3 py-1.5 text-[10px] font-semibold text-text-faint uppercase tracking-wider">
+                Current Repository
+              </div>
+              <div className="px-3 py-2 text-xs text-text-primary font-medium border-b border-border flex items-center justify-between">
+                <span className="truncate">{repoName}</span>
+                {activeRepoPath && <Check className="w-3.5 h-3.5 text-gitlab-orange" />}
+              </div>
+              <button
+                onClick={handleOpenLocalRepo}
+                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
+              >
+                <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
+                Add Existing Local Repository...
+              </button>
+              <button
+                onClick={() => {
+                  setIsRepoDropdownOpen(false);
+                  setIsRepoModalOpen(true);
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
+              >
+                <Plus className="w-3.5 h-3.5 text-text-muted" />
+                Clone Repository from GitLab...
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Branch Selector */}
+        <div className="relative">
+          <button
+            disabled={!activeRepoPath}
+            onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
+            className={`flex items-center gap-2 px-2.5 py-1.5 bg-base-2 border border-border rounded text-xs text-text-primary font-medium transition ${
+              !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'hover:bg-base-3'
+            }`}
+          >
+            <GitBranch className="w-3.5 h-3.5 text-gitlab-teal" />
+            <span className="max-w-[130px] truncate">{status?.current_branch || 'main'}</span>
+            <ChevronDown className="w-3 h-3 text-text-muted" />
+          </button>
+
+          {isBranchDropdownOpen && (
+            <div className="absolute left-0 top-full mt-1.5 w-72 bg-base-2 border border-border rounded-md shadow-2xl p-2 z-50">
+              <input
+                type="text"
+                placeholder="Filter branches..."
+                value={branchSearch}
+                onChange={(e) => setBranchSearch(e.target.value)}
+                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange mb-2"
+              />
+
+              <div className="max-h-48 overflow-y-auto mb-2 space-y-0.5">
+                {filteredBranches.map((b) => (
+                  <button
+                    key={b.name}
+                    onClick={() => handleSwitchBranch(b.name)}
+                    className={`w-full text-left px-2.5 py-1.5 rounded text-xs flex items-center justify-between ${
+                      b.is_current
+                        ? 'bg-gitlab-orange/20 text-gitlab-orange font-semibold'
+                        : 'text-text-primary hover:bg-base-3'
+                    }`}
+                  >
+                    <span className="truncate">{b.name}</span>
+                    {b.is_current && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                ))}
+              </div>
+
+              {!isCreatingBranch ? (
+                <div className="border-t border-border pt-2 flex items-center justify-between">
+                  <button
+                    onClick={() => setIsCreatingBranch(true)}
+                    className="text-xs text-gitlab-orange hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    New Branch
+                  </button>
+                  <button
+                    onClick={handleCreateMergeRequest}
+                    className="text-xs text-text-muted hover:text-text-primary flex items-center gap-1"
+                  >
+                    <GitPullRequest className="w-3.5 h-3.5 text-gitlab-orange" />
+                    Create MR
+                  </button>
+                </div>
+              ) : (
+                <div className="border-t border-border pt-2 space-y-2">
+                  <input
+                    type="text"
+                    placeholder="New branch name"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    className="w-full px-2 py-1 bg-base-0 border border-border rounded text-xs text-text-primary"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setIsCreatingBranch(false)}
+                      className="px-2 py-1 text-xs text-text-muted hover:text-text-primary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleCreateBranch}
+                      className="px-2.5 py-1 text-xs bg-gitlab-orange text-white rounded font-medium"
+                    >
+                      Create
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Fetch / Push / Pull */}
+        {renderFetchPushButton()}
+      </div>
+
+      {/* Center: View Switcher (Git Workspace vs GitLab Dashboard) */}
+      <div className="flex items-center bg-base-2 p-0.5 rounded-md border border-border">
+        <button
+          onClick={() => setCurrentNavView('workspace')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition ${
+            currentNavView === 'workspace'
+              ? 'bg-base-0 text-gitlab-orange shadow-sm font-semibold'
+              : 'text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <Code2 className="w-3.5 h-3.5" />
+          Git Workspace
+        </button>
+        <button
+          onClick={() => setCurrentNavView('home')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition ${
+            currentNavView !== 'workspace'
+              ? 'bg-base-0 text-gitlab-orange shadow-sm font-semibold'
+              : 'text-text-muted hover:text-text-primary'
+          }`}
+        >
+          <LayoutDashboard className="w-3.5 h-3.5" />
+          GitLab Dashboard
+        </button>
+      </div>
+
+      {/* Far Right: Account & Settings */}
+      <div className="flex items-center gap-2">
+        {error && (
+          <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded max-w-xs truncate" title={error.message}>
+            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate">{error.message}</span>
+          </div>
+        )}
+
+        <button
+          onClick={() => setIsRepoModalOpen(true)}
+          className="flex items-center gap-2 px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded transition text-xs"
+        >
+          {user?.avatar_url ? (
+            <img src={user.avatar_url} alt="Avatar" className="w-4 h-4 rounded-full" />
+          ) : (
+            <User className="w-3.5 h-3.5 text-gitlab-orange" />
+          )}
+          <span className="text-text-primary font-medium text-xs">{user ? user.username : 'Sign In'}</span>
+        </button>
+      </div>
+    </header>
+  );
+};

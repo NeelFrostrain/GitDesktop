@@ -1,0 +1,99 @@
+use serde::{Deserialize, Serialize};
+use git2::{Repository, DiffOptions};
+use std::path::Path;
+use std::fs;
+use crate::error::AppError;
+
+const MAX_FILE_SIZE_BYTES: u64 = 2 * 1024 * 1024; // 2 MB
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DiffLine {
+    pub line_type: String, // "addition", "deletion", "context", "header"
+    pub old_line_num: Option<u32>,
+    pub new_line_num: Option<u32>,
+    pub content: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct DiffResult {
+    pub file_path: String,
+    pub lines: Vec<DiffLine>,
+    pub is_binary: bool,
+    pub is_large_file: bool,
+    pub file_size_bytes: u64,
+}
+
+pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<DiffResult, AppError> {
+    let repo = Repository::open(repo_path)
+        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
+
+    let full_path = Path::new(repo_path).join(file_path);
+
+    let file_size_bytes = if full_path.exists() {
+        fs::metadata(&full_path).map(|m| m.len()).unwrap_or(0)
+    } else {
+        0
+    };
+
+    if file_size_bytes > MAX_FILE_SIZE_BYTES {
+        return Ok(DiffResult {
+            file_path: file_path.to_string(),
+            lines: Vec::new(),
+            is_binary: false,
+            is_large_file: true,
+            file_size_bytes,
+        });
+    }
+
+    let mut opts = DiffOptions::new();
+    opts.pathspec(file_path);
+
+    let diff = if staged {
+        let head_tree = match repo.head().and_then(|h| h.peel_to_tree()) {
+            Ok(tree) => Some(tree),
+            Err(_) => None,
+        };
+        let index = repo.index()?;
+        repo.diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut opts))?
+    } else {
+        repo.diff_index_to_workdir(None, Some(&mut opts))?
+    };
+
+    let mut is_binary = false;
+    let mut lines = Vec::new();
+
+    diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+        let origin = line.origin();
+        if origin == 'B' {
+            is_binary = true;
+            return false;
+        }
+
+        let line_type = match origin {
+            '+' => "addition",
+            '-' => "deletion",
+            ' ' => "context",
+            'F' | 'H' => "header",
+            _ => "context",
+        };
+
+        let content = String::from_utf8_lossy(line.content()).to_string();
+
+        lines.push(DiffLine {
+            line_type: line_type.to_string(),
+            old_line_num: line.old_lineno(),
+            new_line_num: line.new_lineno(),
+            content,
+        });
+
+        true
+    })?;
+
+    Ok(DiffResult {
+        file_path: file_path.to_string(),
+        lines,
+        is_binary,
+        is_large_file: false,
+        file_size_bytes,
+    })
+}
