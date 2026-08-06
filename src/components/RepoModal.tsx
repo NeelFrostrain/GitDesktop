@@ -442,14 +442,19 @@ export const RepoModal: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {(accounts || []).map((acct) => {
+                  {(accounts || []).map((acct, idx) => {
                     if (!acct) return null;
-                    const isActive = acct.is_active || (user && user.username === acct.username && user.server_url === acct.server_url);
-                    const isEditing = editingAccountId === acct.id;
+                    const acctId = acct.id || `account_${idx}`;
+                    const acctName = acct.name || 'GitLab User';
+                    const acctUsername = acct.username || 'user';
+                    const acctServerUrl = acct.server_url || 'https://gitlab.com';
+                    const acctEmail = acct.email || null;
+                    const isActive = Boolean(acct.is_active) || (Boolean(user) && user?.username === acctUsername && user?.server_url === acctServerUrl);
+                    const isEditing = editingAccountId === acctId;
 
                     return (
                       <div
-                        key={acct.id}
+                        key={acctId}
                         className={`p-4 rounded-lg border transition flex flex-col gap-3 ${
                           isActive
                             ? 'bg-gitlab-orange/10 border-gitlab-orange/60 shadow-sm'
@@ -467,7 +472,7 @@ export const RepoModal: React.FC = () => {
                             )}
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-text-primary truncate">{acct.name}</span>
+                                <span className="text-xs font-bold text-text-primary truncate">{acctName}</span>
                                 {isActive && (
                                   <span className="px-2 py-0.5 bg-gitlab-teal/20 text-gitlab-teal text-[10px] font-semibold border border-gitlab-teal/40 rounded-full flex items-center gap-1">
                                     <Check className="w-2.5 h-2.5" /> Active
@@ -475,10 +480,10 @@ export const RepoModal: React.FC = () => {
                                 )}
                               </div>
                               <div className="text-[11px] text-text-muted font-mono truncate">
-                                @{acct.username} • {acct.server_url}
+                                @{acctUsername} • {acctServerUrl}
                               </div>
-                              {acct.email && (
-                                <div className="text-[10px] text-text-faint truncate">Commit author: {acct.email}</div>
+                              {acctEmail && (
+                                <div className="text-[10px] text-text-faint truncate">Commit author: {acctEmail}</div>
                               )}
                             </div>
                           </div>
@@ -497,7 +502,7 @@ export const RepoModal: React.FC = () => {
 
                             {!isActive && !isEditing && (
                               <button
-                                onClick={() => handleSwitchAccount(acct.id)}
+                                onClick={() => handleSwitchAccount(acctId)}
                                 className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded text-xs text-text-primary font-medium transition"
                               >
                                 Switch to Account
@@ -506,7 +511,7 @@ export const RepoModal: React.FC = () => {
 
                             {!isEditing && (
                               <button
-                                onClick={() => handleRemoveAccount(acct.id)}
+                                onClick={() => handleRemoveAccount(acctId)}
                                 className="p-1.5 text-text-muted hover:text-red-400 hover:bg-red-950/40 rounded transition"
                                 title="Remove account"
                               >
@@ -555,7 +560,7 @@ export const RepoModal: React.FC = () => {
                               </button>
                               <button
                                 type="button"
-                                onClick={() => handleSaveAccountInfo(acct.id)}
+                                onClick={() => handleSaveAccountInfo(acctId)}
                                 className="px-3 py-1 bg-gitlab-orange hover:bg-orange-600 text-white rounded text-xs font-semibold flex items-center gap-1 transition"
                               >
                                 <Save className="w-3.5 h-3.5" />

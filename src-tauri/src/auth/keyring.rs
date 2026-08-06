@@ -94,13 +94,24 @@ pub fn list_accounts() -> Vec<SavedAccount> {
 
 pub fn add_or_update_account(account: SavedAccount) -> Result<(), AppError> {
     let mut store = read_local_store();
-    let should_activate = store.accounts.is_empty();
+    
+    // Purge legacy dummy migration entries
+    store.accounts.retain(|a| !a.id.starts_with("user@"));
+
+    let should_activate = store.accounts.is_empty() || account.is_active;
+
+    if should_activate {
+        for a in store.accounts.iter_mut() {
+            a.is_active = false;
+        }
+    }
+
     if let Some(existing) = store.accounts.iter_mut().find(|a| a.id == account.id) {
-        let was_active = existing.is_active;
-        *existing = SavedAccount { is_active: was_active, ..account };
+        *existing = SavedAccount { is_active: should_activate, ..account };
     } else {
         store.accounts.push(SavedAccount { is_active: should_activate, ..account });
     }
+
     write_local_store(&store);
     Ok(())
 }

@@ -56,10 +56,15 @@ pub fn commit_changes(
     // Use the account associated with this repo (or the global active account),
     // falling back to local git config, then to defaults.
     let (name, email) = if let Some(acct) = keyring::get_account_for_repo(repo_path) {
+        let name = if acct.name.trim().is_empty() || acct.name == "GitLab User" {
+            config.get_string("user.name").unwrap_or_else(|_| acct.username.clone())
+        } else {
+            acct.name.clone()
+        };
         let email = acct.email.unwrap_or_else(|| {
             config.get_string("user.email").unwrap_or_else(|_| format!("{}@git.local", acct.username))
         });
-        (acct.name, email)
+        (name, email)
     } else {
         let name = config.get_string("user.name").unwrap_or_else(|_| "Git Desktop User".to_string());
         let email = config.get_string("user.email").unwrap_or_else(|_| "user@git.local".to_string());
