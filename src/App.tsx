@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { Sidebar } from './components/Sidebar';
 import { HomeDashboard } from './components/HomeDashboard';
 import { DiffViewer } from './components/DiffViewer';
@@ -22,7 +24,59 @@ export const App: React.FC = () => {
       .catch(() => {
         // Silent catch if no saved credentials
       });
-  }, [setUser]);
+
+    // Root-level listener for automatic OAuth loopback login success & deep links
+    let unlistenEvent: (() => void) | undefined;
+    let unlistenDeepLink: (() => void) | undefined;
+
+    listen<GitLabUser>('oauth-success', (event) => {
+      if (event.payload) {
+        setUser(event.payload);
+        useGitStore.setState({ isRepoModalOpen: false, error: null });
+      }
+    }).then((un) => {
+      unlistenEvent = un;
+    });
+
+    onOpenUrl((urls: string[]) => {
+      for (const urlStr of urls) {
+        if (urlStr.includes('gitlab-desktop://oauth/callback')) {
+          try {
+            const url = new URL(urlStr);
+            const code = url.searchParams.get('code');
+            const savedVerifier = sessionStorage.getItem('oauth_verifier');
+
+            if (code && savedVerifier) {
+              invoke<GitLabUser>('complete_oauth_login', {
+                serverUrl: 'https://gitlab.com',
+                code,
+                verifier: savedVerifier,
+                clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
+                clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+              })
+                .then((loggedUser) => {
+                  setUser(loggedUser);
+                  sessionStorage.removeItem('oauth_verifier');
+                  useGitStore.setState({ isRepoModalOpen: false, error: null });
+                })
+                .catch((err) => {
+                  setError({ code: err.code || 'AUTH_ERROR', message: err.message || String(err) });
+                });
+            }
+          } catch {
+            // Ignore parse errors
+          }
+        }
+      }
+    }).then((un) => {
+      unlistenDeepLink = un;
+    });
+
+    return () => {
+      if (unlistenEvent) unlistenEvent();
+      if (unlistenDeepLink) unlistenDeepLink();
+    };
+  }, [setUser, setError]);
 
   useEffect(() => {
     if (!activeRepoPath) return;

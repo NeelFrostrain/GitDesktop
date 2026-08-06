@@ -362,6 +362,40 @@ impl GitLabClient {
 
         Ok(mr)
     }
+
+    pub async fn create_project(
+        &self,
+        name: &str,
+        is_private: bool,
+        description: Option<&str>,
+    ) -> Result<GitLabProject, AppError> {
+        let url = format!("{}/api/v4/projects", self.server_url);
+        let visibility = if is_private { "private" } else { "public" };
+
+        let mut body = serde_json::json!({
+            "name": name,
+            "visibility": visibility,
+        });
+
+        if let Some(desc) = description {
+            if !desc.trim().is_empty() {
+                body["description"] = serde_json::json!(desc.trim());
+            }
+        }
+
+        let resp = self.client.post(&url).json(&body).send().await?;
+
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to create GitLab project: {}", err_text)));
+        }
+
+        let project: GitLabProject = resp.json().await.map_err(|e| {
+            AppError::Network(format!("Failed to parse project response JSON: {}", e))
+        })?;
+
+        Ok(project)
+    }
 }
 
 #[cfg(test)]

@@ -77,14 +77,13 @@ pub fn get_commit_details(repo_path: &str, sha: &str) -> Result<CommitDetails, A
     };
 
     let mut changed_files = Vec::new();
-    if let Ok(parent) = commit.parent(0) {
-        let commit_tree = commit.tree()?;
-        let parent_tree = parent.tree()?;
-        let diff = repo.diff_tree_to_tree(Some(&parent_tree), Some(&commit_tree), None)?;
-
-        for delta in diff.deltas() {
-            if let Some(path) = delta.new_file().path() {
-                changed_files.push(path.to_string_lossy().to_string());
+    if let Ok(commit_tree) = commit.tree() {
+        let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
+        if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), None) {
+            for delta in diff.deltas() {
+                if let Some(path) = delta.new_file().path() {
+                    changed_files.push(path.to_string_lossy().to_string());
+                }
             }
         }
     }

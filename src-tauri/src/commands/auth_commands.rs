@@ -120,17 +120,20 @@ pub async fn complete_oauth_login(
 #[command]
 pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
     let token = keyring::get_token()?;
-    let server_url = keyring::get_server_url()?;
+    let server_url = keyring::get_server_url()?.unwrap_or_else(|| "https://gitlab.com".to_string());
 
-    match (token, server_url) {
-        (Some(tok), Some(url)) => {
-            let client = GitLabClient::new(url, tok, None)?;
+    if let Some(tok) = token {
+        if !tok.trim().is_empty() {
+            let client = GitLabClient::new(server_url, tok, None)?;
             match client.get_current_user().await {
                 Ok(user) => Ok(Some(user)),
                 Err(_) => Ok(None),
             }
+        } else {
+            Ok(None)
         }
-        _ => Ok(None),
+    } else {
+        Ok(None)
     }
 }
 

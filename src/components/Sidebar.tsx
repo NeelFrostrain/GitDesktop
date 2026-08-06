@@ -1,22 +1,11 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
-  Home, 
   FolderGit2, 
-  Users, 
-  CheckSquare, 
   GitPullRequest, 
-  ListCheck, 
-  Flag, 
   Code2, 
-  Activity, 
-  Download, 
-  Laptop, 
-  Server, 
-  Settings, 
-  Shield, 
-  Globe, 
-  HelpCircle, 
+  Plus,
+  FolderOpen,
   PanelLeftClose,
   FileText,
   Clock,
@@ -28,7 +17,7 @@ import {
   AlertTriangle,
   GitCommit
 } from 'lucide-react';
-import { useGitStore, NavView } from '../store/useGitStore';
+import { useGitStore } from '../store/useGitStore';
 import { FileStatus, CommitInfo, RepoStatus } from '../types/git';
 
 export const Sidebar: React.FC = () => {
@@ -36,6 +25,7 @@ export const Sidebar: React.FC = () => {
     currentNavView,
     setCurrentNavView,
     activeRepoPath,
+    setActiveRepoPath,
     status,
     setStatus,
     selectedFile,
@@ -52,12 +42,27 @@ export const Sidebar: React.FC = () => {
     activeTab,
     setActiveTab,
     setIsRepoModalOpen,
+    setActiveModalTab,
     setError,
   } = useGitStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
+
+  const handleOpenLocalFolder = async () => {
+    try {
+      const selected = await invoke<string | null>('select_folder_cmd');
+      if (selected) {
+        setActiveRepoPath(selected);
+        setCurrentNavView('workspace');
+        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: selected });
+        setStatus(res);
+      }
+    } catch (err: any) {
+      setError({ code: err.code || 'FILESYSTEM_ERROR', message: err.message || String(err) });
+    }
+  };
 
   // If in local git workspace mode (a project is active and currentNavView === 'workspace'), render Changes/History git sidebar
   if (currentNavView === 'workspace' && activeRepoPath) {
@@ -87,13 +92,13 @@ export const Sidebar: React.FC = () => {
         case 'Untracked':
           return <span title="Untracked"><FilePlus className="w-3.5 h-3.5 text-gitlab-teal" /></span>;
         case 'Deleted':
-          return <span title="Deleted"><FileX className="w-3.5 h-3.5 text-github-dark-danger" /></span>;
+          return <span title="Deleted"><FileX className="w-3.5 h-3.5 text-red-400" /></span>;
         case 'Conflicted':
-          return <span title="Conflicted"><AlertTriangle className="w-3.5 h-3.5 text-github-dark-warning" /></span>;
+          return <span title="Conflicted"><AlertTriangle className="w-3.5 h-3.5 text-amber-400" /></span>;
         case 'Staged':
         case 'Modified':
         default:
-          return <span title="Modified"><FileDiff className="w-3.5 h-3.5 text-github-dark-accent" /></span>;
+          return <span title="Modified"><FileDiff className="w-3.5 h-3.5 text-blue-400" /></span>;
       }
     };
 
@@ -102,14 +107,14 @@ export const Sidebar: React.FC = () => {
     const canCommit = Boolean(commitSummary.trim() && stagedFiles.length > 0 && !isCommitting);
 
     return (
-      <aside className="w-[220px] bg-base-0 border-r border-border flex flex-col h-[calc(100vh-3rem)] select-none text-[13px]">
+      <aside className="w-[220px] bg-base-0 border-r border-border flex flex-col h-screen select-none text-[13px] z-20">
         {/* Top Header */}
         <div className="p-3 border-b border-border flex items-center justify-between">
           <button
             onClick={() => setCurrentNavView('home')}
             className="text-[11px] text-text-muted hover:text-text-primary flex items-center gap-1 font-medium"
           >
-            ← Back to Home
+            ← Repository Overview
           </button>
         </div>
 
@@ -160,7 +165,7 @@ export const Sidebar: React.FC = () => {
                 className="flex items-center gap-2 hover:text-white"
               >
                 {isAllStaged ? (
-                  <CheckSquareIcon className="w-4 h-4 text-github-dark-accent" />
+                  <CheckSquareIcon className="w-4 h-4 text-gitlab-teal" />
                 ) : (
                   <Square className="w-4 h-4 text-text-muted" />
                 )}
@@ -196,7 +201,7 @@ export const Sidebar: React.FC = () => {
                         className="text-text-muted hover:text-white"
                       >
                         {isStaged ? (
-                          <CheckSquareIcon className="w-4 h-4 text-github-dark-accent" />
+                          <CheckSquareIcon className="w-4 h-4 text-gitlab-teal" />
                         ) : (
                           <Square className="w-4 h-4 text-text-muted" />
                         )}
@@ -281,29 +286,7 @@ export const Sidebar: React.FC = () => {
     );
   }
 
-  // Primary GitLab.com App Shell Left Rail Sidebar (180px fixed)
-  const navItems: { id: NavView; label: string; icon: React.FC<{ className?: string }> }[] = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'projects', label: 'Projects', icon: FolderGit2 },
-    { id: 'groups', label: 'Groups', icon: Users },
-    { id: 'work-items', label: 'Work items', icon: CheckSquare },
-    { id: 'merge-requests', label: 'Merge requests', icon: GitPullRequest },
-    { id: 'todos', label: 'To-Do List', icon: ListCheck },
-    { id: 'workspace', label: 'Local Git Workspace', icon: Code2 },
-  ];
-
-  const secondaryNavItems = [
-    { label: 'Milestones', icon: Flag },
-    { label: 'Snippets', icon: Code2 },
-    { label: 'Activity', icon: Activity },
-    { label: 'Import history', icon: Download },
-    { label: 'Workspaces', icon: Laptop },
-    { label: 'Environments', icon: Server },
-    { label: 'Operations', icon: Settings },
-    { label: 'Security', icon: Shield },
-    { label: 'Orbit', icon: Globe },
-  ];
-
+  // Repository-focused Left Sidebar (180px fixed)
   const sidebarWidth = isCollapsed ? 'w-14' : 'w-[180px]';
 
   return (
@@ -315,73 +298,85 @@ export const Sidebar: React.FC = () => {
         </svg>
       </div>
 
-      {/* Your Work Section Header */}
+      {/* Section Header */}
       {!isCollapsed && (
-        <div className="px-3 pt-2 pb-1 text-[11px] font-medium text-text-faint uppercase tracking-wider">
-          Your work
+        <div className="px-3 pt-3 pb-1.5 text-[11px] font-semibold text-text-faint uppercase tracking-wider">
+          Repository Options
         </div>
       )}
 
-      {/* Nav List */}
-      <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentNavView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (item.id === 'projects') {
-                  setIsRepoModalOpen(true);
-                } else {
-                  setCurrentNavView(item.id);
-                }
-              }}
-              className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] font-normal transition-colors duration-150 ${
-                isActive
-                  ? 'bg-base-3 text-text-primary font-medium'
-                  : 'text-text-muted hover:bg-base-2 hover:text-text-primary'
-              }`}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-gitlab-orange' : ''}`} />
-              {!isCollapsed && <span className="truncate">{item.label}</span>}
-            </button>
-          );
-        })}
-
-        {!isCollapsed && (
-          <div className="pt-2 space-y-0.5 border-t border-border/40 mt-2">
-            {secondaryNavItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.label}
-                  onClick={() => setIsRepoModalOpen(true)}
-                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors duration-150"
-                >
-                  <Icon className="w-4 h-4 flex-shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Rail Actions */}
-      <div className="p-2 border-t border-border space-y-0.5">
+      {/* Nav List - Repository Management Only */}
+      <div className="flex-1 overflow-y-auto px-2 space-y-1">
+        {/* Local Git Workspace */}
         <button
-          onClick={() => setIsRepoModalOpen(true)}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors"
+          onClick={() => setCurrentNavView('workspace')}
+          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors duration-150 ${
+            currentNavView === 'workspace'
+              ? 'bg-base-3 text-text-primary font-medium border border-border-strong'
+              : 'text-text-muted hover:bg-base-2 hover:text-text-primary'
+          }`}
+          title={isCollapsed ? "Git Workspace" : undefined}
         >
-          <HelpCircle className="w-4 h-4 flex-shrink-0" />
-          {!isCollapsed && <span>Help</span>}
+          <Code2 className={`w-4 h-4 flex-shrink-0 ${currentNavView === 'workspace' ? 'text-gitlab-orange' : ''}`} />
+          {!isCollapsed && <span className="truncate">Git Workspace</span>}
         </button>
 
+        {/* Add Existing Local Repository */}
+        <button
+          onClick={handleOpenLocalFolder}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors duration-150"
+          title={isCollapsed ? "Add Local Repo" : undefined}
+        >
+          <FolderOpen className="w-4 h-4 flex-shrink-0 text-gitlab-teal" />
+          {!isCollapsed && <span className="truncate">Add Local Repo...</span>}
+        </button>
+
+        {/* Clone Repository from GitLab */}
+        <button
+          onClick={() => {
+            setActiveModalTab('repos');
+            setIsRepoModalOpen(true);
+          }}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors duration-150"
+          title={isCollapsed ? "Clone Repository" : undefined}
+        >
+          <Plus className="w-4 h-4 flex-shrink-0 text-gitlab-orange" />
+          {!isCollapsed && <span className="truncate">Clone Repository...</span>}
+        </button>
+
+        {/* Projects List */}
+        <button
+          onClick={() => {
+            setActiveModalTab('repos');
+            setIsRepoModalOpen(true);
+          }}
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors duration-150"
+          title={isCollapsed ? "GitLab Projects" : undefined}
+        >
+          <FolderGit2 className="w-4 h-4 flex-shrink-0 text-blue-400" />
+          {!isCollapsed && <span className="truncate">GitLab Projects</span>}
+        </button>
+
+        {/* Merge Requests */}
+        <button
+          onClick={() => setCurrentNavView('merge-requests')}
+          className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors duration-150 ${
+            currentNavView === 'merge-requests'
+              ? 'bg-base-3 text-text-primary font-medium border border-border-strong'
+              : 'text-text-muted hover:bg-base-2 hover:text-text-primary'
+          }`}
+          title={isCollapsed ? "Merge Requests" : undefined}
+        >
+          <GitPullRequest className="w-4 h-4 flex-shrink-0 text-purple-400" />
+          {!isCollapsed && <span className="truncate">Merge Requests</span>}
+        </button>
+      </div>
+
+      {/* Bottom Rail Action: Collapse Sidebar */}
+      <div className="p-2 border-t border-border">
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors"
+          className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] text-text-muted hover:bg-base-2 hover:text-text-primary transition-colors"
         >
           <PanelLeftClose className={`w-4 h-4 flex-shrink-0 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
           {!isCollapsed && <span>Collapse sidebar</span>}

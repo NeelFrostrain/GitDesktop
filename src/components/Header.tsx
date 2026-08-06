@@ -13,11 +13,14 @@ import {
   Check, 
   GitPullRequest,
   AlertCircle,
-  LayoutDashboard,
-  Code2
+  Lock,
+  Globe,
+  Upload,
+  X
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { BranchInfo, RepoStatus, PullResult } from '../types/git';
+import { GitLabProject } from '../types/gitlab';
 
 export const Header: React.FC = () => {
   const {
@@ -27,6 +30,7 @@ export const Header: React.FC = () => {
     setStatus,
     user,
     setIsRepoModalOpen,
+    setActiveModalTab,
     isFetching,
     setIsFetching,
     isPushing,
@@ -37,7 +41,6 @@ export const Header: React.FC = () => {
     setLastFetchedTimestamp,
     setError,
     error,
-    currentNavView,
     setCurrentNavView,
   } = useGitStore();
 
@@ -47,6 +50,14 @@ export const Header: React.FC = () => {
   const [branchSearch, setBranchSearch] = useState('');
   const [newBranchName, setNewBranchName] = useState('');
   const [isCreatingBranch, setIsCreatingBranch] = useState(false);
+
+  // Publish Repository Modal State
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [publishName, setPublishName] = useState('');
+  const [publishIsPrivate, setPublishIsPrivate] = useState(true);
+  const [publishDescription, setPublishDescription] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   // Fetch branches when active repo changes
   useEffect(() => {
@@ -132,6 +143,29 @@ export const Header: React.FC = () => {
     }
   };
 
+  const handlePublishRepo = async () => {
+    if (!activeRepoPath || !publishName.trim()) return;
+    setIsPublishing(true);
+    setPublishError(null);
+    try {
+      await invoke<GitLabProject>('publish_repository', {
+        repoPath: activeRepoPath,
+        name: publishName.trim(),
+        isPrivate: publishIsPrivate,
+        description: publishDescription || null,
+        serverUrl: user?.server_url || null,
+      });
+      setIsPublishModalOpen(false);
+      setError(null);
+      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(newStatus);
+    } catch (err: any) {
+      setPublishError(err.message || String(err));
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
   const handleSwitchBranch = async (branchName: string) => {
     if (!activeRepoPath) return;
     try {
@@ -174,6 +208,21 @@ export const Header: React.FC = () => {
         <button disabled className="px-3 py-1.5 bg-base-2 text-text-faint rounded border border-border cursor-not-allowed text-xs font-medium flex items-center gap-1.5">
           <RefreshCw className="w-3.5 h-3.5" />
           Fetch origin
+        </button>
+      );
+    }
+
+    if (error?.message?.includes('No remote configured')) {
+      return (
+        <button
+          onClick={() => {
+            setPublishName(repoName);
+            setIsPublishModalOpen(true);
+          }}
+          className="px-3 py-1.5 bg-gitlab-orange hover:bg-orange-600 text-white rounded transition text-xs font-semibold flex items-center gap-1.5 shadow-md"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Publish repository to GitLab
         </button>
       );
     }
@@ -270,6 +319,7 @@ export const Header: React.FC = () => {
               <button
                 onClick={() => {
                   setIsRepoDropdownOpen(false);
+                  setActiveModalTab('repos');
                   setIsRepoModalOpen(true);
                 }}
                 className="w-full text-left px-3 py-2 text-xs text-text-primary hover:bg-base-3 flex items-center gap-2"
@@ -368,47 +418,27 @@ export const Header: React.FC = () => {
           )}
         </div>
 
-        {/* Fetch / Push / Pull */}
+        {/* Fetch / Push / Pull / Publish */}
         {renderFetchPushButton()}
-      </div>
-
-      {/* Center: View Switcher (Git Workspace vs GitLab Dashboard) */}
-      <div className="flex items-center bg-base-2 p-0.5 rounded-md border border-border">
-        <button
-          onClick={() => setCurrentNavView('workspace')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition ${
-            currentNavView === 'workspace'
-              ? 'bg-base-0 text-gitlab-orange shadow-sm font-semibold'
-              : 'text-text-muted hover:text-text-primary'
-          }`}
-        >
-          <Code2 className="w-3.5 h-3.5" />
-          Git Workspace
-        </button>
-        <button
-          onClick={() => setCurrentNavView('home')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition ${
-            currentNavView !== 'workspace'
-              ? 'bg-base-0 text-gitlab-orange shadow-sm font-semibold'
-              : 'text-text-muted hover:text-text-primary'
-          }`}
-        >
-          <LayoutDashboard className="w-3.5 h-3.5" />
-          GitLab Dashboard
-        </button>
       </div>
 
       {/* Far Right: Account & Settings */}
       <div className="flex items-center gap-2">
-        {error && (
+        {error && !error.message?.includes('No remote configured') && !(user && error.message?.includes('Not authenticated')) && (
           <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded max-w-xs truncate" title={error.message}>
             <AlertCircle className="w-3 h-3 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
+            <button onClick={() => setError(null)} className="ml-1 text-red-400 hover:text-white">
+              <X className="w-3 h-3" />
+            </button>
           </div>
         )}
 
         <button
-          onClick={() => setIsRepoModalOpen(true)}
+          onClick={() => {
+            setActiveModalTab('login');
+            setIsRepoModalOpen(true);
+          }}
           className="flex items-center gap-2 px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded transition text-xs"
         >
           {user?.avatar_url ? (
@@ -419,6 +449,93 @@ export const Header: React.FC = () => {
           <span className="text-text-primary font-medium text-xs">{user ? user.username : 'Sign In'}</span>
         </button>
       </div>
+
+      {/* Publish Repository Modal */}
+      {isPublishModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-base-1 border border-border rounded-lg shadow-2xl p-5 w-[420px] space-y-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Upload className="w-4 h-4 text-gitlab-orange" />
+              Publish Repository to GitLab
+            </h3>
+            <p className="text-xs text-text-muted">
+              Create a new remote repository on GitLab and push all local commits to sync with the cloud.
+            </p>
+
+            {publishError && (
+              <div className="p-2.5 bg-red-950/60 border border-red-800/60 rounded text-xs text-red-300 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span className="break-all">{publishError}</span>
+              </div>
+            )}
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-text-muted mb-1 font-medium">Repository Name</label>
+                <input
+                  type="text"
+                  required
+                  value={publishName}
+                  onChange={(e) => setPublishName(e.target.value)}
+                  className="w-full px-3 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-text-muted mb-1 font-medium">Description (optional)</label>
+                <input
+                  type="text"
+                  value={publishDescription}
+                  onChange={(e) => setPublishDescription(e.target.value)}
+                  placeholder="Repository description..."
+                  className="w-full px-3 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                />
+              </div>
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setPublishIsPrivate(true)}
+                  className={`flex-1 py-1.5 px-3 rounded border text-xs font-medium flex items-center justify-center gap-1.5 ${
+                    publishIsPrivate
+                      ? 'bg-gitlab-orange/20 border-gitlab-orange text-gitlab-orange'
+                      : 'bg-base-0 border-border text-text-muted'
+                  }`}
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  Private Repository
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPublishIsPrivate(false)}
+                  className={`flex-1 py-1.5 px-3 rounded border text-xs font-medium flex items-center justify-center gap-1.5 ${
+                    !publishIsPrivate
+                      ? 'bg-gitlab-orange/20 border-gitlab-orange text-gitlab-orange'
+                      : 'bg-base-0 border-border text-text-muted'
+                  }`}
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  Public Repository
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-border">
+              <button
+                type="button"
+                onClick={() => setIsPublishModalOpen(false)}
+                className="px-3 py-1.5 text-xs text-text-muted hover:text-text-primary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isPublishing || !publishName.trim()}
+                onClick={handlePublishRepo}
+                className="px-4 py-1.5 bg-gitlab-orange hover:bg-orange-600 text-white rounded text-xs font-semibold shadow"
+              >
+                {isPublishing ? 'Publishing...' : 'Publish Repository'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

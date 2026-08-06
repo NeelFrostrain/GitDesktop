@@ -72,3 +72,53 @@ pub async fn create_merge_request(
     let client = get_authenticated_client(server_url)?;
     client.create_merge_request(&project_id, &source_branch, &target_branch, &title).await
 }
+
+#[command]
+pub async fn publish_repository(
+    repo_path: String,
+    name: String,
+    is_private: bool,
+    description: Option<String>,
+    server_url: Option<String>,
+) -> Result<GitLabProject, AppError> {
+    let client = get_authenticated_client(server_url.clone())?;
+    let project = client.create_project(&name, is_private, description.as_deref()).await?;
+
+    let repo_path_clone = repo_path.clone();
+    let raw_remote_url = project.http_url_to_repo.clone();
+    let token = keyring::get_token()?.unwrap_or_default();
+
+    let mut authenticated_url = raw_remote_url.clone();
+    if !token.is_empty() && raw_remote_url.starts_with("https://") {
+        authenticated_url = raw_remote_url.replacen("https://", &format!("https://oauth2:{}@", token), 1);
+    }
+
+    tokio::task::spawn_blocking(move || -> Result<(), AppError> {
+        let repo = git2::Repository::open(&repo_path_clone)?;
+        
+        if repo.find_remote("origin").is_ok() {
+            let _ = repo.remote_set_url("origin", &authenticated_url);
+        } else {
+            let _ = repo.remote("origin", &authenticated_url);
+        }
+
+        let output = std::process::Command::new("git")
+            .arg("push")
+            .arg("-u")
+            .arg("origin")
+            .arg("HEAD")
+            .current_dir(&repo_path_clone)
+            .output()?;
+
+        if !output.status.success() {
+            let err_msg = String::from_utf8_lossy(&output.stderr).to_string();
+            return Err(AppError::Git(format!("Project created on GitLab, but failed to push initial commits: {}", err_msg)));
+        }
+
+        Ok(())
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    Ok(project)
+}

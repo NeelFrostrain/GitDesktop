@@ -34,6 +34,7 @@ pub fn run() {
             clone_repository,
             get_open_merge_requests,
             create_merge_request,
+            publish_repository,
             get_repo_status,
             get_file_diff,
             stage_files,
