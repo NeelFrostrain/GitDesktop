@@ -19,7 +19,8 @@ import {
   X,
   LogOut,
   ExternalLink,
-  Search
+  Search,
+  Users
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { BranchInfo, RepoStatus, PullResult } from '../types/git';
@@ -558,6 +559,24 @@ export const Header: React.FC = () => {
               </div>
 
               <div className="space-y-1 pt-1 border-t border-border">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsProfileDropdownOpen(false);
+                    setActiveModalTab('accounts');
+                    setIsRepoModalOpen(true);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded text-xs font-semibold text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition border border-gitlab-orange/30 hover:border-gitlab-orange"
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="w-3.5 h-3.5 text-gitlab-orange" />
+                    Switch / Manage Accounts
+                  </span>
+                  <span className="text-[10px] bg-gitlab-orange/20 text-gitlab-orange px-1.5 py-0.5 rounded font-mono">
+                    Multi
+                  </span>
+                </button>
+
                 <button
                   onClick={async () => {
                     setIsProfileDropdownOpen(false);

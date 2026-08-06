@@ -212,6 +212,15 @@ pub async fn remove_account_cmd(account_id: String) -> Result<(), AppError> {
 }
 
 #[command]
+pub async fn update_account_info_cmd(
+    account_id: String,
+    name: String,
+    email: Option<String>,
+) -> Result<(), AppError> {
+    keyring::update_account_profile(&account_id, &name, email)
+}
+
+#[command]
 pub async fn set_repo_account_cmd(repo_path: String, account_id: String) -> Result<(), AppError> {
     keyring::set_account_for_repo(&repo_path, &account_id)
 }

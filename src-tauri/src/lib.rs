@@ -56,6 +56,7 @@ pub fn run() {
             list_accounts_cmd,
             switch_account_cmd,
             remove_account_cmd,
+            update_account_info_cmd,
             set_repo_account_cmd,
         ])
         .run(tauri::generate_context!())

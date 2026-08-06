@@ -18,7 +18,9 @@ import {
   Users,
   Check,
   Trash2,
-  Plus
+  Plus,
+  Edit2,
+  Save
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { GitLabUser, GitLabProject, PagedResult, SavedAccount } from '../types/gitlab';
@@ -54,11 +56,39 @@ export const RepoModal: React.FC = () => {
   const [manualCode, setManualCode] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
 
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+
   const loadAccounts = async () => {
     try {
       const accs = await invoke<SavedAccount[]>('list_accounts_cmd');
-      setAccounts(accs);
-    } catch {}
+      setAccounts(Array.isArray(accs) ? accs : []);
+    } catch {
+      setAccounts([]);
+    }
+  };
+
+  const handleStartEdit = (acct: SavedAccount) => {
+    setEditingAccountId(acct.id);
+    setEditName(acct.name);
+    setEditEmail(acct.email || '');
+  };
+
+  const handleSaveAccountInfo = async (accountId: string) => {
+    try {
+      await invoke('update_account_info_cmd', {
+        accountId,
+        name: editName,
+        email: editEmail || null,
+      });
+      setEditingAccountId(null);
+      await loadAccounts();
+      const activeUser = await invoke<GitLabUser | null>('get_current_user');
+      if (activeUser) setUser(activeUser);
+    } catch (err: any) {
+      setError({ code: 'AUTH_ERROR', message: err.message || String(err) });
+    }
   };
 
   useEffect(() => {
@@ -349,7 +379,7 @@ export const RepoModal: React.FC = () => {
             }`}
           >
             <Users className="w-3.5 h-3.5 text-gitlab-orange" />
-            Accounts {accounts.length > 0 && `(${accounts.length})`}
+            Accounts {(accounts || []).length > 0 && `(${(accounts || []).length})`}
           </button>
           <button
             onClick={() => setActiveModalTab('login')}
@@ -399,7 +429,7 @@ export const RepoModal: React.FC = () => {
                 </button>
               </div>
 
-              {accounts.length === 0 ? (
+              {!(accounts && accounts.length > 0) ? (
                 <div className="py-8 text-center text-xs text-text-muted space-y-3 bg-base-2/50 border border-border rounded-lg p-6">
                   <User className="w-10 h-10 text-gitlab-orange/60 mx-auto" />
                   <p>No saved GitLab accounts yet.</p>
@@ -412,60 +442,128 @@ export const RepoModal: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {accounts.map((acct) => {
+                  {(accounts || []).map((acct) => {
+                    if (!acct) return null;
                     const isActive = acct.is_active || (user && user.username === acct.username && user.server_url === acct.server_url);
+                    const isEditing = editingAccountId === acct.id;
+
                     return (
                       <div
                         key={acct.id}
-                        className={`p-4 rounded-lg border transition flex items-center justify-between ${
+                        className={`p-4 rounded-lg border transition flex flex-col gap-3 ${
                           isActive
                             ? 'bg-gitlab-orange/10 border-gitlab-orange/60 shadow-sm'
                             : 'bg-base-2 border-border hover:border-text-muted'
                         }`}
                       >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {acct.avatar_url ? (
-                            <img src={acct.avatar_url} alt="Avatar" className="w-11 h-11 rounded-full border border-border flex-shrink-0" />
-                          ) : (
-                            <div className="w-11 h-11 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center flex-shrink-0">
-                              <User className="w-5 h-5 text-gitlab-orange" />
-                            </div>
-                          )}
-                          <div className="min-w-0 space-y-0.5">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-text-primary truncate">{acct.name}</span>
-                              {isActive && (
-                                <span className="px-2 py-0.5 bg-gitlab-teal/20 text-gitlab-teal text-[10px] font-semibold border border-gitlab-teal/40 rounded-full flex items-center gap-1">
-                                  <Check className="w-2.5 h-2.5" /> Active
-                                </span>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            {acct.avatar_url ? (
+                              <img src={acct.avatar_url} alt="Avatar" className="w-11 h-11 rounded-full border border-border flex-shrink-0" />
+                            ) : (
+                              <div className="w-11 h-11 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center flex-shrink-0">
+                                <User className="w-5 h-5 text-gitlab-orange" />
+                              </div>
+                            )}
+                            <div className="min-w-0 space-y-0.5">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-text-primary truncate">{acct.name}</span>
+                                {isActive && (
+                                  <span className="px-2 py-0.5 bg-gitlab-teal/20 text-gitlab-teal text-[10px] font-semibold border border-gitlab-teal/40 rounded-full flex items-center gap-1">
+                                    <Check className="w-2.5 h-2.5" /> Active
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-text-muted font-mono truncate">
+                                @{acct.username} • {acct.server_url}
+                              </div>
+                              {acct.email && (
+                                <div className="text-[10px] text-text-faint truncate">Commit author: {acct.email}</div>
                               )}
                             </div>
-                            <div className="text-[11px] text-text-muted font-mono truncate">
-                              @{acct.username} • {acct.server_url}
-                            </div>
-                            {acct.email && (
-                              <div className="text-[10px] text-text-faint truncate">{acct.email}</div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {!isEditing && (
+                              <button
+                                onClick={() => handleStartEdit(acct)}
+                                className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-3 rounded transition flex items-center gap-1 text-xs"
+                                title="Edit display name & commit email"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                                Edit Info
+                              </button>
+                            )}
+
+                            {!isActive && !isEditing && (
+                              <button
+                                onClick={() => handleSwitchAccount(acct.id)}
+                                className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded text-xs text-text-primary font-medium transition"
+                              >
+                                Switch to Account
+                              </button>
+                            )}
+
+                            {!isEditing && (
+                              <button
+                                onClick={() => handleRemoveAccount(acct.id)}
+                                className="p-1.5 text-text-muted hover:text-red-400 hover:bg-red-950/40 rounded transition"
+                                title="Remove account"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {!isActive && (
-                            <button
-                              onClick={() => handleSwitchAccount(acct.id)}
-                              className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded text-xs text-text-primary font-medium transition"
-                            >
-                              Switch to Account
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleRemoveAccount(acct.id)}
-                            className="p-1.5 text-text-muted hover:text-red-400 hover:bg-red-950/40 rounded transition"
-                            title="Remove account"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
+                        {/* Inline Edit Profile Form */}
+                        {isEditing && (
+                          <div className="pt-3 border-t border-border/80 grid grid-cols-1 gap-2.5 bg-base-0/60 p-3 rounded-md">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-text-primary mb-1">
+                                Display Name (Commit Author Name)
+                              </label>
+                              <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                className="w-full px-2.5 py-1 bg-base-1 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                                placeholder="Your Name"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[11px] font-semibold text-text-primary mb-1">
+                                Commit Author Email
+                              </label>
+                              <input
+                                type="email"
+                                value={editEmail}
+                                onChange={(e) => setEditEmail(e.target.value)}
+                                className="w-full px-2.5 py-1 bg-base-1 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange font-mono"
+                                placeholder="user@example.com"
+                              />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setEditingAccountId(null)}
+                                className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-muted transition"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveAccountInfo(acct.id)}
+                                className="px-3 py-1 bg-gitlab-orange hover:bg-orange-600 text-white rounded text-xs font-semibold flex items-center gap-1 transition"
+                              >
+                                <Save className="w-3.5 h-3.5" />
+                                Save Info
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}
