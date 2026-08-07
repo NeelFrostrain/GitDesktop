@@ -362,7 +362,7 @@ export const Sidebar: React.FC = () => {
 
                     <div className="flex items-center justify-between text-[11px] text-text-muted mt-1.5">
                       <div className="flex items-center gap-1.5 truncate">
-                        <UserAvatar name={c.author_name} className="w-4 h-4" iconClassName="w-2.5 h-2.5" />
+                        <UserAvatar name={c.author_name} email={c.author_email} className="w-4 h-4" iconClassName="w-2.5 h-2.5" />
                         <span className="truncate font-medium text-text-secondary">{c.author_name}</span>
                       </div>
                       <span className="font-mono text-[10px] text-text-faint">{c.relative_date}</span>

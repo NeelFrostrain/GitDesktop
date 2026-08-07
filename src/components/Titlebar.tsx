@@ -123,16 +123,11 @@ export const Titlebar: React.FC = () => {
       data-tauri-drag-region
       className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Logo & Active Workspace Tag */}
+      {/* Left: App Logo & Title */}
       <div data-tauri-drag-region className="flex items-center gap-3">
         <div className="flex items-center gap-2 pointer-events-none">
-          <div className="w-5 h-5 bg-commito-coral rounded flex items-center justify-center text-white font-bold text-[11px] shadow-sm">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" />
-            </svg>
-          </div>
+          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-sm" />
           <span className="font-bold text-text-primary text-sm tracking-tight">Git Desktop</span>
-          <span className="text-text-muted text-xs font-mono ml-1">the-wire</span>
         </div>
       </div>
 
@@ -163,7 +158,8 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2 px-2 py-1 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
+            title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
               url={user?.avatar_url}
@@ -172,9 +168,6 @@ export const Titlebar: React.FC = () => {
               className="w-5 h-5"
               iconClassName="w-3 h-3"
             />
-            <span className="text-xs font-bold truncate max-w-[110px]">
-              {user ? user.name || user.username : 'Guest User'}
-            </span>
             <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
           </button>
 
