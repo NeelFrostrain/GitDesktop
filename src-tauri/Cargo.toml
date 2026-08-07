@@ -36,3 +36,13 @@ rand = "0.8"
 sha2 = "0.10"
 base64 = "0.22"
 
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.dev]
+opt-level = 1
+

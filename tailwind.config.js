@@ -8,26 +8,34 @@ export default {
     extend: {
       colors: {
         base: {
-          0: '#171719', // Main app near-black background
-          1: '#1f1e24', // Card & Panel background
-          2: '#28272d', // Table header / elevated card
-          3: '#33323a', // Hover & active state
+          0: '#121113', // Deep dark app frame
+          1: '#171619', // Main workspace background
+          2: '#201e22', // Elevated cards & panels
+          3: '#2b292f', // Hover & subtle highlights
         },
         border: {
-          DEFAULT: '#36353d',
-          strong: '#46454e',
+          DEFAULT: '#29272b',
+          strong: '#3d3a42',
         },
         text: {
-          primary: '#e1e0e5',
-          secondary: '#bfbee2',
-          muted: '#8f8e9a',
-          faint: '#6e6d78',
+          primary: '#e6e4e8',
+          secondary: '#b3b0b8',
+          muted: '#85818c',
+          faint: '#5c5863',
+        },
+        commito: {
+          coral: '#e05638',
+          coralHover: '#f06344',
+          activeBg: '#382221',
+          activeText: '#f5a494',
+          green: '#22c55e',
+          card: '#1e1c21',
         },
         gitlab: {
-          orange: '#fc6d26',
+          orange: '#e05638',
           purple: '#7b58cf',
           purpleLight: '#3a2d6b',
-          teal: '#108548',
+          teal: '#22c55e',
           blue: '#1f75cb',
         },
         github: {

@@ -49,12 +49,12 @@ const CopyButton: React.FC<{ text: string; label?: string; className?: string }>
       {copied ? (
         <>
           <Check className="w-3 h-3 text-gitlab-teal" />
-          {label && <span className="text-gitlab-teal font-medium">Copied!</span>}
+          <span>Copied!</span>
         </>
       ) : (
         <>
           <Copy className="w-3 h-3" />
-          {label && <span>{label}</span>}
+          <span>{label || 'Copy'}</span>
         </>
       )}
     </button>
@@ -247,6 +247,7 @@ export const DiffViewer: React.FC = () => {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showCommitBody, setShowCommitBody] = useState(false);
 
   // Expanded file diffs in History tab
   const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
@@ -254,8 +255,8 @@ export const DiffViewer: React.FC = () => {
   const [openFiles, setOpenFiles] = useState<Record<string, boolean>>({});
 
   // Image Zoom & Scale State for Preview
-  const [imageZoom, setImageZoom] = useState<number | 'fit'>('fit');
-  const [pixelatedMode, setPixelatedMode] = useState(true);
+  const [imageZoom] = useState<number | 'fit'>('fit');
+  const [pixelatedMode] = useState(true);
 
   // Fetch diff when selected file changes in Changes tab
   useEffect(() => {
@@ -477,16 +478,16 @@ export const DiffViewer: React.FC = () => {
   const renderChangesDiff = () => {
     if (!selectedFile) {
       return (
-        <div className="h-full flex flex-col items-center justify-center text-gray-500 text-sm">
-          <FileText className="w-12 h-12 mb-3 opacity-30 text-github-dark-accent" />
-          Select a changed file to view its line-by-line diff.
+        <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm space-y-2">
+          <FileText className="w-10 h-10 opacity-30 text-commito-coral" />
+          <span className="font-medium text-text-muted">Select a changed file to view its line-by-line diff.</span>
         </div>
       );
     }
 
     if (isLoading) {
       return (
-        <div className="h-full flex items-center justify-center text-gray-400 text-sm">
+        <div className="h-full flex items-center justify-center text-text-muted text-sm">
           Loading file diff...
         </div>
       );
@@ -497,19 +498,18 @@ export const DiffViewer: React.FC = () => {
     if (diff.is_large_file) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-center p-6">
-          <HardDrive className="w-12 h-12 text-github-dark-warning mb-3" />
-          <h3 className="text-base font-semibold text-github-dark-heading mb-1">
+          <HardDrive className="w-12 h-12 text-amber-400 mb-3" />
+          <h3 className="text-base font-semibold text-text-primary mb-1">
             Large File Warning
           </h3>
-          <p className="text-xs text-gray-400 max-w-md">
-            File <span className="font-mono text-white">{selectedFile}</span> exceeds the maximum diff preview limit.
+          <p className="text-xs text-text-muted max-w-md">
+            File <span className="font-mono text-text-primary">{selectedFile}</span> exceeds the maximum diff preview limit.
           </p>
         </div>
       );
     }
 
     if (diff.is_binary || isImageFile(selectedFile)) {
-      const ext = selectedFile.split('.').pop()?.toLowerCase() || '';
       const isImg = isImageFile(selectedFile);
 
       if (isImg) {
@@ -534,77 +534,17 @@ export const DiffViewer: React.FC = () => {
 
         return (
           <div className="h-full flex flex-col bg-base-0">
-            {/* Header Bar matching UI Theme */}
             <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center gap-2 truncate">
-                <ImageIcon className="w-4 h-4 text-gitlab-orange flex-shrink-0" />
+                <ImageIcon className="w-4 h-4 text-commito-coral flex-shrink-0" />
                 <span className="font-mono text-xs text-text-primary font-medium truncate">
                   {selectedFile}
                 </span>
                 <CopyButton text={selectedFile} />
               </div>
-
-              {/* Zoom & Scaling Controls */}
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1 bg-base-2 border border-border rounded p-0.5">
-                  <button
-                    onClick={() => setImageZoom('fit')}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                      imageZoom === 'fit' ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    Auto Fit
-                  </button>
-                  <button
-                    onClick={() => setImageZoom(1)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                      imageZoom === 1 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    1x
-                  </button>
-                  <button
-                    onClick={() => setImageZoom(2)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                      imageZoom === 2 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    2x
-                  </button>
-                  <button
-                    onClick={() => setImageZoom(4)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                      imageZoom === 4 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    4x
-                  </button>
-                  <button
-                    onClick={() => setImageZoom(8)}
-                    className={`px-2 py-0.5 rounded text-[11px] font-mono transition ${
-                      imageZoom === 8 ? 'bg-gitlab-orange text-white font-semibold' : 'text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    8x
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setPixelatedMode(!pixelatedMode)}
-                  className={`px-2 py-0.5 rounded border text-[11px] font-mono transition ${
-                    pixelatedMode
-                      ? 'bg-gitlab-orange/20 border-gitlab-orange/50 text-gitlab-orange font-medium'
-                      : 'bg-base-2 border-border text-text-muted'
-                  }`}
-                  title="Toggle crisp pixel rendering"
-                >
-                  {pixelatedMode ? 'Crisp' : 'Smooth'}
-                </button>
-              </div>
             </div>
 
-            {/* Direct Viewport (No Inner Background Boxes) */}
-            <div className="flex-1 w-full h-full p-8 flex items-center justify-center overflow-auto bg-base-0">
+            <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-[#141316]">
               <img
                 src={fileUrl}
                 alt={selectedFile}
@@ -618,37 +558,20 @@ export const DiffViewer: React.FC = () => {
                 }}
               />
             </div>
-
-            {/* Footer Metadata Bar */}
-            <div className="h-8 bg-base-1 border-t border-border px-4 flex items-center justify-between text-xs font-mono text-text-muted flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <span className="font-medium text-text-primary">Image File</span>
-                <span>•</span>
-                <span>{(diff.file_size_bytes / 1024).toFixed(1)} KB</span>
-                <span>•</span>
-                <span className="uppercase text-gitlab-orange font-semibold">{ext}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span>Scale:</span>
-                <span className="text-gitlab-teal font-medium">
-                  {imageZoom === 'fit' ? 'Auto Fit (280px+)' : `${imageZoom * 100}%`}
-                </span>
-              </div>
-            </div>
           </div>
         );
       }
 
       return (
-        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#1c2128]">
-          <Binary className="w-12 h-12 text-gitlab-orange mb-3" />
-          <h3 className="text-base font-semibold text-github-dark-heading mb-1">
-            Binary File Detected ({ext.toUpperCase()})
+        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#141316]">
+          <Binary className="w-12 h-12 text-commito-coral mb-3" />
+          <h3 className="text-base font-semibold text-text-primary mb-1">
+            Binary File Detected
           </h3>
-          <p className="text-xs text-gray-400 max-w-md mb-2">
+          <p className="text-xs text-text-muted max-w-md mb-2">
             Binary files cannot be rendered as text diffs.
           </p>
-          <span className="text-xs font-mono text-gitlab-teal px-2.5 py-1 bg-base-1 border border-border rounded">
+          <span className="text-xs font-mono text-emerald-400 px-2.5 py-1 bg-base-1 border border-border rounded-md">
             File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
           </span>
         </div>
@@ -657,26 +580,25 @@ export const DiffViewer: React.FC = () => {
 
     return (
       <div className="h-full flex flex-col">
-        {/* Diff File Header Bar */}
         <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 truncate">
             <span className="font-mono text-xs text-text-primary font-medium truncate">
               {selectedFile}
             </span>
             {selectedFile && (selectedFile.endsWith('.uasset') || selectedFile.endsWith('.png') || selectedFile.endsWith('.jpg') || selectedFile.endsWith('.exe')) && (
-              <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-400 border border-amber-400/40 rounded text-[9px] font-mono font-bold">
+              <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-400 border border-amber-400/40 rounded-md text-[9px] font-mono font-bold">
                 LFS
               </span>
             )}
             <CopyButton text={selectedFile} />
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-base-2 border border-border rounded p-0.5">
+            <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md p-0.5">
               <button
                 onClick={() => setDiffViewMode('unified')}
-                className={`p-1 rounded text-xs flex items-center gap-1 ${
+                className={`p-1 rounded-md text-xs flex items-center gap-1 ${
                   diffViewMode === 'unified'
-                    ? 'bg-gitlab-orange text-white font-semibold'
+                    ? 'bg-commito-coral text-white font-semibold'
                     : 'text-text-muted hover:text-text-primary'
                 }`}
                 title="Unified View"
@@ -686,9 +608,9 @@ export const DiffViewer: React.FC = () => {
               </button>
               <button
                 onClick={() => setDiffViewMode('split')}
-                className={`p-1 rounded text-xs flex items-center gap-1 ${
+                className={`p-1 rounded-md text-xs flex items-center gap-1 ${
                   diffViewMode === 'split'
-                    ? 'bg-gitlab-orange text-white font-semibold'
+                    ? 'bg-commito-coral text-white font-semibold'
                     : 'text-text-muted hover:text-text-primary'
                 }`}
                 title="Split View"
@@ -700,10 +622,9 @@ export const DiffViewer: React.FC = () => {
           </div>
         </div>
 
-        {/* Diff Line Viewer */}
-        <div className="flex-1 overflow-auto bg-[#1c2128]">
+        <div className="flex-1 overflow-auto bg-[#141316]">
           {diff.lines.length === 0 ? (
-            <div className="p-6 text-gray-500 text-center font-mono text-xs">No textual line changes detected.</div>
+            <div className="p-6 text-text-muted text-center font-mono text-xs">No textual line changes detected.</div>
           ) : (
             renderDiffContent(diff.lines)
           )}
@@ -711,9 +632,6 @@ export const DiffViewer: React.FC = () => {
       </div>
     );
   };
-
-  // Toggle commit body description visibility
-  const [showCommitBody, setShowCommitBody] = useState(false);
 
   // Render Commit Details for History Tab
   const renderHistoryDetails = () => {
@@ -750,12 +668,12 @@ export const DiffViewer: React.FC = () => {
               {commitTitle}
             </h2>
             <div className="flex items-center gap-2 flex-shrink-0">
-              <div className="flex items-center gap-1 bg-base-1 border border-border rounded p-0.5">
+              <div className="flex items-center gap-1 bg-base-1 border border-border rounded-md p-0.5">
                 <button
                   onClick={() => setDiffViewMode('unified')}
-                  className={`px-2 py-0.5 rounded text-[11px] flex items-center gap-1 ${
+                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 ${
                     diffViewMode === 'unified'
-                      ? 'bg-gitlab-orange text-white font-medium'
+                      ? 'bg-commito-coral text-white font-medium'
                       : 'text-text-muted hover:text-text-primary'
                   }`}
                   title="Unified View"
@@ -765,9 +683,9 @@ export const DiffViewer: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setDiffViewMode('split')}
-                  className={`px-2 py-0.5 rounded text-[11px] flex items-center gap-1 ${
+                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 ${
                     diffViewMode === 'split'
-                      ? 'bg-gitlab-orange text-white font-medium'
+                      ? 'bg-commito-coral text-white font-medium'
                       : 'text-text-muted hover:text-text-primary'
                   }`}
                   title="Split View"
@@ -777,7 +695,7 @@ export const DiffViewer: React.FC = () => {
                 </button>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-[11px] px-2 py-0.5 bg-base-1 border border-border rounded text-gitlab-teal font-medium">
+                <span className="font-mono text-[11px] px-2 py-0.5 bg-base-1 border border-border rounded-md text-commito-coral font-medium">
                   {commitDetails.commit.short_sha}
                 </span>
                 <CopyButton text={commitDetails.commit.sha} label="SHA" />
@@ -789,7 +707,7 @@ export const DiffViewer: React.FC = () => {
           <div className="flex items-center justify-between text-[11px] text-text-muted">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <User className="w-3 h-3 text-gitlab-orange" />
+                <User className="w-3 h-3 text-commito-coral" />
                 <span className="font-medium text-text-primary">{commitDetails.commit.author_name}</span>
                 <span className="text-text-faint">({commitDetails.commit.author_email})</span>
               </div>
@@ -802,7 +720,7 @@ export const DiffViewer: React.FC = () => {
             {commitBody && (
               <button
                 onClick={() => setShowCommitBody(!showCommitBody)}
-                className="text-[11px] text-gitlab-orange hover:underline font-medium"
+                className="text-[11px] text-commito-coral hover:underline font-medium"
               >
                 {showCommitBody ? 'Hide Details' : 'Show Details'}
               </button>
@@ -810,7 +728,7 @@ export const DiffViewer: React.FC = () => {
           </div>
 
           {commitBody && showCommitBody && (
-            <div className="p-2 bg-base-0 border border-border rounded text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+            <div className="p-2 bg-base-0 border border-border rounded-md text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
               {commitBody}
             </div>
           )}
@@ -831,7 +749,7 @@ export const DiffViewer: React.FC = () => {
               return (
                 <div
                   key={file}
-                  className="border border-border rounded-lg overflow-hidden bg-base-1 shadow-sm"
+                  className="border border-border rounded-md overflow-hidden bg-base-1 shadow-sm"
                 >
                   {/* File Accordion Header */}
                   <button

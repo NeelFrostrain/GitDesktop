@@ -3,7 +3,7 @@ import { UnifiedUser, SavedAccount } from '../types/gitlab';
 import { RepoStatus, AppError } from '../types/git';
 import { useLogStore } from './useLogStore';
 
-export type NavView = 'home' | 'projects' | 'groups' | 'work-items' | 'merge-requests' | 'todos' | 'workspace';
+export type NavView = 'overview' | 'files' | 'changes' | 'history' | 'branches' | 'locks' | 'reviews' | 'home' | 'projects' | 'groups' | 'work-items' | 'merge-requests' | 'todos' | 'workspace';
 
 const getCachedUser = (): UnifiedUser | null => {
   try {

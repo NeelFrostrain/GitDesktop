@@ -80,7 +80,7 @@ export const useLogStore = create<LogState>((set, get) => ({
       details: details || null,
     }).catch(() => {});
 
-    const updated = [newEntry, ...get().logs].slice(0, 500);
+    const updated = [newEntry, ...get().logs].slice(0, 100);
     saveLogs(updated);
     set({ logs: updated });
   },

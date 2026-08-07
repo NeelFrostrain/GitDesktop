@@ -5,6 +5,7 @@ import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { Sidebar } from './components/Sidebar';
 import { HomeDashboard } from './components/HomeDashboard';
 import { DiffViewer } from './components/DiffViewer';
+import { FileBrowser } from './components/FileBrowser';
 import { RepoModal } from './components/RepoModal';
 import { LogModal } from './components/LogModal';
 import { ConflictView } from './components/ConflictView';
@@ -111,7 +112,15 @@ export const App: React.FC = () => {
       .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }));
   }, [activeRepoPath, setStatus, setError]);
 
-  const isWorkspace = currentNavView === 'workspace' && Boolean(activeRepoPath);
+  const renderMainContent = () => {
+    if (currentNavView === 'files') {
+      return <FileBrowser />;
+    }
+    if (currentNavView === 'history' || currentNavView === 'changes' || currentNavView === 'workspace') {
+      return <DiffViewer />;
+    }
+    return <HomeDashboard />;
+  };
 
   return (
     <ErrorBoundary>
@@ -129,7 +138,7 @@ export const App: React.FC = () => {
           <Header />
           <ConflictView />
           <div className="flex-1 flex min-h-0 overflow-hidden">
-            {isWorkspace ? <DiffViewer /> : <HomeDashboard />}
+            {renderMainContent()}
           </div>
         </div>
       </div>

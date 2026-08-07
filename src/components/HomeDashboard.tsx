@@ -4,12 +4,12 @@ import {
   GitPullRequest, 
   CheckSquare, 
   ChevronDown, 
-  User, 
   Info, 
   X,
   FolderGit2
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { UserAvatar } from './UserAvatar';
 
 export const HomeDashboard: React.FC = () => {
   const { 
@@ -22,16 +22,6 @@ export const HomeDashboard: React.FC = () => {
     removeRecentRepo
   } = useGitStore();
   const [showBanner, setShowBanner] = useState(true);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .filter(Boolean)
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
 
   const getDayGreeting = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -66,13 +56,7 @@ export const HomeDashboard: React.FC = () => {
 
       {/* User Greeting Row */}
       <div className="flex items-center gap-3 py-1">
-        {user?.avatar_url ? (
-          <img src={user.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full border border-border" />
-        ) : (
-          <div className="w-10 h-10 rounded-full bg-gitlab-purple text-gitlab-purpleLight text-sm font-semibold flex items-center justify-center border border-gitlab-purple/40">
-            {user ? getInitials(user.name) : <User className="w-5 h-5" />}
-          </div>
-        )}
+        <UserAvatar url={user?.avatar_url} name={user?.name || user?.username} provider={user?.provider} className="w-10 h-10" iconClassName="w-5 h-5" />
         <div>
           <h1 className="text-base font-semibold text-text-primary leading-tight">
             {user ? user.name : 'GitLab User'}

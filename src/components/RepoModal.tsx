@@ -30,6 +30,7 @@ import {
   gitLabUserToUnified, gitHubUserToUnified
 } from '../types/gitlab';
 import type { Provider } from '../types/gitlab';
+import { UserAvatar } from './UserAvatar';
 
 interface PkcePair {
   verifier: String;
@@ -524,13 +525,7 @@ export const RepoModal: React.FC = () => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3.5 min-w-0">
-                            {acct.avatar_url ? (
-                              <img src={acct.avatar_url} alt="Avatar" className="w-11 h-11 rounded-full border border-border flex-shrink-0" />
-                            ) : (
-                              <div className="w-11 h-11 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center flex-shrink-0">
-                                <User className="w-5 h-5 text-gitlab-orange" />
-                              </div>
-                            )}
+                            <UserAvatar url={acct.avatar_url} name={acctName} provider={acct.provider} className="w-11 h-11" iconClassName="w-5 h-5" />
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-text-primary truncate">{acctName}</span>
