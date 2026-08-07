@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Minus, Square, Copy, X, Search } from 'lucide-react';
+import { Minus, Square, Copy, X } from 'lucide-react';
 
 export const Titlebar: React.FC = () => {
   const [isMaximized, setIsMaximized] = useState(false);
@@ -86,25 +86,20 @@ export const Titlebar: React.FC = () => {
       data-tauri-drag-region
       className="titlebar-drag h-9 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default"
     >
-      {/* Left: GitLab Logo & App Name */}
-      <div data-tauri-drag-region className="flex items-center gap-2 pointer-events-none">
-        <img src="/favicon.png" alt="GitLab Logo" className="w-4 h-4 rounded-sm flex-shrink-0" />
-        <span className="font-semibold text-text-primary tracking-tight">
-          Git Desktop
-        </span>
-      </div>
+      {/* Left: App Logo & GitHub Desktop Top Menu Items */}
+      <div data-tauri-drag-region className="flex items-center gap-3">
+        <div className="flex items-center gap-2 pointer-events-none pr-1">
+          <img src="/favicon.png" alt="App Logo" className="w-4 h-4 rounded-sm flex-shrink-0" />
+        </div>
 
-      {/* Center: GitLab Web Style Search Pill */}
-      <div
-        className="titlebar-no-drag flex-1 max-w-md mx-4 flex items-center justify-center"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        <div className="w-full flex items-center gap-2 px-3 py-1 bg-base-1 border border-border rounded-md text-text-muted hover:border-border-strong cursor-text transition">
-          <Search className="w-3.5 h-3.5 text-text-faint" />
-          <span className="flex-1 text-[11px] truncate">Search or go to...</span>
-          <kbd className="px-1.5 py-0.2 bg-base-2 border border-border rounded text-[10px] font-mono text-text-faint">
-            /
-          </kbd>
+        {/* GitHub Desktop Menu Bar */}
+        <div className="titlebar-no-drag flex items-center gap-0.5 text-xs text-text-primary">
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">File</button>
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">Edit</button>
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">View</button>
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">Repository</button>
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">Branch</button>
+          <button className="px-2 py-0.5 rounded hover:bg-base-2 text-text-primary transition">Help</button>
         </div>
       </div>
 

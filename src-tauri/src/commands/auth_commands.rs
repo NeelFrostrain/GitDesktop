@@ -5,6 +5,7 @@ use crate::auth::gitlab::{
     GitLabClient, GitLabUser, PkcePair, generate_pkce, exchange_code_for_token,
     listen_for_oauth_callback, DEFAULT_CLIENT_ID, DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
 };
+use crate::auth::github::{GitHubClient, GitHubUser};
 use crate::auth::keyring::{self, SavedAccount};
 
 #[command]
@@ -38,6 +39,7 @@ pub async fn login_gitlab_pat(
         email: user.email.clone(),
         avatar_url: user.avatar_url.clone(),
         is_active: true,
+        provider: "gitlab".to_string(),
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&keyring::make_account_id(&user.username, &server_url))?;
@@ -134,6 +136,7 @@ pub async fn complete_oauth_login(
         email: user.email.clone(),
         avatar_url: user.avatar_url.clone(),
         is_active: true,
+        provider: "gitlab".to_string(),
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
@@ -145,6 +148,14 @@ pub async fn complete_oauth_login(
 
 #[command]
 pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
+    // Check active account's provider
+    if let Some(acct) = keyring::get_active_account() {
+        if acct.provider == "github" {
+            // Delegate to GitHub session restore
+            return Ok(None); // Frontend will call get_github_user separately
+        }
+    }
+
     let token = keyring::get_token()?;
     let server_url = keyring::get_server_url()?.unwrap_or_else(|| "https://gitlab.com".to_string());
 
@@ -163,6 +174,7 @@ pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
                         email: user.email.clone(),
                         avatar_url: user.avatar_url.clone(),
                         is_active: true,
+                        provider: "gitlab".to_string(),
                     };
                     let _ = keyring::add_or_update_account(account);
                     Ok(Some(user))
@@ -223,4 +235,48 @@ pub async fn update_account_info_cmd(
 #[command]
 pub async fn set_repo_account_cmd(repo_path: String, account_id: String) -> Result<(), AppError> {
     keyring::set_account_for_repo(&repo_path, &account_id)
+}
+
+/// Login to GitHub using a Personal Access Token
+#[command]
+pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
+    if token.trim().is_empty() {
+        return Err(AppError::Validation("GitHub Personal Access Token is required".to_string()));
+    }
+
+    let client = GitHubClient::new(&token)?;
+    let gh_user = client.get_current_user().await?;
+
+    let server_url = "https://github.com".to_string();
+    let account_id = keyring::make_account_id(&gh_user.login, &server_url);
+    let account = SavedAccount {
+        id: account_id.clone(),
+        server_url: server_url.clone(),
+        token: token.clone(),
+        name: gh_user.name.clone().unwrap_or_else(|| gh_user.login.clone()),
+        username: gh_user.login.clone(),
+        email: gh_user.email.clone(),
+        avatar_url: gh_user.avatar_url.clone(),
+        is_active: true,
+        provider: "github".to_string(),
+    };
+    keyring::add_or_update_account(account)?;
+    keyring::switch_active_account(&account_id)?;
+
+    Ok(gh_user)
+}
+
+/// Restore GitHub session from saved active account
+#[command]
+pub async fn get_github_user() -> Result<Option<GitHubUser>, AppError> {
+    if let Some(acct) = keyring::get_active_account() {
+        if acct.provider == "github" && !acct.token.trim().is_empty() {
+            let client = GitHubClient::new(&acct.token)?;
+            match client.get_current_user().await {
+                Ok(user) => return Ok(Some(user)),
+                Err(_) => return Ok(None),
+            }
+        }
+    }
+    Ok(None)
 }

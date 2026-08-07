@@ -24,7 +24,12 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
-import { GitLabUser, GitLabProject, PagedResult, SavedAccount } from '../types/gitlab';
+import {
+  GitLabUser, GitHubUser, UnifiedRepo,
+  PagedResult, SavedAccount,
+  gitLabUserToUnified, gitHubUserToUnified
+} from '../types/gitlab';
+import type { Provider } from '../types/gitlab';
 
 interface PkcePair {
   verifier: String;
@@ -49,10 +54,14 @@ export const RepoModal: React.FC = () => {
   const [serverUrl, setServerUrl] = useState(() => {
     return localStorage.getItem('git_desktop_server_url') || 'https://gitlab.com';
   });
+  // Provider selector for Add Account tab
+  const [loginProvider, setLoginProvider] = useState<Provider>('gitlab');
   const [patToken, setPatToken] = useState('');
+  const [githubToken, setGithubToken] = useState('');
   const [customCaPem, setCustomCaPem] = useState('');
   const [showCustomCa, setShowCustomCa] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isGithubAuthenticating, setIsGithubAuthenticating] = useState(false);
   const [isOauthLoading, setIsOauthLoading] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -85,8 +94,16 @@ export const RepoModal: React.FC = () => {
       });
       setEditingAccountId(null);
       await loadAccounts();
-      const activeUser = await invoke<GitLabUser | null>('get_current_user');
-      if (activeUser) setUser(activeUser);
+      // Refresh user for active account regardless of provider
+      const accts = await invoke<SavedAccount[]>('list_accounts_cmd');
+      const active = accts?.find(a => a.is_active);
+      if (active?.provider === 'github') {
+        const u = await invoke<GitHubUser | null>('get_github_user');
+        if (u) setUser(gitHubUserToUnified(u));
+      } else {
+        const u = await invoke<GitLabUser | null>('get_current_user');
+        if (u) setUser(gitLabUserToUnified(u));
+      }
       useLogStore.getState().addLog('success', 'Auth', `Updated profile info for account '${accountId}'.`);
     } catch (err: any) {
       const msg = err.message || String(err);
@@ -104,14 +121,21 @@ export const RepoModal: React.FC = () => {
   const handleSwitchAccount = async (accountId: string) => {
     useLogStore.getState().addLog('info', 'Auth', `Switching active account to '${accountId}'...`);
     try {
-      const switchedUser = await invoke<GitLabUser | null>('switch_account_cmd', { accountId });
-      if (switchedUser) {
-        setUser(switchedUser);
-      }
+      // switch_account_cmd returns GitLabUser | null for GitLab; for GitHub we restore separately
+      const accts = await invoke<SavedAccount[]>('list_accounts_cmd');
+      const target = accts?.find(a => a.id === accountId);
+      await invoke('switch_account_cmd', { accountId });
       if (activeRepoPath) {
         await invoke('set_repo_account_cmd', { repoPath: activeRepoPath, accountId });
       }
       await loadAccounts();
+      if (target?.provider === 'github') {
+        const u = await invoke<GitHubUser | null>('get_github_user');
+        if (u) setUser(gitHubUserToUnified(u));
+      } else {
+        const u = await invoke<GitLabUser | null>('get_current_user');
+        if (u) setUser(gitLabUserToUnified(u));
+      }
       useLogStore.getState().addLog('success', 'Auth', `Switched active account to '${accountId}'.`);
     } catch (err: any) {
       const msg = err.message || String(err);
@@ -125,8 +149,16 @@ export const RepoModal: React.FC = () => {
     try {
       await invoke('remove_account_cmd', { accountId });
       await loadAccounts();
-      const activeUser = await invoke<GitLabUser | null>('get_current_user');
-      setUser(activeUser);
+      // After removal restore whichever provider is active
+      const accts = await invoke<SavedAccount[]>('list_accounts_cmd');
+      const active = accts?.find(a => a.is_active);
+      if (active?.provider === 'github') {
+        const u = await invoke<GitHubUser | null>('get_github_user');
+        setUser(u ? gitHubUserToUnified(u) : null);
+      } else {
+        const u = await invoke<GitLabUser | null>('get_current_user');
+        setUser(u ? gitLabUserToUnified(u) : null);
+      }
       useLogStore.getState().addLog('success', 'Auth', `Removed account '${accountId}'.`);
     } catch (err: any) {
       const msg = err.message || String(err);
@@ -159,7 +191,7 @@ export const RepoModal: React.FC = () => {
         clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
       });
 
-      setUser(loggedUser);
+      setUser(gitLabUserToUnified(loggedUser));
       await loadAccounts();
       sessionStorage.removeItem('oauth_verifier');
       setActiveModalTab('repos');
@@ -172,7 +204,7 @@ export const RepoModal: React.FC = () => {
   };
 
   // Projects pagination state
-  const [projects, setProjects] = useState<GitLabProject[]>([]);
+  const [projects, setProjects] = useState<UnifiedRepo[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
@@ -187,7 +219,7 @@ export const RepoModal: React.FC = () => {
     // Listen for Rust emitted oauth-success event (0-click local loopback server)
     listen<GitLabUser>('oauth-success', (event) => {
       if (event.payload) {
-        setUser(event.payload);
+        setUser(gitLabUserToUnified(event.payload));
         setIsOauthLoading(false);
         setActiveModalTab('repos');
         fetchRepositories(1);
@@ -214,7 +246,7 @@ export const RepoModal: React.FC = () => {
                 clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
               })
                 .then((loggedUser) => {
-                  setUser(loggedUser);
+                  setUser(gitLabUserToUnified(loggedUser));
                   sessionStorage.removeItem('oauth_verifier');
                   setActiveModalTab('repos');
                   fetchRepositories(1);
@@ -241,13 +273,10 @@ export const RepoModal: React.FC = () => {
     };
   }, [serverUrl, setUser]);
 
-  if (!isRepoModalOpen) return null;
-
   const handlePatLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthenticating(true);
     setLoginError(null);
-
     try {
       const cleanUrl = serverUrl.trim().replace(/\/+$/, '') || 'https://gitlab.com';
       const loggedUser = await invoke<GitLabUser>('login_gitlab_pat', {
@@ -256,7 +285,7 @@ export const RepoModal: React.FC = () => {
         customCaPem: customCaPem || null,
       });
       localStorage.setItem('git_desktop_server_url', cleanUrl);
-      setUser(loggedUser);
+      setUser(gitLabUserToUnified(loggedUser));
       await loadAccounts();
       setActiveModalTab('repos');
       fetchRepositories(1);
@@ -264,6 +293,23 @@ export const RepoModal: React.FC = () => {
       setLoginError(err.message || 'Authentication failed. Please check token and URL.');
     } finally {
       setIsAuthenticating(false);
+    }
+  };
+
+  const handleGitHubPatLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsGithubAuthenticating(true);
+    setLoginError(null);
+    try {
+      const ghUser = await invoke<GitHubUser>('login_github_pat', { token: githubToken });
+      setUser(gitHubUserToUnified(ghUser));
+      await loadAccounts();
+      setActiveModalTab('repos');
+      fetchRepositories(1);
+    } catch (err: any) {
+      setLoginError(err.message || 'GitHub authentication failed. Check token scopes (repo, read:user).');
+    } finally {
+      setIsGithubAuthenticating(false);
     }
   };
 
@@ -314,9 +360,10 @@ export const RepoModal: React.FC = () => {
     setIsLoadingProjects(true);
     setFetchError(null);
     try {
-      const result = await invoke<PagedResult<GitLabProject>>('fetch_user_repositories', {
+      const result = await invoke<PagedResult<UnifiedRepo>>('fetch_user_repositories', {
         serverUrl: user?.server_url || serverUrl,
         page,
+        provider: user?.provider || null,
       });
       if (result && Array.isArray(result.items)) {
         setProjects(result.items);
@@ -335,7 +382,7 @@ export const RepoModal: React.FC = () => {
     }
   };
 
-  const handleCloneProject = async (project: GitLabProject) => {
+  const handleCloneProject = async (project: UnifiedRepo) => {
     try {
       const destination = await invoke<string | null>('select_folder_cmd');
 
@@ -359,6 +406,8 @@ export const RepoModal: React.FC = () => {
     }
   };
 
+  if (!isRepoModalOpen) return null;
+
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
       <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
@@ -369,7 +418,7 @@ export const RepoModal: React.FC = () => {
               <FolderGit2 className="w-4 h-4 text-gitlab-orange" />
             </div>
             <h2 className="text-sm font-bold text-text-primary">
-              GitLab Integration & Repositories
+              Account Services &amp; Repositories
             </h2>
           </div>
           <button
@@ -426,7 +475,7 @@ export const RepoModal: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-                    Saved GitLab Accounts
+                    Saved Accounts
                   </h3>
                   <p className="text-[11px] text-text-muted mt-0.5">
                     Switch between accounts to use their identity for commits and pushes.
@@ -444,12 +493,12 @@ export const RepoModal: React.FC = () => {
               {!(accounts && accounts.length > 0) ? (
                 <div className="py-8 text-center text-xs text-text-muted space-y-3 bg-base-2/50 border border-border rounded-lg p-6">
                   <User className="w-10 h-10 text-gitlab-orange/60 mx-auto" />
-                  <p>No saved GitLab accounts yet.</p>
+                  <p>No saved accounts yet.</p>
                   <button
                     onClick={() => setActiveModalTab('login')}
                     className="px-4 py-2 bg-gitlab-orange hover:bg-orange-600 text-white rounded text-xs font-semibold transition"
                   >
-                    Sign In to GitLab
+                    Add an Account
                   </button>
                 </div>
               ) : (
@@ -485,6 +534,18 @@ export const RepoModal: React.FC = () => {
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs font-bold text-text-primary truncate">{acctName}</span>
+                                {/* Provider badge */}
+                                {acct.provider === 'github' ? (
+                                  <span className="px-1.5 py-0.5 bg-white/10 text-white text-[9px] font-bold border border-white/20 rounded flex items-center gap-1">
+                                    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                                    GitHub
+                                  </span>
+                                ) : (
+                                  <span className="px-1.5 py-0.5 bg-[#FC6D26]/15 text-[#FC6D26] text-[9px] font-bold border border-[#FC6D26]/30 rounded flex items-center gap-1">
+                                    <svg className="w-2.5 h-2.5" viewBox="0 0 25 24" fill="currentColor"><path d="M24.507 9.5l-.034-.09L21.082.925a.896.896 0 00-1.694.091l-2.29 7.01H7.825L5.535 1.016a.896.896 0 00-1.694-.091L.451 9.41l-.035.09a6.25 6.25 0 002.083 7.21l.012.01.03.022 5.16 3.867 2.557 1.935 1.557 1.18a1.035 1.035 0 001.25 0l1.557-1.18 2.557-1.935 5.19-3.89.014-.01A6.25 6.25 0 0024.507 9.5z"/></svg>
+                                    GitLab
+                                  </span>
+                                )}
                                 {isActive && (
                                   <span className="px-2 py-0.5 bg-gitlab-teal/20 text-gitlab-teal text-[10px] font-semibold border border-gitlab-teal/40 rounded-full flex items-center gap-1">
                                     <Check className="w-2.5 h-2.5" /> Active
@@ -602,7 +663,16 @@ export const RepoModal: React.FC = () => {
                       </div>
                     )}
                     <div className="space-y-1">
-                      <h3 className="text-base font-bold text-text-primary">{user.name}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-bold text-text-primary">{user.name}</h3>
+                        <span className={`px-1.5 py-0.5 text-[9px] font-bold border rounded ${
+                          user.provider === 'github'
+                            ? 'bg-white/10 text-white border-white/20'
+                            : 'bg-[#FC6D26]/15 text-[#FC6D26] border-[#FC6D26]/30'
+                        }`}>
+                          {user.provider === 'github' ? 'GitHub' : 'GitLab'}
+                        </span>
+                      </div>
                       <p className="text-xs text-text-muted font-mono">@{user.username}</p>
                       {user.email && <p className="text-xs text-text-muted">{user.email}</p>}
                     </div>
@@ -623,7 +693,7 @@ export const RepoModal: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                /* Login Section */
+                /* Login Section — provider selector */
                 <div className="space-y-5 max-w-md mx-auto">
                   {loginError && (
                     <div className="p-3 bg-red-950/50 border border-red-800/60 rounded text-xs text-red-300 flex items-start gap-2">
@@ -632,114 +702,189 @@ export const RepoModal: React.FC = () => {
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-xs font-semibold text-text-primary mb-1">
-                      GitLab Instance URL
-                    </label>
-                    <div className="relative">
-                      <Globe className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
-                      <input
-                        type="url"
-                        required
-                        value={serverUrl}
-                        onChange={(e) => setServerUrl(e.target.value)}
-                        placeholder="https://gitlab.com or https://gitlab.mycompany.com"
-                        className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
-                      />
-                    </div>
+                  {/* Provider Selector */}
+                  <div className="flex rounded-lg border border-border overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setLoginProvider('gitlab'); setLoginError(null); }}
+                      className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 transition ${
+                        loginProvider === 'gitlab'
+                          ? 'bg-[#FC6D26] text-white'
+                          : 'bg-base-2 text-text-muted hover:text-text-primary'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 25 24" fill="currentColor"><path d="M24.507 9.5l-.034-.09L21.082.925a.896.896 0 00-1.694.091l-2.29 7.01H7.825L5.535 1.016a.896.896 0 00-1.694-.091L.451 9.41l-.035.09a6.25 6.25 0 002.083 7.21l.012.01.03.022 5.16 3.867 2.557 1.935 1.557 1.18a1.035 1.035 0 001.25 0l1.557-1.18 2.557-1.935 5.19-3.89.014-.01A6.25 6.25 0 0024.507 9.5z"/></svg>
+                      GitLab
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setLoginProvider('github'); setLoginError(null); }}
+                      className={`flex-1 py-2.5 text-xs font-bold flex items-center justify-center gap-2 transition ${
+                        loginProvider === 'github'
+                          ? 'bg-gray-800 text-white border-l border-white/10'
+                          : 'bg-base-2 text-text-muted hover:text-text-primary border-l border-border'
+                      }`}
+                    >
+                      <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                      GitHub
+                    </button>
                   </div>
 
-                  {/* GitLab Orange Branded OAuth Button */}
-                  <button
-                    type="button"
-                    onClick={handleOAuthLogin}
-                    disabled={isOauthLoading}
-                    className="w-full flex items-center justify-center gap-2 bg-[#FC6D26] hover:bg-[#e2591c] disabled:bg-[#FC6D26]/50 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-md transition shadow-md text-xs"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    {isOauthLoading ? 'Opening browser for GitLab sign in...' : 'Sign in with GitLab (Browser PKCE)'}
-                  </button>
-
-                  {isOauthLoading && (
-                    <div className="p-3 bg-base-2 border border-border rounded-md space-y-2">
-                      <p className="text-[11px] text-text-muted">
-                        Waiting for browser authorization. If your browser redirected to a <span className="font-mono text-gitlab-orange">gitlab-desktop://...</span> page, paste the URL or authorization code below:
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Paste authorization code or callback URL..."
-                          value={manualCode}
-                          onChange={(e) => setManualCode(e.target.value)}
-                          className="flex-1 px-2.5 py-1 bg-base-0 border border-border rounded text-xs text-text-primary font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleManualCodeSubmit}
-                          className="px-3 py-1 bg-gitlab-teal hover:bg-teal-700 text-white rounded text-xs font-medium"
-                        >
-                          Submit
-                        </button>
+                  {loginProvider === 'gitlab' && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-semibold text-text-primary mb-1">
+                          GitLab Instance URL
+                        </label>
+                        <div className="relative">
+                          <Globe className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
+                          <input
+                            type="url"
+                            required
+                            value={serverUrl}
+                            onChange={(e) => setServerUrl(e.target.value)}
+                            placeholder="https://gitlab.com or https://gitlab.mycompany.com"
+                            className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
 
-                  <div className="relative flex py-1 items-center">
-                    <div className="flex-grow border-t border-border"></div>
-                    <span className="flex-shrink mx-3 text-[11px] text-text-muted uppercase tracking-wider font-semibold">Or use Personal Access Token</span>
-                    <div className="flex-grow border-t border-border"></div>
-                  </div>
-
-                  {/* PAT Form */}
-                  <form onSubmit={handlePatLogin} className="space-y-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-text-primary mb-1">
-                        Personal Access Token (PAT)
-                      </label>
-                      <div className="relative">
-                        <Key className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
-                        <input
-                          type="password"
-                          required
-                          value={patToken}
-                          onChange={(e) => setPatToken(e.target.value)}
-                          placeholder="glpat-..."
-                          className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange font-mono"
-                        />
-                      </div>
-                      <p className="text-[11px] text-text-muted mt-1">
-                        Requires <span className="font-mono text-text-primary">api</span> and <span className="font-mono text-text-primary">read_user</span> scopes.
-                      </p>
-                    </div>
-
-                    <div>
+                      {/* GitLab OAuth Button */}
                       <button
                         type="button"
-                        onClick={() => setShowCustomCa(!showCustomCa)}
-                        className="text-xs text-gitlab-orange hover:underline flex items-center gap-1 font-medium"
+                        onClick={handleOAuthLogin}
+                        disabled={isOauthLoading}
+                        className="w-full flex items-center justify-center gap-2 bg-[#FC6D26] hover:bg-[#e2591c] disabled:bg-[#FC6D26]/50 disabled:cursor-not-allowed text-white font-medium py-2.5 rounded-md transition shadow-md text-xs"
                       >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        {showCustomCa ? 'Hide Custom CA Certificate' : 'Self-hosted? Add Custom CA Certificate (PEM)'}
+                        <ExternalLink className="w-4 h-4" />
+                        {isOauthLoading ? 'Opening browser for GitLab sign in...' : 'Sign in with GitLab (Browser PKCE)'}
                       </button>
-                      {showCustomCa && (
-                        <textarea
-                          rows={3}
-                          placeholder="-----BEGIN CERTIFICATE-----"
-                          value={customCaPem}
-                          onChange={(e) => setCustomCaPem(e.target.value)}
-                          className="w-full mt-2 p-2 bg-base-0 border border-border rounded text-[11px] font-mono text-text-primary focus:outline-none focus:border-gitlab-orange resize-none"
-                        />
-                      )}
-                    </div>
 
-                    <button
-                      type="submit"
-                      disabled={isAuthenticating}
-                      className="w-full py-2 bg-base-2 hover:bg-base-3 disabled:opacity-50 disabled:cursor-not-allowed border border-border text-text-primary font-semibold rounded text-xs transition shadow-sm"
-                    >
-                      {isAuthenticating ? 'Validating Token...' : 'Sign In with Personal Access Token'}
-                    </button>
-                  </form>
+                      {isOauthLoading && (
+                        <div className="p-3 bg-base-2 border border-border rounded-md space-y-2">
+                          <p className="text-[11px] text-text-muted">
+                            Waiting for browser authorization. If your browser redirected to a <span className="font-mono text-gitlab-orange">gitlab-desktop://...</span> page, paste the URL or authorization code below:
+                          </p>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Paste authorization code or callback URL..."
+                              value={manualCode}
+                              onChange={(e) => setManualCode(e.target.value)}
+                              className="flex-1 px-2.5 py-1 bg-base-0 border border-border rounded text-xs text-text-primary font-mono"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleManualCodeSubmit}
+                              className="px-3 py-1 bg-gitlab-teal hover:bg-teal-700 text-white rounded text-xs font-medium"
+                            >
+                              Submit
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="relative flex py-1 items-center">
+                        <div className="flex-grow border-t border-border"></div>
+                        <span className="flex-shrink mx-3 text-[11px] text-text-muted uppercase tracking-wider font-semibold">Or use Personal Access Token</span>
+                        <div className="flex-grow border-t border-border"></div>
+                      </div>
+
+                      {/* GitLab PAT Form */}
+                      <form onSubmit={handlePatLogin} className="space-y-3">
+                        <div>
+                          <label className="block text-xs font-semibold text-text-primary mb-1">
+                            Personal Access Token (PAT)
+                          </label>
+                          <div className="relative">
+                            <Key className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
+                            <input
+                              type="password"
+                              required
+                              value={patToken}
+                              onChange={(e) => setPatToken(e.target.value)}
+                              placeholder="glpat-..."
+                              className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange font-mono"
+                            />
+                          </div>
+                          <p className="text-[11px] text-text-muted mt-1">
+                            Requires <span className="font-mono text-text-primary">api</span> and <span className="font-mono text-text-primary">read_user</span> scopes.
+                          </p>
+                        </div>
+
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => setShowCustomCa(!showCustomCa)}
+                            className="text-xs text-gitlab-orange hover:underline flex items-center gap-1 font-medium"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            {showCustomCa ? 'Hide Custom CA Certificate' : 'Self-hosted? Add Custom CA Certificate (PEM)'}
+                          </button>
+                          {showCustomCa && (
+                            <textarea
+                              rows={3}
+                              placeholder="-----BEGIN CERTIFICATE-----"
+                              value={customCaPem}
+                              onChange={(e) => setCustomCaPem(e.target.value)}
+                              className="w-full mt-2 p-2 bg-base-0 border border-border rounded text-[11px] font-mono text-text-primary focus:outline-none focus:border-gitlab-orange resize-none"
+                            />
+                          )}
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isAuthenticating}
+                          className="w-full py-2 bg-base-2 hover:bg-base-3 disabled:opacity-50 disabled:cursor-not-allowed border border-border text-text-primary font-semibold rounded text-xs transition shadow-sm"
+                        >
+                          {isAuthenticating ? 'Validating Token...' : 'Sign In with Personal Access Token'}
+                        </button>
+                      </form>
+                    </>
+                  )}
+
+                  {loginProvider === 'github' && (
+                    <form onSubmit={handleGitHubPatLogin} className="space-y-4">
+                      <div className="p-3 bg-base-2 border border-border rounded-md text-[11px] text-text-muted space-y-1">
+                        <p className="font-semibold text-text-primary">How to get a GitHub Personal Access Token:</p>
+                        <ol className="list-decimal list-inside space-y-1 pl-1">
+                          <li>Go to <span className="font-mono text-blue-400">github.com → Settings → Developer settings → Personal access tokens</span></li>
+                          <li>Click <span className="font-mono">Generate new token (classic)</span></li>
+                          <li>Select scopes: <span className="font-mono text-text-primary">repo</span>, <span className="font-mono text-text-primary">read:user</span></li>
+                          <li>Copy and paste the token below</li>
+                        </ol>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold text-text-primary mb-1">
+                          GitHub Personal Access Token
+                        </label>
+                        <div className="relative">
+                          <Key className="w-4 h-4 text-text-muted absolute left-3 top-2.5" />
+                          <input
+                            type="password"
+                            required
+                            value={githubToken}
+                            onChange={(e) => setGithubToken(e.target.value)}
+                            placeholder="ghp_..."
+                            className="w-full pl-9 pr-3 py-2 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-blue-500 font-mono"
+                          />
+                        </div>
+                        <p className="text-[11px] text-text-muted mt-1">
+                          Requires <span className="font-mono text-text-primary">repo</span> and <span className="font-mono text-text-primary">read:user</span> scopes.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isGithubAuthenticating}
+                        className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 text-white font-semibold rounded text-xs transition shadow-sm flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                        {isGithubAuthenticating ? 'Connecting to GitHub...' : 'Connect GitHub Account'}
+                      </button>
+                    </form>
+                  )}
                 </div>
               )}
             </div>
@@ -755,7 +900,7 @@ export const RepoModal: React.FC = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-text-primary uppercase tracking-wider">
-                      Your GitLab Repositories (Page {currentPage} of {totalPages})
+                      {user?.provider === 'github' ? 'GitHub' : 'GitLab'} Repositories (Page {currentPage} of {totalPages})
                     </span>
                     <div className="flex items-center gap-2">
                       <button
@@ -787,11 +932,11 @@ export const RepoModal: React.FC = () => {
                     </div>
                   ) : isLoadingProjects ? (
                     <div className="py-8 text-center text-xs text-text-muted animate-pulse">
-                      Fetching projects from GitLab...
+                      Fetching repositories from {user?.provider === 'github' ? 'GitHub' : 'GitLab'}...
                     </div>
                   ) : (projects || []).length === 0 ? (
                     <div className="py-8 text-center text-xs text-text-muted space-y-2">
-                      <p>No remote projects found on {user?.server_url || 'GitLab'}.</p>
+                      <p>No remote repositories found on {user?.server_url || (user?.provider === 'github' ? 'GitHub' : 'GitLab')}.</p>
                       <button
                         onClick={() => fetchRepositories(1)}
                         className="px-3 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-primary transition"

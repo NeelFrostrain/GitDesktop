@@ -1,3 +1,5 @@
+export type Provider = 'gitlab' | 'github';
+
 export interface GitLabUser {
   id: number;
   name: string;
@@ -6,6 +8,31 @@ export interface GitLabUser {
   avatar_url: string | null;
   web_url: string;
   server_url: string;
+}
+
+export interface GitHubUser {
+  id: number;
+  login: string;
+  name: string | null;
+  email: string | null;
+  avatar_url: string | null;
+  html_url: string;
+  server_url: string;
+}
+
+/** Unified user shape used in the store — covers both GitLab and GitHub */
+export interface UnifiedUser {
+  id: number;
+  /** Display name */
+  name: string;
+  /** Username / login handle */
+  username: string;
+  email: string | null;
+  avatar_url: string | null;
+  /** Profile URL */
+  web_url: string;
+  server_url: string;
+  provider: Provider;
 }
 
 export interface SavedAccount {
@@ -17,8 +44,24 @@ export interface SavedAccount {
   email: string | null;
   avatar_url: string | null;
   is_active: boolean;
+  provider: Provider;
 }
 
+/** Unified repository shape from backend — works for both GitLab and GitHub */
+export interface UnifiedRepo {
+  id: number;
+  name: string;
+  path_with_namespace: string;
+  http_url_to_repo: string;
+  ssh_url_to_repo: string;
+  web_url: string;
+  default_branch: string | null;
+  star_count: number;
+  visibility: string;
+  provider: Provider;
+}
+
+/** Legacy alias for GitLab-only code paths that still use GitLabProject */
 export interface GitLabProject {
   id: number;
   name: string;
@@ -47,4 +90,31 @@ export interface MergeRequest {
   target_branch: string;
   web_url: string;
   created_at: string;
+}
+
+// Helpers
+export function gitLabUserToUnified(user: GitLabUser): UnifiedUser {
+  return {
+    id: user.id,
+    name: user.name,
+    username: user.username,
+    email: user.email,
+    avatar_url: user.avatar_url,
+    web_url: user.web_url,
+    server_url: user.server_url,
+    provider: 'gitlab',
+  };
+}
+
+export function gitHubUserToUnified(user: GitHubUser): UnifiedUser {
+  return {
+    id: user.id,
+    name: user.name ?? user.login,
+    username: user.login,
+    email: user.email,
+    avatar_url: user.avatar_url,
+    web_url: user.html_url,
+    server_url: user.server_url,
+    provider: 'github',
+  };
 }

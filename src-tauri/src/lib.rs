@@ -58,6 +58,8 @@ pub fn run() {
             remove_account_cmd,
             update_account_info_cmd,
             set_repo_account_cmd,
+            login_github_pat,
+            get_github_user,
             log_action_cmd,
         ])
         .run(tauri::generate_context!())

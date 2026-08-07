@@ -8,6 +8,10 @@ const SERVICE_NAME: &str = "gitlab-desktop";
 const TOKEN_KEY: &str = "gitlab_token";
 const SERVER_URL_KEY: &str = "gitlab_server_url";
 
+fn default_provider() -> String {
+    "gitlab".to_string()
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SavedAccount {
     pub id: String,
@@ -18,6 +22,8 @@ pub struct SavedAccount {
     pub email: Option<String>,
     pub avatar_url: Option<String>,
     pub is_active: bool,
+    #[serde(default = "default_provider")]
+    pub provider: String, // "gitlab" | "github"
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -83,6 +89,7 @@ pub fn list_accounts() -> Vec<SavedAccount> {
                     email: None,
                     avatar_url: None,
                     is_active: true,
+                    provider: "gitlab".to_string(),
                 };
                 store.accounts.push(acct);
                 write_local_store(&store);

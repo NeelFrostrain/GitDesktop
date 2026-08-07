@@ -7,7 +7,6 @@ import {
   Plus,
   FolderOpen,
   PanelLeftClose,
-  FileText,
   Clock,
   CheckSquare as CheckSquareIcon,
   Square,
@@ -15,7 +14,9 @@ import {
   FileX,
   FileDiff,
   AlertTriangle,
-  GitCommit
+  GitCommit,
+  User,
+  Filter
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
@@ -45,15 +46,17 @@ export const Sidebar: React.FC = () => {
     setIsRepoModalOpen,
     setActiveModalTab,
     setError,
+    user,
   } = useGitStore();
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [isCommitting, setIsCommitting] = useState(false);
+  const [fileFilter, setFileFilter] = useState('');
 
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     const saved = localStorage.getItem('gitlab_sidebar_width');
-    return saved ? parseInt(saved, 10) : 260;
+    return saved ? parseInt(saved, 10) : 280;
   });
   const [isResizing, setIsResizing] = useState(false);
 
@@ -62,7 +65,7 @@ export const Sidebar: React.FC = () => {
     setIsResizing(true);
 
     const onMouseMove = (moveEvent: MouseEvent) => {
-      const newWidth = Math.max(160, Math.min(500, moveEvent.clientX));
+      const newWidth = Math.max(180, Math.min(500, moveEvent.clientX));
       setSidebarWidth(newWidth);
       localStorage.setItem('gitlab_sidebar_width', newWidth.toString());
     };
@@ -139,35 +142,29 @@ export const Sidebar: React.FC = () => {
     const isAllStaged = allFilesCount > 0 && stagedFiles.length === allFilesCount;
     const canCommit = Boolean(commitSummary.trim() && stagedFiles.length > 0 && !isCommitting);
 
+    const filteredFileList = (status?.files || []).filter((f) => {
+      if (!fileFilter.trim()) return true;
+      return f.path.toLowerCase().includes(fileFilter.toLowerCase().trim());
+    });
+
     return (
       <aside
         style={{ width: sidebarWidth }}
         className="bg-base-0 border-r border-border flex flex-col h-full select-none text-[13px] z-20 relative flex-shrink-0"
       >
-        {/* Top Header */}
-        <div className="p-3 border-b border-border flex items-center justify-between">
-          <button
-            onClick={() => setCurrentNavView('home')}
-            className="text-[11px] text-text-muted hover:text-text-primary flex items-center gap-1 font-medium"
-          >
-            ← Repository Overview
-          </button>
-        </div>
-
-        {/* Tab Switcher */}
+        {/* GitHub Desktop Style Top Navigation Tabs */}
         <div className="flex border-b border-border bg-base-1">
           <button
             onClick={() => setActiveTab('changes')}
-            className={`flex-1 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+            className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition ${
               activeTab === 'changes'
                 ? 'border-gitlab-orange text-text-primary bg-base-0'
                 : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            Changes
+            <span>Changes</span>
             {allFilesCount > 0 && (
-              <span className="px-1.5 py-0.2 bg-base-3 text-text-secondary rounded-full text-[10px]">
+              <span className="px-1.5 py-0.2 bg-base-3 text-text-secondary rounded-full text-[10px] font-mono">
                 {allFilesCount}
               </span>
             )}
@@ -181,51 +178,68 @@ export const Sidebar: React.FC = () => {
                   .catch(() => {});
               }
             }}
-            className={`flex-1 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 border-b-2 transition ${
+            className={`flex-1 py-2 text-xs font-bold flex items-center justify-center gap-1.5 border-b-2 transition ${
               activeTab === 'history'
                 ? 'border-gitlab-orange text-text-primary bg-base-0'
                 : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >
-            <Clock className="w-3.5 h-3.5" />
-            History
+            <span>History</span>
           </button>
         </div>
 
         {/* Changes View */}
         {activeTab === 'changes' && (
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="px-3 py-2 bg-base-1 border-b border-border flex items-center justify-between text-xs text-text-muted">
-              <button
-                onClick={() => setAllStaged(!isAllStaged)}
-                className="flex items-center gap-2 hover:text-white"
-              >
-                {isAllStaged ? (
-                  <CheckSquareIcon className="w-4 h-4 text-gitlab-teal" />
-                ) : (
-                  <Square className="w-4 h-4 text-text-muted" />
-                )}
-                <span className="font-medium">{stagedFiles.length} of {allFilesCount} changed files</span>
-              </button>
+            {/* Filter Search Input (GitHub Desktop style) */}
+            <div className="p-2 border-b border-border bg-base-1 space-y-1.5">
+              <div className="relative">
+                <Filter className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Filter"
+                  value={fileFilter}
+                  onChange={(e) => setFileFilter(e.target.value)}
+                  className="w-full pl-8 pr-3 py-1 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
+                />
+              </div>
+
+              {/* Select All Checkbox Header */}
+              <div className="px-1 pt-1 flex items-center justify-between text-xs text-text-muted">
+                <button
+                  onClick={() => setAllStaged(!isAllStaged)}
+                  className="flex items-center gap-2 hover:text-white font-medium"
+                >
+                  {isAllStaged ? (
+                    <CheckSquareIcon className="w-4 h-4 text-gitlab-teal" />
+                  ) : (
+                    <Square className="w-4 h-4 text-text-muted" />
+                  )}
+                  <span>{stagedFiles.length} changed files</span>
+                </button>
+              </div>
             </div>
 
+            {/* Changed Files List */}
             <div className="flex-1 overflow-y-auto p-1 space-y-0.5">
-              {status?.files.length === 0 ? (
+              {filteredFileList.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-text-muted text-xs p-4 text-center">
                   <GitCommit className="w-8 h-8 mb-2 opacity-30 text-gitlab-orange" />
-                  No uncommitted changes in this repository.
+                  No changed files matching filter.
                 </div>
               ) : (
-                status?.files.map((file) => {
+                filteredFileList.map((file) => {
                   const isSelected = selectedFile === file.path;
                   const isStaged = stagedFiles.includes(file.path);
+                  const isLfs = file.path.endsWith('.uasset') || file.path.endsWith('.png') || file.path.endsWith('.jpg') || file.path.endsWith('.exe') || file.path.endsWith('.bin');
+
                   return (
                     <div
                       key={file.path}
                       onClick={() => setSelectedFile(file.path)}
                       className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer group transition ${
                         isSelected
-                          ? 'bg-base-3 border border-border-strong text-text-primary'
+                          ? 'bg-base-3 border border-border-strong text-text-primary font-semibold'
                           : 'hover:bg-base-2 text-text-secondary'
                       }`}
                     >
@@ -234,7 +248,7 @@ export const Sidebar: React.FC = () => {
                           e.stopPropagation();
                           toggleStageFile(file.path);
                         }}
-                        className="text-text-muted hover:text-white"
+                        className="text-text-muted hover:text-white flex-shrink-0"
                       >
                         {isStaged ? (
                           <CheckSquareIcon className="w-4 h-4 text-gitlab-teal" />
@@ -246,39 +260,55 @@ export const Sidebar: React.FC = () => {
                       <span className="truncate flex-1 font-mono text-[11px]">
                         {file.path}
                       </span>
+                      {isLfs && (
+                        <div className="w-2.5 h-2.5 border border-amber-400 bg-amber-400/20 rounded-xs flex-shrink-0" title="Binary / LFS File" />
+                      )}
                     </div>
                   );
                 })
               )}
             </div>
 
-            {/* Commit Box */}
+            {/* GitHub Desktop Commit Box at Bottom */}
             <div className="p-3 border-t border-border bg-base-1 space-y-2 flex-shrink-0">
-              <input
-                type="text"
-                placeholder="Commit summary (required)"
-                value={commitSummary}
-                onChange={(e) => setCommitSummary(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-gitlab-orange"
-              />
+              {/* Row 1: User Avatar & Summary Input */}
+              <div className="flex items-center gap-2">
+                {user?.avatar_url ? (
+                  <img src={user.avatar_url} alt="User Avatar" className="w-7 h-7 rounded-full border border-border flex-shrink-0" />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-gitlab-orange/20 border border-gitlab-orange flex items-center justify-center flex-shrink-0">
+                    <User className="w-3.5 h-3.5 text-gitlab-orange" />
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="Summary (required)"
+                  value={commitSummary}
+                  onChange={(e) => setCommitSummary(e.target.value)}
+                  className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-gitlab-orange font-sans"
+                />
+              </div>
+
+              {/* Row 2: Description Textarea */}
               <textarea
-                placeholder="Description (optional)"
+                placeholder="Description"
                 rows={2}
                 value={commitDescription}
                 onChange={(e) => setCommitDescription(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-gitlab-orange resize-none"
+                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-gitlab-orange resize-none font-sans"
               />
+
+              {/* Row 3: Full-width Commit Button */}
               <button
                 onClick={handleCommit}
                 disabled={!canCommit}
-                className={`w-full py-1.5 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm ${
+                className={`w-full py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm ${
                   canCommit
-                    ? 'bg-gitlab-teal hover:bg-teal-700 text-white'
-                    : 'bg-base-3 text-text-faint cursor-not-allowed'
+                    ? 'bg-blue-600 hover:bg-blue-500 text-white cursor-pointer'
+                    : 'bg-base-2 text-text-muted cursor-not-allowed border border-border'
                 }`}
               >
-                <GitCommit className="w-3.5 h-3.5" />
-                Commit to {status?.current_branch || 'main'}
+                Commit {stagedFiles.length > 0 ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''}` : ''} to {status?.current_branch || 'main'}
               </button>
             </div>
           </div>

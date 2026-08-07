@@ -658,38 +658,45 @@ export const DiffViewer: React.FC = () => {
     return (
       <div className="h-full flex flex-col">
         {/* Diff File Header Bar */}
-        <div className="h-10 bg-github-dark-header border-b border-github-dark-border px-4 flex items-center justify-between">
+        <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2 truncate">
-            <span className="font-mono text-xs text-github-dark-heading font-medium truncate">
+            <span className="font-mono text-xs text-text-primary font-medium truncate">
               {selectedFile}
             </span>
+            {selectedFile && (selectedFile.endsWith('.uasset') || selectedFile.endsWith('.png') || selectedFile.endsWith('.jpg') || selectedFile.endsWith('.exe')) && (
+              <span className="px-1.5 py-0.2 bg-amber-400/20 text-amber-400 border border-amber-400/40 rounded text-[9px] font-mono font-bold">
+                LFS
+              </span>
+            )}
             <CopyButton text={selectedFile} />
           </div>
-          <div className="flex items-center gap-1 bg-github-dark-sidebar border border-github-dark-border rounded p-0.5">
-            <button
-              onClick={() => setDiffViewMode('unified')}
-              className={`p-1 rounded text-xs flex items-center gap-1 ${
-                diffViewMode === 'unified'
-                  ? 'bg-github-dark-accent text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              title="Unified View"
-            >
-              <AlignJustify className="w-3.5 h-3.5" />
-              Unified
-            </button>
-            <button
-              onClick={() => setDiffViewMode('split')}
-              className={`p-1 rounded text-xs flex items-center gap-1 ${
-                diffViewMode === 'split'
-                  ? 'bg-github-dark-accent text-white'
-                  : 'text-gray-400 hover:text-white'
-              }`}
-              title="Split View"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              Split
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-base-2 border border-border rounded p-0.5">
+              <button
+                onClick={() => setDiffViewMode('unified')}
+                className={`p-1 rounded text-xs flex items-center gap-1 ${
+                  diffViewMode === 'unified'
+                    ? 'bg-gitlab-orange text-white font-semibold'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+                title="Unified View"
+              >
+                <AlignJustify className="w-3.5 h-3.5" />
+                Unified
+              </button>
+              <button
+                onClick={() => setDiffViewMode('split')}
+                className={`p-1 rounded text-xs flex items-center gap-1 ${
+                  diffViewMode === 'split'
+                    ? 'bg-gitlab-orange text-white font-semibold'
+                    : 'text-text-muted hover:text-text-primary'
+                }`}
+                title="Split View"
+              >
+                <Columns className="w-3.5 h-3.5" />
+                Split
+              </button>
+            </div>
           </div>
         </div>
 

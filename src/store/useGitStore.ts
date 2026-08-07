@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import { GitLabUser, SavedAccount } from '../types/gitlab';
+import { UnifiedUser, SavedAccount } from '../types/gitlab';
 import { RepoStatus, AppError } from '../types/git';
 import { useLogStore } from './useLogStore';
 
 export type NavView = 'home' | 'projects' | 'groups' | 'work-items' | 'merge-requests' | 'todos' | 'workspace';
 
-const getCachedUser = (): GitLabUser | null => {
+const getCachedUser = (): UnifiedUser | null => {
   try {
-    const cached = localStorage.getItem('cached_gitlab_user');
+    const cached = localStorage.getItem('cached_user');
     return cached ? JSON.parse(cached) : null;
   } catch {
     return null;
@@ -34,7 +34,7 @@ const getCachedRecentRepos = (): string[] => {
 export interface GitState {
   activeRepoPath: string | null;
   recentRepos: string[];
-  user: GitLabUser | null;
+  user: UnifiedUser | null;
   accounts: SavedAccount[];
   status: RepoStatus | null;
   selectedFile: string | null;
@@ -56,7 +56,7 @@ export interface GitState {
   setActiveRepoPath: (path: string | null) => void;
   addRecentRepo: (path: string) => void;
   removeRecentRepo: (path: string) => void;
-  setUser: (user: GitLabUser | null) => void;
+  setUser: (user: UnifiedUser | null) => void;
   setAccounts: (accounts: SavedAccount[]) => void;
   setStatus: (status: RepoStatus | null) => void;
   setSelectedFile: (file: string | null) => void;
@@ -153,12 +153,12 @@ export const useGitStore = create<GitState>((set, get) => ({
   setUser: (user) => {
     if (user) {
       try {
-        localStorage.setItem('cached_gitlab_user', JSON.stringify(user));
+        localStorage.setItem('cached_user', JSON.stringify(user));
       } catch {}
-      useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name})`);
+      useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name}) [${user.provider}]`);
     } else {
       try {
-        localStorage.removeItem('cached_gitlab_user');
+        localStorage.removeItem('cached_user');
       } catch {}
       useLogStore.getState().addLog('info', 'Auth', `User session logged out`);
     }

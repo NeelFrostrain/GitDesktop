@@ -20,7 +20,9 @@ import {
   LogOut,
   ExternalLink,
   Search,
-  Users
+  Users,
+  UserPlus,
+  Settings
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
@@ -32,7 +34,6 @@ export const Header: React.FC = () => {
     activeRepoPath,
     setActiveRepoPath,
     recentRepos,
-    removeRecentRepo,
     status,
     setStatus,
     user,
@@ -273,10 +274,13 @@ export const Header: React.FC = () => {
       return (
         <button
           onClick={handlePull}
-          className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-500 transition text-xs font-medium flex items-center gap-1.5 shadow-sm"
+          className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-base-2 text-left transition"
         >
-          <ArrowDown className="w-3.5 h-3.5" />
-          Pull {behind} commit{behind > 1 ? 's' : ''}
+          <ArrowDown className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-text-primary leading-none mb-0.5">Pull origin</span>
+            <span className="text-[10px] text-text-muted font-medium leading-tight">Pull {behind} commit{behind > 1 ? 's' : ''}</span>
+          </div>
         </button>
       );
     }
@@ -285,29 +289,32 @@ export const Header: React.FC = () => {
       return (
         <button
           onClick={handlePush}
-          className="px-3 py-1.5 bg-gitlab-teal text-white rounded hover:bg-teal-600 transition text-xs font-medium flex items-center gap-1.5 shadow-sm"
+          className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-base-2 text-left transition"
         >
-          <ArrowUp className="w-3.5 h-3.5" />
-          Push {ahead} commit{ahead > 1 ? 's' : ''}
+          <ArrowUp className="w-4 h-4 text-gitlab-teal flex-shrink-0" />
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-text-primary leading-none mb-0.5">Push origin</span>
+            <span className="text-[10px] text-text-muted font-medium leading-tight">Push {ahead} commit{ahead > 1 ? 's' : ''}</span>
+          </div>
         </button>
       );
     }
 
     return (
-      <div className="flex items-center gap-2">
-        <button
-          onClick={handleFetch}
-          className="px-3 py-1.5 bg-base-2 text-text-primary hover:bg-base-3 border border-border rounded transition text-xs font-medium flex items-center gap-1.5"
-        >
-          <RefreshCw className="w-3.5 h-3.5 text-gitlab-orange" />
-          Fetch origin
-        </button>
-        {lastFetchedTimestamp && (
-          <span className="text-[11px] text-text-muted font-normal hidden lg:inline">
-            {Math.floor((Date.now() - lastFetchedTimestamp) / 1000 / 60)}m ago
+      <button
+        onClick={handleFetch}
+        className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-base-2 text-left transition"
+      >
+        <RefreshCw className={`w-4 h-4 text-gitlab-orange flex-shrink-0 ${isFetching ? 'animate-spin' : ''}`} />
+        <div className="flex flex-col min-w-0">
+          <span className="text-xs font-bold text-text-primary leading-none mb-0.5">Fetch origin</span>
+          <span className="text-[10px] text-text-muted font-medium leading-tight">
+            {lastFetchedTimestamp
+              ? `${Math.floor((Date.now() - lastFetchedTimestamp) / 1000 / 60)}m ago`
+              : 'Never fetched'}
           </span>
-        )}
-      </div>
+        </div>
+      </button>
     );
   };
 
@@ -320,112 +327,159 @@ export const Header: React.FC = () => {
   });
 
   return (
-    <header className="h-12 bg-base-0 border-b border-border px-3 flex items-center justify-between select-none z-30 relative">
-      {/* Left: GitHub Desktop Repository & Branch Selector */}
-      <div className="flex items-center gap-2">
-        {/* Repository Dropdown */}
+    <header className="h-14 bg-base-0 border-b border-border px-3 flex items-center justify-between select-none z-30 relative">
+      {/* Left: GitHub Desktop 3-Segment Top Bar */}
+      <div className="flex items-center border border-border rounded-lg bg-base-1 overflow-hidden divide-x divide-border">
+        {/* Segment 1: Current repository */}
         <div className="relative">
           <button
             onClick={() => setIsRepoDropdownOpen(!isRepoDropdownOpen)}
-            className="flex items-center gap-2 px-2.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-primary font-medium transition"
+            className="flex items-center gap-2.5 px-3 py-1.5 hover:bg-base-2 text-left transition"
           >
-            <FolderGit2 className="w-3.5 h-3.5 text-gitlab-orange" />
-            <span className="max-w-[150px] truncate">{repoName}</span>
-            <ChevronDown className="w-3 h-3 text-text-muted" />
+            <FolderGit2 className="w-4 h-4 text-gitlab-orange flex-shrink-0" />
+            <div className="flex flex-col min-w-0 max-w-[170px]">
+              <span className="text-[10px] text-text-muted font-medium leading-none mb-0.5">Current repository</span>
+              <span className="text-xs font-bold text-text-primary truncate leading-tight">{repoName}</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-text-muted flex-shrink-0 ml-1" />
           </button>
 
+          {/* GitHub Desktop Repository Switcher Popup */}
           {isRepoDropdownOpen && (
-            <div className="absolute left-0 top-full mt-1.5 w-72 bg-base-2 border border-border rounded-md shadow-2xl py-1 z-50">
-              <div className="px-3 py-1.5 text-[10px] font-semibold text-text-faint uppercase tracking-wider flex items-center justify-between border-b border-border">
-                <span>Recent Repositories</span>
-                <span className="text-[9px] text-gitlab-orange">{recentRepos.length} saved</span>
+            <div className="absolute left-0 top-full mt-1.5 w-80 bg-base-2 border border-border rounded-lg shadow-2xl p-2 z-50 space-y-2">
+              {/* Top Row: Filter input & Add dropdown button */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="Filter"
+                    value={branchSearch}
+                    onChange={(e) => setBranchSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange font-sans"
+                  />
+                </div>
+
+                <div className="relative">
+                  <button
+                    onClick={() => {
+                      setIsRepoDropdownOpen(false);
+                      setActiveModalTab('repos');
+                      setIsRepoModalOpen(true);
+                    }}
+                    className="px-2.5 py-1 bg-base-3 hover:bg-base-1 border border-border rounded text-xs text-text-primary font-semibold flex items-center gap-1 transition"
+                  >
+                    <span>Add</span>
+                    <ChevronDown className="w-3 h-3 text-text-muted" />
+                  </button>
+                </div>
               </div>
 
-              <div className="max-h-52 overflow-y-auto border-b border-border space-y-0.5 px-1 py-1">
-                {recentRepos.length === 0 ? (
-                  <div className="px-3 py-3 text-xs text-text-muted italic text-center">
-                    No saved repositories yet.
+              {/* Sections: Recent, Account User, Other */}
+              <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                {/* Recent Section */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2">
+                    Recent
                   </div>
-                ) : (
-                  recentRepos.map((rPath) => {
+                  {recentRepos.slice(0, 3).map((rPath) => {
                     const rName = rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
                     const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === rPath.replace(/\\/g, '/');
 
                     return (
-                      <div
-                        key={rPath}
-                        className={`w-full px-2 py-1.5 rounded text-xs flex items-center justify-between group transition ${
+                      <button
+                        key={`recent_${rPath}`}
+                        onClick={() => {
+                          setActiveRepoPath(rPath);
+                          setIsRepoDropdownOpen(false);
+                        }}
+                        className={`w-full px-2 py-1.5 rounded text-xs flex items-center justify-between transition ${
                           isActive
-                            ? 'bg-gitlab-orange/20 text-gitlab-orange font-semibold'
-                            : 'text-text-primary hover:bg-base-3'
+                            ? 'bg-base-3 text-text-primary font-semibold'
+                            : 'hover:bg-base-3/60 text-text-secondary'
                         }`}
                       >
-                        <button
-                          onClick={() => {
-                            setActiveRepoPath(rPath);
-                            setIsRepoDropdownOpen(false);
-                          }}
-                          className="flex-1 text-left truncate flex items-center gap-2"
-                        >
-                          <FolderGit2 className={`w-3.5 h-3.5 flex-shrink-0 ${isActive ? 'text-gitlab-orange' : 'text-text-muted'}`} />
-                          <div className="truncate min-w-0">
-                            <div className="truncate text-xs">{rName}</div>
-                            <div className="text-[10px] text-text-faint font-mono truncate">{rPath}</div>
-                          </div>
-                        </button>
-                        <div className="flex items-center gap-1">
-                          {isActive && <Check className="w-3.5 h-3.5 text-gitlab-orange flex-shrink-0 ml-1" />}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeRecentRepo(rPath);
-                            }}
-                            className="p-1 text-text-faint hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                            title="Remove from recent list"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
+                        <div className="flex items-center gap-2 truncate">
+                          <Lock className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+                          <span className="truncate">{rName}</span>
                         </div>
-                      </div>
+                        {isActive && <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                      </button>
                     );
-                  })
-                )}
+                  })}
+                </div>
+
+                {/* Account Section */}
+                <div className="space-y-1">
+                  <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider px-2">
+                    {user?.username || 'Local Repositories'}
+                  </div>
+                  {recentRepos.map((rPath) => {
+                    const rName = rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
+                    const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === rPath.replace(/\\/g, '/');
+
+                    return (
+                      <button
+                        key={`acct_${rPath}`}
+                        onClick={() => {
+                          setActiveRepoPath(rPath);
+                          setIsRepoDropdownOpen(false);
+                        }}
+                        className={`w-full px-2 py-1.5 rounded text-xs flex items-center justify-between transition ${
+                          isActive
+                            ? 'bg-base-3 text-text-primary font-semibold'
+                            : 'hover:bg-base-3/60 text-text-secondary'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <Lock className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+                          <span className="truncate">{rName}</span>
+                        </div>
+                        {isActive && <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
-              <button
-                onClick={handleOpenLocalRepo}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
-              >
-                <FolderGit2 className="w-3.5 h-3.5 text-gitlab-teal" />
-                Add Existing Local Repository...
-              </button>
-              <button
-                onClick={() => {
-                  setIsRepoDropdownOpen(false);
-                  setActiveModalTab('repos');
-                  setIsRepoModalOpen(true);
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5 text-gitlab-orange" />
-                Clone Repository...
-              </button>
+              {/* Footer actions */}
+              <div className="pt-2 border-t border-border flex items-center justify-between text-[11px]">
+                <button
+                  onClick={handleOpenLocalRepo}
+                  className="text-gitlab-teal hover:underline flex items-center gap-1 font-medium"
+                >
+                  <Plus className="w-3 h-3" /> Add Local Folder
+                </button>
+                <button
+                  onClick={() => {
+                    setIsRepoDropdownOpen(false);
+                    setActiveModalTab('repos');
+                    setIsRepoModalOpen(true);
+                  }}
+                  className="text-gitlab-orange hover:underline font-medium"
+                >
+                  Clone Remote...
+                </button>
+              </div>
             </div>
           )}
         </div>
 
-        {/* Branch Selector */}
+        {/* Segment 2: Current branch */}
         <div className="relative">
           <button
             disabled={!activeRepoPath}
             onClick={() => setIsBranchDropdownOpen(!isBranchDropdownOpen)}
-            className={`flex items-center gap-2 px-2.5 py-1.5 bg-base-2 border border-border rounded text-xs text-text-primary font-medium transition ${
-              !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'hover:bg-base-3'
+            className={`flex items-center gap-2.5 px-3 py-1.5 hover:bg-base-2 text-left transition ${
+              !activeRepoPath ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            <GitBranch className="w-3.5 h-3.5 text-gitlab-teal" />
-            <span className="max-w-[130px] truncate">{status?.current_branch || 'main'}</span>
-            <ChevronDown className="w-3 h-3 text-text-muted" />
+            <GitBranch className="w-4 h-4 text-gitlab-teal flex-shrink-0" />
+            <div className="flex flex-col min-w-0 max-w-[140px]">
+              <span className="text-[10px] text-text-muted font-medium leading-none mb-0.5">Current branch</span>
+              <span className="text-xs font-bold text-text-primary truncate leading-tight">{status?.current_branch || 'main'}</span>
+            </div>
+            <ChevronDown className="w-3.5 h-3.5 text-text-muted flex-shrink-0 ml-1" />
           </button>
 
           {isBranchDropdownOpen && (
@@ -522,7 +576,7 @@ export const Header: React.FC = () => {
         {renderFetchPushButton()}
       </div>
 
-      {/* Far Right: Account & Settings */}
+      {/* Far Right: Account, Co-author, Settings & Errors */}
       <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !(user && error.message?.includes('Not authenticated')) && (
           <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded max-w-xs truncate" title={error.message}>
@@ -534,6 +588,32 @@ export const Header: React.FC = () => {
           </div>
         )}
 
+        {/* Co-author & Settings Action Buttons */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => {
+              setActiveModalTab('accounts');
+              setIsRepoModalOpen(true);
+            }}
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded border border-border transition flex items-center gap-1 text-xs"
+            title="Co-authors & Accounts"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveModalTab('accounts');
+              setIsRepoModalOpen(true);
+            }}
+            className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded border border-border transition flex items-center gap-1 text-xs"
+            title="Settings & Account Configuration"
+          >
+            <Settings className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* User Account Profile Button */}
         <div className="relative">
           <button
             onClick={() => {
@@ -567,7 +647,16 @@ export const Header: React.FC = () => {
                   </div>
                 )}
                 <div className="truncate min-w-0">
-                  <div className="text-xs font-bold text-text-primary truncate">{user.name}</div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-text-primary truncate">{user.name}</span>
+                    <span className={`px-1 py-0.2 text-[8px] font-bold border rounded ${
+                      user.provider === 'github'
+                        ? 'bg-white/10 text-white border-white/20'
+                        : 'bg-[#FC6D26]/15 text-[#FC6D26] border-[#FC6D26]/30'
+                    }`}>
+                      {user.provider === 'github' ? 'GitHub' : 'GitLab'}
+                    </span>
+                  </div>
                   <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
                 </div>
               </div>
@@ -606,7 +695,7 @@ export const Header: React.FC = () => {
                   }}
                   className="w-full text-left px-2.5 py-1.5 rounded text-xs text-text-primary bg-base-2 hover:bg-base-3 active:bg-base-3 flex items-center justify-between transition"
                 >
-                  <span>View Profile on GitLab</span>
+                  <span>View Profile on {user.provider === 'github' ? 'GitHub' : 'GitLab'}</span>
                   <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
                 </button>
 
