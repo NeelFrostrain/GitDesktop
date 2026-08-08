@@ -3,3 +3,16 @@ pub mod diff;
 pub mod history;
 pub mod commit;
 pub mod remote;
+pub mod lfs;
+pub mod worktree;
+pub mod rebase;
+pub mod cherry_pick;
+pub mod stash;
+pub mod tags;
+pub mod blame;
+pub mod reflog;
+pub mod patch;
+pub mod config;
+pub mod submodules;
+
+

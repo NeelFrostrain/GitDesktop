@@ -57,7 +57,12 @@ pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
     GitAuthInfo { token, username, provider }
 }
 
+pub fn apply_git_auth_args_pub(cmd: &mut Command, auth_info: &GitAuthInfo) {
+    apply_git_auth_args(cmd, auth_info);
+}
+
 fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
+
     if let Some(ref t) = auth_info.token {
         let t_clean = t.trim();
         if !t_clean.is_empty() {

@@ -16,6 +16,23 @@ import { GitLabUser, GitHubUser, gitLabUserToUnified, gitHubUserToUnified } from
 import { RepoStatus } from './types/git';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
+import { BranchesView } from './components/BranchesView';
+import { LfsView } from './components/LfsView';
+import { MergeRequestModal } from './components/MergeRequestModal';
+import { WorktreeModal } from './components/WorktreeModal';
+
+import { StashManagerView } from './components/StashManagerView';
+import { TagsView } from './components/TagsView';
+import { SubmodulesView } from './components/SubmodulesView';
+
+import { ConflictResolverModal } from './components/ConflictResolverModal';
+import { RebaseModal } from './components/RebaseModal';
+import { CherryPickModal } from './components/CherryPickModal';
+import { BlameViewer } from './components/BlameViewer';
+import { ReflogModal } from './components/ReflogModal';
+import { PatchModal } from './components/PatchModal';
+import { GitConfigModal } from './components/GitConfigModal';
+
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
 
@@ -116,6 +133,21 @@ export const App: React.FC = () => {
     if (currentNavView === 'files') {
       return <FileBrowser />;
     }
+    if (currentNavView === 'branches') {
+      return <BranchesView />;
+    }
+    if (currentNavView === 'locks') {
+      return <LfsView />;
+    }
+    if (currentNavView === 'stashes') {
+      return <StashManagerView />;
+    }
+    if (currentNavView === 'tags') {
+      return <TagsView />;
+    }
+    if (currentNavView === 'submodules') {
+      return <SubmodulesView />;
+    }
     if (currentNavView === 'history' || currentNavView === 'changes' || currentNavView === 'workspace') {
       return <DiffViewer />;
     }
@@ -146,10 +178,21 @@ export const App: React.FC = () => {
       <ErrorBoundary>
         <RepoModal />
       </ErrorBoundary>
+      <MergeRequestModal />
+      <WorktreeModal />
+      <ConflictResolverModal />
+      <RebaseModal />
+      <CherryPickModal />
+      <BlameViewer />
+      <ReflogModal />
+      <PatchModal />
+      <GitConfigModal />
       <LogModal />
     </div>
     </ErrorBoundary>
   );
 };
+
+
 
 export default App;

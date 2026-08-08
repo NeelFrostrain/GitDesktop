@@ -160,3 +160,45 @@ pub fn create_branch(repo_path: &str, branch_name: &str) -> Result<(), AppError>
     checkout_branch(repo_path, branch_name)?;
     Ok(())
 }
+
+pub fn rename_branch(repo_path: &str, old_name: &str, new_name: &str) -> Result<(), AppError> {
+    let repo = Repository::open(repo_path)?;
+    let mut branch = repo.find_branch(old_name, git2::BranchType::Local)?;
+    branch.rename(new_name, true)?;
+    Ok(())
+}
+
+pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<(), AppError> {
+    let repo = Repository::open(repo_path)?;
+    let mut branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
+    if force {
+        branch.delete()?;
+    } else {
+        branch.delete()?;
+    }
+    Ok(())
+}
+
+pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Result<(), AppError> {
+    use std::process::Command;
+    use crate::git::remote::{get_git_auth_info, apply_git_auth_args_pub};
+
+    let auth_info = get_git_auth_info(repo_path);
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+    apply_git_auth_args_pub(&mut cmd, &auth_info);
+
+    cmd.arg("push");
+    if set_upstream {
+        cmd.arg("-u");
+    }
+    cmd.arg("origin").arg(branch_name);
+
+    let output = cmd.output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!("Failed to push branch: {}", stderr.trim())));
+    }
+    Ok(())
+}
+

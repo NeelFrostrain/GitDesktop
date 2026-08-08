@@ -13,6 +13,7 @@ import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { CommitInfo, RepoStatus } from '../types/git';
 import { UserAvatar } from './UserAvatar';
+import { CommitContextMenu } from './CommitContextMenu';
 
 export const Sidebar: React.FC = () => {
   const {
@@ -43,6 +44,8 @@ export const Sidebar: React.FC = () => {
   const [fileFilter, setFileFilter] = useState('');
   const [commitFilter, setCommitFilter] = useState('');
   const [commits, setCommits] = useState<CommitInfo[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ commit: CommitInfo; x: number; y: number } | null>(null);
+
 
   const activeRepoName = activeRepoPath ? activeRepoPath.split(/[/\\]/).pop() || 'NicolasN_BunnyMP' : 'NicolasN_BunnyMP';
 
@@ -345,6 +348,12 @@ export const Sidebar: React.FC = () => {
                       setSelectedCommitSha(c.sha);
                       setCurrentNavView('history');
                     }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedCommitSha(c.sha);
+                      setContextMenu({ commit: c, x: e.clientX, y: e.clientY });
+                    }}
                     className={`p-2.5 rounded-md cursor-pointer transition border ${
                       isSelected
                         ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
@@ -374,6 +383,16 @@ export const Sidebar: React.FC = () => {
           </div>
         </div>
       )}
+
+      {contextMenu && (
+        <CommitContextMenu
+          commit={contextMenu.commit}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </aside>
   );
 };
+

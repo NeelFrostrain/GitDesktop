@@ -3,11 +3,16 @@ import { invoke } from '@tauri-apps/api/core';
 import { 
   Upload, 
   Download,
-  Bell, 
   GitPullRequest,
   AlertCircle,
-  X
+  X,
+  RotateCcw,
+  History,
+  FileCode,
+  Settings,
+  GitCommit
 } from 'lucide-react';
+
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { RepoStatus } from '../types/git';
@@ -19,10 +24,15 @@ export const Header: React.FC = () => {
     user,
     error,
     setError,
-    setIsRepoModalOpen,
-    setActiveModalTab,
+    setIsMergeRequestModalOpen,
+    setIsRebaseModalOpen,
+    setIsCherryPickModalOpen,
+    setIsReflogModalOpen,
+    setIsPatchModalOpen,
+    setIsConfigModalOpen,
     currentNavView,
   } = useGitStore();
+
 
   const [isPushing, setIsPushing] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -41,6 +51,12 @@ export const Header: React.FC = () => {
         return { title: 'Locks', subtitle: 'LFS and file lock management' };
       case 'reviews':
         return { title: 'Reviews', subtitle: 'Code reviews and merge requests' };
+      case 'stashes':
+        return { title: 'Stashes', subtitle: 'Shelved changes & diff previews' };
+      case 'tags':
+        return { title: 'Tags', subtitle: 'Release tags and remote publishing' };
+      case 'submodules':
+        return { title: 'Submodules', subtitle: 'Nested submodules management' };
       case 'overview':
       default:
         return { title: 'Overview', subtitle: 'Project workspace overview' };
@@ -90,7 +106,7 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right: Action Toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !(user && error.message?.includes('Not authenticated')) && (
           <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2.5 py-1 rounded-lg max-w-xs truncate" title={error.message}>
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -101,19 +117,58 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        {/* Notifications Bell */}
+        {/* Rebase Tool */}
         <button
-          className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
-          title="Notifications"
+          onClick={() => setIsRebaseModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          title="Interactive Rebase"
         >
-          <Bell className="w-4 h-4" />
+          <RotateCcw className="w-3.5 h-3.5 text-commito-coral" />
         </button>
+
+        {/* Cherry Pick Tool */}
+        <button
+          onClick={() => setIsCherryPickModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          title="Cherry-Pick Commits"
+        >
+          <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
+        </button>
+
+        {/* Reflog Tool */}
+        <button
+          onClick={() => setIsReflogModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          title="Reflog Safety Net"
+        >
+          <History className="w-3.5 h-3.5 text-gitlab-teal" />
+        </button>
+
+        {/* Patch Studio */}
+        <button
+          onClick={() => setIsPatchModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          title="Export / Apply Patch"
+        >
+          <FileCode className="w-3.5 h-3.5 text-amber-400" />
+        </button>
+
+        {/* Git Config */}
+        <button
+          onClick={() => setIsConfigModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          title="Repo Config & .gitignore"
+        >
+          <Settings className="w-3.5 h-3.5 text-text-secondary" />
+        </button>
+
+        <div className="h-4 w-px bg-border my-auto mx-1" />
 
         {/* Sync Button */}
         <button
           onClick={handleSync}
           disabled={isFetching || !activeRepoPath}
-          className={`px-3.5 py-1.5 rounded-md border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-2 transition shadow-sm ${
+          className={`px-3 py-1.5 rounded-md border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 transition shadow-sm ${
             isFetching || !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
           }`}
           title="Sync repository with remote origin"
@@ -122,11 +177,11 @@ export const Header: React.FC = () => {
           <span>Sync</span>
         </button>
 
-        {/* Push Button (Vibrant Coral Action Button) */}
+        {/* Push Button */}
         <button
           onClick={handlePush}
           disabled={isPushing || !activeRepoPath}
-          className={`px-4 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-bold flex items-center gap-2 transition shadow-md ${
+          className={`px-3.5 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-bold flex items-center gap-1.5 transition shadow-md ${
             isPushing || !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
           }`}
           title="Push local commits to origin"
@@ -137,16 +192,14 @@ export const Header: React.FC = () => {
 
         {/* PR / Merge Button */}
         <button
-          onClick={() => {
-            setActiveModalTab('repos');
-            setIsRepoModalOpen(true);
-          }}
-          className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
+          onClick={() => setIsMergeRequestModalOpen(true)}
+          className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition"
           title="Create Merge / Pull Request"
         >
-          <GitPullRequest className="w-4 h-4" />
+          <GitPullRequest className="w-4 h-4 text-commito-coral" />
         </button>
       </div>
     </header>
   );
 };
+

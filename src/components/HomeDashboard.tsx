@@ -6,10 +6,12 @@ import {
   ChevronDown, 
   Info, 
   X,
-  FolderGit2
+  FolderGit2,
+  MoreVertical
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { UserAvatar } from './UserAvatar';
+import { RepoContextMenu } from './RepoContextMenu';
 
 export const HomeDashboard: React.FC = () => {
   const { 
@@ -17,11 +19,13 @@ export const HomeDashboard: React.FC = () => {
     setIsRepoModalOpen, 
     setCurrentNavView,
     recentRepos,
+    repoAliases,
     activeRepoPath,
     setActiveRepoPath,
     removeRecentRepo
   } = useGitStore();
   const [showBanner, setShowBanner] = useState(true);
+  const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
 
   const getDayGreeting = () => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -29,8 +33,14 @@ export const HomeDashboard: React.FC = () => {
     return `${today}. You've got this.`;
   };
 
+  const handleContextMenu = (e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ path, x: e.clientX, y: e.clientY });
+  };
+
   return (
-    <div className="flex-1 bg-base-1 overflow-y-auto p-6 space-y-5 select-none">
+    <div className="flex-1 bg-base-1 overflow-y-auto p-6 space-y-5 select-none relative">
       {/* Breadcrumb row */}
       <div className="text-[12px] text-text-muted flex items-center gap-1">
         <span>Your work</span>
@@ -195,13 +205,16 @@ export const HomeDashboard: React.FC = () => {
               </p>
             ) : (
               recentRepos.map((rPath) => {
-                const rName = rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
-                const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === rPath.replace(/\\/g, '/');
+                const normalized = rPath.replace(/\\/g, '/');
+                const alias = repoAliases[normalized];
+                const rName = alias || rPath.split(/[/\\]/).filter(Boolean).pop() || rPath;
+                const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === normalized;
 
                 return (
                   <div
                     key={rPath}
                     onClick={() => setActiveRepoPath(rPath)}
+                    onContextMenu={(e) => handleContextMenu(e, rPath)}
                     className={`p-2 rounded-md cursor-pointer text-xs flex items-center justify-between group transition border ${
                       isActive
                         ? 'bg-gitlab-orange/20 border-gitlab-orange/50 text-gitlab-orange font-semibold'
@@ -211,20 +224,37 @@ export const HomeDashboard: React.FC = () => {
                     <div className="flex items-center gap-2 truncate min-w-0">
                       <FolderGit2 className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-gitlab-orange' : 'text-gitlab-teal'}`} />
                       <div className="truncate min-w-0">
-                        <div className="font-medium truncate">{rName}</div>
+                        <div className="font-medium truncate flex items-center gap-1.5">
+                          <span>{rName}</span>
+                          {alias && (
+                            <span className="text-[9px] bg-commito-coral/20 text-commito-coral border border-commito-coral/40 px-1 py-0.2 rounded font-mono font-normal">
+                              alias
+                            </span>
+                          )}
+                        </div>
                         <div className="text-[10px] text-text-faint font-mono truncate">{rPath}</div>
                       </div>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeRecentRepo(rPath);
-                      }}
-                      className="p-1 text-text-faint hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
-                      title="Remove from saved repositories"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={(e) => handleContextMenu(e, rPath)}
+                        className="p-1 text-text-faint hover:text-text-primary opacity-0 group-hover:opacity-100 transition"
+                        title="Repository options"
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeRecentRepo(rPath);
+                        }}
+                        className="p-1 text-text-faint hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
+                        title="Remove from saved repositories"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 );
               })
@@ -240,6 +270,16 @@ export const HomeDashboard: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {contextMenu && (
+        <RepoContextMenu
+          repoPath={contextMenu.path}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 };
+

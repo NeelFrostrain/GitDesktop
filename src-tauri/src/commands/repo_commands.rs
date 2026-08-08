@@ -220,3 +220,74 @@ pub fn log_action_cmd(
         details_str
     );
 }
+
+#[command]
+pub async fn open_in_terminal_cmd(repo_path: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .arg("/c")
+            .arg("start")
+            .arg("cmd.exe")
+            .current_dir(&repo_path)
+            .spawn()?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-a")
+            .arg("Terminal")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("x-terminal-emulator")
+            .current_dir(&repo_path)
+            .spawn()?;
+    }
+    Ok(())
+}
+
+#[command]
+pub async fn open_in_vscode_cmd(repo_path: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .arg("/c")
+            .arg("code")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::process::Command::new("code")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    Ok(())
+}
+
+#[command]
+pub async fn show_in_explorer_cmd(repo_path: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&repo_path)
+            .spawn()?;
+    }
+    Ok(())
+}
+

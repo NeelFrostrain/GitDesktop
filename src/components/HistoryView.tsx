@@ -4,6 +4,7 @@ import { FileText, Copy, Check, GitCommit } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { CommitInfo } from '../types/git';
 import { UserAvatar } from './UserAvatar';
+import { CommitContextMenu } from './CommitContextMenu';
 
 interface CommitDetails {
   commit: CommitInfo;
@@ -17,6 +18,8 @@ export const HistoryView: React.FC = () => {
   const [selectedCommitFile, setSelectedCommitFile] = useState<string | null>(null);
   const [commitDiffText, setCommitDiffText] = useState<string | null>(null);
   const [copiedSha, setCopiedSha] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ commit: CommitInfo; x: number; y: number } | null>(null);
+
 
   // Sample commits if no local git repo active
   const sampleCommits: CommitInfo[] = [
@@ -152,7 +155,14 @@ export const HistoryView: React.FC = () => {
       {activeCommit ? (
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Header: Commit Meta Info */}
-          <div className="p-4 border-b border-border bg-base-2 space-y-2 flex-shrink-0">
+          <div
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setContextMenu({ commit: activeCommit, x: e.clientX, y: e.clientY });
+            }}
+            className="p-4 border-b border-border bg-base-2 space-y-2 flex-shrink-0 cursor-context-menu"
+          >
             <div className="flex items-start justify-between gap-4">
               <h2 className="text-base font-extrabold text-text-primary leading-tight">
                 {activeCommit.message}
@@ -233,6 +243,16 @@ export const HistoryView: React.FC = () => {
             <span className="text-sm font-medium">Select a commit to view details</span>
           </div>
         )}
+
+      {contextMenu && (
+        <CommitContextMenu
+          commit={contextMenu.commit}
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 };
+

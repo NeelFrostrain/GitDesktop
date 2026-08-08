@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 
 export type LogLevel = 'info' | 'success' | 'warning' | 'error';
-export type LogCategory = 'Git' | 'Auth' | 'Repo' | 'System';
+export type LogCategory = 'Git' | 'Auth' | 'Repo' | 'System' | 'Git LFS' | 'Merge Request' | 'Worktree' | 'Remote';
+
 
 export interface LogEntry {
   id: string;
