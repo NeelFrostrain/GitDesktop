@@ -56,6 +56,12 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
                 return true;
             }
 
+            let content = String::from_utf8_lossy(line.content()).to_string();
+
+            if origin == '>' || origin == '<' || content.trim_start().starts_with("\\ No newline at end of file") {
+                return true;
+            }
+
             let line_type = match origin {
                 '+' => "addition",
                 '-' => "deletion",
@@ -63,8 +69,6 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
                 'F' | 'H' => "header",
                 _ => "context",
             };
-
-            let content = String::from_utf8_lossy(line.content()).to_string();
 
             lines.push(DiffLine {
                 line_type: line_type.to_string(),
@@ -159,6 +163,12 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
             return true;
         }
 
+        let content = String::from_utf8_lossy(line.content()).to_string();
+
+        if origin == '>' || origin == '<' || content.trim_start().starts_with("\\ No newline at end of file") {
+            return true;
+        }
+
         let line_type = match origin {
             '+' => "addition",
             '-' => "deletion",
@@ -166,8 +176,6 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
             'F' | 'H' => "header",
             _ => "context",
         };
-
-        let content = String::from_utf8_lossy(line.content()).to_string();
 
         lines.push(DiffLine {
             line_type: line_type.to_string(),
@@ -178,6 +186,7 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
 
         true
     })?;
+
 
     Ok(DiffResult {
         file_path: file_path.to_string(),

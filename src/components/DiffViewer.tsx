@@ -432,7 +432,8 @@ export const DiffViewer: React.FC = () => {
     }
 
     // Unified View
-    const filteredLines = lines.filter((l) => !(l.line_type === 'header' && isVerbosePatchHeader(l.content)));
+    const filteredLines = lines.filter((l) => !(l.line_type === 'header' && isVerbosePatchHeader(l.content)) && !l.content.trim().startsWith('\\ No newline at end of file'));
+
 
     return (
       <div className="w-full font-mono text-[12px] leading-6 select-text">
