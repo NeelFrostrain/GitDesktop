@@ -14,8 +14,10 @@ import {
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { UnifiedMergeRequest, BranchInfo } from '../types/git';
+import { Dropdown } from './Dropdown';
 
 export const MergeRequestModal: React.FC = () => {
+
   const {
     activeRepoPath,
     isMergeRequestModalOpen,
@@ -178,17 +180,15 @@ export const MergeRequestModal: React.FC = () => {
                     <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
                     <span>Source Branch (Compare)</span>
                   </label>
-                  <select
+                  <Dropdown
+                    options={branches.map((b) => ({
+                      value: b.name,
+                      label: `${b.name}${b.is_current ? ' (active)' : ''}`,
+                    }))}
                     value={sourceBranch}
-                    onChange={(e) => setSourceBranch(e.target.value)}
-                    className="w-full px-3 py-2 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
-                  >
-                    {branches.map((b) => (
-                      <option key={b.name} value={b.name}>
-                        {b.name} {b.is_current ? '(active)' : ''}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSourceBranch}
+                    className="w-full font-mono"
+                  />
                 </div>
 
                 <div>
@@ -196,19 +196,15 @@ export const MergeRequestModal: React.FC = () => {
                     <GitBranch className="w-3.5 h-3.5 text-emerald-400" />
                     <span>Target Branch (Base)</span>
                   </label>
-                  <select
+                  <Dropdown
+                    options={branches.map((b) => ({ value: b.name, label: b.name }))}
                     value={targetBranch}
-                    onChange={(e) => setTargetBranch(e.target.value)}
-                    className="w-full px-3 py-2 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
-                  >
-                    {branches.map((b) => (
-                      <option key={b.name} value={b.name}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setTargetBranch}
+                    className="w-full font-mono"
+                  />
                 </div>
               </div>
+
 
               {/* Title Field */}
               <div>

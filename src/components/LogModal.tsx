@@ -12,8 +12,10 @@ import {
   Filter
 } from 'lucide-react';
 import { useLogStore, LogLevel } from '../store/useLogStore';
+import { Dropdown } from './Dropdown';
 
 export const LogModal: React.FC = () => {
+
   const {
     logs,
     isLogModalOpen,
@@ -145,31 +147,34 @@ export const LogModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <Filter className="w-3.5 h-3.5 text-text-muted" />
             {/* Level Filter */}
-            <select
+            <Dropdown
+              options={[
+                { value: 'all', label: 'All Levels' },
+                { value: 'success', label: 'Success Only' },
+                { value: 'error', label: 'Errors Only' },
+                { value: 'warning', label: 'Warnings Only' },
+                { value: 'info', label: 'Info Only' },
+              ]}
               value={filterLevel}
-              onChange={(e) => setFilterLevel(e.target.value as any)}
-              className="px-2 py-1 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
-            >
-              <option value="all">All Levels</option>
-              <option value="success">Success Only</option>
-              <option value="error">Errors Only</option>
-              <option value="warning">Warnings Only</option>
-              <option value="info">Info Only</option>
-            </select>
+              onChange={(val) => setFilterLevel(val as any)}
+              size="sm"
+            />
 
             {/* Category Filter */}
-            <select
+            <Dropdown
+              options={[
+                { value: 'all', label: 'All Categories' },
+                { value: 'Git', label: 'Git Operations' },
+                { value: 'Auth', label: 'Authentication' },
+                { value: 'Repo', label: 'Repository' },
+                { value: 'System', label: 'System' },
+              ]}
               value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value as any)}
-              className="px-2 py-1 bg-base-0 border border-border rounded text-xs text-text-primary focus:outline-none focus:border-gitlab-orange"
-            >
-              <option value="all">All Categories</option>
-              <option value="Git">Git Operations</option>
-              <option value="Auth">Authentication</option>
-              <option value="Repo">Repository</option>
-              <option value="System">System</option>
-            </select>
+              onChange={(val) => setFilterCategory(val as any)}
+              size="sm"
+            />
           </div>
+
         </div>
 
         {/* Logs List */}

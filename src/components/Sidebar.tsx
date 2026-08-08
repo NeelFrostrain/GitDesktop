@@ -3,20 +3,21 @@ import { invoke } from '@tauri-apps/api/core';
 import { 
   ChevronsUpDown,
   Filter,
-  CheckSquare as CheckSquareIcon,
-  Square,
   FileText,
   GitCommit,
   Search
 } from 'lucide-react';
+
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { CommitInfo, RepoStatus } from '../types/git';
 import { UserAvatar } from './UserAvatar';
 import { CommitContextMenu } from './CommitContextMenu';
 import { FileContextMenu } from './FileContextMenu';
+import { Checkbox } from './Checkbox';
 
 export const Sidebar: React.FC = () => {
+
   const {
     activeRepoPath,
     status,
@@ -228,17 +229,12 @@ export const Sidebar: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between text-xs text-text-muted px-1">
-              <button
-                onClick={() => setAllStaged(!isAllStaged)}
-                className="flex items-center gap-2 hover:text-text-primary transition font-medium"
-              >
-                {isAllStaged ? (
-                  <CheckSquareIcon className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <Square className="w-4 h-4 text-text-muted" />
-                )}
-                <span>{allFiles.length} changed file{allFiles.length === 1 ? '' : 's'}</span>
-              </button>
+              <Checkbox
+                checked={isAllStaged}
+                indeterminate={stagedFiles.length > 0 && stagedFiles.length < allFiles.length}
+                onChange={setAllStaged}
+                label={`${allFiles.length} changed file${allFiles.length === 1 ? '' : 's'}`}
+              />
             </div>
           </div>
 
@@ -263,25 +259,15 @@ export const Sidebar: React.FC = () => {
                       setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
                     }}
                     className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition ${
-
                       isSelected
                         ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
                         : 'hover:bg-base-2 text-text-secondary'
                     }`}
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleStageFile(file.path);
-                      }}
-                      className="text-text-muted hover:text-white flex-shrink-0"
-                    >
-                      {isStaged ? (
-                        <CheckSquareIcon className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <Square className="w-4 h-4 text-text-muted" />
-                      )}
-                    </button>
+                    <Checkbox
+                      checked={isStaged}
+                      onChange={() => toggleStageFile(file.path)}
+                    />
                     <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
                     <span className="truncate flex-1 font-mono text-[11px]">{file.path}</span>
                   </div>
@@ -289,6 +275,7 @@ export const Sidebar: React.FC = () => {
               })
             )}
           </div>
+
 
           {/* Commit Box at Bottom */}
           <div className="p-3 border-t border-border bg-base-1 space-y-2 flex-shrink-0">

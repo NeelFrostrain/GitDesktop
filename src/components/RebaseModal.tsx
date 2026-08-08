@@ -10,8 +10,10 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+
 import { useLogStore } from '../store/useLogStore';
 import { RebaseCommitPlanItem, RebaseCommitAction, BranchInfo } from '../types/git';
+import { Dropdown } from './Dropdown';
 
 export const RebaseModal: React.FC = () => {
   const {
@@ -66,7 +68,6 @@ export const RebaseModal: React.FC = () => {
     );
   };
 
-
   const handleMoveCommit = (index: number, direction: 'up' | 'down') => {
     if (direction === 'up' && index === 0) return;
     if (direction === 'down' && index === commitPlan.length - 1) return;
@@ -107,6 +108,19 @@ export const RebaseModal: React.FC = () => {
 
   if (!isRebaseModalOpen) return null;
 
+  const branchOptions = branches
+    .filter((b) => !b.is_current)
+    .map((b) => ({ value: b.name, label: b.name }));
+
+  const actionOptions = [
+    { value: 'pick', label: 'pick (use commit)' },
+    { value: 'reword', label: 'reword (use & edit msg)' },
+    { value: 'edit', label: 'edit (stop for amend)' },
+    { value: 'squash', label: 'squash (meld into prev)' },
+    { value: 'fixup', label: 'fixup (meld & discard msg)' },
+    { value: 'drop', label: 'drop (remove commit)' },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
@@ -139,22 +153,15 @@ export const RebaseModal: React.FC = () => {
           <div className="flex items-center gap-3 p-3.5 bg-base-2 border border-border rounded-xl">
             <GitBranch className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span className="text-xs font-bold text-text-primary">Rebase onto Target:</span>
-            <select
+            <Dropdown
+              options={branchOptions}
               value={targetBranch}
-              onChange={(e) => {
-                setTargetBranch(e.target.value);
-                loadCommits(e.target.value);
+              onChange={(val) => {
+                setTargetBranch(val);
+                loadCommits(val);
               }}
-              className="px-3 py-1.5 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono flex-1"
-            >
-              {branches
-                .filter((b) => !b.is_current)
-                .map((b) => (
-                  <option key={b.name} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
-            </select>
+              className="flex-1"
+            />
 
             <button
               type="button"
@@ -215,22 +222,17 @@ export const RebaseModal: React.FC = () => {
                     </div>
                   </div>
 
-                  <select
+                  <Dropdown
+                    options={actionOptions}
                     value={item.action}
-                    onChange={(e) => handleActionChange(index, e.target.value)}
-                    className="px-2.5 py-1 bg-base-1 border border-border rounded-lg text-xs font-mono font-bold text-commito-coral focus:outline-none"
-                  >
-                    <option value="pick">pick (use commit)</option>
-                    <option value="reword">reword (use & edit msg)</option>
-                    <option value="edit">edit (stop for amend)</option>
-                    <option value="squash">squash (meld into prev)</option>
-                    <option value="fixup">fixup (meld & discard msg)</option>
-                    <option value="drop">drop (remove commit)</option>
-                  </select>
+                    onChange={(val) => handleActionChange(index, val)}
+                    size="sm"
+                  />
                 </div>
               ))
             )}
           </div>
+
 
           {/* Modal Footer Controls */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">

@@ -10,6 +10,7 @@ import {
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { StashEntry, RepoStatus } from '../types/git';
+import { Checkbox } from './Checkbox';
 
 export const StashManagerView: React.FC = () => {
   const {
@@ -175,17 +176,14 @@ export const StashManagerView: React.FC = () => {
           />
 
           <div className="flex items-center justify-between">
-            <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-text-primary">
-              <input
-                type="checkbox"
-                checked={includeUntracked}
-                onChange={(e) => setIncludeUntracked(e.target.checked)}
-                className="rounded border-border bg-base-1 text-commito-coral focus:ring-0"
-              />
-              <span>Include untracked files (-u)</span>
-            </label>
+            <Checkbox
+              checked={includeUntracked}
+              onChange={setIncludeUntracked}
+              label="Include untracked files (-u)"
+            />
 
             <div className="flex items-center gap-2">
+
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}

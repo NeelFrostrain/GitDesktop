@@ -4,16 +4,18 @@ import {
   X, 
   GitCommit, 
   GitBranch, 
-  CheckSquare, 
-  Square, 
   Play, 
   Search 
 } from 'lucide-react';
+
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { CommitInfo, BranchInfo } from '../types/git';
+import { Checkbox } from './Checkbox';
+import { Dropdown } from './Dropdown';
 
 export const CherryPickModal: React.FC = () => {
+
   const {
     activeRepoPath,
     isCherryPickModalOpen,
@@ -134,21 +136,15 @@ export const CherryPickModal: React.FC = () => {
           <div className="grid grid-cols-2 gap-3 p-3.5 bg-base-2 border border-border rounded-xl">
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-commito-coral flex-shrink-0" />
-              <select
+              <Dropdown
+                options={branches.map((b) => ({ value: b.name, label: b.name }))}
                 value={sourceBranch}
-                onChange={(e) => {
-                  setSourceBranch(e.target.value);
+                onChange={(val) => {
+                  setSourceBranch(val);
                   loadBranchCommits();
                 }}
-
-                className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
-              >
-                {branches.map((b) => (
-                  <option key={b.name} value={b.name}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                className="flex-1 font-mono"
+              />
             </div>
 
             <div className="relative">
@@ -165,15 +161,11 @@ export const CherryPickModal: React.FC = () => {
 
           {/* Options row */}
           <div className="flex items-center justify-between text-xs text-text-muted px-1">
-            <label className="flex items-center gap-2 cursor-pointer hover:text-text-primary">
-              <input
-                type="checkbox"
-                checked={noCommit}
-                onChange={(e) => setNoCommit(e.target.checked)}
-                className="rounded border-border bg-base-2 text-commito-coral focus:ring-0"
-              />
-              <span>Stage changes without auto-committing (-n / --no-commit)</span>
-            </label>
+            <Checkbox
+              checked={noCommit}
+              onChange={setNoCommit}
+              label="Stage changes without auto-committing (-n / --no-commit)"
+            />
             <span className="font-mono text-[11px]">{selectedShas.length} selected</span>
           </div>
 
@@ -198,11 +190,10 @@ export const CherryPickModal: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
-                      {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                      ) : (
-                        <Square className="w-4 h-4 text-text-muted flex-shrink-0" />
-                      )}
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => toggleSelectCommit(c.sha)}
+                      />
 
                       <div className="min-w-0 truncate">
                         <div className="flex items-center gap-2">
@@ -221,6 +212,7 @@ export const CherryPickModal: React.FC = () => {
               })
             )}
           </div>
+
 
           {/* Modal Footer Controls */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
