@@ -32,6 +32,8 @@ import { BlameViewer } from './components/BlameViewer';
 import { ReflogModal } from './components/ReflogModal';
 import { PatchModal } from './components/PatchModal';
 import { GitConfigModal } from './components/GitConfigModal';
+import { CreateRepoModal } from './components/CreateRepoModal';
+
 
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
@@ -178,7 +180,9 @@ export const App: React.FC = () => {
       <ErrorBoundary>
         <RepoModal />
       </ErrorBoundary>
+      <CreateRepoModal />
       <MergeRequestModal />
+
       <WorktreeModal />
       <ConflictResolverModal />
       <RebaseModal />

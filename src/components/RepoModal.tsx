@@ -20,8 +20,11 @@ import {
   Trash2,
   Plus,
   Edit2,
-  Save
+  Save,
+  RefreshCw,
+  Lock
 } from 'lucide-react';
+
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import {
@@ -411,7 +414,7 @@ export const RepoModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
-      <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-md shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="h-12 bg-base-3 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -492,7 +495,7 @@ export const RepoModal: React.FC = () => {
               </div>
 
               {!(accounts && accounts.length > 0) ? (
-                <div className="py-8 text-center text-xs text-text-muted space-y-3 bg-base-2/50 border border-border rounded-lg p-6">
+                <div className="py-8 text-center text-xs text-text-muted space-y-3 bg-base-2/50 border border-border rounded-md p-6">
                   <User className="w-10 h-10 text-gitlab-orange/60 mx-auto" />
                   <p>No saved accounts yet.</p>
                   <button
@@ -517,7 +520,7 @@ export const RepoModal: React.FC = () => {
                     return (
                       <div
                         key={acctId}
-                        className={`p-4 rounded-lg border transition flex flex-col gap-3 ${
+                        className={`p-4 rounded-md border transition flex flex-col gap-3 ${
                           isActive
                             ? 'bg-gitlab-orange/10 border-gitlab-orange/60 shadow-sm'
                             : 'bg-base-2 border-border hover:border-text-muted'
@@ -648,7 +651,7 @@ export const RepoModal: React.FC = () => {
             <div className="space-y-6">
               {user ? (
                 /* Authenticated User Card */
-                <div className="p-5 bg-base-2 border border-border rounded-lg space-y-4 shadow-sm">
+                <div className="p-5 bg-base-2 border border-border rounded-md space-y-4 shadow-sm">
                   <div className="flex items-center gap-4">
                     {user.avatar_url ? (
                       <img src={user.avatar_url} alt="Avatar" className="w-14 h-14 rounded-full border border-border" />
@@ -698,7 +701,7 @@ export const RepoModal: React.FC = () => {
                   )}
 
                   {/* Provider Selector */}
-                  <div className="flex rounded-lg border border-border overflow-hidden">
+                  <div className="flex rounded-md border border-border overflow-hidden">
                     <button
                       type="button"
                       onClick={() => { setLoginProvider('gitlab'); setLoginError(null); }}
@@ -915,28 +918,90 @@ export const RepoModal: React.FC = () => {
                     </div>
                   </div>
 
-                  {fetchError ? (
-                    <div className="p-4 bg-red-950/30 border border-red-500/30 rounded-md text-xs text-red-300 space-y-2 text-center">
-                      <p>{fetchError}</p>
-                      <button
-                        onClick={() => fetchRepositories(currentPage)}
-                        className="px-3 py-1 bg-gitlab-orange text-white rounded text-xs font-semibold hover:bg-orange-600 transition"
-                      >
-                        Retry Fetching
-                      </button>
-                    </div>
-                  ) : isLoadingProjects ? (
-                    <div className="py-8 text-center text-xs text-text-muted animate-pulse">
-                      Fetching repositories from {user?.provider === 'github' ? 'GitHub' : 'GitLab'}...
+                  {fetchError ? (() => {
+                    let title = 'Failed to Fetch Repositories';
+                    let detail = fetchError;
+                    let isAuthError = false;
+
+                    if (fetchError.includes('401') || fetchError.includes('Bad credentials') || fetchError.includes('Unauthorized') || fetchError.includes('403')) {
+                      title = 'Authentication Error (401 Bad Credentials)';
+                      detail = 'Your Personal Access Token or account credentials have expired or are invalid for this service.';
+                      isAuthError = true;
+                    } else if (fetchError.includes('JSON') || fetchError.trim().startsWith('{')) {
+                      try {
+                        const jsonStart = fetchError.indexOf('{');
+                        if (jsonStart !== -1) {
+                          const jsonStr = fetchError.substring(jsonStart);
+                          const parsed = JSON.parse(jsonStr);
+                          if (parsed.message) {
+                            detail = parsed.message === 'Bad credentials' 
+                              ? 'Invalid authentication token. Please update or re-authenticate your account credentials.' 
+                              : parsed.message;
+                          }
+                          if (parsed.status === '401' || parsed.status === 401) {
+                            isAuthError = true;
+                            title = 'Authentication Failure (401 Unauthorized)';
+                          }
+                        }
+                      } catch {
+                        // fallback
+                      }
+                    }
+
+                    return (
+                      <div className="p-5 bg-red-950/40 border border-red-800/60 rounded-md text-xs space-y-4 shadow-xl animate-in fade-in zoom-in-95 duration-150">
+                        <div className="flex items-start gap-3.5">
+                          <div className="w-10 h-10 rounded-md bg-red-900/40 border border-red-700/50 text-red-400 flex items-center justify-center flex-shrink-0 shadow-inner">
+                            <AlertCircle className="w-5 h-5" />
+                          </div>
+                          <div className="space-y-1 min-w-0 flex-1">
+                            <h4 className="text-xs font-bold text-red-200 flex items-center gap-2">
+                              {title}
+                            </h4>
+                            <p className="text-xs text-red-300/90 leading-relaxed font-sans">
+                              {detail}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-red-900/50 justify-end">
+                          {isAuthError && (
+                            <button
+                              type="button"
+                              onClick={() => setActiveModalTab('login')}
+                              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+                            >
+                              <Key className="w-3.5 h-3.5" />
+                              <span>Re-authenticate Account</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => fetchRepositories(currentPage)}
+                            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-text-muted" />
+                            <span>Retry Fetching</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })() : isLoadingProjects ? (
+                    <div className="py-12 text-center text-xs text-text-muted animate-pulse flex flex-col items-center gap-2">
+                      <RefreshCw className="w-6 h-6 text-commito-coral animate-spin" />
+                      <span>Fetching repositories from {user?.provider === 'github' ? 'GitHub' : 'GitLab'}...</span>
                     </div>
                   ) : (projects || []).length === 0 ? (
-                    <div className="py-8 text-center text-xs text-text-muted space-y-2">
+                    <div className="py-12 text-center text-xs text-text-muted space-y-3 bg-base-2/40 border border-border rounded-md p-6">
+                      <FolderGit2 className="w-10 h-10 text-commito-coral/50 mx-auto" />
                       <p>No remote repositories found on {user?.server_url || (user?.provider === 'github' ? 'GitHub' : 'GitLab')}.</p>
                       <button
+                        type="button"
                         onClick={() => fetchRepositories(1)}
-                        className="px-3 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-xs text-text-primary transition"
+                        className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition flex items-center gap-1.5 mx-auto cursor-pointer"
                       >
-                        Refresh Repositories
+                        <RefreshCw className="w-3.5 h-3.5 text-text-muted" />
+                        <span>Refresh Repositories</span>
                       </button>
                     </div>
                   ) : (
@@ -944,11 +1009,18 @@ export const RepoModal: React.FC = () => {
                       {(projects || []).map((p) => (
                         <div
                           key={p.id}
-                          className="p-3 bg-base-2 border border-border rounded-md flex items-center justify-between hover:border-gitlab-orange/50 transition"
+                          className="p-3.5 bg-base-2 border border-border rounded-md flex items-center justify-between hover:border-commito-coral/50 transition group"
                         >
-                          <div className="space-y-1 max-w-md">
-                            <div className="text-xs font-semibold text-text-primary truncate">
-                              {p.path_with_namespace}
+                          <div className="space-y-1 max-w-md min-w-0">
+                            <div className="flex items-center gap-2">
+                              {p.visibility === 'private' ? (
+                                <Lock className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                              ) : (
+                                <Globe className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                              )}
+                              <span className="text-xs font-bold text-text-primary truncate">
+                                {p.path_with_namespace}
+                              </span>
                             </div>
                             <div className="text-[11px] text-text-muted font-mono truncate">{p.http_url_to_repo}</div>
                           </div>
@@ -956,15 +1028,16 @@ export const RepoModal: React.FC = () => {
                           <button
                             disabled={isCloning}
                             onClick={() => handleCloneProject(p)}
-                            className="px-3 py-1.5 bg-base-1 hover:bg-base-3 border border-border rounded text-xs font-medium text-text-primary flex items-center gap-1.5 transition"
+                            className="px-3.5 py-1.5 bg-base-1 hover:bg-commito-coral hover:text-white border border-border rounded-md text-xs font-bold text-text-primary flex items-center gap-1.5 transition shadow-sm cursor-pointer"
                           >
-                            <Download className="w-3.5 h-3.5 text-gitlab-orange" />
-                            Clone to Computer
+                            <Download className="w-3.5 h-3.5 text-commito-coral group-hover:text-white" />
+                            <span>Clone to Computer</span>
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
+
 
                   {isCloning && (
                     <div className="p-3 bg-gitlab-orange/10 border border-gitlab-orange/30 rounded text-xs text-gitlab-orange">

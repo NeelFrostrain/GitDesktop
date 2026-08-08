@@ -135,7 +135,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-56 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-56 bg-base-1/95 backdrop-blur-md border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       {showAliasInput ? (
         <form onSubmit={handleSaveAlias} className="p-2 space-y-2">
@@ -154,13 +154,13 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
             <button
               type="button"
               onClick={() => setShowAliasInput(false)}
-              className="px-2 py-1 text-[11px] bg-base-2 hover:bg-base-3 text-text-muted rounded"
+              className="px-2 py-1 text-[11px] bg-base-2 hover:bg-base-3 text-text-muted rounded-md"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-2 py-1 text-[11px] bg-commito-coral text-white font-bold rounded"
+              className="px-2 py-1 text-[11px] bg-commito-coral text-white font-bold rounded-md"
             >
               Save Alias
             </button>
@@ -172,7 +172,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           <div className="p-1 space-y-0.5">
             <button
               onClick={() => setShowAliasInput(true)}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Edit3 className="w-3.5 h-3.5 text-commito-coral" />
               <span>Create alias</span>
@@ -180,7 +180,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleShowWorktrees}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Layers className="w-3.5 h-3.5 text-gitlab-teal" />
               <span>Show worktrees</span>
@@ -188,7 +188,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleShowWorktrees}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <PlusSquare className="w-3.5 h-3.5 text-gitlab-orange" />
               <span>New worktree...</span>
@@ -201,7 +201,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           <div className="p-1 space-y-0.5">
             <button
               onClick={handleCopyName}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Copy className="w-3.5 h-3.5 text-text-muted" />
               <span>Copy repo name</span>
@@ -209,7 +209,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleCopyPath}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Folder className="w-3.5 h-3.5 text-text-muted" />
               <span>Copy repo path</span>
@@ -222,7 +222,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           <div className="p-1 space-y-0.5">
             <button
               onClick={handleViewOnRemote}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <ExternalLink className="w-3.5 h-3.5 text-github-dark-accent" />
               <span>Open in remote</span>
@@ -230,7 +230,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleOpenTerminal}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Terminal className="w-3.5 h-3.5 text-emerald-400" />
               <span>Open in Command Prompt</span>
@@ -238,7 +238,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleShowInExplorer}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>Show in Explorer</span>
@@ -246,7 +246,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
 
             <button
               onClick={handleOpenVSCode}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
             >
               <Code className="w-3.5 h-3.5 text-blue-400" />
               <span>Open in Visual Studio Code</span>
@@ -259,7 +259,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           <div className="p-1">
             <button
               onClick={handleRemoveRepo}
-              className="w-full px-2.5 py-1.5 rounded-lg hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2 transition font-medium"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2 transition font-medium"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Remove...</span>
@@ -267,7 +267,8 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           </div>
         </>
       )}
-    </div>,
+    </div>
+,
     document.body
   );
 };

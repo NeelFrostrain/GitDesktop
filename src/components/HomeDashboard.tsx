@@ -50,7 +50,7 @@ export const HomeDashboard: React.FC = () => {
 
       {/* Top Banner Alert */}
       {showBanner && (
-        <div className="p-3 bg-base-2 border border-border rounded-lg flex items-center justify-between text-[13px] text-text-primary">
+        <div className="p-3 bg-base-2 border border-border rounded-md flex items-center justify-between text-[13px] text-text-primary">
           <div className="flex items-center gap-2.5">
             <Info className="w-4 h-4 text-github-dark-accent" />
             <span>The application was created successfully.</span>
@@ -82,7 +82,7 @@ export const HomeDashboard: React.FC = () => {
           {/* 4-column Stat Card Row */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Stat 1 */}
-            <div className="bg-base-2 border border-border rounded-lg p-3 space-y-1">
+            <div className="bg-base-2 border border-border rounded-md p-3 space-y-1">
               <div className="flex items-center justify-between text-text-muted text-[11px]">
                 <span>Merge requests</span>
                 <GitPullRequest className="w-3.5 h-3.5" />
@@ -93,7 +93,7 @@ export const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Stat 2 */}
-            <div className="bg-base-2 border border-border rounded-lg p-3 space-y-1">
+            <div className="bg-base-2 border border-border rounded-md p-3 space-y-1">
               <div className="flex items-center justify-between text-text-muted text-[11px]">
                 <span>Merge requests</span>
                 <GitPullRequest className="w-3.5 h-3.5" />
@@ -104,7 +104,7 @@ export const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Stat 3 */}
-            <div className="bg-base-2 border border-border rounded-lg p-3 space-y-1">
+            <div className="bg-base-2 border border-border rounded-md p-3 space-y-1">
               <div className="flex items-center justify-between text-text-muted text-[11px]">
                 <span>Work items</span>
                 <CheckSquare className="w-3.5 h-3.5" />
@@ -115,7 +115,7 @@ export const HomeDashboard: React.FC = () => {
             </div>
 
             {/* Stat 4 */}
-            <div className="bg-base-2 border border-border rounded-lg p-3 space-y-1">
+            <div className="bg-base-2 border border-border rounded-md p-3 space-y-1">
               <div className="flex items-center justify-between text-text-muted text-[11px]">
                 <span>Work items</span>
                 <CheckSquare className="w-3.5 h-3.5" />
@@ -127,7 +127,7 @@ export const HomeDashboard: React.FC = () => {
           </div>
 
           {/* Items that need your attention Panel */}
-          <div className="bg-base-2 border border-border rounded-lg p-4 space-y-4">
+          <div className="bg-base-2 border border-border rounded-md p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-text-primary">
                 Items that need your attention
@@ -159,7 +159,7 @@ export const HomeDashboard: React.FC = () => {
           </div>
 
           {/* Follow the latest updates Panel */}
-          <div className="bg-base-2 border border-border rounded-lg p-4 space-y-4">
+          <div className="bg-base-2 border border-border rounded-md p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-[14px] font-semibold text-text-primary">
                 Follow the latest updates
@@ -192,7 +192,7 @@ export const HomeDashboard: React.FC = () => {
         </div>
 
         {/* Quick Access Side Card */}
-        <div className="bg-base-2 border border-border rounded-lg p-4 space-y-3 h-fit">
+        <div className="bg-base-2 border border-border rounded-md p-4 space-y-3 h-fit">
           <div className="flex items-center justify-between">
             <h2 className="text-[14px] font-semibold text-text-primary">Saved Repositories</h2>
             <span className="text-[10px] text-gitlab-orange font-mono font-semibold">{recentRepos.length}</span>

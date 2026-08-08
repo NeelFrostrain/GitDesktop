@@ -86,28 +86,28 @@ export const SubmodulesView: React.FC = () => {
           <button
             onClick={loadSubmodules}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handleInitSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-xs font-semibold text-text-primary transition"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition"
           >
             Init Submodules
           </button>
 
           <button
             onClick={handleSyncSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-xs font-semibold text-text-primary transition"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition"
           >
             Sync Remotes
           </button>
 
           <button
             onClick={handleUpdateSubmodules}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm"
           >
             Update Recursive
           </button>
@@ -117,14 +117,14 @@ export const SubmodulesView: React.FC = () => {
       {/* Submodule List */}
       <div className="space-y-2">
         {submodules.length === 0 ? (
-          <div className="p-8 text-center bg-base-2 border border-border rounded-xl text-xs text-text-muted italic">
+          <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
             No Git submodules registered in this repository (.gitmodules)
           </div>
         ) : (
           submodules.map((sub) => (
             <div
               key={sub.path}
-              className="p-3.5 bg-base-2/60 border border-border rounded-xl flex items-center justify-between hover:bg-base-2 transition"
+              className="p-3.5 bg-base-2/60 border border-border rounded-md flex items-center justify-between hover:bg-base-2 transition"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                 <FolderGit2 className="w-4 h-4 text-gitlab-teal flex-shrink-0" />

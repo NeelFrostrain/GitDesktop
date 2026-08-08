@@ -69,7 +69,9 @@ pub fn run() {
             open_in_terminal_cmd,
             open_in_vscode_cmd,
             show_in_explorer_cmd,
+            create_repository_cmd,
             get_rebase_commits_cmd,
+
             execute_rebase_cmd,
             rebase_continue_cmd,
             rebase_abort_cmd,

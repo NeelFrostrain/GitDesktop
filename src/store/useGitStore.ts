@@ -97,7 +97,9 @@ export interface GitState {
 
   // Modals
   isRepoModalOpen: boolean;
+  isCreateRepoModalOpen: boolean;
   isMergeRequestModalOpen: boolean;
+
   isWorktreeModalOpen: boolean;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
@@ -145,7 +147,9 @@ export interface GitState {
   setCurrentNavView: (view: NavView) => void;
 
   setIsRepoModalOpen: (open: boolean) => void;
+  setIsCreateRepoModalOpen: (open: boolean) => void;
   setIsMergeRequestModalOpen: (open: boolean) => void;
+
   setIsWorktreeModalOpen: (open: boolean) => void;
   setIsRebaseModalOpen: (open: boolean) => void;
   setIsCherryPickModalOpen: (open: boolean) => void;
@@ -193,7 +197,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   currentNavView: getCachedActiveRepoPath() ? 'workspace' : 'home',
 
   isRepoModalOpen: false,
+  isCreateRepoModalOpen: false,
   isMergeRequestModalOpen: false,
+
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
@@ -352,7 +358,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   },
 
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
+  setIsCreateRepoModalOpen: (isCreateRepoModalOpen) => set({ isCreateRepoModalOpen }),
   setIsMergeRequestModalOpen: (isMergeRequestModalOpen) => set({ isMergeRequestModalOpen }),
+
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),

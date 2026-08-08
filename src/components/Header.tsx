@@ -108,7 +108,7 @@ export const Header: React.FC = () => {
       {/* Right: Action Toolbar */}
       <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !(user && error.message?.includes('Not authenticated')) && (
-          <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2.5 py-1 rounded-lg max-w-xs truncate" title={error.message}>
+          <div className="flex items-center gap-1.5 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2.5 py-1 rounded-md max-w-xs truncate" title={error.message}>
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
             <button onClick={() => setError(null)} className="ml-1 text-red-400 hover:text-white">

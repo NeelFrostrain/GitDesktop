@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { 
   ChevronsUpDown,
@@ -15,9 +15,9 @@ import { UserAvatar } from './UserAvatar';
 import { CommitContextMenu } from './CommitContextMenu';
 import { FileContextMenu } from './FileContextMenu';
 import { Checkbox } from './Checkbox';
+import { RepoDropdown } from './RepoDropdown';
 
 export const Sidebar: React.FC = () => {
-
   const {
     activeRepoPath,
     status,
@@ -36,11 +36,10 @@ export const Sidebar: React.FC = () => {
     setCurrentNavView,
     selectedCommitSha,
     setSelectedCommitSha,
-    setIsRepoModalOpen,
-    setActiveModalTab,
     setError,
     user,
   } = useGitStore();
+
 
   const [isCommitting, setIsCommitting] = useState(false);
   const [fileFilter, setFileFilter] = useState('');
@@ -48,15 +47,21 @@ export const Sidebar: React.FC = () => {
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [contextMenu, setContextMenu] = useState<{ commit: CommitInfo; x: number; y: number } | null>(null);
   const [fileContextMenu, setFileContextMenu] = useState<{ filePath: string; x: number; y: number } | null>(null);
+  const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
+  const [repoCardRect, setRepoCardRect] = useState<DOMRect | null>(null);
 
-
+  const repoCardRef = useRef<HTMLDivElement>(null);
 
   const activeRepoName = activeRepoPath ? activeRepoPath.split(/[/\\]/).pop() || 'NicolasN_BunnyMP' : 'NicolasN_BunnyMP';
 
-  const handleOpenRepoSwitcher = () => {
-    setActiveModalTab('repos');
-    setIsRepoModalOpen(true);
+  const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (repoCardRef.current) {
+      setRepoCardRect(repoCardRef.current.getBoundingClientRect());
+    }
+    setIsRepoDropdownOpen(!isRepoDropdownOpen);
   };
+
 
   // Sample fallback commits
   const sampleCommits: CommitInfo[] = [
@@ -160,9 +165,11 @@ export const Sidebar: React.FC = () => {
       {/* Top Repo Switcher Card */}
       <div className="p-3 border-b border-border">
         <div
+          ref={repoCardRef}
           onClick={handleOpenRepoSwitcher}
           className="p-2.5 bg-commito-card border border-border hover:border-border-strong rounded-md flex items-center justify-between cursor-pointer transition shadow-sm"
         >
+
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -398,8 +405,15 @@ export const Sidebar: React.FC = () => {
           onClose={() => setFileContextMenu(null)}
         />
       )}
+
+      <RepoDropdown
+        isOpen={isRepoDropdownOpen}
+        onClose={() => setIsRepoDropdownOpen(false)}
+        triggerRect={repoCardRect}
+      />
     </aside>
   );
 };
+
 
 

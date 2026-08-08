@@ -143,14 +143,14 @@ export const StashManagerView: React.FC = () => {
           <button
             onClick={loadStashes}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Stash Changes</span>
@@ -160,7 +160,7 @@ export const StashManagerView: React.FC = () => {
 
       {/* Create Stash Form Modal Overlay */}
       {showCreateModal && (
-        <form onSubmit={handleCreateStash} className="p-4 bg-base-2 border border-border rounded-xl space-y-3 shadow-md">
+        <form onSubmit={handleCreateStash} className="p-4 bg-base-2 border border-border rounded-md space-y-3 shadow-md">
           <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
             <Archive className="w-4 h-4 text-commito-coral" />
             <span>Save Working Copy to Stash</span>
@@ -171,7 +171,7 @@ export const StashManagerView: React.FC = () => {
             placeholder="Stash message (optional, e.g. WIP before branch switch)"
             value={stashMessage}
             onChange={(e) => setStashMessage(e.target.value)}
-            className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral font-sans"
+            className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-sans"
             autoFocus
           />
 
@@ -187,13 +187,13 @@ export const StashManagerView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1 bg-base-3 text-text-secondary rounded-lg text-xs font-semibold hover:bg-base-1 transition"
+                className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1 bg-commito-coral text-white rounded-lg text-xs font-bold transition shadow-sm"
+                className="px-4 py-1 bg-commito-coral text-white rounded-md text-xs font-bold transition shadow-sm"
               >
                 Save Stash
               </button>
@@ -207,7 +207,7 @@ export const StashManagerView: React.FC = () => {
         {/* Left Column: Stash List */}
         <div className="space-y-2">
           {stashes.length === 0 ? (
-            <div className="p-8 text-center bg-base-2 border border-border rounded-xl text-xs text-text-muted italic">
+            <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
               No stashes recorded in working repository
             </div>
           ) : (
@@ -218,7 +218,7 @@ export const StashManagerView: React.FC = () => {
                 <div
                   key={s.index}
                   onClick={() => handleViewDiff(s.index)}
-                  className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                  className={`p-3.5 rounded-md border flex items-center justify-between cursor-pointer transition ${
                     isSelected
                       ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
                       : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
@@ -275,7 +275,7 @@ export const StashManagerView: React.FC = () => {
         </div>
 
         {/* Right Column: Diff Preview Panel */}
-        <div className="bg-base-2 border border-border rounded-xl p-4 flex flex-col min-h-0">
+        <div className="bg-base-2 border border-border rounded-md p-4 flex flex-col min-h-0">
           <div className="text-xs font-bold text-text-primary pb-2 border-b border-border flex items-center justify-between">
             <span>Stash Diff Preview</span>
             {selectedStashIndex !== null && (

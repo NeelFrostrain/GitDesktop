@@ -168,13 +168,13 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-64 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-64 bg-base-1/95 backdrop-blur-md border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       {/* Group 1: Discard changes */}
       <div className="p-1">
         <button
           onClick={handleDiscardChanges}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition text-left font-medium"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition text-left font-medium"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Discard changes</span>
@@ -187,7 +187,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleIgnoreFile}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <FileX className="w-3.5 h-3.5 text-text-muted" />
           <span>Ignore file (add to .gitignore)</span>
@@ -196,7 +196,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         {extension && (
           <button
             onClick={handleIgnoreExtension}
-            className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+            className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
           >
             <FileStack className="w-3.5 h-3.5 text-text-muted" />
             <span>{ignoreExtLabel}</span>
@@ -210,7 +210,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCopyFullPath}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy file path</span>
@@ -218,7 +218,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleCopyRelativePath}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <FileText className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy relative file path</span>
@@ -231,7 +231,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleShowInExplorer}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
           <span>Show in Explorer</span>
@@ -239,7 +239,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleOpenVSCode}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Code className="w-3.5 h-3.5 text-blue-400" />
           <span>Open in Visual Studio Code</span>
@@ -247,8 +247,9 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleOpenDefault}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
+
           <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
           <span>Open with default program</span>
         </button>

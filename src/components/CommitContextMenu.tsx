@@ -219,14 +219,14 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-60 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-60 bg-base-1/95 backdrop-blur-md border border-border rounded-md shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
 
       {/* Group 1: Commit Transformations */}
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleAmendCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Edit3 className="w-3.5 h-3.5 text-commito-coral" />
           <span>Amend commit...</span>
@@ -234,7 +234,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleResetToCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
           <span>Reset to commit...</span>
@@ -242,7 +242,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCheckoutCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
           <span>Checkout commit</span>
@@ -250,7 +250,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleReorderCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <ArrowUpDown className="w-3.5 h-3.5 text-gitlab-teal" />
           <span>Reorder commit</span>
@@ -258,7 +258,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleRevertCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Undo2 className="w-3.5 h-3.5 text-red-400" />
           <span>Revert changes in commit</span>
@@ -271,7 +271,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCreateBranchFromCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
           <span>Create branch from commit</span>
@@ -279,7 +279,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCreateTag}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Tag className="w-3.5 h-3.5 text-amber-400" />
           <span>Create Tag...</span>
@@ -287,7 +287,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCherryPickCommit}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
           <span>Cherry-pick commit...</span>
@@ -300,7 +300,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCopySha}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy SHA</span>
@@ -308,7 +308,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCopyTag}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy tag</span>
@@ -316,13 +316,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleViewOnRemote}
-          className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <ExternalLink className="w-3.5 h-3.5 text-github-dark-accent" />
           <span>Open in remote</span>
         </button>
-
       </div>
+
     </div>,
     document.body
   );

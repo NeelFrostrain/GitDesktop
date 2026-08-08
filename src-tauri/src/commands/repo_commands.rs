@@ -291,3 +291,94 @@ pub async fn show_in_explorer_cmd(repo_path: String) -> Result<(), AppError> {
     Ok(())
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct CreateRepoOptions {
+    pub name: String,
+    pub parent_path: String,
+    pub description: Option<String>,
+    pub init_readme: bool,
+    pub gitignore_template: Option<String>,
+    pub license_template: Option<String>,
+}
+
+#[command]
+pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, AppError> {
+    tokio::task::spawn_blocking(move || {
+        let repo_dir = std::path::Path::new(&opts.parent_path).join(&opts.name);
+        std::fs::create_dir_all(&repo_dir)?;
+
+        let repo = git2::Repository::init(&repo_dir)
+            .map_err(|e| AppError::Git(format!("Failed to initialize repository: {}", e)))?;
+
+        let mut created_files = false;
+
+        // 1. README
+        if opts.init_readme {
+            let readme_path = repo_dir.join("README.md");
+            let mut content = format!("# {}\n", opts.name);
+            if let Some(ref desc) = opts.description {
+                if !desc.trim().is_empty() {
+                    content.push_str(&format!("\n{}\n", desc.trim()));
+                }
+            }
+            std::fs::write(&readme_path, content)?;
+            created_files = true;
+        }
+
+        // 2. Gitignore
+        if let Some(ref gi) = opts.gitignore_template {
+            if gi != "None" && !gi.trim().is_empty() {
+                let gi_path = repo_dir.join(".gitignore");
+                let gi_content = match gi.as_str() {
+                    "Node" => "node_modules/\ndist/\n.env\n.DS_Store\n",
+                    "Rust" => "/target\nCargo.lock\n**/*.rs.bk\n",
+                    "Python" => "__pycache__/\n*.py[cod]\n*$py.class\nvenv/\n.env\n",
+                    "C++" => "*.o\n*.obj\n*.exe\n*.out\nbuild/\n.vs/\n",
+                    "Go" => "*.exe\n*.exe~\n*.dll\n*.so\n*.dylib\nvendor/\n",
+                    "Unity" => "[L|l]ibrary/\n[T|t]emp/\n[O|o]bj/\n[B|b]uild/\n[B|b]uilds/\n",
+                    "UnrealEngine" => "Binaries/\nDerivedDataCache/\nIntermediate/\nSaved/\n*.rsym\n*.obj\n",
+                    _ => "",
+                };
+                if !gi_content.is_empty() {
+                    std::fs::write(&gi_path, gi_content)?;
+                    created_files = true;
+                }
+            }
+        }
+
+        // 3. License
+        if let Some(ref lic) = opts.license_template {
+            if lic != "None" && !lic.trim().is_empty() {
+                let lic_path = repo_dir.join("LICENSE");
+                let year = chrono::Utc::now().format("%Y").to_string();
+                let lic_content = match lic.as_str() {
+                    "MIT" => format!("MIT License\n\nCopyright (c) {} \n\nPermission is hereby granted, free of charge, to any person obtaining a copy...", year),
+                    "Apache-2.0" => format!("Apache License\nVersion 2.0, January 2004\n\nCopyright {} ...", year),
+                    "GPL-3.0" => format!("GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n\nCopyright (C) {} ...", year),
+                    _ => "".to_string(),
+                };
+                if !lic_content.is_empty() {
+                    std::fs::write(&lic_path, lic_content)?;
+                    created_files = true;
+                }
+            }
+        }
+
+        // Initial Commit
+        if created_files {
+            let mut index = repo.index()?;
+            index.add_all(["*"].iter(), git2::IndexAddOption::DEFAULT, None)?;
+            index.write()?;
+            let tree_id = index.write_tree()?;
+            let tree = repo.find_tree(tree_id)?;
+            let sig = git2::Signature::now("Git Desktop User", "user@git.local")?;
+            let _ = repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[]);
+        }
+
+        Ok(repo_dir.to_string_lossy().to_string())
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+

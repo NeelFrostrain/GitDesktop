@@ -42,19 +42,33 @@ export function Dropdown<T extends string = string>({
   const toggleOpen = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (disabled) return;
-
     if (!isOpen && triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
-      const left = Math.min(rect.left, window.innerWidth - Math.max(rect.width, 220));
-      const top = rect.bottom + 4 > window.innerHeight - 250 ? rect.top - 240 : rect.bottom + 4;
       setMenuCoords({
-        left,
-        top,
+        left: rect.left,
+        top: rect.bottom + 4,
         width: Math.max(rect.width, 200),
       });
     }
     setIsOpen(!isOpen);
   };
+
+  useEffect(() => {
+    if (isOpen && triggerRef.current && menuRef.current) {
+      const triggerRect = triggerRef.current.getBoundingClientRect();
+      const menuHeight = menuRef.current.offsetHeight;
+      const menuWidth = Math.max(triggerRect.width, 200);
+
+      const left = Math.max(8, Math.min(triggerRect.left, window.innerWidth - menuWidth - 8));
+      let top = triggerRect.bottom + 4;
+
+      if (top + menuHeight > window.innerHeight - 8) {
+        top = Math.max(8, triggerRect.top - menuHeight - 4);
+      }
+
+      setMenuCoords({ left, top, width: menuWidth });
+    }
+  }, [isOpen, options.length]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -74,6 +88,7 @@ export function Dropdown<T extends string = string>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+
   const handleSelect = (val: T) => {
     onChange(val);
     setIsOpen(false);
@@ -91,7 +106,7 @@ export function Dropdown<T extends string = string>({
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-base-2/80 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-lg text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral ${
+        className={`w-full flex items-center justify-between gap-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded-md text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral ${
           isOpen ? 'border-commito-coral ring-1 ring-commito-coral/30' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
@@ -113,7 +128,7 @@ export function Dropdown<T extends string = string>({
               top: `${menuCoords.top}px`,
               minWidth: `${menuCoords.width}px`,
             }}
-            className="fixed z-[9999] bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto"
+            className="fixed z-[9999] bg-base-2 border border-border-strong rounded-md shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
@@ -127,10 +142,10 @@ export function Dropdown<T extends string = string>({
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
-                    className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between gap-2.5 transition text-left cursor-pointer ${
+                    className={`w-full px-2.5 py-1.5 rounded-md flex items-center justify-between gap-2.5 transition text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-commito-activeBg text-commito-activeText font-semibold'
-                        : 'hover:bg-base-2 text-text-primary'
+                        ? 'bg-base-3 text-text-primary font-bold'
+                        : 'hover:bg-base-3/60 text-text-secondary hover:text-text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate min-w-0">
@@ -160,4 +175,5 @@ export function Dropdown<T extends string = string>({
         )}
     </div>
   );
+
 }

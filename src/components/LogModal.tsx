@@ -87,7 +87,7 @@ export const LogModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
-      <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-md shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Header */}
         <div className="h-12 bg-base-3 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -191,7 +191,7 @@ export const LogModal: React.FC = () => {
                 <div
                   key={log.id}
                   onClick={() => log.details && setExpandedId(isExpanded ? null : log.id)}
-                  className={`p-2.5 rounded-lg border transition ${
+                  className={`p-2.5 rounded-md border transition ${
                     log.level === 'error'
                       ? 'bg-red-950/20 border-red-900/40 hover:border-red-700/60'
                       : log.level === 'success'

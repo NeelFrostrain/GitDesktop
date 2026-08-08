@@ -106,11 +106,11 @@ export const CherryPickModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center">
               <GitCommit className="w-4 h-4" />
             </div>
             <div>
@@ -124,7 +124,7 @@ export const CherryPickModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsCherryPickModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-lg hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -133,7 +133,7 @@ export const CherryPickModal: React.FC = () => {
         {/* Modal Body */}
         <form onSubmit={handleExecuteCherryPick} className="flex-1 flex flex-col min-h-0 p-5 space-y-4">
           {/* Branch Selector & Search */}
-          <div className="grid grid-cols-2 gap-3 p-3.5 bg-base-2 border border-border rounded-xl">
+          <div className="grid grid-cols-2 gap-3 p-3.5 bg-base-2 border border-border rounded-md">
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-commito-coral flex-shrink-0" />
               <Dropdown
@@ -154,7 +154,7 @@ export const CherryPickModal: React.FC = () => {
                 placeholder="Search commits by message..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+                className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral"
               />
             </div>
           </div>
@@ -172,7 +172,7 @@ export const CherryPickModal: React.FC = () => {
           {/* Commits List */}
           <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
             {filteredCommits.length === 0 ? (
-              <div className="p-8 text-center bg-base-2 border border-border rounded-xl text-xs text-text-muted italic">
+              <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
                 No commits found in branch {sourceBranch}
               </div>
             ) : (
@@ -183,7 +183,7 @@ export const CherryPickModal: React.FC = () => {
                   <div
                     key={c.sha}
                     onClick={() => toggleSelectCommit(c.sha)}
-                    className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition ${
+                    className={`p-3 rounded-md border flex items-center justify-between cursor-pointer transition ${
                       isSelected
                         ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
                         : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
@@ -219,14 +219,14 @@ export const CherryPickModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCherryPickModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={selectedShas.length === 0 || isSubmitting}
-              className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm ${
+              className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm ${
                 selectedShas.length === 0 || isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
               }`}
             >

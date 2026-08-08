@@ -123,11 +123,11 @@ export const RebaseModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
               <RotateCcw className="w-4 h-4" />
             </div>
             <div>
@@ -141,7 +141,7 @@ export const RebaseModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsRebaseModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-lg hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
           >
             <X className="w-4 h-4" />
           </button>
@@ -150,7 +150,7 @@ export const RebaseModal: React.FC = () => {
         {/* Modal Body */}
         <form onSubmit={handleExecuteRebase} className="flex-1 flex flex-col min-h-0 p-5 space-y-4">
           {/* Target Branch Selector */}
-          <div className="flex items-center gap-3 p-3.5 bg-base-2 border border-border rounded-xl">
+          <div className="flex items-center gap-3 p-3.5 bg-base-2 border border-border rounded-md">
             <GitBranch className="w-4 h-4 text-emerald-400 flex-shrink-0" />
             <span className="text-xs font-bold text-text-primary">Rebase onto Target:</span>
             <Dropdown
@@ -167,7 +167,7 @@ export const RebaseModal: React.FC = () => {
               type="button"
               onClick={() => loadCommits(targetBranch)}
               disabled={isLoading}
-              className="p-2 text-text-muted hover:text-text-primary bg-base-1 border border-border rounded-lg"
+              className="p-2 text-text-muted hover:text-text-primary bg-base-1 border border-border rounded-md"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -181,14 +181,14 @@ export const RebaseModal: React.FC = () => {
             </div>
 
             {commitPlan.length === 0 ? (
-              <div className="p-8 text-center bg-base-2 border border-border rounded-xl text-xs text-text-muted italic">
+              <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
                 Current branch is already up to date with {targetBranch}
               </div>
             ) : (
               commitPlan.map((item, index) => (
                 <div
                   key={item.sha + index}
-                  className="p-3 bg-base-2 border border-border rounded-xl flex items-center justify-between gap-3 hover:border-text-muted transition"
+                  className="p-3 bg-base-2 border border-border rounded-md flex items-center justify-between gap-3 hover:border-text-muted transition"
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex flex-col gap-0.5">
@@ -239,14 +239,14 @@ export const RebaseModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsRebaseModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-lg text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-sm cursor-pointer"
+              className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{isSubmitting ? 'Rebasing...' : 'Execute Rebase Plan'}</span>
