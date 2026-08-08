@@ -202,3 +202,20 @@ pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Re
     Ok(())
 }
 
+pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppError> {
+    use std::process::Command;
+    let mut cmd = Command::new("git");
+    cmd.current_dir(repo_path);
+    cmd.args(["checkout", "HEAD", "--", file_path]);
+    let output = cmd.output()?;
+    if !output.status.success() {
+        // Try git checkout -- file_path for untracked/staged
+        let mut cmd2 = Command::new("git");
+        cmd2.current_dir(repo_path);
+        cmd2.args(["checkout", "--", file_path]);
+        let _ = cmd2.output();
+    }
+    Ok(())
+}
+
+

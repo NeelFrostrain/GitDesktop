@@ -468,4 +468,56 @@ pub async fn sync_submodules_cmd(repo_path: String) -> Result<(), AppError> {
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn discard_file_changes_cmd(repo_path: String, file_path: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || commit_mod::discard_file_changes(&repo_path, &file_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn ignore_file_pattern_cmd(repo_path: String, pattern: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        let content = crate::git::config::read_gitignore(&repo_path).unwrap_or_default();
+        let new_content = if content.ends_with('\n') || content.is_empty() {
+            format!("{}{}\n", content, pattern)
+        } else {
+            format!("{}\n{}\n", content, pattern)
+        };
+        crate::git::config::write_gitignore(&repo_path, &new_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn open_file_default_cmd(file_path: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("cmd")
+            .arg("/c")
+            .arg("start")
+            .arg("")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| AppError::Unknown(e.to_string()))?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| AppError::Unknown(e.to_string()))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&file_path)
+            .spawn()
+            .map_err(|e| AppError::Unknown(e.to_string()))?;
+    }
+    Ok(())
+}
+
+
 

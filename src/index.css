@@ -14,9 +14,11 @@
     appearance: none;
     background-color: transparent;
   }
+
   button:active {
     background-color: inherit;
   }
+
   button:focus-visible {
     outline: 2px solid #FC6D26;
     outline-offset: 1px;
@@ -39,12 +41,14 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  width: 6px;
+  height: 6px;
+  /* background: transparent; */
 }
 
 ::-webkit-scrollbar-thumb {
   background: #36353d;
-  border-radius: 4px;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {

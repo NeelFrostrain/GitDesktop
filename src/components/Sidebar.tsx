@@ -14,6 +14,7 @@ import { useLogStore } from '../store/useLogStore';
 import { CommitInfo, RepoStatus } from '../types/git';
 import { UserAvatar } from './UserAvatar';
 import { CommitContextMenu } from './CommitContextMenu';
+import { FileContextMenu } from './FileContextMenu';
 
 export const Sidebar: React.FC = () => {
   const {
@@ -45,6 +46,8 @@ export const Sidebar: React.FC = () => {
   const [commitFilter, setCommitFilter] = useState('');
   const [commits, setCommits] = useState<CommitInfo[]>([]);
   const [contextMenu, setContextMenu] = useState<{ commit: CommitInfo; x: number; y: number } | null>(null);
+  const [fileContextMenu, setFileContextMenu] = useState<{ filePath: string; x: number; y: number } | null>(null);
+
 
 
   const activeRepoName = activeRepoPath ? activeRepoPath.split(/[/\\]/).pop() || 'NicolasN_BunnyMP' : 'NicolasN_BunnyMP';
@@ -253,7 +256,14 @@ export const Sidebar: React.FC = () => {
                   <div
                     key={file.path}
                     onClick={() => setSelectedFile(file.path)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedFile(file.path);
+                      setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
+                    }}
                     className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition ${
+
                       isSelected
                         ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
                         : 'hover:bg-base-2 text-text-secondary'
@@ -392,7 +402,17 @@ export const Sidebar: React.FC = () => {
           onClose={() => setContextMenu(null)}
         />
       )}
+
+      {fileContextMenu && (
+        <FileContextMenu
+          filePath={fileContextMenu.filePath}
+          x={fileContextMenu.x}
+          y={fileContextMenu.y}
+          onClose={() => setFileContextMenu(null)}
+        />
+      )}
     </aside>
   );
 };
+
 

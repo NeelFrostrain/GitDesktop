@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { 
@@ -130,11 +131,11 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
   const adjustedX = Math.min(x, window.innerWidth - 240);
   const adjustedY = Math.min(y, window.innerHeight - 360);
 
-  return (
+  return createPortal(
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-50 w-56 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-56 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       {showAliasInput ? (
         <form onSubmit={handleSaveAlias} className="p-2 space-y-2">
@@ -227,7 +228,6 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
               <span>Open in remote</span>
             </button>
 
-
             <button
               onClick={handleOpenTerminal}
               className="w-full px-2.5 py-1.5 rounded-lg hover:bg-base-2 text-text-primary flex items-center gap-2 transition"
@@ -267,6 +267,8 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           </div>
         </>
       )}
-    </div>
+    </div>,
+    document.body
   );
 };
+

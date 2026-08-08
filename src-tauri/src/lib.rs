@@ -101,6 +101,9 @@ pub fn run() {
             init_submodules_cmd,
             update_submodules_cmd,
             sync_submodules_cmd,
+            discard_file_changes_cmd,
+            ignore_file_pattern_cmd,
+            open_file_default_cmd,
             list_accounts_cmd,
             switch_account_cmd,
             remove_account_cmd,
@@ -113,5 +116,6 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
 
 

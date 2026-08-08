@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { 
@@ -39,7 +40,6 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     setIsCherryPickModalOpen,
     user
   } = useGitStore();
-
 
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -212,15 +212,16 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   };
 
   // Prevent menu overflow off-screen
-  const adjustedX = Math.min(x, window.innerWidth - 240);
-  const adjustedY = Math.min(y, window.innerHeight - 380);
+  const adjustedX = Math.min(x, window.innerWidth - 250);
+  const adjustedY = Math.min(y, window.innerHeight - 390);
 
-  return (
+  return createPortal(
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-50 w-60 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-60 bg-base-1/95 backdrop-blur-md border border-border rounded-xl shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
+
       {/* Group 1: Commit Transformations */}
       <div className="p-1 space-y-0.5">
         <button
@@ -322,6 +323,8 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         </button>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+
