@@ -69,16 +69,74 @@ pub fn restore_reflog_target(repo_path: &str, sha: &str, force: bool) -> Result<
 }
 
 pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    // Check for uncommitted changes first
+    let status_output = Command::new("git")
+        .arg("status")
+        .arg("--porcelain")
+        .current_dir(repo_path)
+        .output()?;
+
+    if status_output.status.success() {
+        let status_str = String::from_utf8_lossy(&status_output.stdout);
+        if !status_str.trim().is_empty() {
+            return Err(AppError::Git(
+                "Cannot revert commit with uncommitted changes in your working directory. Please commit or stash your changes first.".to_string()
+            ));
+        }
+    }
+
+    // Attempt standard revert
+    let mut output = Command::new("git")
         .arg("revert")
         .arg("--no-edit")
         .arg(sha)
         .current_dir(repo_path)
         .output()?;
 
+    // If commit is a merge commit, retry with -m 1
+    if !output.status.success() {
+        let err_text = format!("{} {}", String::from_utf8_lossy(&output.stderr), String::from_utf8_lossy(&output.stdout));
+        if err_text.contains("is a merge but no -m option was given") {
+            let _ = Command::new("git")
+                .arg("revert")
+                .arg("--abort")
+                .current_dir(repo_path)
+                .output();
+
+            output = Command::new("git")
+                .arg("revert")
+                .arg("-m")
+                .arg("1")
+                .arg("--no-edit")
+                .arg(sha)
+                .current_dir(repo_path)
+                .output()?;
+        }
+    }
+
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to revert commit: {}", stderr.trim())));
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
+
+        let err_detail = if combined.contains("nothing to commit") || combined.contains("working tree clean") {
+            "The changes in this commit have already been reverted or are empty.".to_string()
+        } else if !stderr.trim().is_empty() {
+            stderr.trim().to_string()
+        } else if !stdout.trim().is_empty() {
+            stdout.trim().to_string()
+        } else {
+            "Revert failed (check for merge conflicts)".to_string()
+        };
+
+        // Abort failed revert to keep working directory clean
+        let _ = Command::new("git")
+            .arg("revert")
+            .arg("--abort")
+            .current_dir(repo_path)
+            .output();
+
+        return Err(AppError::Git(format!("Failed to revert commit: {}", err_detail)));
     }
 
     Ok(())
