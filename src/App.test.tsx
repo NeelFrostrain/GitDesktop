@@ -32,14 +32,15 @@ describe('Sidebar Component', () => {
 
   it('disables commit button when commit summary is empty', () => {
     render(<Sidebar />);
-    const commitBtn = screen.getByText('Commit to main');
+    const commitBtn = screen.getByText(/commit.*to main/i);
     expect(commitBtn.closest('button')?.disabled).toBe(true);
   });
 
   it('enables commit button when commit summary is provided', () => {
     useGitStore.setState({ commitSummary: 'feat: add user authentication' });
     render(<Sidebar />);
-    const commitBtn = screen.getByText('Commit to main');
+    const commitBtn = screen.getByText(/commit.*to main/i);
     expect(commitBtn.closest('button')?.disabled).toBe(false);
   });
+
 });
