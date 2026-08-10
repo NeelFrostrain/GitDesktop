@@ -31,7 +31,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
+      <div className="flex-1 overflow-y-auto space-y-0.5">
         {filteredFiles.map((file) => {
           const isStaged = stagedFiles.includes(file.path);
           const isSelected = selectedFile === file.path;
@@ -46,11 +46,10 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 setSelectedFile(file.path);
                 setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
               }}
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition ${
-                isSelected
-                  ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
-                  : 'hover:bg-base-2 text-text-secondary'
-              }`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md text-xs cursor-pointer transition ${isSelected
+                ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
+                : 'hover:bg-base-2 text-text-secondary'
+                }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
               <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />

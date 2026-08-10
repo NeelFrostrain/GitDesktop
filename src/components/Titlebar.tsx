@@ -1,28 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   Minus,
   Square,
   Copy,
-  X,
-  ChevronDown,
-  User,
-  LogOut,
-  FolderGit2,
-  Terminal,
-  Plus,
-  Key
+  X
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
-import { useLogStore } from '../store/useLogStore';
 import { UserAvatar } from './UserAvatar';
 
 export const Titlebar: React.FC = () => {
-  const { user, setUser, setIsRepoModalOpen, setActiveModalTab } = useGitStore();
+  const { user } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const appWindow = getCurrentWindow();
 
   useEffect(() => {
@@ -54,16 +44,6 @@ export const Titlebar: React.FC = () => {
     };
   }, []);
 
-  // Close dropdown on click outside
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setIsProfileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleMinimize = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -110,13 +90,6 @@ export const Titlebar: React.FC = () => {
     }
   };
 
-  const handleSignOut = () => {
-    setUser(null);
-    setIsProfileOpen(false);
-    useLogStore.getState().addLog('info', 'Auth', 'Signed out of user session');
-    setActiveModalTab('accounts');
-    setIsRepoModalOpen(true);
-  };
 
   return (
     <header
@@ -148,14 +121,9 @@ export const Titlebar: React.FC = () => {
             ⌘K
           </kbd>
         </div>
-        {/* User Account Profile Button Dropdown */}
-        <div className="relative" ref={menuRef}>
-          <button
-            type="button"
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
-            title={user ? user.name || user.username : 'Account Menu'}
-          >
+        {/* User Avatar (static display) */}
+        <div className="relative">
+          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border text-text-primary shadow-sm">
             <UserAvatar
               url={user?.avatar_url}
               name={user?.name || user?.username || 'Guest'}
@@ -163,152 +131,7 @@ export const Titlebar: React.FC = () => {
               className="w-5 h-5"
               iconClassName="w-3 h-3"
             />
-            <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          {/* Floating Dropdown Menu */}
-          {isProfileOpen && (
-            <div className="absolute right-0 top-full mt-1.5 w-64 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
-              {/* Account Header Profile Info */}
-              <div className="p-3 border-b border-border bg-base-2/80">
-                <div className="flex items-center gap-3">
-                  <UserAvatar
-                    url={user?.avatar_url}
-                    name={user?.name || user?.username || 'Guest'}
-                    provider={user?.provider}
-                    className="w-9 h-9"
-                    iconClassName="w-4 h-4"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h4 className="font-extrabold text-text-primary truncate text-xs leading-tight">
-                      {user ? user.name || user.username : 'Guest User'}
-                    </h4>
-                    <p className="text-[11px] text-text-muted truncate font-mono">
-                      {user?.username ? `@${user.username}` : user?.email || 'Not signed in'}
-                    </p>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                        {user ? 'Signed In' : 'Offline'}
-                      </span>
-                      {user?.provider && (
-                        <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded text-[9px] font-mono text-commito-coral font-bold uppercase ml-auto">
-                          {user.provider}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Menu Items */}
-              <div className="p-1 space-y-0.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    useGitStore.getState().setIsUserConfigModalOpen(true);
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-commito-coral group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-xs">Git Identity & Profile</span>
-                  </div>
-                  <span className="text-[10px] text-text-muted font-mono">Edit</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    setActiveModalTab('accounts');
-                    setIsRepoModalOpen(true);
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-gitlab-teal group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-xs">Accounts & Switcher</span>
-                  </div>
-                  <span className="text-[10px] text-text-muted font-mono">Manage</span>
-                </button>
-
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    setActiveModalTab('repos');
-                    setIsRepoModalOpen(true);
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <FolderGit2 className="w-3.5 h-3.5 text-gitlab-blue group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-xs">Repositories & Remotes</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    useLogStore.getState().setIsLogModalOpen(true);
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-xs">Git Command Console</span>
-                  </div>
-                  <span className="text-[10px] text-text-muted font-mono">Logs</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    setActiveModalTab('accounts');
-                    setIsRepoModalOpen(true);
-                  }}
-                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2">
-                    <Key className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-                    <span className="font-semibold text-xs">API Key / Access Tokens</span>
-                  </div>
-                </button>
-              </div>
-
-              {/* Footer / Sign Out Section */}
-              <div className="p-1 border-t border-border mt-1">
-                {user ? (
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2 transition cursor-pointer font-bold"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Sign Out Session</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      setActiveModalTab('accounts');
-                      setIsRepoModalOpen(true);
-                    }}
-                    className="w-full px-2.5 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white flex items-center justify-center gap-2 transition cursor-pointer font-bold shadow-sm"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Sign In to GitHub / GitLab</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Vertical Separator */}

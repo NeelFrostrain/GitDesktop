@@ -91,7 +91,7 @@ export const FileBrowser: React.FC = () => {
             <span className="text-text-secondary font-medium">current branch</span>
           </div>
           <button
-            onClick={() => {}}
+            onClick={() => { }}
             className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition"
             title="Refresh working copy"
           >
@@ -100,7 +100,7 @@ export const FileBrowser: React.FC = () => {
         </div>
 
         {/* Tree List */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-0.5 font-sans text-xs">
+        <div className="flex-1 overflow-y-auto space-y-0.5 font-sans text-xs">
           {fileTree.map((node) => {
             const isExpanded = expandedFolders[node.path];
             const isSelected = selectedFile === node.path;
@@ -109,11 +109,10 @@ export const FileBrowser: React.FC = () => {
               <div
                 key={node.path}
                 onClick={() => handleSelectFile(node)}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer transition ${
-                  isSelected
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer transition ${isSelected
                     ? 'bg-commito-activeBg text-commito-activeText font-semibold'
                     : 'text-text-primary hover:bg-base-2'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-2 truncate min-w-0">
                   {node.is_dir ? (

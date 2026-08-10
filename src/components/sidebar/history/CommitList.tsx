@@ -30,7 +30,7 @@ export const CommitList: React.FC<CommitListProps> = ({ commits }) => {
 
   return (
     <>
-      <div ref={commitListRef} className="flex-1 overflow-y-auto p-2 space-y-1">
+      <div ref={commitListRef} className="flex-1 overflow-y-auto p-2 pr-0.5 space-y-1">
         {commits.map((c) => {
           const isSelected = selectedCommitSha === c.sha;
           const isDragging = draggedSha === c.sha;
