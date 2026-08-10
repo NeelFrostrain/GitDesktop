@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import React from 'react';
 import { 
-  Upload, 
-  Download,
   GitPullRequest,
   AlertCircle,
   X,
@@ -15,14 +12,12 @@ import {
 } from 'lucide-react';
 
 import { useGitStore } from '../store/useGitStore';
-import { useLogStore } from '../store/useLogStore';
-import { RepoStatus } from '../types/git';
+import { SmartGitActionButton } from './SmartGitActionButton';
+import { useRepositorySync } from '../hooks/useRepositorySync';
 
 export const Header: React.FC = () => {
   const {
     activeRepoPath,
-    setStatus,
-    user,
     error,
     setError,
     setIsMergeRequestModalOpen,
@@ -33,38 +28,7 @@ export const Header: React.FC = () => {
     setIsConfigModalOpen,
   } = useGitStore();
 
-  const [isPushing, setIsPushing] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-
-  const handleSync = async () => {
-    if (!activeRepoPath) return;
-    setIsFetching(true);
-    try {
-      await invoke('fetch_remote_cmd', { repoPath: activeRepoPath });
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
-      setStatus(res);
-      useLogStore.getState().addLog('success', 'Git', 'Fetched latest changes from origin');
-    } catch (err: any) {
-      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handlePush = async () => {
-    if (!activeRepoPath) return;
-    setIsPushing(true);
-    try {
-      await invoke('push_to_remote_cmd', { repoPath: activeRepoPath, force: false });
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
-      setStatus(res);
-      useLogStore.getState().addLog('success', 'Git', 'Pushed commits to remote origin');
-    } catch (err: any) {
-      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
-    } finally {
-      setIsPushing(false);
-    }
-  };
+  const { refreshSync, isFetching } = useRepositorySync();
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
@@ -72,7 +36,7 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-1.5">
         {/* Fetch/Refresh Status */}
         <button
-          onClick={handleSync}
+          onClick={refreshSync}
           disabled={isFetching || !activeRepoPath}
           className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
           title="Refresh Repository Status"
@@ -128,7 +92,7 @@ export const Header: React.FC = () => {
 
       {/* Right: Sync, Push & PR Action Group */}
       <div className="flex items-center gap-2">
-        {error && !error.message?.includes('No remote configured') && !(user && error.message?.includes('Not authenticated')) && (
+        {error && !error.message?.includes('No remote configured') && !error.message?.includes('Not authenticated') && (
           <div className="flex items-center gap-1 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded-md max-w-xs truncate" title={error.message}>
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
@@ -138,31 +102,8 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        {/* Sync Button */}
-        <button
-          onClick={handleSync}
-          disabled={isFetching || !activeRepoPath}
-          className={`px-2.5 py-1 rounded-md border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 transition shadow-xs ${
-            isFetching || !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-          }`}
-          title="Sync repository with remote origin"
-        >
-          <Download className={`w-3.5 h-3.5 text-text-muted ${isFetching ? 'animate-spin' : ''}`} />
-          <span>Sync</span>
-        </button>
-
-        {/* Push Button */}
-        <button
-          onClick={handlePush}
-          disabled={isPushing || !activeRepoPath}
-          className={`px-3 py-1 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs ${
-            isPushing || !activeRepoPath ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-          }`}
-          title="Push local commits to origin"
-        >
-          <Upload className="w-3.5 h-3.5" />
-          <span>{isPushing ? 'Pushing...' : 'Push'}</span>
-        </button>
+        {/* Smart Git Action Button */}
+        <SmartGitActionButton />
 
         {/* PR / Merge Button */}
         <button

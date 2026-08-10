@@ -1,6 +1,7 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
 import { Sidebar } from './components/Sidebar';
 import { HomeDashboard } from './components/HomeDashboard';
@@ -41,6 +42,7 @@ import { GitUserConfigModal } from './components/GitUserConfigModal';
 
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
+  const wasBlurredRef = useRef(false);
 
   useEffect(() => {
     // Load accounts list
@@ -134,6 +136,37 @@ export const App: React.FC = () => {
       .then((res: any) => setStatus(res))
       .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }));
   }, [activeRepoPath, setStatus, setError]);
+
+  // ── App focus refresh — fires only on blur→focus transition ────────────────
+  // Uses a fast local-only get_repo_status (no network) to avoid slow fetch on
+  // every focus while still keeping the UI in sync with external changes.
+  useEffect(() => {
+    if (!activeRepoPath) return;
+    const appWindow = getCurrentWindow();
+    let unlisten: (() => void) | undefined;
+
+    appWindow.onFocusChanged(({ payload: focused }) => {
+      if (focused && wasBlurredRef.current) {
+        // App regained focus — refresh local repo state
+        wasBlurredRef.current = false;
+        invoke<any>('get_repo_status', { repoPath: activeRepoPath })
+          .then((res) => setStatus(res))
+          .catch(() => {
+            // Silently ignore focus-refresh failures — keep last known state
+          });
+      }
+      if (!focused) {
+        wasBlurredRef.current = true;
+      }
+    }).then((fn) => {
+      unlisten = fn;
+    });
+
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, [activeRepoPath, setStatus]);
+
 
   const renderMainContent = () => {
     if (currentNavView === 'files') {

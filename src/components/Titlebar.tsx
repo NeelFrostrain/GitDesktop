@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   Minus,
   Square,
   Copy,
-  X
+  X,
+  ChevronDown
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
 import { UserAvatar } from './UserAvatar';
@@ -13,6 +14,8 @@ import { UserAvatar } from './UserAvatar';
 export const Titlebar: React.FC = () => {
   const { user } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const appWindow = getCurrentWindow();
 
   useEffect(() => {
@@ -44,6 +47,16 @@ export const Titlebar: React.FC = () => {
     };
   }, []);
 
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleMinimize = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -121,9 +134,14 @@ export const Titlebar: React.FC = () => {
             ⌘K
           </kbd>
         </div>
-        {/* User Avatar (static display) */}
-        <div className="relative">
-          <div className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border text-text-primary shadow-sm">
+        {/* User Account Profile Dropdown */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setIsProfileOpen((o) => !o)}
+            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
+            title={user ? user.name || user.username : 'Account Menu'}
+          >
             <UserAvatar
               url={user?.avatar_url}
               name={user?.name || user?.username || 'Guest'}
@@ -131,7 +149,15 @@ export const Titlebar: React.FC = () => {
               className="w-5 h-5"
               iconClassName="w-3 h-3"
             />
-          </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {/* Dropdown panel — add menu items here */}
+          {isProfileOpen && (
+            <div className="absolute right-0 top-full mt-1.5 w-56 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
+              {/* empty — items will be added here */}
+            </div>
+          )}
         </div>
 
         {/* Vertical Separator */}

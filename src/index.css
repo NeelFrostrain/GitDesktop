@@ -61,4 +61,12 @@
 
 ::-webkit-resizer {
   background: transparent;
-}
+}
+
+/* Indeterminate progress bar sweep for SmartGitActionButton */
+@keyframes progress-sweep {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(250%); }
+  100% { transform: translateX(250%); }
+}
+
