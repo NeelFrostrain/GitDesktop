@@ -33,6 +33,10 @@ import { ReflogModal } from './components/ReflogModal';
 import { PatchModal } from './components/PatchModal';
 import { GitConfigModal } from './components/GitConfigModal';
 import { CreateRepoModal } from './components/CreateRepoModal';
+import { RewriteHistoryModal } from './components/RewriteHistoryModal';
+import { GitUserConfigModal } from './components/GitUserConfigModal';
+
+
 
 
 export const App: React.FC = () => {
@@ -191,7 +195,11 @@ export const App: React.FC = () => {
       <ReflogModal />
       <PatchModal />
       <GitConfigModal />
+      <RewriteHistoryModal />
+      <GitUserConfigModal />
       <LogModal />
+
+
     </div>
     </ErrorBoundary>
   );

@@ -62,13 +62,17 @@ pub async fn commit_changes(
     repo_path: String,
     summary: String,
     description: Option<String>,
+    no_verify: Option<bool>,
+    sign_off: Option<bool>,
+    allow_empty: Option<bool>,
 ) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || {
-        commit_mod::commit_changes(&repo_path, &summary, description.as_deref())
+        commit_mod::commit_changes(&repo_path, &summary, description.as_deref(), no_verify, sign_off, allow_empty)
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?
 }
+
 
 #[command]
 pub async fn push_to_remote(repo_path: String, branch: String) -> Result<(), AppError> {
@@ -267,6 +271,19 @@ pub async fn rebase_skip_cmd(repo_path: String) -> Result<(), AppError> {
         .await
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }
+
+#[command]
+pub async fn rewrite_history_cmd(
+    repo_path: String,
+    operation: crate::git::history_rewrite::HistoryOperationPayload,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::history_rewrite::execute_history_operation(&repo_path, operation)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
 
 // Cherry Pick
 #[command]
@@ -518,6 +535,16 @@ pub async fn open_file_default_cmd(file_path: String) -> Result<(), AppError> {
     }
     Ok(())
 }
+
+#[command]
+pub async fn get_git_user_identity_cmd(
+    repo_path: String,
+) -> Result<crate::git::config::GitUserIdentity, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::config::get_git_user_identity(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
 
 
 

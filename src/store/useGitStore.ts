@@ -10,8 +10,10 @@ import {
   StashEntry,
   TagInfo,
   BlameLine,
-  SubmoduleInfo
+  SubmoduleInfo,
+  HistoryOperation,
 } from '../types/git';
+
 
 import { useLogStore } from './useLogStore';
 
@@ -69,8 +71,15 @@ const getCachedAliases = (): Record<string, string> => {
   }
 };
 
+export interface CommitOptions {
+  bypassHooks: boolean;
+  signOff: boolean;
+  allowEmpty: boolean;
+}
+
 export interface GitState {
   activeRepoPath: string | null;
+
   recentRepos: string[];
   repoAliases: Record<string, string>;
   user: UnifiedUser | null;
@@ -111,8 +120,14 @@ export interface GitState {
   isPatchModalOpen: boolean;
   isConfigModalOpen: boolean;
   isSubmodulesModalOpen: boolean;
+  isRewriteModalOpen: boolean;
+  pendingHistoryOp: HistoryOperation | null;
+  isUserConfigModalOpen: boolean;
+  pendingCommitData: { summary: string; description?: string } | null;
 
   activeModalTab: 'accounts' | 'login' | 'repos';
+
+
   isFetching: boolean;
   isPushing: boolean;
   isPulling: boolean;
@@ -142,7 +157,11 @@ export interface GitState {
   setSelectedCommitSha: (sha: string | null) => void;
   setCommitSummary: (summary: string) => void;
   setCommitDescription: (desc: string) => void;
+  commitOptions: CommitOptions;
+  setCommitOptions: (opts: Partial<CommitOptions>) => void;
+  resetCommitOptions: () => void;
   setActiveTab: (tab: 'changes' | 'history') => void;
+
   setDiffViewMode: (mode: 'unified' | 'split') => void;
   setCurrentNavView: (view: NavView) => void;
 
@@ -161,8 +180,14 @@ export interface GitState {
   setIsPatchModalOpen: (open: boolean) => void;
   setIsConfigModalOpen: (open: boolean) => void;
   setIsSubmodulesModalOpen: (open: boolean) => void;
+  setIsRewriteModalOpen: (open: boolean) => void;
+  setPendingHistoryOp: (op: HistoryOperation | null) => void;
+  setIsUserConfigModalOpen: (open: boolean) => void;
+  setPendingCommitData: (data: { summary: string; description?: string } | null) => void;
 
   setActiveModalTab: (tab: 'accounts' | 'login' | 'repos') => void;
+
+
   setIsFetching: (fetching: boolean) => void;
   setIsPushing: (pushing: boolean) => void;
   setIsPulling: (pushing: boolean) => void;
@@ -192,7 +217,13 @@ export const useGitStore = create<GitState>((set, get) => ({
   selectedCommitSha: null,
   commitSummary: '',
   commitDescription: '',
+  commitOptions: {
+    bypassHooks: false,
+    signOff: false,
+    allowEmpty: false,
+  },
   activeTab: 'changes',
+
   diffViewMode: 'unified',
   currentNavView: getCachedActiveRepoPath() ? 'workspace' : 'home',
 
@@ -211,6 +242,12 @@ export const useGitStore = create<GitState>((set, get) => ({
   isPatchModalOpen: false,
   isConfigModalOpen: false,
   isSubmodulesModalOpen: false,
+  isRewriteModalOpen: false,
+  pendingHistoryOp: null,
+  isUserConfigModalOpen: false,
+  pendingCommitData: null,
+
+
 
   activeModalTab: 'accounts',
   isFetching: false,
@@ -344,7 +381,12 @@ export const useGitStore = create<GitState>((set, get) => ({
   },
   setCommitSummary: (commitSummary) => set({ commitSummary }),
   setCommitDescription: (commitDescription) => set({ commitDescription }),
+  setCommitOptions: (opts) =>
+    set((state) => ({ commitOptions: { ...state.commitOptions, ...opts } })),
+  resetCommitOptions: () =>
+    set({ commitOptions: { bypassHooks: false, signOff: false, allowEmpty: false } }),
   setActiveTab: (activeTab) => {
+
     useLogStore.getState().addLog('info', 'System', `Switched workspace tab to '${activeTab}'`);
     set({ activeTab });
   },
@@ -372,6 +414,12 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
   setIsSubmodulesModalOpen: (isSubmodulesModalOpen) => set({ isSubmodulesModalOpen }),
+  setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
+  setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
+  setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),
+  setPendingCommitData: (pendingCommitData) => set({ pendingCommitData }),
+
+
 
   setActiveModalTab: (activeModalTab) => set({ activeModalTab }),
   setIsFetching: (isFetching) => set({ isFetching }),

@@ -6,13 +6,13 @@ import {
   Edit3, 
   RotateCcw, 
   GitCommit, 
-  ArrowUpDown, 
   Undo2, 
   GitBranch, 
   Tag, 
   Copy, 
   ExternalLink 
 } from 'lucide-react';
+
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { CommitInfo, RepoStatus } from '../types/git';
@@ -36,9 +36,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     setError,
     setCommitSummary,
     setActiveTab,
-    setIsRebaseModalOpen,
     setIsCherryPickModalOpen,
     user
+
   } = useGitStore();
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -102,13 +102,8 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     onClose();
   };
 
-  // 4. Reorder commit
-  const handleReorderCommit = () => {
-    setIsRebaseModalOpen(true);
-    onClose();
-  };
+  // 4. Revert changes in commit
 
-  // 5. Revert changes in commit
   const handleRevertCommit = async () => {
     if (!activeRepoPath) return;
 
@@ -249,20 +244,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         </button>
 
         <button
-          onClick={handleReorderCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
-        >
-          <ArrowUpDown className="w-3.5 h-3.5 text-gitlab-teal" />
-          <span>Reorder commit</span>
-        </button>
-
-        <button
           onClick={handleRevertCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Undo2 className="w-3.5 h-3.5 text-red-400" />
           <span>Revert changes in commit</span>
         </button>
+
       </div>
 
       <div className="h-px bg-border my-1" />

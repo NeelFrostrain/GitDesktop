@@ -165,4 +165,28 @@ export interface GitConfigItem {
   scope: 'local' | 'global';
 }
 
+export type HistoryOperationType = 'reorder' | 'merge' | 'remove';
+
+export interface ReorderOperation {
+  type: 'reorder';
+  sourceCommit: CommitInfo;
+  targetCommit: CommitInfo;
+  position: 'before' | 'after';
+}
+
+export interface MergeOperation {
+  type: 'merge';
+  sourceCommit: CommitInfo;
+  targetCommit: CommitInfo;
+  newMessage: string;
+}
+
+export interface RemoveOperation {
+  type: 'remove';
+  sourceCommit: CommitInfo;
+}
+
+export type HistoryOperation = ReorderOperation | MergeOperation | RemoveOperation;
+
+
 

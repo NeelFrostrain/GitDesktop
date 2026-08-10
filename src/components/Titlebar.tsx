@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { 
-  Minus, 
-  Square, 
-  Copy, 
-  X, 
-  ChevronDown, 
-  User, 
-  LogOut, 
-  FolderGit2, 
-  Terminal, 
+import {
+  Minus,
+  Square,
+  Copy,
+  X,
+  ChevronDown,
+  User,
+  LogOut,
+  FolderGit2,
+  Terminal,
   Plus,
   Key
 } from 'lucide-react';
@@ -127,12 +127,14 @@ export const Titlebar: React.FC = () => {
       <div data-tauri-drag-region className="flex items-center gap-3">
         <div className="flex items-center gap-2 pointer-events-none">
           <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-sm" />
-          <span className="font-bold text-text-primary text-sm tracking-tight">Git Desktop</span>
+          {/* <span className="font-bold text-text-primary text-sm tracking-tight">Git Desktop</span> */}
         </div>
       </div>
-
-      {/* Center: Command Search Bar */}
-      <div className="titlebar-no-drag flex items-center gap-3 flex-1 justify-center max-w-sm mx-auto">
+      {/* Right: Profile Dropdown + Window Action Buttons */}
+      <div
+        className="titlebar-no-drag flex items-center gap-2.5 z-50"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
         <div className="relative w-full">
           <input
             type="text"
@@ -146,19 +148,12 @@ export const Titlebar: React.FC = () => {
             ⌘K
           </kbd>
         </div>
-      </div>
-
-      {/* Right: Profile Dropdown + Window Action Buttons */}
-      <div
-        className="titlebar-no-drag flex items-center gap-2.5 z-50"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
         {/* User Account Profile Button Dropdown */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-1.5 px-1.5 py-1 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
@@ -212,17 +207,33 @@ export const Titlebar: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setIsProfileOpen(false);
+                    useGitStore.getState().setIsUserConfigModalOpen(true);
+                  }}
+                  className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <User className="w-3.5 h-3.5 text-commito-coral group-hover:scale-110 transition-transform" />
+                    <span className="font-semibold text-xs">Git Identity & Profile</span>
+                  </div>
+                  <span className="text-[10px] text-text-muted font-mono">Edit</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileOpen(false);
                     setActiveModalTab('accounts');
                     setIsRepoModalOpen(true);
                   }}
                   className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center justify-between transition group cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
-                    <User className="w-3.5 h-3.5 text-commito-coral group-hover:scale-110 transition-transform" />
+                    <User className="w-3.5 h-3.5 text-gitlab-teal group-hover:scale-110 transition-transform" />
                     <span className="font-semibold text-xs">Accounts & Switcher</span>
                   </div>
                   <span className="text-[10px] text-text-muted font-mono">Manage</span>
                 </button>
+
 
                 <button
                   type="button"

@@ -10,6 +10,51 @@ pub struct GitConfigItem {
     pub scope: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct GitUserIdentity {
+    pub name: Option<String>,
+    pub email: Option<String>,
+}
+
+pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppError> {
+    let name_output = Command::new("git")
+        .arg("config")
+        .arg("user.name")
+        .current_dir(repo_path)
+        .output();
+
+    let email_output = Command::new("git")
+        .arg("config")
+        .arg("user.email")
+        .current_dir(repo_path)
+        .output();
+
+    let name = if let Ok(out) = name_output {
+        if out.status.success() {
+            let val = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !val.is_empty() { Some(val) } else { None }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    let email = if let Ok(out) = email_output {
+        if out.status.success() {
+            let val = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            if !val.is_empty() { Some(val) } else { None }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    Ok(GitUserIdentity { name, email })
+}
+
+
 pub fn get_repo_git_config(repo_path: &str) -> Result<Vec<GitConfigItem>, AppError> {
     let output = Command::new("git")
         .arg("config")

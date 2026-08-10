@@ -76,7 +76,9 @@ pub fn run() {
             rebase_continue_cmd,
             rebase_abort_cmd,
             rebase_skip_cmd,
+            rewrite_history_cmd,
             cherry_pick_commits_cmd,
+
             cherry_pick_continue_cmd,
             cherry_pick_abort_cmd,
             list_stashes_cmd,
@@ -97,7 +99,9 @@ pub fn run() {
             apply_patch_cmd,
             get_repo_git_config_cmd,
             set_repo_git_config_cmd,
+            get_git_user_identity_cmd,
             read_gitignore_cmd,
+
             write_gitignore_cmd,
             list_submodules_cmd,
             init_submodules_cmd,

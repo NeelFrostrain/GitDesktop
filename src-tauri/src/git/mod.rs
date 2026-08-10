@@ -14,5 +14,7 @@ pub mod reflog;
 pub mod patch;
 pub mod config;
 pub mod submodules;
+pub mod history_rewrite;
+
 
 

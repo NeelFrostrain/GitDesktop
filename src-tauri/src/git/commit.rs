@@ -1,7 +1,9 @@
 use git2::{Repository, IndexAddOption, Signature};
 use std::path::Path;
+use std::process::Command;
 use crate::error::AppError;
 use crate::auth::keyring;
+
 
 pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
     let repo = Repository::open(repo_path)
@@ -41,20 +43,21 @@ pub fn commit_changes(
     repo_path: &str,
     summary: &str,
     description: Option<&str>,
+    no_verify: Option<bool>,
+    sign_off: Option<bool>,
+    allow_empty: Option<bool>,
 ) -> Result<(), AppError> {
     if summary.trim().is_empty() {
         return Err(AppError::Validation("Commit summary cannot be empty".to_string()));
     }
 
-    let repo = Repository::open(repo_path)?;
-    let mut index = repo.index()?;
-    let tree_id = index.write_tree()?;
-    let tree = repo.find_tree(tree_id)?;
+    let is_no_verify = no_verify.unwrap_or(false);
+    let is_allow_empty = allow_empty.unwrap_or(false);
+    let is_sign_off = sign_off.unwrap_or(false);
 
+    let repo = Repository::open(repo_path)?;
     let config = repo.config()?;
 
-    // Use the account associated with this repo (or the global active account),
-    // falling back to local git config, then to defaults.
     let (name, email) = if let Some(acct) = keyring::get_account_for_repo(repo_path) {
         let name = if acct.name.trim().is_empty() || acct.name == "GitLab User" {
             config.get_string("user.name").unwrap_or_else(|_| acct.username.clone())
@@ -71,12 +74,43 @@ pub fn commit_changes(
         (name, email)
     };
 
-    let signature = Signature::now(&name, &email)?;
-
-    let full_message = match description {
+    let mut full_message = match description {
         Some(desc) if !desc.trim().is_empty() => format!("{}\n\n{}", summary.trim(), desc.trim()),
         _ => summary.trim().to_string(),
     };
+
+    if is_sign_off && !full_message.contains("Signed-off-by:") {
+        full_message = format!("{}\n\nSigned-off-by: {} <{}>", full_message.trim(), name, email);
+    }
+
+    if is_no_verify || is_allow_empty {
+        let mut cmd = Command::new("git");
+        cmd.arg("commit");
+        if is_no_verify {
+            cmd.arg("--no-verify");
+        }
+        if is_allow_empty {
+            cmd.arg("--allow-empty");
+        }
+        if is_sign_off {
+            cmd.arg("-s");
+        }
+        cmd.arg("-m").arg(&full_message);
+        cmd.current_dir(repo_path);
+
+        let output = cmd.output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AppError::Git(format!("Git commit failed: {}", stderr.trim())));
+        }
+        return Ok(());
+    }
+
+    let mut index = repo.index()?;
+    let tree_id = index.write_tree()?;
+    let tree = repo.find_tree(tree_id)?;
+
+    let signature = Signature::now(&name, &email)?;
 
     let parent_commit = match repo.head() {
         Ok(head) => match head.peel_to_commit() {
@@ -102,6 +136,7 @@ pub fn commit_changes(
 
     Ok(())
 }
+
 
 pub fn list_branches(repo_path: &str) -> Result<Vec<crate::git::status::BranchInfo>, AppError> {
     let repo = Repository::open(repo_path)?;
