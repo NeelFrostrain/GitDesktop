@@ -81,7 +81,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
 
       {/* Drop to Merge Overlay */}
       {isTarget && dropZone === 'merge' && (
-        <div className="absolute inset-0 bg-commito-coral/25 backdrop-blur-[1px] border-2 border-commito-coral rounded-md flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-white uppercase tracking-wider z-20 pointer-events-none shadow-lg">
+        <div className="absolute inset-0 bg-commito-coral/90 border-2 border-commito-coral rounded-md flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-white uppercase tracking-wider z-20 pointer-events-none shadow-lg">
           <GitMerge className="w-3.5 h-3.5" />
           <span>DROP TO MERGE COMMITS</span>
         </div>

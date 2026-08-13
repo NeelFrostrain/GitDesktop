@@ -53,6 +53,22 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
+  // 0. Undo commit (Soft Reset HEAD~1)
+  const handleUndoCommit = async () => {
+    if (!activeRepoPath) return;
+    try {
+      const undoneMsg = await invoke<string>('undo_commit_cmd', { repoPath: activeRepoPath });
+      setCommitSummary(undoneMsg || commit.message);
+      setActiveTab('changes');
+      useLogStore.getState().addLog('success', 'Git', `Undone commit '${undoneMsg || commit.message}' — changes preserved in working directory`);
+      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      setStatus(res);
+    } catch (err: any) {
+      setError({ code: 'UNDO_COMMIT_ERROR', message: err.message || String(err) });
+    }
+    onClose();
+  };
+
   // 1. Amend commit...
   const handleAmendCommit = () => {
     setCommitSummary(commit.message);
@@ -213,11 +229,19 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-60 bg-base-1/95 backdrop-blur-md border border-border rounded-md shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-md shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
 
-      {/* Group 1: Commit Transformations */}
+      {/* Group 1: Commit Modifications */}
       <div className="p-1 space-y-0.5">
+        <button
+          onClick={handleUndoCommit}
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left font-bold"
+        >
+          <Undo2 className="w-3.5 h-3.5 text-commito-coral" />
+          <span>Undo commit (Soft Reset)</span>
+        </button>
+
         <button
           onClick={handleAmendCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
@@ -227,13 +251,18 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         </button>
 
         <button
-          onClick={handleResetToCommit}
+          onClick={handleRevertCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-          <span>Reset to commit...</span>
+          <RotateCcw className="w-3.5 h-3.5 text-red-400" />
+          <span>Revert commit</span>
         </button>
+      </div>
 
+      <div className="h-px bg-border my-1" />
+
+      {/* Group 2: Branching & Navigation */}
+      <div className="p-1 space-y-0.5">
         <button
           onClick={handleCheckoutCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
@@ -243,19 +272,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         </button>
 
         <button
-          onClick={handleRevertCommit}
+          onClick={handleResetToCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
-          <Undo2 className="w-3.5 h-3.5 text-red-400" />
-          <span>Revert changes in commit</span>
+          <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+          <span>Reset HEAD to commit...</span>
         </button>
 
-      </div>
-
-      <div className="h-px bg-border my-1" />
-
-      {/* Group 2: Branching & Tagging */}
-      <div className="p-1 space-y-0.5">
         <button
           onClick={handleCreateBranchFromCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
@@ -298,7 +321,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
-          <span>Copy tag</span>
+          <span>Copy commit message</span>
         </button>
 
         <button

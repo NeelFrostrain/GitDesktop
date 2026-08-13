@@ -84,40 +84,26 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
             continue;
         }
 
-        // Staged changes (Index)
-        if s.contains(Status::INDEX_NEW)
+        let is_staged = s.contains(Status::INDEX_NEW)
             || s.contains(Status::INDEX_MODIFIED)
             || s.contains(Status::INDEX_DELETED)
-            || s.contains(Status::INDEX_RENAMED)
-        {
-            let kind = if s.contains(Status::INDEX_NEW) {
-                FileStatusKind::Staged
-            } else if s.contains(Status::INDEX_DELETED) {
-                FileStatusKind::Deleted
-            } else if s.contains(Status::INDEX_RENAMED) {
-                FileStatusKind::Renamed
-            } else {
-                FileStatusKind::Modified
-            };
+            || s.contains(Status::INDEX_RENAMED);
 
-            files.push(FileStatus {
-                path: path_str.clone(),
-                status: kind,
-                staged: true,
-            });
-        }
-
-        // Unstaged changes (Worktree)
-        if s.contains(Status::WT_NEW)
+        let is_wt = s.contains(Status::WT_NEW)
             || s.contains(Status::WT_MODIFIED)
             || s.contains(Status::WT_DELETED)
-            || s.contains(Status::WT_RENAMED)
-        {
-            let kind = if s.contains(Status::WT_NEW) {
-                FileStatusKind::Untracked
-            } else if s.contains(Status::WT_DELETED) {
+            || s.contains(Status::WT_RENAMED);
+
+        if is_staged || is_wt {
+            let kind = if s.contains(Status::INDEX_NEW) || s.contains(Status::WT_NEW) {
+                if s.contains(Status::WT_NEW) && !is_staged {
+                    FileStatusKind::Untracked
+                } else {
+                    FileStatusKind::Staged
+                }
+            } else if s.contains(Status::INDEX_DELETED) || s.contains(Status::WT_DELETED) {
                 FileStatusKind::Deleted
-            } else if s.contains(Status::WT_RENAMED) {
+            } else if s.contains(Status::INDEX_RENAMED) || s.contains(Status::WT_RENAMED) {
                 FileStatusKind::Renamed
             } else {
                 FileStatusKind::Modified
@@ -126,7 +112,7 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
             files.push(FileStatus {
                 path: path_str,
                 status: kind,
-                staged: false,
+                staged: is_staged,
             });
         }
     }

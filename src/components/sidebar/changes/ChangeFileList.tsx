@@ -17,7 +17,15 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   } | null>(null);
 
   const allFiles = status?.files || [];
-  const filteredFiles = allFiles.filter((f) =>
+  const uniqueFilesMap = new Map<string, typeof allFiles[0]>();
+  allFiles.forEach((f) => {
+    if (!uniqueFilesMap.has(f.path)) {
+      uniqueFilesMap.set(f.path, f);
+    }
+  });
+  const uniqueFiles = Array.from(uniqueFilesMap.values());
+
+  const filteredFiles = uniqueFiles.filter((f) =>
     f.path.toLowerCase().includes(filter.toLowerCase())
   );
 

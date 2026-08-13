@@ -118,7 +118,7 @@ export const MergeRequestModal: React.FC = () => {
   if (!isMergeRequestModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans">
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">

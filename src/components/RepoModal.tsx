@@ -413,7 +413,7 @@ export const RepoModal: React.FC = () => {
   if (!isRepoModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none">
       <div className="bg-base-2 border-2 border-gitlab-orange/40 rounded-md shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Modal Header */}
         <div className="h-12 bg-base-3 border-b border-border px-4 flex items-center justify-between">

@@ -92,7 +92,7 @@ export const CreateRepoModal: React.FC = () => {
     : name.trim() || 'repository-name';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none">
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none">
       <div className="bg-base-0 border border-border rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="h-12 bg-base-2 border-b border-border px-4 flex items-center justify-between">

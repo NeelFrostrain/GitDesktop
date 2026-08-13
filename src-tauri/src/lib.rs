@@ -95,6 +95,7 @@ pub fn run() {
             list_reflog_cmd,
             restore_reflog_target_cmd,
             revert_commit_cmd,
+            undo_commit_cmd,
             export_patch_cmd,
             apply_patch_cmd,
             get_repo_git_config_cmd,

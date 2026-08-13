@@ -38,7 +38,7 @@ export const GitUserConfigModal: React.FC = () => {
   const isManualMode = selectedSyncAccount === 'custom';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 select-none font-sans">
+    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[90vh]">
         <ConfigHeader onClose={handleClose} />
 
