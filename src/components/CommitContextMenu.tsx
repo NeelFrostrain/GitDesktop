@@ -90,7 +90,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     try {
       await invoke('checkout_branch', {
         repoPath: activeRepoPath,
-        name: commit.sha,
+        branch: commit.sha,
       });
 
       useLogStore.getState().addLog('info', 'Git', `Checked out commit ${commit.short_sha} (Detached HEAD)`);
@@ -133,8 +133,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       try {
         await invoke('create_branch', {
           repoPath: activeRepoPath,
-          name: branchName.trim(),
-          startPoint: commit.sha,
+          branch: branchName.trim(),
         });
 
         useLogStore.getState().addLog('success', 'Git', `Created branch '${branchName.trim()}' from commit ${commit.short_sha}`);
