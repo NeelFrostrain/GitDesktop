@@ -167,7 +167,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleMinimize}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
+          className="w-10 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title="Minimize"
         >
           <Minus className="w-3.5 h-3.5 pointer-events-none" />
@@ -176,7 +176,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleToggleMaximize}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
+          className="w-10 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title={isMaximized ? "Restore" : "Maximize"}
         >
           {isMaximized ? (
@@ -189,7 +189,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleClose}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-red-600 hover:text-white transition cursor-pointer"
+          className="w-10 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-red-600 hover:text-white transition cursor-pointer"
           title="Close"
         >
           <X className="w-3.5 h-3.5 pointer-events-none" />

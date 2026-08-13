@@ -13,6 +13,7 @@ import {
 
 import { useGitStore } from '../store/useGitStore';
 import { SmartGitActionButton } from './SmartGitActionButton';
+import { BranchDropdown } from './BranchDropdown';
 import { useRepositorySync } from '../hooks/useRepositorySync';
 
 export const Header: React.FC = () => {
@@ -90,7 +91,7 @@ export const Header: React.FC = () => {
         </button>
       </div>
 
-      {/* Right: Sync, Push & PR Action Group */}
+      {/* Right: Sync, Push, Branch & PR Action Group */}
       <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !error.message?.includes('Not authenticated') && (
           <div className="flex items-center gap-1 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded-md max-w-xs truncate" title={error.message}>
@@ -104,6 +105,9 @@ export const Header: React.FC = () => {
 
         {/* Smart Git Action Button */}
         <SmartGitActionButton />
+
+        {/* Branch Switcher Dropdown */}
+        <BranchDropdown />
 
         {/* PR / Merge Button */}
         <button

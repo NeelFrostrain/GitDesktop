@@ -282,6 +282,27 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     }
   }, [isOpen, user]);
 
+  // ── Filtering ───────────────────────────────────────────────────────────────
+
+  const queryLower = filterQuery.trim().toLowerCase();
+
+  const filteredRecentRepos = useMemo(() => {
+    return recentRepos.filter((path) => {
+      const name = getRepoName(path).toLowerCase();
+      const fullPath = path.toLowerCase();
+      return name.includes(queryLower) || fullPath.includes(queryLower);
+    });
+  }, [recentRepos, queryLower]);
+
+  const filteredUserRepos = useMemo(() => {
+    return userRepos.filter((repo) => {
+      return (
+        repo.name.toLowerCase().includes(queryLower) ||
+        repo.path_with_namespace.toLowerCase().includes(queryLower)
+      );
+    });
+  }, [userRepos, queryLower]);
+
   if (!isOpen || !triggerRect) return null;
 
   // ── Actions ─────────────────────────────────────────────────────────────────
@@ -337,27 +358,6 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     setIsRepoModalOpen(true);
   };
 
-  // ── Filtering ───────────────────────────────────────────────────────────────
-
-  const queryLower = filterQuery.trim().toLowerCase();
-
-  const filteredRecentRepos = useMemo(() => {
-    return recentRepos.filter((path) => {
-      const name = getRepoName(path).toLowerCase();
-      const fullPath = path.toLowerCase();
-      return name.includes(queryLower) || fullPath.includes(queryLower);
-    });
-  }, [recentRepos, queryLower]);
-
-  const filteredUserRepos = useMemo(() => {
-    return userRepos.filter((repo) => {
-      return (
-        repo.name.toLowerCase().includes(queryLower) ||
-        repo.path_with_namespace.toLowerCase().includes(queryLower)
-      );
-    });
-  }, [userRepos, queryLower]);
-
   // Positioning
   const menuWidth = Math.max(triggerRect.width, 360);
   const leftPos = Math.min(triggerRect.left, window.innerWidth - menuWidth - 12);
@@ -371,7 +371,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
         top: `${topPos}px`,
         width: `${menuWidth}px`,
       }}
-      className="fixed z-[9999] bg-base-1/98 backdrop-blur-md border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[500px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+      className="fixed z-[9999] bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[500px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
     >
       {/* 1. Header Toolbar: Title & Add Action */}
       <div className="px-3 pt-2.5 pb-2 border-b border-border bg-base-0/90 flex items-center justify-between flex-shrink-0">

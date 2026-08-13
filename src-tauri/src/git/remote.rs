@@ -20,12 +20,12 @@ pub struct GitAuthInfo {
 }
 
 pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
+    // 1. Check if a specific account is linked to this repository
     let acct = keyring::get_account_for_repo(repo_path);
-    let token = acct.as_ref().map(|a| a.token.clone()).or_else(|| keyring::get_token().unwrap_or(None));
-    let username = acct.as_ref().map(|a| a.username.clone());
-    let provider = acct.as_ref().map(|a| a.provider.clone()).unwrap_or_else(|| "gitlab".to_string());
 
-    // Clean legacy embedded credentials from the git remote URL (e.g. https://oauth2:token@host/repo.git -> https://host/repo.git)
+    // 2. Determine provider from linked account or auto-detect from remote URL
+    let mut repo_provider = acct.as_ref().map(|a| a.provider.clone());
+
     if let Ok(repo) = Repository::open(repo_path) {
         let remote_name = if repo.find_remote("origin").is_ok() {
             "origin"
@@ -37,6 +37,16 @@ pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
 
         if let Ok(remote) = repo.find_remote(remote_name) {
             if let Some(url) = remote.url() {
+                let url_lower = url.to_lowercase();
+                if repo_provider.is_none() {
+                    if url_lower.contains("github.com") {
+                        repo_provider = Some("github".to_string());
+                    } else if url_lower.contains("gitlab") {
+                        repo_provider = Some("gitlab".to_string());
+                    }
+                }
+
+                // Clean legacy embedded credentials from the git remote URL (e.g. https://oauth2:token@host/repo.git -> https://host/repo.git)
                 if url.starts_with("https://") && url.contains('@') {
                     let url_without_scheme = &url["https://".len()..];
                     if let Some(idx) = url_without_scheme.find('@') {
@@ -53,6 +63,21 @@ pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
             }
         }
     }
+
+    let provider = repo_provider.unwrap_or_else(|| "gitlab".to_string());
+
+    // 3. Match token to provider: only use active token if account provider matches repo provider
+    let (token, username) = if let Some(a) = acct {
+        (Some(a.token), Some(a.username))
+    } else if let Some(active) = keyring::get_active_account() {
+        if active.provider == provider {
+            (Some(active.token), Some(active.username))
+        } else {
+            (None, None)
+        }
+    } else {
+        (keyring::get_token().unwrap_or(None), None)
+    };
 
     GitAuthInfo { token, username, provider }
 }
@@ -93,11 +118,11 @@ pub fn fetch_remote(repo_path: &str) -> Result<(), AppError> {
         if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
             if auth_info.token.is_none() {
                 return Err(AppError::Auth(
-                    "Authentication Required: Please sign in to your account in Account Services to fetch remote.".to_string()
+                    format!("Authentication Required: Please sign in to your account in Account Services to fetch from {}.", auth_info.provider)
                 ));
             }
             return Err(AppError::Auth(
-                "Access Denied: The stored token is invalid, expired, or lacks repo permissions. Please re-authenticate in Account Services.".to_string()
+                format!("Access Denied: {}", stderr.trim())
             ));
         }
         return Err(AppError::Git(format!("Fetch failed: {}", stderr.trim())));
@@ -119,19 +144,22 @@ pub fn push_to_remote(repo_path: &str, branch_name: &str) -> Result<(), AppError
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        
-        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
+        let err_msg = combined.trim().to_string();
+
+        if err_msg.contains("HTTP Basic: Access denied") || err_msg.contains("Authentication failed") || err_msg.contains("Permission denied") {
             if auth_info.token.is_none() {
                 return Err(AppError::Auth(
-                    "Authentication Required: Please sign in to your account in Account Services to push to remote.".to_string()
+                    format!("Authentication Required: Please sign in to your account in Account Services to push to {}.", auth_info.provider)
                 ));
             }
             return Err(AppError::Auth(
-                "Access Denied: Stored token does not have push permissions for this repository. Please re-login in Account Services.".to_string()
+                format!("Access Denied: {}", err_msg)
             ));
         }
 
-        return Err(AppError::Git(format!("Failed to push to remote: {}", stderr.trim())));
+        return Err(AppError::Git(format!("Failed to push to remote: {}", err_msg)));
     }
 
     Ok(())

@@ -135,7 +135,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-56 bg-base-1/95 backdrop-blur-md border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-56 bg-base-1 border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       {showAliasInput ? (
         <form onSubmit={handleSaveAlias} className="p-2 space-y-2">
