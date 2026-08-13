@@ -62,12 +62,10 @@ pub fn apply_git_auth_args_pub(cmd: &mut Command, auth_info: &GitAuthInfo) {
 }
 
 fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
-
     if let Some(ref t) = auth_info.token {
         let t_clean = t.trim();
         if !t_clean.is_empty() {
-            let default_user = if auth_info.provider == "github" { "x-access-token" } else { "oauth2" };
-            let auth_user = auth_info.username.as_deref().unwrap_or(default_user);
+            let auth_user = if auth_info.provider == "github" { "x-access-token" } else { "oauth2" };
             let auth_str = format!("{}:{}", auth_user, t_clean);
             let encoded = STANDARD.encode(auth_str.as_bytes());
 
@@ -206,9 +204,7 @@ pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppErr
         let t_clean = t.trim();
         if !t_clean.is_empty() {
             let provider = active_acct.as_ref().map(|a| a.provider.as_str()).unwrap_or("gitlab");
-            let username = active_acct.as_ref().map(|a| a.username.as_str());
-            let default_user = if provider == "github" { "x-access-token" } else { "oauth2" };
-            let auth_user = username.unwrap_or(default_user);
+            let auth_user = if provider == "github" { "x-access-token" } else { "oauth2" };
             let auth_str = format!("{}:{}", auth_user, t_clean);
             let encoded = STANDARD.encode(auth_str.as_bytes());
 
