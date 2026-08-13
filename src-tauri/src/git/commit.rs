@@ -35,6 +35,8 @@ pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError
 
     if let Some(commit) = head {
         repo.reset_default(Some(commit.as_object()), files)?;
+        let mut index = repo.index()?;
+        index.write()?;
     }
     Ok(())
 }
@@ -172,7 +174,13 @@ pub fn checkout_branch(repo_path: &str, branch_name: &str) -> Result<(), AppErro
     let repo = Repository::open(repo_path)?;
     let (object, reference) = repo.revparse_ext(branch_name)?;
 
-    repo.checkout_tree(&object, None)?;
+    let mut opts = git2::build::CheckoutBuilder::new();
+    opts.safe();
+    if let Err(_) = repo.checkout_tree(&object, Some(&mut opts)) {
+        let mut force_opts = git2::build::CheckoutBuilder::new();
+        force_opts.force();
+        repo.checkout_tree(&object, Some(&mut force_opts))?;
+    }
 
     match reference {
         Some(gref) => {
@@ -239,16 +247,21 @@ pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Re
 
 pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppError> {
     use std::process::Command;
+    let full_path = Path::new(repo_path).join(file_path);
+
     let mut cmd = Command::new("git");
     cmd.current_dir(repo_path);
     cmd.args(["checkout", "HEAD", "--", file_path]);
     let output = cmd.output()?;
+
     if !output.status.success() {
-        // Try git checkout -- file_path for untracked/staged
         let mut cmd2 = Command::new("git");
         cmd2.current_dir(repo_path);
-        cmd2.args(["checkout", "--", file_path]);
-        let _ = cmd2.output();
+        cmd2.args(["clean", "-f", "--", file_path]);
+        let output2 = cmd2.output()?;
+        if !output2.status.success() && full_path.exists() {
+            let _ = std::fs::remove_file(&full_path);
+        }
     }
     Ok(())
 }

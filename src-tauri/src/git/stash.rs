@@ -28,7 +28,7 @@ pub fn list_stashes(repo_path: &str) -> Result<Vec<StashEntry>, AppError> {
     let mut stashes = Vec::new();
 
     for (i, line) in stdout.lines().enumerate() {
-        let parts: Vec<&str> = line.split('|').collect();
+        let parts: Vec<&str> = line.splitn(4, '|').collect();
         if parts.len() >= 4 {
             let _stash_ref = parts[0];
 

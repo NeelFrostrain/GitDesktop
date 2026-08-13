@@ -139,7 +139,7 @@ pub fn push_to_remote(repo_path: &str, branch_name: &str) -> Result<(), AppError
     Ok(())
 }
 
-pub fn pull_from_remote(repo_path: &str, _branch_name: &str) -> Result<PullResult, AppError> {
+pub fn pull_from_remote(repo_path: &str, branch_name: &str) -> Result<PullResult, AppError> {
     let auth_info = get_git_auth_info(repo_path);
 
     let mut cmd = Command::new("git");
@@ -147,6 +147,9 @@ pub fn pull_from_remote(repo_path: &str, _branch_name: &str) -> Result<PullResul
     apply_git_auth_args(&mut cmd, &auth_info);
 
     cmd.arg("pull").arg("--no-rebase");
+    if !branch_name.trim().is_empty() && branch_name != "HEAD" {
+        cmd.arg("origin").arg(branch_name.trim());
+    }
 
     let output = cmd.output()?;
 

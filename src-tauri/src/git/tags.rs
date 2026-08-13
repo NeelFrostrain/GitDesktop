@@ -28,7 +28,7 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
     let mut tags = Vec::new();
 
     for line in stdout.lines() {
-        let parts: Vec<&str> = line.split('|').collect();
+        let parts: Vec<&str> = line.splitn(4, '|').collect();
         if !parts.is_empty() && !parts[0].trim().is_empty() {
             let name = parts[0].to_string();
             let sha = parts.get(1).unwrap_or(&"").to_string();

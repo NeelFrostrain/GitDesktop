@@ -230,7 +230,10 @@ export function useGitUserConfig() {
       if (pendingCommitData && activeRepoPath) {
         useLogStore.getState().addLog('info', 'Git', `Resuming original commit operation...`);
 
-        const opts = useGitStore.getState().commitOptions;
+        const { commitOptions: opts, stagedFiles } = useGitStore.getState();
+        if (stagedFiles.length > 0) {
+          await invoke('stage_files', { repoPath: activeRepoPath, files: stagedFiles });
+        }
         await invoke('commit_changes', {
           repoPath: activeRepoPath,
           summary: pendingCommitData.summary,

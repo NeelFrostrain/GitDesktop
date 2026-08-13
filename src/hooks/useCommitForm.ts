@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { GitCommitService } from '../services/git/GitCommitService';
@@ -60,6 +61,9 @@ export function useCommitForm() {
     setIsCommitting(true);
 
     try {
+      if (stagedFiles.length > 0) {
+        await invoke('stage_files', { repoPath: activeRepoPath, files: stagedFiles });
+      }
       await GitCommitService.commit({
         repoPath: activeRepoPath,
         summary: commitSummary,

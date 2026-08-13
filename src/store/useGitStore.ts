@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { UnifiedUser, SavedAccount } from '../types/gitlab';
 import { 
   RepoStatus, 
@@ -352,26 +353,64 @@ export const useGitStore = create<GitState>((set, get) => ({
     }
     set({ selectedFile: file });
   },
-  toggleStageFile: (file) => {
-    const { stagedFiles } = get();
+  toggleStageFile: async (file) => {
+    const { activeRepoPath, stagedFiles, setStatus } = get();
     const isStaged = stagedFiles.includes(file);
     if (isStaged) {
       useLogStore.getState().addLog('info', 'Git', `Unstaged file '${file}'`);
       set({ stagedFiles: stagedFiles.filter(f => f !== file) });
+      if (activeRepoPath) {
+        try {
+          await invoke('unstage_files', { repoPath: activeRepoPath, files: [file] });
+          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          setStatus(newStatus);
+        } catch (e: any) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage file '${file}': ${e?.message || e}`);
+        }
+      }
     } else {
       useLogStore.getState().addLog('info', 'Git', `Staged file '${file}'`);
       set({ stagedFiles: [...stagedFiles, file] });
+      if (activeRepoPath) {
+        try {
+          await invoke('stage_files', { repoPath: activeRepoPath, files: [file] });
+          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          setStatus(newStatus);
+        } catch (e: any) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage file '${file}': ${e?.message || e}`);
+        }
+      }
     }
   },
-  setAllStaged: (staged) => {
-    const { status } = get();
+  setAllStaged: async (staged) => {
+    const { activeRepoPath, status, setStatus } = get();
     if (!status) return;
     if (staged) {
       useLogStore.getState().addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
+      set({ stagedFiles: status.files.map(f => f.path) });
+      if (activeRepoPath) {
+        try {
+          await invoke('stage_files', { repoPath: activeRepoPath, files: [] });
+          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          setStatus(newStatus);
+        } catch (e: any) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage all files: ${e?.message || e}`);
+        }
+      }
     } else {
       useLogStore.getState().addLog('info', 'Git', `Unstaged all files`);
+      const allPaths = status.files.map(f => f.path);
+      set({ stagedFiles: [] });
+      if (activeRepoPath) {
+        try {
+          await invoke('unstage_files', { repoPath: activeRepoPath, files: allPaths });
+          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          setStatus(newStatus);
+        } catch (e: any) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage all files: ${e?.message || e}`);
+        }
+      }
     }
-    set({ stagedFiles: staged ? status.files.map(f => f.path) : [] });
   },
   setSelectedCommitSha: (sha) => {
     if (sha) {
