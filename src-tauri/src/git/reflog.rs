@@ -141,3 +141,23 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
 
     Ok(())
 }
+
+pub fn undo_commit(repo_path: &str) -> Result<String, AppError> {
+    let msg_out = Command::new("git")
+        .args(["log", "-1", "--format=%B"])
+        .current_dir(repo_path)
+        .output()?;
+    let msg = String::from_utf8_lossy(&msg_out.stdout).trim().to_string();
+
+    let output = Command::new("git")
+        .args(["reset", "--soft", "HEAD~1"])
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!("Failed to undo commit: {}", stderr.trim())));
+    }
+
+    Ok(msg)
+}

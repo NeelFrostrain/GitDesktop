@@ -66,7 +66,7 @@ pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
 
     let provider = repo_provider.unwrap_or_else(|| "gitlab".to_string());
 
-    // 3. Match token to provider: only use active token if account provider matches repo provider
+    // 3. Match token to provider: only use token if account provider matches repo provider
     let (token, username) = if let Some(a) = acct {
         (Some(a.token), Some(a.username))
     } else if let Some(active) = keyring::get_active_account() {
@@ -76,7 +76,7 @@ pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
             (None, None)
         }
     } else {
-        (keyring::get_token().unwrap_or(None), None)
+        (None, None)
     };
 
     GitAuthInfo { token, username, provider }
@@ -223,16 +223,16 @@ pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppErr
         return Err(AppError::Validation(format!("Destination path '{}' is not empty", local_path)));
     }
 
-    let token = keyring::get_token().unwrap_or(None);
+    let target_provider = if remote_url.to_lowercase().contains("github.com") { "github" } else { "gitlab" };
     let active_acct = keyring::get_active_account();
+    let token = active_acct.as_ref().and_then(|a| if a.provider == target_provider { Some(&a.token) } else { None });
 
     let mut cmd = Command::new("git");
     
-    if let Some(ref t) = token {
+    if let Some(t) = token {
         let t_clean = t.trim();
         if !t_clean.is_empty() {
-            let provider = active_acct.as_ref().map(|a| a.provider.as_str()).unwrap_or("gitlab");
-            let auth_user = if provider == "github" { "x-access-token" } else { "oauth2" };
+            let auth_user = if target_provider == "github" { "x-access-token" } else { "oauth2" };
             let auth_str = format!("{}:{}", auth_user, t_clean);
             let encoded = STANDARD.encode(auth_str.as_bytes());
 

@@ -412,6 +412,13 @@ pub async fn revert_commit_cmd(repo_path: String, sha: String) -> Result<(), App
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn undo_commit_cmd(repo_path: String) -> Result<String, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::reflog::undo_commit(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
 // Patch
 #[command]
 pub async fn export_patch_cmd(repo_path: String, target_path: String, range: Option<String>) -> Result<(), AppError> {
