@@ -371,7 +371,17 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
             index.write()?;
             let tree_id = index.write_tree()?;
             let tree = repo.find_tree(tree_id)?;
-            let sig = git2::Signature::now("Git Desktop User", "user@git.local")?;
+
+            // Prefer user's configured git identity; fall back to generic defaults
+            let config = repo.config().ok();
+            let global_name = config.as_ref()
+                .and_then(|c| c.get_string("user.name").ok())
+                .unwrap_or_else(|| "Git Desktop User".to_string());
+            let global_email = config.as_ref()
+                .and_then(|c| c.get_string("user.email").ok())
+                .unwrap_or_else(|| "user@git.local".to_string());
+
+            let sig = git2::Signature::now(&global_name, &global_email)?;
             let _ = repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[]);
         }
 

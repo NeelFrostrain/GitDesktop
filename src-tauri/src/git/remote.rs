@@ -168,6 +168,18 @@ pub fn push_to_remote(repo_path: &str, branch_name: &str) -> Result<(), AppError
 pub fn pull_from_remote(repo_path: &str, branch_name: &str) -> Result<PullResult, AppError> {
     let auth_info = get_git_auth_info(repo_path);
 
+    // Record current HEAD SHA so we can count new commits after the pull
+    let head_before = Command::new("git")
+        .args(["rev-parse", "HEAD"])
+        .current_dir(repo_path)
+        .output()
+        .ok()
+        .and_then(|o| if o.status.success() {
+            Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
+        } else {
+            None
+        });
+
     let mut cmd = Command::new("git");
     cmd.current_dir(repo_path);
     apply_git_auth_args(&mut cmd, &auth_info);
@@ -210,10 +222,28 @@ pub fn pull_from_remote(repo_path: &str, branch_name: &str) -> Result<PullResult
         return Err(AppError::Git(format!("Git pull failed: {}", stderr.trim())));
     }
 
+    // Count how many new commits were pulled
+    let commits_pulled = if let Some(ref old_head) = head_before {
+        let count_out = Command::new("git")
+            .args(["rev-list", "--count", &format!("{}..HEAD", old_head)])
+            .current_dir(repo_path)
+            .output()
+            .ok()
+            .and_then(|o| if o.status.success() {
+                String::from_utf8_lossy(&o.stdout).trim().parse::<usize>().ok()
+            } else {
+                None
+            })
+            .unwrap_or(0);
+        count_out
+    } else {
+        0
+    };
+
     Ok(PullResult {
         success: true,
         conflicts: Vec::new(),
-        commits_pulled: 1,
+        commits_pulled,
     })
 }
 

@@ -75,9 +75,11 @@ pub fn execute_rebase(
 
     let todo_str = todo_file_path.to_string_lossy().to_string();
     let seq_editor = if cfg!(windows) {
-        format!("cmd /c copy /Y \"{}\"", todo_str)
+        // On Windows: `cmd /c copy /Y "<src>" %1` — %1 is the git-provided destination path
+        format!("cmd /c copy /Y \"{}\" %1", todo_str)
     } else {
-        format!("cp \"{}\"", todo_str)
+        // On Unix: `cp "<src>" "$1"` — $1 is the git-provided destination path
+        format!("cp \"{}\" \"$1\"", todo_str)
     };
 
     let mut cmd = Command::new("git");

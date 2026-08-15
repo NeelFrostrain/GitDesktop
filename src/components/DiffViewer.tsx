@@ -258,7 +258,16 @@ export const DiffViewer: React.FC = () => {
   const [imageZoom] = useState<number | 'fit'>('fit');
   const [pixelatedMode] = useState(true);
 
-  // Fetch diff when selected file changes in Changes tab
+  // Derive isStaged OUTSIDE the effect so it becomes a stable, reactive dependency.
+  // If we derive it inside the effect, React can't track it as a dep and may use a stale value
+  // when the same file transitions between staged/unstaged.
+  const isStaged = React.useMemo(() => {
+    if (!selectedFile || !status) return false;
+    const fileInStatus = status.files.find((f) => f.path === selectedFile);
+    return fileInStatus ? fileInStatus.staged : false;
+  }, [selectedFile, status]);
+
+  // Fetch diff when selected file or its staged state changes in Changes tab
   useEffect(() => {
     if (!activeRepoPath || !selectedFile || activeTab !== 'changes') {
       setDiff(null);
@@ -266,8 +275,6 @@ export const DiffViewer: React.FC = () => {
     }
 
     setIsLoading(true);
-    const fileInStatus = status?.files.find((f) => f.path === selectedFile);
-    const isStaged = fileInStatus ? fileInStatus.staged : false;
 
     invoke<DiffResult>('get_file_diff', {
       repoPath: activeRepoPath,
@@ -277,7 +284,7 @@ export const DiffViewer: React.FC = () => {
       .then(setDiff)
       .catch((err) => setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) }))
       .finally(() => setIsLoading(false));
-  }, [activeRepoPath, selectedFile, activeTab, status]);
+  }, [activeRepoPath, selectedFile, activeTab, isStaged]);
 
   // Fetch commit details when selected commit changes in History tab
   useEffect(() => {

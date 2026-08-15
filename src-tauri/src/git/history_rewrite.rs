@@ -226,9 +226,11 @@ fn run_interactive_rebase(
     let todo_str = todo_file_path.to_string_lossy().to_string();
 
     let seq_editor = if cfg!(windows) {
-        format!("cmd /c copy /Y \"{}\"", todo_str)
+        // On Windows: `cmd /c copy /Y "<src>" %1` — %1 is the git-provided destination path
+        format!("cmd /c copy /Y \"{}\" %1", todo_str)
     } else {
-        format!("cp \"{}\"", todo_str)
+        // On Unix: `cp "<src>" "$1"` — $1 is the git-provided destination path
+        format!("cp \"{}\" \"$1\"", todo_str)
     };
 
     let mut msg_file_path = temp_dir.join("git_msg_dummy.txt");
@@ -241,9 +243,9 @@ fn run_interactive_rebase(
         let msg_str = msg_file_path.to_string_lossy().to_string();
 
         let editor_cmd = if cfg!(windows) {
-            format!("cmd /c copy /Y \"{}\"", msg_str)
+            format!("cmd /c copy /Y \"{}\" %1", msg_str)
         } else {
-            format!("cp \"{}\"", msg_str)
+            format!("cp \"{}\" \"$1\"", msg_str)
         };
         editor_env = Some(editor_cmd);
     }
