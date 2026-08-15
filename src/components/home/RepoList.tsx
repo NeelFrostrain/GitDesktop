@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
-  FolderPlus,
   Search,
   FolderGit2,
   DownloadCloud,

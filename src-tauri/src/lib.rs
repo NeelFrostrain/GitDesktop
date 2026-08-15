@@ -3,12 +3,16 @@ pub mod auth;
 pub mod git;
 pub mod repos;
 pub mod activity;
+pub mod domain;
+pub mod integrations;
 pub mod commands;
 
 use commands::auth_commands::*;
 use commands::git_commands::*;
 use commands::repo_commands::*;
 use commands::window_commands::*;
+use commands::accounts::*;
+use commands::remotes::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -143,6 +147,16 @@ pub fn run() {
             get_repo_dashboard_status_cmd,
             get_local_activity_cmd,
             get_gitlab_activity_cmd,
+            accounts_list,
+            accounts_set_active,
+            accounts_update,
+            accounts_remove,
+            accounts_start_oauth,
+            remotes_list,
+            remotes_add,
+            remotes_remove,
+            remotes_set_url,
+            remotes_set_default,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 import { useGitStore } from '../store/useGitStore';
+import { useAccountServicesStore } from '../features/account-services';
 import { useRemoteStore } from '../store/remoteStore';
 import { useSigningStore } from '../store/signingStore';
 import { SmartGitActionButton } from './SmartGitActionButton';
@@ -25,6 +26,7 @@ export const Header: React.FC = () => {
     activeRepoPath,
     error,
     setError,
+    currentNavView,
     setIsMergeRequestModalOpen,
     setIsRebaseModalOpen,
     setIsCherryPickModalOpen,
@@ -37,7 +39,6 @@ export const Header: React.FC = () => {
     remotes,
     activeRemote,
     setActiveRemote,
-    setIsRemoteManagerOpen,
     loadRemotes,
   } = useRemoteStore();
 
@@ -52,9 +53,11 @@ export const Header: React.FC = () => {
     }
   }, [activeRepoPath, loadRemotes, loadConfig]);
 
+  const isHome = currentNavView === 'home';
+
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Compact Action Tools Group */}
+      {/* Left: Action Tools Group */}
       <div className="flex items-center gap-1.5">
         {/* Fetch/Refresh Status */}
         <button
@@ -66,63 +69,67 @@ export const Header: React.FC = () => {
           <RefreshCw className={`w-3.5 h-3.5 text-commito-coral ${isFetching ? 'animate-spin' : ''}`} />
         </button>
 
-        {/* Remote Manager */}
-        <button
-          onClick={() => setIsRemoteManagerOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Manage Git Remotes"
-        >
-          <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
-        </button>
+        {!isHome && (
+          <>
+            {/* Remote Manager */}
+            <button
+              onClick={() => useAccountServicesStore.getState().openModalWithTab('remotes')}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Manage Git Remotes"
+            >
+              <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
+            </button>
 
-        {/* Commit Signing Settings */}
-        <button
-          onClick={() => setIsSigningSettingsOpen(true)}
-          className={`p-1 rounded-md border border-border transition cursor-pointer ${
-            config?.enabled
-              ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/40 hover:bg-emerald-900/40'
-              : 'text-text-muted hover:text-text-primary hover:bg-base-2'
-          }`}
-          title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
-        >
-          <ShieldCheck className="w-3.5 h-3.5" />
-        </button>
+            {/* Commit Signing Settings */}
+            <button
+              onClick={() => setIsSigningSettingsOpen(true)}
+              className={`p-1 rounded-md border border-border transition cursor-pointer ${
+                config?.enabled
+                  ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/40 hover:bg-emerald-900/40'
+                  : 'text-text-muted hover:text-text-primary hover:bg-base-2'
+              }`}
+              title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </button>
 
-        {/* Rebase Tool */}
-        <button
-          onClick={() => setIsRebaseModalOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Interactive Rebase"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-text-muted hover:text-commito-coral" />
-        </button>
+            {/* Rebase Tool */}
+            <button
+              onClick={() => setIsRebaseModalOpen(true)}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Interactive Rebase"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-text-muted hover:text-commito-coral" />
+            </button>
 
-        {/* Cherry Pick Tool */}
-        <button
-          onClick={() => setIsCherryPickModalOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Cherry-Pick Commits"
-        >
-          <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
-        </button>
+            {/* Cherry Pick Tool */}
+            <button
+              onClick={() => setIsCherryPickModalOpen(true)}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Cherry-Pick Commits"
+            >
+              <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
+            </button>
 
-        {/* Reflog Tool */}
-        <button
-          onClick={() => setIsReflogModalOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Reflog Safety Net"
-        >
-          <History className="w-3.5 h-3.5 text-gitlab-teal" />
-        </button>
+            {/* Reflog Tool */}
+            <button
+              onClick={() => setIsReflogModalOpen(true)}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Reflog Safety Net"
+            >
+              <History className="w-3.5 h-3.5 text-gitlab-teal" />
+            </button>
 
-        {/* Patch Studio */}
-        <button
-          onClick={() => setIsPatchModalOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Export / Apply Patch"
-        >
-          <FileCode className="w-3.5 h-3.5 text-amber-400" />
-        </button>
+            {/* Patch Studio */}
+            <button
+              onClick={() => setIsPatchModalOpen(true)}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Export / Apply Patch"
+            >
+              <FileCode className="w-3.5 h-3.5 text-amber-400" />
+            </button>
+          </>
+        )}
 
         {/* Git Config */}
         <button
@@ -146,38 +153,42 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        {/* Remote Selector Dropdown (when 2+ remotes exist) */}
-        {remotes.length > 1 && (
-          <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md px-2 py-1 text-xs text-text-secondary">
-            <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
-            <select
-              value={activeRemote}
-              onChange={(e) => setActiveRemote(e.target.value)}
-              className="bg-transparent text-text-primary text-xs font-mono font-semibold focus:outline-none cursor-pointer"
+        {!isHome && (
+          <>
+            {/* Remote Selector Dropdown (when 2+ remotes exist) */}
+            {remotes.length > 1 && (
+              <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md px-2 py-1 text-xs text-text-secondary">
+                <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
+                <select
+                  value={activeRemote}
+                  onChange={(e) => setActiveRemote(e.target.value)}
+                  className="bg-transparent text-text-primary text-xs font-mono font-semibold focus:outline-none cursor-pointer"
+                >
+                  {remotes.map((r) => (
+                    <option key={r.name} value={r.name} className="bg-base-1 text-text-primary font-mono">
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Smart Git Action Button */}
+            <SmartGitActionButton />
+
+            {/* Branch Switcher Dropdown */}
+            <BranchDropdown />
+
+            {/* PR / Merge Button */}
+            <button
+              onClick={() => setIsMergeRequestModalOpen(true)}
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              title="Create Merge / Pull Request"
             >
-              {remotes.map((r) => (
-                <option key={r.name} value={r.name} className="bg-base-1 text-text-primary font-mono">
-                  {r.name}
-                </option>
-              ))}
-            </select>
-          </div>
+              <GitPullRequest className="w-4 h-4 text-commito-coral" />
+            </button>
+          </>
         )}
-
-        {/* Smart Git Action Button */}
-        <SmartGitActionButton />
-
-        {/* Branch Switcher Dropdown */}
-        <BranchDropdown />
-
-        {/* PR / Merge Button */}
-        <button
-          onClick={() => setIsMergeRequestModalOpen(true)}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Create Merge / Pull Request"
-        >
-          <GitPullRequest className="w-4 h-4 text-commito-coral" />
-        </button>
       </div>
     </header>
   );

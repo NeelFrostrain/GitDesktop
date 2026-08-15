@@ -9,7 +9,7 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
-import { useAccountStore } from '../store/accountStore';
+import { useAccountServicesStore } from '../features/account-services';
 import { UserAvatar } from './UserAvatar';
 
 export const Titlebar: React.FC = () => {
@@ -117,12 +117,6 @@ export const Titlebar: React.FC = () => {
     setIsProfileOpen(false);
   };
 
-  const handleSwitchAccount = () => {
-    setActiveModalTab('accounts');
-    setIsRepoModalOpen(true);
-    setIsProfileOpen(false);
-  };
-
   return (
     <header
       data-tauri-drag-region
@@ -175,25 +169,28 @@ export const Titlebar: React.FC = () => {
               {/* Actions */}
               <button
                 onClick={() => {
-                  useAccountStore.getState().setIsAccountPanelOpen(true);
+                  useAccountServicesStore.getState().openModalWithTab('accounts');
                   setIsProfileOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2"
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5 text-gitlab-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                Account Details & Scopes
+                Account Services & Repositories
               </button>
 
               <button
-                onClick={handleSwitchAccount}
-                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2"
+                onClick={() => {
+                  useAccountServicesStore.getState().openModalWithTab('add');
+                  setIsProfileOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
               >
                 <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                 </svg>
-                Switch / Add Account
+                + Add Remote Account
               </button>
 
               {user && (

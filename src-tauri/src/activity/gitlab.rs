@@ -3,6 +3,7 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use crate::error::AppError;
 use super::local::{ActivityEvent, ActivityKind};
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct GitLabEventRaw {
     id: u64,
@@ -15,6 +16,7 @@ struct GitLabEventRaw {
     target_iid: Option<u64>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct GitLabPushDataRaw {
     commit_count: Option<u32>,

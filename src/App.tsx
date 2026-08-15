@@ -36,9 +36,8 @@ import { GitConfigModal } from './components/GitConfigModal';
 import { CreateRepoModal } from './components/CreateRepoModal';
 import { RewriteHistoryModal } from './components/RewriteHistoryModal';
 import { GitUserConfigModal } from './components/GitUserConfigModal';
-import { AccountPanel } from './components/AccountPanel';
+import { AccountServicesModal } from './features/account-services';
 import { GitLabSignInModal } from './components/GitLabSignInModal';
-import { RemoteManager } from './components/RemoteManager';
 import { SigningSettings } from './components/SigningSettings';
 
 export const App: React.FC = () => {
@@ -232,9 +231,8 @@ export const App: React.FC = () => {
       <RewriteHistoryModal />
       <GitUserConfigModal />
       <LogModal />
-      <AccountPanel />
+      <AccountServicesModal />
       <GitLabSignInModal />
-      <RemoteManager />
       <SigningSettings />
 
     </div>

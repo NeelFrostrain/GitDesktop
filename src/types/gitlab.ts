@@ -29,7 +29,7 @@ export interface TokenInfo {
 
 /** Unified user shape used in the store — covers both GitLab and GitHub */
 export interface UnifiedUser {
-  id: number;
+  id: number | string;
   /** Display name */
   name: string;
   /** Username / login handle */

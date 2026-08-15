@@ -7,9 +7,7 @@ import {
   CheckCircle,
   XCircle,
   PlayCircle,
-  Clock,
   ExternalLink,
-  FolderGit2,
 } from 'lucide-react';
 import { ActivityEvent } from '../../types/home';
 import { useGitStore } from '../../store/useGitStore';

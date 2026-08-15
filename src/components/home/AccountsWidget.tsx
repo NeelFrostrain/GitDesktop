@@ -2,30 +2,18 @@ import React from 'react';
 import {
   User,
   Plus,
-  Globe,
   ExternalLink,
   ChevronRight,
 } from 'lucide-react';
-import { useAccountStore } from '../../store/accountStore';
+import { useAccounts, useAccountServicesStore, ProviderAccount } from '../../features/account-services';
 import { UserAvatar } from '../UserAvatar';
-import { SavedAccount } from '../../types/gitlab';
 
 export const AccountsWidget: React.FC = () => {
-  const { accounts, setIsAccountPanelOpen, setIsSignInModalOpen } = useAccountStore();
+  const { accounts } = useAccounts();
+  const { openModalWithTab } = useAccountServicesStore();
 
-  const getHealthDot = (account: SavedAccount) => {
-    if (!account.expires_at) {
-      // PAT or static token
-      return (
-        <span
-          className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20 flex-shrink-0"
-          title="Token connected & healthy"
-        />
-      );
-    }
-    const now = Math.floor(Date.now() / 1000);
-    const diff = account.expires_at - now;
-    if (diff <= 0) {
+  const getHealthDot = (account: ProviderAccount) => {
+    if (account.token_status === 'expired') {
       return (
         <span
           className="w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-400/20 flex-shrink-0"
@@ -33,7 +21,7 @@ export const AccountsWidget: React.FC = () => {
         />
       );
     }
-    if (diff < 86400) {
+    if (account.token_status === 'expiring_soon') {
       return (
         <span
           className="w-2 h-2 rounded-full bg-amber-400 ring-2 ring-amber-400/20 flex-shrink-0"
@@ -64,7 +52,7 @@ export const AccountsWidget: React.FC = () => {
           </h3>
         </div>
         <button
-          onClick={() => setIsSignInModalOpen(true)}
+          onClick={() => openModalWithTab('add')}
           className="p-1 rounded-md text-text-muted hover:text-commito-coral hover:bg-base-3 transition cursor-pointer flex items-center gap-1 text-[11px] font-semibold"
           title="Connect new account"
         >
@@ -79,14 +67,14 @@ export const AccountsWidget: React.FC = () => {
           {accounts.map((acc) => (
             <div
               key={acc.id}
-              onClick={() => setIsAccountPanelOpen(true)}
-              className="p-2 rounded-lg bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
+              onClick={() => openModalWithTab('accounts')}
+              className="p-2 rounded-lg bg-base-1 border border-border/80 hover:border-[#fc6d26]/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative">
                   <UserAvatar
                     url={acc.avatar_url}
-                    name={acc.name || acc.username}
+                    name={acc.display_name || acc.handle}
                     provider={acc.provider}
                     className="w-7 h-7"
                     iconClassName="w-3.5 h-3.5"
@@ -98,13 +86,13 @@ export const AccountsWidget: React.FC = () => {
 
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-text-primary truncate flex items-center gap-1.5">
-                    <span>{acc.name || acc.username}</span>
+                    <span>{acc.display_name}</span>
                     <span className="px-1 py-0.2 bg-base-3 text-text-muted rounded text-[9px] font-mono uppercase font-bold">
                       {acc.provider}
                     </span>
                   </div>
                   <p className="text-[10px] text-text-muted font-mono truncate">
-                    @{acc.username} • {getCleanHost(acc.server_url)}
+                    {acc.handle} • {getCleanHost(acc.instance_url)}
                   </p>
                 </div>
               </div>
@@ -120,11 +108,11 @@ export const AccountsWidget: React.FC = () => {
             No remote accounts connected yet.
           </p>
           <button
-            onClick={() => setIsSignInModalOpen(true)}
-            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 w-full cursor-pointer"
+            onClick={() => openModalWithTab('add')}
+            className="px-3 py-1.5 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 w-full cursor-pointer"
           >
             <ExternalLink className="w-3.5 h-3.5" />
-            <span>Connect GitLab Account</span>
+            <span>Connect Account</span>
           </button>
         </div>
       )}
