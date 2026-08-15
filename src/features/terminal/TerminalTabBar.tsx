@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Terminal,
   History,
@@ -8,8 +8,12 @@ import {
   ChevronDown,
   X,
   GitBranch,
+  Download,
+  CheckCircle,
 } from 'lucide-react';
 import { useTerminalStore } from './store/terminalStore';
+import { listen } from '@tauri-apps/api/event';
+import type { MinGitProgress } from '../git-runtime/useGitRuntime';
 
 interface TerminalTabBarProps {
   repoName: string;
@@ -41,6 +45,20 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
     isSearchOpen,
     setIsSearchOpen,
   } = useTerminalStore();
+
+  const [gitProgress, setGitProgress] = useState<MinGitProgress | null>(null);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    listen<MinGitProgress>('mingit:download:progress', (event) => {
+      setGitProgress(event.payload);
+      // Auto-clear the pill 4 seconds after completion or error
+      if (event.payload.status === 'completed' || event.payload.status === 'error') {
+        setTimeout(() => setGitProgress(null), 4000);
+      }
+    }).then((fn) => { unlisten = fn; });
+    return () => { if (unlisten) unlisten(); };
+  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -94,6 +112,40 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             {repoName}
           </span>
         </div>
+
+        {/* MinGit silent download progress pill */}
+        {gitProgress && (
+          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all duration-300 ${
+            gitProgress.status === 'completed'
+              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              : gitProgress.status === 'error'
+              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
+          }`}>
+            {gitProgress.status === 'completed' ? (
+              <CheckCircle className="w-2.5 h-2.5 flex-shrink-0" />
+            ) : (
+              <Download className="w-2.5 h-2.5 flex-shrink-0 animate-bounce" />
+            )}
+            <span>
+              {gitProgress.status === 'completed'
+                ? 'Git ready'
+                : gitProgress.status === 'error'
+                ? 'Git install failed'
+                : gitProgress.status === 'extracting'
+                ? 'Installing git...'
+                : `Git ${gitProgress.percentage.toFixed(0)}%`}
+            </span>
+            {(gitProgress.status === 'downloading' || gitProgress.status === 'extracting') && (
+              <div className="w-12 h-1 rounded-full bg-commito-coral/20 overflow-hidden">
+                <div
+                  className="h-full bg-commito-coral rounded-full transition-all duration-200"
+                  style={{ width: `${gitProgress.percentage}%` }}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         {branchName && (
           <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-base-2 text-text-muted text-[11px] font-mono border border-border max-w-[160px] truncate">

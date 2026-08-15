@@ -17,6 +17,7 @@ use commands::remotes::*;
 use commands::terminal::*;
 use commands::logs::*;
 use commands::settings::*;
+use commands::git_runtime::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -34,6 +35,45 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let _ = app.deep_link().register_all();
             }
+
+            // Silently auto-install MinGit in the background if git is not available.
+            // This ensures terminal git commands work on any PC without user interaction.
+            {
+                let runtime_info = crate::domain::git_runtime::detect_git_runtime();
+                if !runtime_info.is_available {
+                    crate::log_info!(
+                        crate::core::logging::LogCategory::App,
+                        "Git not detected on system. Starting silent MinGit background download..."
+                    );
+                    let handle = app.handle().clone();
+                    tokio::spawn(async move {
+                        match crate::domain::git_runtime::download_and_install_mingit(&handle).await {
+                            Ok(info) => {
+                                crate::log_info!(
+                                    crate::core::logging::LogCategory::App,
+                                    &format!("MinGit auto-install completed. Git version: {}", info.version.unwrap_or_default())
+                                );
+                            }
+                            Err(e) => {
+                                crate::log_info!(
+                                    crate::core::logging::LogCategory::App,
+                                    &format!("MinGit auto-install failed: {}. User can install manually via Git Runtime settings.", e)
+                                );
+                            }
+                        }
+                    });
+                } else {
+                    crate::log_info!(
+                        crate::core::logging::LogCategory::App,
+                        &format!(
+                            "Git detected: {} (portable: {})",
+                            runtime_info.version.unwrap_or_default(),
+                            runtime_info.is_portable_mingit
+                        )
+                    );
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -186,6 +226,8 @@ pub fn run() {
             settings_get_repo,
             settings_save_repo_value,
             settings_reset_repo_value,
+            git_runtime_get_status,
+            git_runtime_install_mingit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -7,3 +7,4 @@ pub mod remotes;
 pub mod terminal;
 pub mod logs;
 pub mod settings;
+pub mod git_runtime;

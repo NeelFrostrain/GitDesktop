@@ -38,6 +38,7 @@ import { LogModal } from './components/logs/LogModal';
 import { AccountServicesModal } from './features/account-services';
 import { TerminalPanel, useTerminalStore } from './features/terminal';
 import { SettingsPanel, useSettingsStore } from './features/settings';
+import { useGitRuntime, MinGitSetupModal } from './features/git-runtime';
 import { useGitStore } from './store/useGitStore';
 import { GitLabUser, GitHubUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
 import { RepoStatus } from './types/git';
@@ -45,6 +46,7 @@ import { RepoStatus } from './types/git';
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
   const wasBlurredRef = useRef(false);
+  const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
     // Load accounts list
@@ -256,6 +258,10 @@ export const App: React.FC = () => {
       <GitLabSignInModal />
       <SigningSettings />
       <SettingsPanel />
+      <MinGitSetupModal
+        isOpen={showInstallPrompt}
+        onClose={() => setShowInstallPrompt(false)}
+      />
 
     </div>
     </ErrorBoundary>

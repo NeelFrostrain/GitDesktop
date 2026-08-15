@@ -29,12 +29,12 @@ fn get_sessions_map() -> Arc<Mutex<HashMap<String, ActivePtySession>>> {
 
 #[cfg(target_os = "windows")]
 fn build_default_command(repo_path: &str) -> CommandBuilder {
-    // Check if git bash exists for better unix git tooling, else use powershell.exe
     let mut cmd = CommandBuilder::new("powershell.exe");
     cmd.args(["-NoLogo", "-NoExit", "-ExecutionPolicy", "Bypass"]);
     cmd.cwd(repo_path);
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
+    crate::domain::git_runtime::inject_git_path(&mut cmd);
     cmd
 }
 
