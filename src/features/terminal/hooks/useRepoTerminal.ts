@@ -20,8 +20,34 @@ const terminalCache = new Map<
 
 export function useRepoTerminal(repoId: string | null, repoPath: string | null) {
   const terminalContainerRef = useRef<HTMLDivElement>(null);
-  const [isSessionAlive, setIsSessionAlive] = useState(false);
+  const [isSessionAlive, setIsSessionAlive] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [cursorPixelPos, setCursorPixelPos] = useState<{ x: number; y: number } | null>(null);
+
+  const calculateCursorPosition = useCallback(() => {
+    if (!repoId || !terminalContainerRef.current) return;
+    const cached = terminalCache.get(repoId);
+    if (!cached || !cached.terminal) return;
+
+    const term = cached.terminal;
+    const buffer = term.buffer.active;
+    const cursorX = buffer.cursorX;
+    const cursorY = buffer.cursorY;
+
+    const container = terminalContainerRef.current;
+    const screen = container.querySelector('.xterm-screen') as HTMLElement | null;
+
+    const cols = term.cols || 80;
+    const rows = term.rows || 24;
+
+    const cellWidth = screen && cols > 0 ? screen.clientWidth / cols : 9;
+    const cellHeight = screen && rows > 0 ? screen.clientHeight / rows : 17;
+
+    const x = cursorX * cellWidth + 8;
+    const y = (cursorY + 1) * cellHeight + 6;
+
+    setCursorPixelPos({ x, y });
+  }, [repoId]);
 
   const inputBufferRef = useRef<string>('');
   const cursorPosRef = useRef<number>(0);
@@ -47,27 +73,27 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       lineHeight: 1.25,
       scrollback: 5000,
       theme: {
-        background: '#0a0d12',
-        foreground: '#e6edf3',
-        cursor: '#f36a36',
-        cursorAccent: '#0a0d12',
-        selectionBackground: '#264f78',
-        black: '#0a0d12',
-        red: '#f85149',
-        green: '#2ea043',
-        yellow: '#d29922',
-        blue: '#58a6ff',
-        magenta: '#bc8cff',
-        cyan: '#39c5cf',
-        white: '#b1bac4',
-        brightBlack: '#484f58',
-        brightRed: '#ff7b72',
-        brightGreen: '#3fb950',
-        brightYellow: '#e3b341',
-        brightBlue: '#79c0ff',
-        brightMagenta: '#d2a8ff',
-        brightCyan: '#56d4dd',
-        brightWhite: '#f0f6fc',
+        background: '#121113', // base-0
+        foreground: '#e6e4e8', // text-primary
+        cursor: '#e05638', // commito-coral
+        cursorAccent: '#121113',
+        selectionBackground: '#382221', // commito-activeBg
+        black: '#171619',
+        red: '#f87171',
+        green: '#4ade80',
+        yellow: '#facc15',
+        blue: '#60a5fa',
+        magenta: '#c084fc',
+        cyan: '#38bdf8',
+        white: '#e6e4e8',
+        brightBlack: '#85818c',
+        brightRed: '#fca5a5',
+        brightGreen: '#86efac',
+        brightYellow: '#fde047',
+        brightBlue: '#93c5fd',
+        brightMagenta: '#d8b4fe',
+        brightCyan: '#7dd3fc',
+        brightWhite: '#ffffff',
       },
     });
 
@@ -214,6 +240,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         }
         // If single candidate or trigger autocomplete
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
+        setTimeout(calculateCursorPosition, 0);
         return;
       }
 
@@ -256,6 +283,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
             inputBufferRef.current.slice(0, cursorPosRef.current) +
             inputBufferRef.current.slice(cursorPosRef.current + 1);
           auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
+          setTimeout(calculateCursorPosition, 0);
         }
       } else if (data.length === 1 && data.charCodeAt(0) >= 32) {
         // Printable character
@@ -265,16 +293,22 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           inputBufferRef.current.slice(cursorPosRef.current);
         cursorPosRef.current += 1;
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
+        setTimeout(calculateCursorPosition, 0);
       }
 
       // Forward keystroke to backend PTY
       ptyBridge.write(repoId, data);
     });
 
+    const onCursorMoveDisposable = terminal.onCursorMove(() => {
+      calculateCursorPosition();
+    });
+
     // Resize observer
     const resizeObserver = new ResizeObserver(() => {
       try {
         fitAddon.fit();
+        calculateCursorPosition();
         if (repoId && terminal.cols > 0 && terminal.rows > 0) {
           ptyBridge.resize(repoId, terminal.cols, terminal.rows).catch(() => {});
         }
@@ -287,11 +321,12 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
 
     return () => {
       onDataDisposable.dispose();
+      onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();
       if (unlistenData) unlistenData();
       if (unlistenExit) unlistenExit();
     };
-  }, [repoId, repoPath, getOrCreateTerminal, applySuggestion]);
+  }, [repoId, repoPath, getOrCreateTerminal, applySuggestion, calculateCursorPosition]);
 
   // Actions
   const clearTerminal = useCallback(() => {
@@ -333,13 +368,25 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     [repoId]
   );
 
+  const fitTerminal = useCallback(() => {
+    if (!repoId) return;
+    const cached = terminalCache.get(repoId);
+    if (cached) {
+      try {
+        cached.fitAddon.fit();
+      } catch {}
+    }
+  }, [repoId]);
+
   return {
     terminalContainerRef,
     isSessionAlive,
     sessionId,
     autocomplete,
+    cursorPixelPos,
     clearTerminal,
     restartTerminal,
+    fitTerminal,
     searchInTerminal,
     applySuggestion,
   };

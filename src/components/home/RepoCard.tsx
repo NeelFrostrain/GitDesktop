@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { RepoEntry, RepoDashboardStatus } from '../../types/home';
-import { useRepoStore } from '../../store/repoStore';
+import { useRepoStore, openRepo } from '../../features/repos';
 
 interface RepoCardProps {
   repo: RepoEntry;
@@ -19,7 +19,7 @@ interface RepoCardProps {
 }
 
 export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
-  const { openRepo, pinRepo, removeRepo } = useRepoStore();
+  const { pinRepo, removeRepo } = useRepoStore();
 
   const handleCardClick = () => {
     openRepo(repo.path);

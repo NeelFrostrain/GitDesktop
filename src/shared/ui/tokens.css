@@ -1,0 +1,107 @@
+/* ==========================================================================
+   GitDesktop Central Design Tokens (CSS Custom Properties)
+   100% Coverage of Surfaces, Text, Accents, Git Diffs, Terminal, Typography,
+   Spacing, Radii, Shadows, and Density Scale.
+   ========================================================================== */
+
+:root {
+  /* --- Surfaces & Backgrounds --- */
+  --app-bg-primary: #171619;          /* Main workspace background */
+  --app-bg-secondary: #121113;        /* Deep frame / Sidebar background */
+  --app-bg-elevated: #201e22;         /* Elevated cards, panels & modals */
+  --app-surface-hover: #2b292f;       /* Hover state on rows and cards */
+  --app-surface-active: #382221;      /* Pressed/selected active background */
+  --app-border: #29272b;              /* Default border color */
+  --app-border-strong: #3d3a42;       /* Emphasized border / active focus */
+
+  /* --- Text Colors --- */
+  --app-text-primary: #e6e4e8;        /* Main heading and body text */
+  --app-text-secondary: #b3b0b8;      /* Secondary labels, breadcrumbs */
+  --app-text-muted: #85818c;          /* Muted, timestamp & placeholder text */
+  --app-text-on-accent: #ffffff;      /* Text rendered on top of accent buttons */
+
+  /* --- Accent & Status Colors --- */
+  --app-accent: #e05638;              /* Commito-coral brand accent */
+  --app-accent-hover: #f06344;        /* Accent hover state */
+  --app-accent-muted: rgba(224, 86, 56, 0.15); /* Low opacity accent selection */
+  --app-success: #22c55e;             /* Success / valid token / clean status */
+  --app-warning: #eab308;             /* Warning / ahead behind caution */
+  --app-error: #ef4444;               /* Error / dirty alert / failed push */
+  --app-info: #3b82f6;                /* Informational / links */
+
+  /* --- Git Diff & Indicator Colors --- */
+  --git-added: #22c55e;               /* Diff added lines / inserted files */
+  --git-removed: #ef4444;             /* Diff removed lines / deleted files */
+  --git-modified: #eab308;            /* Modified working tree files */
+  --git-renamed: #3b82f6;             /* Renamed files */
+  --git-conflict: #f97316;            /* Merge conflict indicator */
+  --git-ahead: #22c55e;               /* Commits ahead (↑) */
+  --git-behind: #ef4444;              /* Commits behind (↓) */
+
+  /* --- Provider Badges --- */
+  --provider-gitlab: #e24329;         /* GitLab brand badge */
+  --provider-github: #2da44e;         /* GitHub brand badge */
+
+  /* --- Terminal Colors --- */
+  --terminal-bg: #121113;             /* Terminal canvas background */
+  --terminal-fg: #e6e4e8;             /* Default terminal text color */
+  --terminal-cursor: #e05638;         /* Terminal cursor bar */
+  --terminal-selection: #382221;      /* Terminal text selection highlight */
+
+  /* Terminal 8 Standard ANSI Colors */
+  --terminal-ansi-black: #171619;
+  --terminal-ansi-red: #f87171;
+  --terminal-ansi-green: #4ade80;
+  --terminal-ansi-yellow: #facc15;
+  --terminal-ansi-blue: #60a5fa;
+  --terminal-ansi-magenta: #c084fc;
+  --terminal-ansi-cyan: #38bdf8;
+  --terminal-ansi-white: #e6e4e8;
+
+  /* Terminal 8 Bright ANSI Colors */
+  --terminal-ansi-bright-black: #85818c;
+  --terminal-ansi-bright-red: #fca5a5;
+  --terminal-ansi-bright-green: #86efac;
+  --terminal-ansi-bright-yellow: #fde047;
+  --terminal-ansi-bright-blue: #93c5fd;
+  --terminal-ansi-bright-magenta: #d8b4fe;
+  --terminal-ansi-bright-cyan: #7dd3fc;
+  --terminal-ansi-bright-white: #ffffff;
+
+  /* --- App Log Level Colors (Terminal streaming logger) --- */
+  --log-debug: #85818c;
+  --log-info: #38bdf8;
+  --log-success: #4ade80;
+  --log-warn: #facc15;
+  --log-error: #f87171;
+
+  /* --- Typography --- */
+  --app-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-size: 13px;
+  --app-font-size-sm: 11px;
+  --app-font-size-lg: 15px;
+  --app-font-weight-normal: 400;
+  --app-font-weight-medium: 500;
+  --app-font-weight-bold: 600;
+  --app-line-height: 1.5;
+  --terminal-font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+  --terminal-font-size: 13px;
+
+  /* --- Spacing, Radius & Dimensions --- */
+  --app-radius-sm: 4px;
+  --app-radius-md: 6px;
+  --app-radius-lg: 12px;
+  --app-spacing-unit: 4px;
+  --app-sidebar-width: 260px;
+  --app-row-height: 38px;
+
+  /* --- Elevation & Motion --- */
+  --app-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --app-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --app-shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.6);
+  --app-transition-fast: 100ms;
+  --app-transition-normal: 200ms;
+
+  /* --- Density Mode --- */
+  --app-density: comfortable;
+}
