@@ -51,6 +51,12 @@ pub async fn login_gitlab_pat(
     keyring::save_token(&token)?;
     keyring::save_server_url(&server_url)?;
 
+    crate::log_success!(
+        crate::core::logging::LogCategory::Account,
+        format!("Logged in to GitLab as @{}", user.username);
+        meta: serde_json::json!({ "username": user.username, "server_url": server_url })
+    );
+
     Ok(user)
 }
 
@@ -160,6 +166,12 @@ pub async fn complete_oauth_login(
     keyring::save_token(&token_resp.access_token)?;
     keyring::save_server_url(&server_url)?;
 
+    crate::log_success!(
+        crate::core::logging::LogCategory::Account,
+        format!("Completed OAuth sign-in for @{}", user.username);
+        meta: serde_json::json!({ "username": user.username, "server_url": server_url })
+    );
+
     Ok(user)
 }
 
@@ -190,6 +202,13 @@ pub async fn gitlab_ensure_fresh_token(account_id: String) -> Result<String, App
             updated_account.expires_at = new_expires_at;
 
             keyring::add_or_update_account(updated_account)?;
+
+            crate::log_info!(
+                crate::core::logging::LogCategory::Account,
+                format!("Refreshed OAuth access token for account {}", account_id);
+                meta: serde_json::json!({ "account_id": account_id })
+            );
+
             return Ok(refreshed.access_token);
         }
     }
@@ -328,6 +347,12 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Account,
+        format!("Logged in to GitHub as @{}", gh_user.login);
+        meta: serde_json::json!({ "username": gh_user.login })
+    );
 
     Ok(gh_user)
 }

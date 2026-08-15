@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { 
-  FileText, 
-  Binary, 
-  HardDrive, 
-  GitPullRequest, 
-  ExternalLink, 
-  Columns, 
+import {
+  FileText,
+  Binary,
+  HardDrive,
+  GitPullRequest,
+  ExternalLink,
+  Columns,
   AlignJustify,
   CheckCircle,
   Clock,
@@ -95,8 +95,8 @@ function highlightCodeLine(text: string): React.ReactNode {
 
   return matches.map((token, i) => {
     if ((token.startsWith('"') && token.endsWith('"')) ||
-        (token.startsWith("'") && token.endsWith("'")) ||
-        (token.startsWith('`') && token.endsWith('`'))) {
+      (token.startsWith("'") && token.endsWith("'")) ||
+      (token.startsWith('`') && token.endsWith('`'))) {
       return <span key={i} className="text-amber-300">{token}</span>;
     }
 
@@ -392,15 +392,14 @@ export const DiffViewer: React.FC = () => {
               <div key={idx} className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono">
                 {/* Left Side (Old) */}
                 <div
-                  className={`w-1/2 min-w-0 flex border-r border-border/40 ${
-                    isDel
-                      ? 'bg-red-950/40 text-red-300'
-                      : isModified
+                  className={`w-1/2 min-w-0 flex border-r border-border/40 ${isDel
+                    ? 'bg-red-950/40 text-red-300'
+                    : isModified
                       ? 'bg-red-950/30 text-red-300'
                       : isOldEmpty
-                      ? 'bg-base-1/20'
-                      : 'bg-base-0 text-text-primary'
-                  }`}
+                        ? 'bg-base-1/20'
+                        : 'bg-base-0 text-text-primary'
+                    }`}
                 >
                   <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
                     {row.oldNum ?? ''}
@@ -415,15 +414,14 @@ export const DiffViewer: React.FC = () => {
 
                 {/* Right Side (New) */}
                 <div
-                  className={`w-1/2 min-w-0 flex ${
-                    isAdd
-                      ? 'bg-green-950/40 text-green-300'
-                      : isModified
+                  className={`w-1/2 min-w-0 flex ${isAdd
+                    ? 'bg-green-950/40 text-green-300'
+                    : isModified
                       ? 'bg-green-950/30 text-green-300'
                       : isNewEmpty
-                      ? 'bg-base-1/20'
-                      : 'bg-base-0 text-text-primary'
-                  }`}
+                        ? 'bg-base-1/20'
+                        : 'bg-base-0 text-text-primary'
+                    }`}
                 >
                   <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
                     {row.newNum ?? ''}
@@ -619,11 +617,10 @@ export const DiffViewer: React.FC = () => {
             <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md p-0.5">
               <button
                 onClick={() => setDiffViewMode('unified')}
-                className={`p-1 rounded-md text-xs flex items-center gap-1 ${
-                  diffViewMode === 'unified'
-                    ? 'bg-commito-coral text-white font-semibold'
-                    : 'text-text-muted hover:text-text-primary'
-                }`}
+                className={`p-1 rounded-md text-xs flex items-center gap-1 ${diffViewMode === 'unified'
+                  ? 'bg-commito-coral text-white font-semibold'
+                  : 'text-text-muted hover:text-text-primary'
+                  }`}
                 title="Unified View"
               >
                 <AlignJustify className="w-3.5 h-3.5" />
@@ -631,11 +628,10 @@ export const DiffViewer: React.FC = () => {
               </button>
               <button
                 onClick={() => setDiffViewMode('split')}
-                className={`p-1 rounded-md text-xs flex items-center gap-1 ${
-                  diffViewMode === 'split'
-                    ? 'bg-commito-coral text-white font-semibold'
-                    : 'text-text-muted hover:text-text-primary'
-                }`}
+                className={`p-1 rounded-md text-xs flex items-center gap-1 ${diffViewMode === 'split'
+                  ? 'bg-commito-coral text-white font-semibold'
+                  : 'text-text-muted hover:text-text-primary'
+                  }`}
                 title="Split View"
               >
                 <Columns className="w-3.5 h-3.5" />
@@ -694,11 +690,10 @@ export const DiffViewer: React.FC = () => {
               <div className="flex items-center gap-1 bg-base-1 border border-border rounded-md p-0.5">
                 <button
                   onClick={() => setDiffViewMode('unified')}
-                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
-                    diffViewMode === 'unified'
-                      ? 'bg-commito-coral text-white font-medium shadow-sm'
-                      : 'text-text-muted hover:text-text-primary'
-                  }`}
+                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${diffViewMode === 'unified'
+                    ? 'bg-commito-coral text-white font-medium shadow-sm'
+                    : 'text-text-muted hover:text-text-primary'
+                    }`}
                   title="Unified View"
                 >
                   <AlignJustify className="w-3 h-3" />
@@ -706,11 +701,10 @@ export const DiffViewer: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setDiffViewMode('split')}
-                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
-                    diffViewMode === 'split'
-                      ? 'bg-commito-coral text-white font-medium shadow-sm'
-                      : 'text-text-muted hover:text-text-primary'
-                  }`}
+                  className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${diffViewMode === 'split'
+                    ? 'bg-commito-coral text-white font-medium shadow-sm'
+                    : 'text-text-muted hover:text-text-primary'
+                    }`}
                   title="Split View"
                 >
                   <Columns className="w-3 h-3" />
@@ -808,9 +802,9 @@ export const DiffViewer: React.FC = () => {
         </div>
 
         {/* Changed Files with Accordion Diffs */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-base-0">
+        <div className="flex-1 p-2 overflow-y-auto space-y-3 bg-base-0">
           <div className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center justify-between">
-            <span>Changed Files ({commitDetails.changed_files.length})</span>
+            <span className='text-xs'>Changed Files ({commitDetails.changed_files.length})</span>
             <span className="font-mono text-[11px] font-medium text-text-faint">
               {commitDetails.changed_files.length} file{commitDetails.changed_files.length !== 1 ? 's' : ''} modified
             </span>
@@ -925,11 +919,10 @@ export const DiffViewer: React.FC = () => {
           <button
             onClick={handleOpenMergeRequest}
             disabled={!user || !isCurrentBranchPushed}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition ${
-              user && isCurrentBranchPushed
-                ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition ${user && isCurrentBranchPushed
+              ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
+              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              }`}
             title={!isCurrentBranchPushed ? 'Push branch to origin before creating Merge Request' : ''}
           >
             <GitPullRequest className="w-3.5 h-3.5" />
@@ -939,11 +932,10 @@ export const DiffViewer: React.FC = () => {
           <button
             onClick={handleViewPipelines}
             disabled={!user}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition ${
-              user
-                ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition ${user
+              ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
+              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
             View Pipelines

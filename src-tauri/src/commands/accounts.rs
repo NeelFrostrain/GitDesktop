@@ -19,11 +19,22 @@ pub async fn accounts_set_active(
     account_id: String,
     active_repo_path: Option<String>,
 ) -> Result<(), AppError> {
+    let aid = account_id.clone();
+    let repo_path = active_repo_path.clone();
     tokio::task::spawn_blocking(move || {
-        active_account::set_active_and_sync_git(&account_id, active_repo_path.as_deref())
+        active_account::set_active_and_sync_git(&aid, repo_path.as_deref())
     })
     .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Account,
+        format!("Switched active account to {}", account_id);
+        repo_id: active_repo_path,
+        meta: serde_json::json!({ "account_id": account_id })
+    );
+
+    Ok(())
 }
 
 #[command]
@@ -31,16 +42,26 @@ pub async fn accounts_update(
     account_id: String,
     patch: AccountPatch,
 ) -> Result<ProviderAccount, AppError> {
-    tokio::task::spawn_blocking(move || token_store::update_account(&account_id, patch))
+    let aid = account_id.clone();
+    let res = tokio::task::spawn_blocking(move || token_store::update_account(&aid, patch))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Account,
+        format!("Updated account settings for {}", res.handle);
+        meta: serde_json::json!({ "account_id": account_id, "handle": res.handle })
+    );
+
+    Ok(res)
 }
 
 #[command]
 pub async fn accounts_remove(account_id: String) -> Result<(), AppError> {
+    let aid = account_id.clone();
     tokio::task::spawn_blocking(move || {
         let accounts = token_store::list_accounts();
-        if let Some(acc) = accounts.iter().find(|a| a.id == account_id) {
+        if let Some(acc) = accounts.iter().find(|a| a.id == aid) {
             // Revoke on remote where supported
             match acc.provider {
                 ProviderKind::Gitlab => {
@@ -53,10 +74,18 @@ pub async fn accounts_remove(account_id: String) -> Result<(), AppError> {
                 }
             }
         }
-        token_store::remove_account(&account_id)
+        token_store::remove_account(&aid)
     })
     .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Account,
+        format!("Removed account {}", account_id);
+        meta: serde_json::json!({ "account_id": account_id })
+    );
+
+    Ok(())
 }
 
 #[command]
@@ -68,16 +97,22 @@ pub async fn accounts_start_oauth(
     let url = match provider.to_lowercase().as_str() {
         "gitlab" => {
             let p = GitLabAuthProvider;
-            let target = instance_url.unwrap_or_else(|| p.default_instance_url().to_string());
+            let target = instance_url.clone().unwrap_or_else(|| p.default_instance_url().to_string());
             p.start_oauth(&target)?
         }
         "github" => {
             let p = GitHubAuthProvider;
-            let target = instance_url.unwrap_or_else(|| p.default_instance_url().to_string());
+            let target = instance_url.clone().unwrap_or_else(|| p.default_instance_url().to_string());
             p.start_oauth(&target)?
         }
         _ => return Err(AppError::Validation(format!("Unsupported provider '{}'", provider))),
     };
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Account,
+        format!("Started OAuth sign-in for {}", provider);
+        meta: serde_json::json!({ "provider": provider, "instance_url": instance_url })
+    );
 
     app.opener()
         .open_url(&url, None::<&str>)

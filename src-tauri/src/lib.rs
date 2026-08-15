@@ -1,4 +1,5 @@
 pub mod error;
+pub mod core;
 pub mod auth;
 pub mod git;
 pub mod repos;
@@ -14,6 +15,7 @@ use commands::window_commands::*;
 use commands::accounts::*;
 use commands::remotes::*;
 use commands::terminal::*;
+use commands::logs::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,6 +25,9 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
+            crate::core::logging::init_app_handle(app.handle().clone());
+            crate::log_info!(crate::core::logging::LogCategory::App, "GitDesktop application started");
+
             #[cfg(desktop)]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
@@ -169,6 +174,10 @@ pub fn run() {
             terminal_get_log_session,
             terminal_export_log_session,
             autocomplete_suggest,
+            logs_query,
+            logs_export,
+            logs_clear,
+            logs_add,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -29,6 +29,13 @@ pub fn append_history(repo_id: &str, cmd: &str, exit_code: Option<i32>) -> Resul
     writeln!(file, "{}", json_line)
         .map_err(|e| AppError::Filesystem(format!("Failed to write history entry: {}", e)))?;
 
+    crate::log_info!(
+        crate::core::logging::LogCategory::Terminal,
+        format!("Ran '{}'", clean_cmd);
+        repo_id: Some(repo_id.to_string()),
+        meta: serde_json::json!({ "command": clean_cmd, "exit_code": exit_code })
+    );
+
     Ok(())
 }
 

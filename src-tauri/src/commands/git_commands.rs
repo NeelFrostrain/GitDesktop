@@ -66,19 +66,40 @@ pub async fn commit_changes(
     sign_off: Option<bool>,
     allow_empty: Option<bool>,
 ) -> Result<(), AppError> {
+    let rp = repo_path.clone();
+    let sum = summary.clone();
     tokio::task::spawn_blocking(move || {
-        commit_mod::commit_changes(&repo_path, &summary, description.as_deref(), no_verify, sign_off, allow_empty)
+        commit_mod::commit_changes(&rp, &sum, description.as_deref(), no_verify, sign_off, allow_empty)
     })
     .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
-}
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
 
+    crate::log_success!(
+        crate::core::logging::LogCategory::Git,
+        format!("Committed changes: {}", summary);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "summary": summary })
+    );
+
+    Ok(())
+}
 
 #[command]
 pub async fn push_to_remote(repo_path: String, branch: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || remote_mod::push_to_remote(&repo_path, &branch))
+    let rp = repo_path.clone();
+    let br = branch.clone();
+    tokio::task::spawn_blocking(move || remote_mod::push_to_remote(&rp, &br))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Remote,
+        format!("Pushed branch '{}' to remote", branch);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "branch": branch })
+    );
+
+    Ok(())
 }
 
 #[command]
@@ -86,16 +107,36 @@ pub async fn pull_from_remote(
     repo_path: String,
     branch: String,
 ) -> Result<remote_mod::PullResult, AppError> {
-    tokio::task::spawn_blocking(move || remote_mod::pull_from_remote(&repo_path, &branch))
+    let rp = repo_path.clone();
+    let br = branch.clone();
+    let res = tokio::task::spawn_blocking(move || remote_mod::pull_from_remote(&rp, &br))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Remote,
+        format!("Pulled {} commits on branch '{}'", res.commits_pulled, branch);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "branch": branch, "commits_pulled": res.commits_pulled })
+    );
+
+    Ok(res)
 }
 
 #[command]
 pub async fn fetch_remote(repo_path: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || remote_mod::fetch_remote(&repo_path))
+    let rp = repo_path.clone();
+    tokio::task::spawn_blocking(move || remote_mod::fetch_remote(&rp))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Remote,
+        "Fetched latest remote changes";
+        repo_id: Some(repo_path)
+    );
+
+    Ok(())
 }
 
 #[command]
@@ -130,16 +171,38 @@ pub async fn list_branches(repo_path: String) -> Result<Vec<BranchInfo>, AppErro
 
 #[command]
 pub async fn checkout_branch(repo_path: String, branch: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || commit_mod::checkout_branch(&repo_path, &branch))
+    let rp = repo_path.clone();
+    let br = branch.clone();
+    tokio::task::spawn_blocking(move || commit_mod::checkout_branch(&rp, &br))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Git,
+        format!("Switched to branch '{}'", branch);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "branch": branch })
+    );
+
+    Ok(())
 }
 
 #[command]
 pub async fn create_branch(repo_path: String, branch: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || commit_mod::create_branch(&repo_path, &branch))
+    let rp = repo_path.clone();
+    let br = branch.clone();
+    tokio::task::spawn_blocking(move || commit_mod::create_branch(&rp, &br))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Git,
+        format!("Created new branch '{}'", branch);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "branch": branch })
+    );
+
+    Ok(())
 }
 
 #[command]
@@ -657,9 +720,33 @@ pub async fn signing_verify_commit_cmd(
     repo_path: String,
     sha: String,
 ) -> Result<crate::git::signing::VerifyResult, AppError> {
-    tokio::task::spawn_blocking(move || crate::git::signing::verify_commit(&repo_path, &sha))
+    let rp = repo_path.clone();
+    let s = sha.clone();
+    let res = tokio::task::spawn_blocking(move || crate::git::signing::verify_commit(&rp, &s))
         .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    match &res {
+        crate::git::signing::VerifyResult::Verified { signer, key_id } => {
+            crate::log_success!(
+                crate::core::logging::LogCategory::Signing,
+                format!("Verified commit {} signed by {}", &sha[..7.min(sha.len())], signer);
+                repo_id: Some(repo_path),
+                meta: serde_json::json!({ "sha": sha, "signer": signer, "key_id": key_id })
+            );
+        }
+        crate::git::signing::VerifyResult::Unverified { reason } => {
+            crate::log_warn!(
+                crate::core::logging::LogCategory::Signing,
+                format!("Unverified signature on commit {}: {}", &sha[..7.min(sha.len())], reason);
+                repo_id: Some(repo_path),
+                meta: serde_json::json!({ "sha": sha, "reason": reason })
+            );
+        }
+        _ => {}
+    }
+
+    Ok(res)
 }
 
 
