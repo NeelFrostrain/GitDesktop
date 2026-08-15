@@ -134,11 +134,25 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
         .or_else(|| repo.path().parent())
         .ok_or_else(|| AppError::Git("Cannot determine repo workdir".to_string()))?;
 
+    // First check if a remote named "origin" is configured at all.
+    // For local-only repos with no remote, reporting commits as "ahead" is misleading.
+    let has_remote = Command::new("git")
+        .args(["remote", "get-url", "origin"])
+        .current_dir(repo_path)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    if !has_remote {
+        // No remote configured — ahead/behind is meaningless, return 0/0
+        return Ok((0, 0));
+    }
+
     // Use system git rev-list --count which reads actual on-disk refs (never stale).
     // This is more reliable than libgit2's in-memory ref cache after a push/fetch.
     let remote_ref = format!("origin/{}", branch_name);
 
-    // Check if the remote ref exists at all
+    // Check if the remote tracking ref exists (i.e. branch has been pushed at least once)
     let ref_exists = Command::new("git")
         .args(["show-ref", "--quiet", "--verify", &format!("refs/remotes/{}", remote_ref)])
         .current_dir(repo_path)
@@ -147,7 +161,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
         .unwrap_or(false);
 
     if !ref_exists {
-        // Branch has never been pushed — count all local commits as "ahead"
+        // Remote is configured but this branch has never been pushed — count all local commits as "ahead"
         let output = Command::new("git")
             .args(["rev-list", "--count", "HEAD"])
             .current_dir(repo_path)

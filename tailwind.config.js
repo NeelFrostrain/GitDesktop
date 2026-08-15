@@ -22,6 +22,7 @@ export default {
           secondary: '#b3b0b8',
           muted: '#85818c',
           faint: '#5c5863',
+          onAccent: '#ffffff',
         },
         commito: {
           coral: '#e05638',
@@ -30,6 +31,15 @@ export default {
           activeText: '#f5a494',
           green: '#22c55e',
           card: '#1e1c21',
+        },
+        git: {
+          added: '#22c55e',
+          removed: '#ef4444',
+          modified: '#eab308',
+          renamed: '#3b82f6',
+          conflict: '#f97316',
+          ahead: '#22c55e',
+          behind: '#ef4444',
         },
         gitlab: {
           orange: '#e05638',
@@ -53,7 +63,24 @@ export default {
             heading: '#ffffff',
           }
         }
-      }
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+      },
+      borderRadius: {
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '6px',
+        lg: '12px',
+        xl: '16px',
+      },
+      boxShadow: {
+        sm: '0 1px 2px 0 rgba(0, 0, 0, 0.25)',
+        DEFAULT: '0 4px 6px -1px rgba(0, 0, 0, 0.4)',
+        md: '0 4px 6px -1px rgba(0, 0, 0, 0.4)',
+        lg: '0 10px 25px -3px rgba(0, 0, 0, 0.6)',
+      },
     },
   },
   plugins: [],

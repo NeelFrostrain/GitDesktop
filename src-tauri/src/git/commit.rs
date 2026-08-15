@@ -34,9 +34,27 @@ pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError
     let head = repo.head().and_then(|h| h.peel_to_commit()).ok();
 
     if let Some(commit) = head {
+        // Normal case: repo has at least one commit — use libgit2 reset
         repo.reset_default(Some(commit.as_object()), files)?;
         let mut index = repo.index()?;
         index.write()?;
+    } else {
+        // Brand-new repo with no commits yet — HEAD doesn't exist.
+        // Use `git rm --cached` to remove files from the index.
+        let file_args: Vec<&str> = files.iter().map(|s| s.as_str()).collect();
+        if !file_args.is_empty() {
+            let mut cmd = Command::new("git");
+            cmd.arg("rm").arg("--cached").arg("--");
+            for f in &file_args {
+                cmd.arg(f);
+            }
+            cmd.current_dir(repo_path);
+            let output = cmd.output()?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(AppError::Git(format!("Failed to unstage files: {}", stderr.trim())));
+            }
+        }
     }
     Ok(())
 }
@@ -94,9 +112,9 @@ pub fn commit_changes(
         if is_allow_empty {
             cmd.arg("--allow-empty");
         }
-        if is_sign_off {
-            cmd.arg("-s");
-        }
+        // NOTE: Do NOT pass `-s` here — the sign-off trailer is already embedded
+        // in `full_message` (lines above). Passing `-s` again would produce a
+        // duplicate "Signed-off-by:" line in the commit message.
         cmd.arg("-m").arg(&full_message);
         cmd.current_dir(repo_path);
 
@@ -212,12 +230,33 @@ pub fn rename_branch(repo_path: &str, old_name: &str, new_name: &str) -> Result<
 }
 
 pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<(), AppError> {
-    let repo = Repository::open(repo_path)?;
-    let mut branch = repo.find_branch(branch_name, git2::BranchType::Local)?;
     if force {
-        branch.delete()?;
+        // Force delete: use `git branch -D` which deletes even if unmerged
+        let output = Command::new("git")
+            .args(["branch", "-D", branch_name])
+            .current_dir(repo_path)
+            .output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AppError::Git(format!("Failed to force-delete branch '{}': {}", branch_name, stderr.trim())));
+        }
     } else {
-        branch.delete()?;
+        // Safe delete: use `git branch -d` which refuses to delete unmerged branches
+        let output = Command::new("git")
+            .args(["branch", "-d", branch_name])
+            .current_dir(repo_path)
+            .output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            // Provide a user-friendly message if the branch is not fully merged
+            if stderr.contains("not fully merged") {
+                return Err(AppError::Git(format!(
+                    "Branch '{}' is not fully merged. Use force delete to remove it anyway.",
+                    branch_name
+                )));
+            }
+            return Err(AppError::Git(format!("Failed to delete branch '{}': {}", branch_name, stderr.trim())));
+        }
     }
     Ok(())
 }

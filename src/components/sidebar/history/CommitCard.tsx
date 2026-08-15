@@ -1,7 +1,9 @@
-import React from 'react';
-import { GitMerge } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { GitMerge, GitCommit, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
-import { UserAvatar } from '../../UserAvatar';
+import { UserAvatar } from '../../common/UserAvatar';
+import { useSigningStore } from '../../../store/signingStore';
+import { useGitStore } from '../../../store/useGitStore';
 
 interface CommitCardProps {
   commit: CommitInfo;
@@ -24,6 +26,48 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   onClick,
   onContextMenu,
 }) => {
+  const { activeRepoPath } = useGitStore();
+  const { verifiedCommits, verifyCommit } = useSigningStore();
+  const verification = verifiedCommits[commit.sha];
+
+  useEffect(() => {
+    if (activeRepoPath && !verification && commit.sha) {
+      verifyCommit(activeRepoPath, commit.sha);
+    }
+  }, [activeRepoPath, commit.sha, verification, verifyCommit]);
+
+  const renderSigningBadge = () => {
+    if (!verification || verification.status === 'NoSignature') return null;
+
+    if (verification.status === 'Verified') {
+      const signer = typeof verification.details === 'object' ? verification.details.signer : '';
+      return (
+        <span
+          title={`Verified commit (Signed by ${signer || 'GPG/SSH key'})`}
+          className="flex items-center gap-0.5 text-emerald-400 font-mono text-[9px] bg-emerald-950/40 border border-emerald-800/40 px-1 py-0.2 rounded"
+        >
+          <ShieldCheck className="w-2.5 h-2.5" />
+          <span>Verified</span>
+        </span>
+      );
+    }
+
+    if (verification.status === 'Unverified') {
+      const reason = typeof verification.details === 'object' ? verification.details.reason : '';
+      return (
+        <span
+          title={`Unverified signature: ${reason || 'Untrusted or expired key'}`}
+          className="flex items-center gap-0.5 text-amber-400 font-mono text-[9px] bg-amber-950/40 border border-amber-800/40 px-1 py-0.2 rounded"
+        >
+          <ShieldAlert className="w-2.5 h-2.5" />
+          <span>Unverified</span>
+        </span>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div
       data-commit-sha={commit.sha}
@@ -61,9 +105,13 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       {/* Card Header & Content */}
       <div className="flex items-start justify-between gap-2 mb-1 pointer-events-none">
         <h4 className="text-xs font-bold truncate leading-snug flex-1">{commit.message}</h4>
-        <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded-md text-[10px] font-mono text-text-muted flex-shrink-0">
-          {commit.short_sha}
-        </span>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {renderSigningBadge()}
+          <div className="flex items-center gap-1 px-1.5 py-0.2 bg-base-3 border border-border rounded-md text-[10px] font-mono text-text-muted">
+            <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
+            <span>{commit.short_sha}</span>
+          </div>
+        </div>
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-text-muted mt-1.5 pointer-events-none">
@@ -71,12 +119,20 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           <UserAvatar
             name={commit.author_name}
             email={commit.author_email}
-            className="w-4 h-4"
+            className="w-4 h-4 rounded-full ring-1 ring-border/50"
             iconClassName="w-2.5 h-2.5"
           />
           <span className="truncate font-medium text-text-secondary">{commit.author_name}</span>
         </div>
-        <span className="font-mono text-[10px] text-text-faint">{commit.relative_date}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {commit.additions !== undefined && commit.deletions !== undefined && (commit.additions > 0 || commit.deletions > 0) && (
+            <div className="flex items-center gap-1 font-mono text-[9px] font-semibold">
+              <span className="text-emerald-400">+{commit.additions}</span>
+              <span className="text-red-400">-{commit.deletions}</span>
+            </div>
+          )}
+          <span className="font-mono text-[10px] text-text-faint">{commit.relative_date}</span>
+        </div>
       </div>
 
       {/* Drop to Merge Overlay */}

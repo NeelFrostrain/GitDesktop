@@ -35,6 +35,9 @@ urlencoding = "2.1"
 rand = "0.8"
 sha2 = "0.10"
 base64 = "0.22"
+portable-pty = "0.8"
+uuid = { version = "1", features = ["v4"] }
+zip = { version = "2.2", default-features = false, features = ["deflate"] }
 
 [profile.release]
 opt-level = "z"

@@ -371,7 +371,17 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
             index.write()?;
             let tree_id = index.write_tree()?;
             let tree = repo.find_tree(tree_id)?;
-            let sig = git2::Signature::now("Git Desktop User", "user@git.local")?;
+
+            // Prefer user's configured git identity; fall back to generic defaults
+            let config = repo.config().ok();
+            let global_name = config.as_ref()
+                .and_then(|c| c.get_string("user.name").ok())
+                .unwrap_or_else(|| "Git Desktop User".to_string());
+            let global_email = config.as_ref()
+                .and_then(|c| c.get_string("user.email").ok())
+                .unwrap_or_else(|| "user@git.local".to_string());
+
+            let sig = git2::Signature::now(&global_name, &global_email)?;
             let _ = repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[]);
         }
 
@@ -380,5 +390,123 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?
 }
+
+#[command]
+pub async fn list_known_repos_cmd() -> Result<Vec<crate::repos::registry::RepoEntry>, AppError> {
+    let res = tokio::task::spawn_blocking(crate::repos::registry::list_known_repos)
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    Ok(res)
+}
+
+#[command]
+pub async fn add_repo_to_registry_cmd(path: String) -> Result<crate::repos::registry::RepoEntry, AppError> {
+    let p = path.clone();
+    let res = tokio::task::spawn_blocking(move || crate::repos::registry::add_repo(&p))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Repo,
+        format!("Added repository '{}' to registry", res.name);
+        repo_id: Some(path),
+        meta: serde_json::json!({ "repo_name": res.name })
+    );
+
+    Ok(res)
+}
+
+#[command]
+pub async fn remove_repo_from_registry_cmd(id: String) -> Result<(), AppError> {
+    let i = id.clone();
+    tokio::task::spawn_blocking(move || crate::repos::registry::remove_repo(&i))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Repo,
+        "Removed repository from registry";
+        repo_id: Some(id)
+    );
+
+    Ok(())
+}
+
+#[command]
+pub async fn pin_repo_cmd(id: String, pinned: bool) -> Result<(), AppError> {
+    let i = id.clone();
+    tokio::task::spawn_blocking(move || crate::repos::registry::pin_repo(&i, pinned))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Repo,
+        format!("{} repository in workspace", if pinned { "Pinned" } else { "Unpinned" });
+        repo_id: Some(id)
+    );
+
+    Ok(())
+}
+
+#[command]
+pub async fn get_repo_dashboard_status_cmd(
+    path: String,
+) -> Result<crate::repos::status::RepoDashboardStatus, AppError> {
+    tokio::task::spawn_blocking(move || crate::repos::status::get_repo_dashboard_status(&path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_local_activity_cmd(
+    repo_paths: Vec<String>,
+    limit: Option<usize>,
+) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
+    let rps = repo_paths.clone();
+    let events = tokio::task::spawn_blocking(move || {
+        crate::activity::local::get_local_activity(rps, limit.unwrap_or(30))
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    crate::log_debug!(
+        crate::core::logging::LogCategory::Activity,
+        format!("Scanned local activity across {} repos ({} events found)", repo_paths.len(), events.len());
+        meta: serde_json::json!({ "repo_count": repo_paths.len(), "event_count": events.len() })
+    );
+
+    Ok(events)
+}
+
+#[command]
+pub async fn get_gitlab_activity_cmd(
+    account_id: String,
+    project_paths: Vec<String>,
+    limit: Option<usize>,
+) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
+    let accounts = keyring::list_accounts();
+    let account = accounts.into_iter().find(|a| a.id == account_id)
+        .or_else(|| keyring::get_active_account());
+
+    if let Some(acct) = account {
+        let events = crate::activity::gitlab::get_gitlab_activity(
+            acct.server_url,
+            acct.token,
+            project_paths,
+            limit.unwrap_or(20),
+        ).await?;
+
+        crate::log_info!(
+            crate::core::logging::LogCategory::Activity,
+            format!("Polled GitLab activity: fetched {} events", events.len());
+            meta: serde_json::json!({ "event_count": events.len() })
+        );
+
+        Ok(events)
+    } else {
+        Ok(Vec::new())
+    }
+}
+
 
 

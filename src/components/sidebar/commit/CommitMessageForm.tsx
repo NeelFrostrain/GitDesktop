@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGitStore } from '../../../store/useGitStore';
-import { UserAvatar } from '../../UserAvatar';
+import { UserAvatar } from '../../common/UserAvatar';
 
 interface CommitMessageFormProps {
   summary: string;

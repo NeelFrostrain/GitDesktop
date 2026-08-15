@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
-import { Checkbox } from '../../Checkbox';
+import { Checkbox } from '../../common/Checkbox';
 import { ChangeFileList } from './ChangeFileList';
 
 export const ChangesPanel: React.FC = () => {

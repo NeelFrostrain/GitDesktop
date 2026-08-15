@@ -12,6 +12,15 @@ export interface BranchInfo {
   is_remote: boolean;
 }
 
+export interface RemoteInfo {
+  name: string;
+  url: string;
+  push_url?: string | null;
+  is_default: boolean;
+  ahead: number;
+  behind: number;
+}
+
 export interface RepoStatus {
   current_branch: string;
   ahead: number;
@@ -36,6 +45,13 @@ export interface DiffResult {
   file_size_bytes: number;
 }
 
+export interface CommitFileStat {
+  path: string;
+  additions: number;
+  deletions: number;
+  status: string;
+}
+
 export interface CommitInfo {
   sha: string;
   short_sha: string;
@@ -44,11 +60,16 @@ export interface CommitInfo {
   message: string;
   timestamp: number;
   relative_date: string;
+  additions?: number;
+  deletions?: number;
 }
 
 export interface CommitDetails {
   commit: CommitInfo;
   changed_files: string[];
+  total_additions?: number;
+  total_deletions?: number;
+  file_stats?: CommitFileStat[];
 }
 
 export interface PullResult {
@@ -188,5 +209,36 @@ export interface RemoveOperation {
 
 export type HistoryOperation = ReorderOperation | MergeOperation | RemoveOperation;
 
+export interface GpgKeyInfo {
+  key_id: string;
+  user_id: string;
+  email?: string | null;
+  created_at?: string | null;
+  expires_at?: string | null;
+}
 
+export interface SshKeyInfo {
+  path: string;
+  public_key: string;
+  key_type: string;
+  comment?: string | null;
+  is_agent: boolean;
+}
 
+export interface SigningConfig {
+  enabled: boolean;
+  method: 'gpg' | 'ssh';
+  key_id: string;
+  scope: 'repo' | 'global';
+}
+
+export type VerifyStatus = 'Verified' | 'Unverified' | 'NoSignature' | 'Error';
+
+export interface VerifyResult {
+  status: VerifyStatus;
+  details?: {
+    signer?: string;
+    key_id?: string;
+    reason?: string;
+  } | string;
+}

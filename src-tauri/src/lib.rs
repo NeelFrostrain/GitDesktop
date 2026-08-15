@@ -1,12 +1,23 @@
 pub mod error;
+pub mod core;
 pub mod auth;
 pub mod git;
+pub mod repos;
+pub mod activity;
+pub mod domain;
+pub mod integrations;
 pub mod commands;
 
 use commands::auth_commands::*;
 use commands::git_commands::*;
 use commands::repo_commands::*;
 use commands::window_commands::*;
+use commands::accounts::*;
+use commands::remotes::*;
+use commands::terminal::*;
+use commands::logs::*;
+use commands::settings::*;
+use commands::git_runtime::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -16,11 +27,53 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
+            crate::core::logging::init_app_handle(app.handle().clone());
+            crate::log_info!(crate::core::logging::LogCategory::App, "GitDesktop application started");
+
             #[cfg(desktop)]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let _ = app.deep_link().register_all();
             }
+
+            // Silently auto-install MinGit in the background if git is not available.
+            // This ensures terminal git commands work on any PC without user interaction.
+            {
+                let runtime_info = crate::domain::git_runtime::detect_git_runtime();
+                if !runtime_info.is_available {
+                    crate::log_info!(
+                        crate::core::logging::LogCategory::App,
+                        "Git not detected on system. Starting silent MinGit background download..."
+                    );
+                    let handle = app.handle().clone();
+                    tokio::spawn(async move {
+                        match crate::domain::git_runtime::download_and_install_mingit(&handle).await {
+                            Ok(info) => {
+                                crate::log_info!(
+                                    crate::core::logging::LogCategory::App,
+                                    &format!("MinGit auto-install completed. Git version: {}", info.version.unwrap_or_default())
+                                );
+                            }
+                            Err(e) => {
+                                crate::log_info!(
+                                    crate::core::logging::LogCategory::App,
+                                    &format!("MinGit auto-install failed: {}. User can install manually via Git Runtime settings.", e)
+                                );
+                            }
+                        }
+                    });
+                } else {
+                    crate::log_info!(
+                        crate::core::logging::LogCategory::App,
+                        &format!(
+                            "Git detected: {} (portable: {})",
+                            runtime_info.version.unwrap_or_default(),
+                            runtime_info.is_portable_mingit
+                        )
+                    );
+                }
+            }
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -119,6 +172,62 @@ pub fn run() {
             login_github_pat,
             get_github_user,
             log_action_cmd,
+            gitlab_ensure_fresh_token,
+            gitlab_get_token_info_cmd,
+            list_remotes_cmd,
+            add_remote_cmd,
+            remove_remote_cmd,
+            rename_remote_cmd,
+            set_remote_url_cmd,
+            fetch_specific_remote_cmd,
+            push_specific_remote_cmd,
+            pull_specific_remote_cmd,
+            signing_list_gpg_keys_cmd,
+            signing_list_ssh_keys_cmd,
+            signing_get_config_cmd,
+            signing_set_config_cmd,
+            signing_verify_commit_cmd,
+            list_known_repos_cmd,
+            add_repo_to_registry_cmd,
+            remove_repo_from_registry_cmd,
+            pin_repo_cmd,
+            get_repo_dashboard_status_cmd,
+            get_local_activity_cmd,
+            get_gitlab_activity_cmd,
+            accounts_list,
+            accounts_set_active,
+            accounts_update,
+            accounts_remove,
+            accounts_start_oauth,
+            remotes_list,
+            remotes_add,
+            remotes_remove,
+            remotes_set_url,
+            remotes_set_default,
+            terminal_open,
+            terminal_write,
+            terminal_resize,
+            terminal_kill,
+            terminal_get_history,
+            terminal_record_history,
+            terminal_clear_history,
+            terminal_list_log_sessions,
+            terminal_get_log_session,
+            terminal_export_log_session,
+            autocomplete_suggest,
+            logs_query,
+            logs_export,
+            logs_clear,
+            logs_add,
+            settings_get_all,
+            settings_save_value,
+            settings_reset_value,
+            settings_reset_all,
+            settings_get_repo,
+            settings_save_repo_value,
+            settings_reset_repo_value,
+            git_runtime_get_status,
+            git_runtime_install_mingit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

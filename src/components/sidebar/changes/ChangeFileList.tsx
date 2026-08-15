@@ -1,12 +1,42 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
-import { Checkbox } from '../../Checkbox';
-import { FileContextMenu } from '../../FileContextMenu';
+import { Checkbox } from '../../common/Checkbox';
+import { FileContextMenu } from '../../context-menus/FileContextMenu';
 
 interface ChangeFileListProps {
   filter: string;
 }
+
+const getStatusBadge = (statusStr?: string) => {
+  const s = (statusStr || '').toUpperCase();
+  if (s.includes('NEW') || s.includes('ADD') || s.includes('UNTRACKED')) {
+    return (
+      <span className="w-4 h-4 rounded-xs bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
+        +
+      </span>
+    );
+  }
+  if (s.includes('DELETE') || s.includes('REMOVE')) {
+    return (
+      <span className="w-4 h-4 rounded-xs bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
+        -
+      </span>
+    );
+  }
+  if (s.includes('RENAME')) {
+    return (
+      <span className="w-4 h-4 rounded-xs bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
+        R
+      </span>
+    );
+  }
+  return (
+    <span className="w-4 h-4 rounded-xs bg-git-modified/15 text-git-modified text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-modified/25">
+      M
+    </span>
+  );
+};
 
 export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   const { status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } = useGitStore();
@@ -60,7 +90,8 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
-              <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+              {getStatusBadge(file.status)}
+              {/* <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" /> */}
               <span className="truncate flex-1 font-mono text-[11px]">{file.path}</span>
             </div>
           );

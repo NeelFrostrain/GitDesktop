@@ -27,11 +27,22 @@ pub fn generate_pkce() -> PkcePair {
     PkcePair { verifier, challenge }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct OAuthTokenResponse {
     pub access_token: String,
     pub token_type: String,
     pub refresh_token: Option<String>,
+    pub expires_in: Option<i64>,
+    pub scope: Option<String>,
+    pub created_at: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct TokenInfo {
+    pub scope: Vec<String>,
+    pub created_at: Option<i64>,
+    pub expires_in_seconds: Option<i64>,
+    pub resource_owner_id: Option<u64>,
 }
 
 pub async fn listen_for_oauth_callback(
@@ -70,7 +81,7 @@ pub async fn listen_for_oauth_callback(
     let _ = stream.write_all(html_response.as_bytes()).await;
     let _ = stream.flush().await;
 
-    let token = exchange_code_for_token(
+    let token_resp = exchange_code_for_token_response(
         &server_url,
         &client_id,
         client_secret.as_deref(),
@@ -80,10 +91,37 @@ pub async fn listen_for_oauth_callback(
     )
     .await?;
 
-    let client = GitLabClient::new(server_url.clone(), token.clone(), None)?;
+    let client = GitLabClient::new(server_url.clone(), token_resp.access_token.clone(), None)?;
     let user = client.get_current_user().await?;
 
-    crate::auth::keyring::save_token(&token)?;
+    let scopes_list = token_resp.scope.as_ref().map(|s| {
+        s.split_whitespace().map(|x| x.to_string()).collect::<Vec<String>>()
+    });
+
+    let expires_at = token_resp.expires_in.map(|exp| {
+        chrono::Utc::now().timestamp() + exp
+    });
+
+    let account_id = crate::auth::keyring::make_account_id(&user.username, &server_url);
+    let account = crate::auth::keyring::SavedAccount {
+        id: account_id.clone(),
+        server_url: server_url.clone(),
+        token: token_resp.access_token.clone(),
+        name: user.name.clone(),
+        username: user.username.clone(),
+        email: user.email.clone(),
+        avatar_url: user.avatar_url.clone(),
+        is_active: true,
+        provider: "gitlab".to_string(),
+        refresh_token: token_resp.refresh_token.clone(),
+        expires_at,
+        scopes: scopes_list,
+        created_at: Some(chrono::Utc::now().timestamp()),
+    };
+
+    crate::auth::keyring::add_or_update_account(account)?;
+    crate::auth::keyring::switch_active_account(&account_id)?;
+    crate::auth::keyring::save_token(&token_resp.access_token)?;
     crate::auth::keyring::save_server_url(&server_url)?;
 
     use tauri::Emitter;
@@ -92,14 +130,14 @@ pub async fn listen_for_oauth_callback(
     Ok(user)
 }
 
-pub async fn exchange_code_for_token(
+pub async fn exchange_code_for_token_response(
     server_url: &str,
     client_id: &str,
     client_secret: Option<&str>,
     code: &str,
     verifier: &str,
     redirect_uri: &str,
-) -> Result<String, AppError> {
+) -> Result<OAuthTokenResponse, AppError> {
     let clean_url = server_url.trim_end_matches('/');
     let token_url = format!("{}/oauth/token", clean_url);
     let clean_cid = client_id.trim();
@@ -131,7 +169,7 @@ pub async fn exchange_code_for_token(
         let token_resp: OAuthTokenResponse = resp.json().await.map_err(|e| {
             AppError::Auth(format!("Failed to parse token response: {}", e))
         })?;
-        return Ok(token_resp.access_token);
+        return Ok(token_resp);
     }
 
     // Fallback: If request failed and client_secret was sent, try pure PKCE without client_secret
@@ -149,7 +187,7 @@ pub async fn exchange_code_for_token(
             let token_resp: OAuthTokenResponse = resp2.json().await.map_err(|e| {
                 AppError::Auth(format!("Failed to parse token response: {}", e))
             })?;
-            return Ok(token_resp.access_token);
+            return Ok(token_resp);
         }
         let err_text = resp2.text().await.unwrap_or_default();
         return Err(AppError::Auth(format!(
@@ -165,6 +203,54 @@ pub async fn exchange_code_for_token(
     )))
 }
 
+pub async fn exchange_code_for_token(
+    server_url: &str,
+    client_id: &str,
+    client_secret: Option<&str>,
+    code: &str,
+    verifier: &str,
+    redirect_uri: &str,
+) -> Result<String, AppError> {
+    let resp = exchange_code_for_token_response(server_url, client_id, client_secret, code, verifier, redirect_uri).await?;
+    Ok(resp.access_token)
+}
+
+pub async fn refresh_oauth_token(
+    server_url: &str,
+    client_id: &str,
+    client_secret: Option<&str>,
+    refresh_token: &str,
+) -> Result<OAuthTokenResponse, AppError> {
+    let clean_url = server_url.trim_end_matches('/');
+    let token_url = format!("{}/oauth/token", clean_url);
+    let clean_cid = client_id.trim();
+
+    let client = reqwest::Client::new();
+    let mut params = vec![
+        ("client_id", clean_cid.to_string()),
+        ("grant_type", "refresh_token".to_string()),
+        ("refresh_token", refresh_token.trim().to_string()),
+    ];
+
+    if let Some(secret) = client_secret {
+        let clean_secret = secret.trim();
+        if !clean_secret.is_empty() {
+            params.push(("client_secret", clean_secret.to_string()));
+        }
+    }
+
+    let resp = client.post(&token_url).form(&params).send().await?;
+
+    if resp.status().is_success() {
+        let token_resp: OAuthTokenResponse = resp.json().await.map_err(|e| {
+            AppError::Auth(format!("Failed to parse refreshed token response: {}", e))
+        })?;
+        return Ok(token_resp);
+    }
+
+    let err_text = resp.text().await.unwrap_or_default();
+    Err(AppError::Auth(format!("OAuth token refresh failed: {}", err_text)))
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitLabUser {
@@ -281,6 +367,38 @@ impl GitLabClient {
             avatar_url: raw.avatar_url,
             web_url: raw.web_url,
             server_url: self.server_url.clone(),
+        })
+    }
+
+    pub async fn get_token_info(&self) -> Result<TokenInfo, AppError> {
+        let url = format!("{}/oauth/token/info", self.server_url);
+        let resp = self.client.get(&url).send().await?;
+
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to fetch token info: {}", err_text)));
+        }
+
+        #[derive(Deserialize)]
+        struct RawTokenInfo {
+            scope: Option<Vec<String>>,
+            scopes: Option<Vec<String>>,
+            created_at: Option<i64>,
+            expires_in: Option<i64>,
+            expires_in_seconds: Option<i64>,
+            resource_owner_id: Option<u64>,
+        }
+
+        let raw: RawTokenInfo = resp.json().await.map_err(|e| AppError::Network(format!("Failed to parse token info JSON: {}", e)))?;
+
+        let scope = raw.scope.or(raw.scopes).unwrap_or_default();
+        let expires_in_seconds = raw.expires_in_seconds.or(raw.expires_in);
+
+        Ok(TokenInfo {
+            scope,
+            created_at: raw.created_at,
+            expires_in_seconds,
+            resource_owner_id: raw.resource_owner_id,
         })
     }
 
@@ -433,4 +551,3 @@ mod tests {
         assert!(!pkce.challenge.is_empty());
     }
 }
-

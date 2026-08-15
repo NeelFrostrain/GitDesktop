@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
+import { useAppLogStore, LogLevel as CoreLogLevel, LogCategory as CoreLogCategory } from '../core/logging';
 
 export type LogLevel = 'info' | 'success' | 'warning' | 'error';
 export type LogCategory = 'Git' | 'Auth' | 'Repo' | 'System' | 'Git LFS' | 'Merge Request' | 'Worktree' | 'Remote';
-
 
 export interface LogEntry {
   id: string;
@@ -29,23 +28,34 @@ interface LogState {
   setSearchQuery: (query: string) => void;
 }
 
-const getStoredLogs = (): LogEntry[] => {
-  try {
-    const cached = localStorage.getItem('git_desktop_activity_logs');
-    return cached ? JSON.parse(cached) : [];
-  } catch {
-    return [];
+function mapToCoreLevel(lvl: LogLevel): CoreLogLevel {
+  switch (lvl) {
+    case 'success':
+      return 'Success';
+    case 'warning':
+      return 'Warn';
+    case 'error':
+      return 'Error';
+    default:
+      return 'Info';
   }
-};
+}
 
-const saveLogs = (logs: LogEntry[]) => {
-  try {
-    localStorage.setItem('git_desktop_activity_logs', JSON.stringify(logs.slice(0, 300)));
-  } catch {}
-};
+function mapToCoreCategory(cat: LogCategory): CoreLogCategory {
+  switch (cat) {
+    case 'Auth':
+      return 'Account';
+    case 'Remote':
+      return 'Remote';
+    case 'Repo':
+      return 'Repo';
+    default:
+      return 'Git';
+  }
+}
 
 export const useLogStore = create<LogState>((set, get) => ({
-  logs: getStoredLogs(),
+  logs: [],
   isLogModalOpen: false,
   filterLevel: 'all',
   filterCategory: 'all',
@@ -61,33 +71,23 @@ export const useLogStore = create<LogState>((set, get) => ({
       details,
     };
 
-    // Output to developer console
-    const logPrefix = `[GitDesktop] [${newEntry.timestamp}] [${category}] ${message}`;
-    if (level === 'error') {
-      console.error(logPrefix, details || '');
-    } else if (level === 'warning') {
-      console.warn(logPrefix, details || '');
-    } else if (level === 'success') {
-      console.log(`%c${logPrefix}`, 'color: #10b981; font-weight: bold;', details || '');
-    } else {
-      console.info(logPrefix, details || '');
-    }
-
-    // Print directly to terminal output running Tauri
-    invoke('log_action_cmd', {
-      level,
-      category,
+    // Forward to central app logging bus
+    const coreLevel = mapToCoreLevel(level);
+    const coreCat = mapToCoreCategory(category);
+    useAppLogStore.getState().addLog(
+      coreLevel,
+      coreCat,
       message,
-      details: details || null,
-    }).catch(() => {});
+      undefined,
+      details ? { details } : undefined
+    );
 
-    const updated = [newEntry, ...get().logs].slice(0, 100);
-    saveLogs(updated);
+    const updated = [newEntry, ...get().logs].slice(0, 200);
     set({ logs: updated });
   },
 
   clearLogs: () => {
-    saveLogs([]);
+    useAppLogStore.getState().clearLogs();
     set({ logs: [] });
   },
 
@@ -96,3 +96,4 @@ export const useLogStore = create<LogState>((set, get) => ({
   setFilterCategory: (filterCategory) => set({ filterCategory }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 }));
+

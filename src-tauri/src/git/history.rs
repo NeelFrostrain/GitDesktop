@@ -3,6 +3,14 @@ use git2::Repository;
 use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CommitFileStat {
+    pub path: String,
+    pub additions: usize,
+    pub deletions: usize,
+    pub status: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommitInfo {
     pub sha: String,
     pub short_sha: String,
@@ -11,12 +19,19 @@ pub struct CommitInfo {
     pub message: String,
     pub timestamp: i64,
     pub relative_date: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub additions: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deletions: Option<usize>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommitDetails {
     pub commit: CommitInfo,
     pub changed_files: Vec<String>,
+    pub total_additions: usize,
+    pub total_deletions: usize,
+    pub file_stats: Vec<CommitFileStat>,
 }
 
 pub fn get_commit_history(repo_path: &str, limit: usize, offset: usize) -> Result<Vec<CommitInfo>, AppError> {
@@ -52,6 +67,8 @@ pub fn get_commit_history(repo_path: &str, limit: usize, offset: usize) -> Resul
             message,
             timestamp,
             relative_date,
+            additions: None,
+            deletions: None,
         });
     }
 
@@ -66,6 +83,60 @@ pub fn get_commit_details(repo_path: &str, sha: &str) -> Result<CommitDetails, A
     let commit = repo.find_commit(oid)?;
     let author = commit.author();
 
+    let mut changed_files = Vec::new();
+    let mut total_additions = 0;
+    let mut total_deletions = 0;
+    let mut file_stats = Vec::new();
+
+    if let Ok(commit_tree) = commit.tree() {
+        let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
+        if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), None) {
+            if let Ok(stats) = diff.stats() {
+                total_additions = stats.insertions();
+                total_deletions = stats.deletions();
+            }
+
+            use std::collections::HashMap;
+            let mut file_line_counts: HashMap<String, (usize, usize)> = HashMap::new();
+            let _ = diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
+                if let Some(path) = delta.new_file().path() {
+                    let path_str = path.to_string_lossy().to_string();
+                    let entry = file_line_counts.entry(path_str).or_insert((0, 0));
+                    match line.origin() {
+                        '+' => entry.0 += 1,
+                        '-' => entry.1 += 1,
+                        _ => {}
+                    }
+                }
+                true
+            });
+
+            for delta in diff.deltas() {
+                if let Some(path) = delta.new_file().path() {
+                    let path_str = path.to_string_lossy().to_string();
+                    changed_files.push(path_str.clone());
+
+                    let counts = file_line_counts.get(&path_str).copied().unwrap_or((0, 0));
+                    let status = match delta.status() {
+                        git2::Delta::Added => "added",
+                        git2::Delta::Deleted => "deleted",
+                        git2::Delta::Modified => "modified",
+                        git2::Delta::Renamed => "renamed",
+                        git2::Delta::Copied => "copied",
+                        _ => "modified",
+                    };
+
+                    file_stats.push(CommitFileStat {
+                        path: path_str,
+                        additions: counts.0,
+                        deletions: counts.1,
+                        status: status.to_string(),
+                    });
+                }
+            }
+        }
+    }
+
     let commit_info = CommitInfo {
         sha: commit.id().to_string(),
         short_sha: commit.id().to_string().chars().take(7).collect(),
@@ -74,23 +145,16 @@ pub fn get_commit_details(repo_path: &str, sha: &str) -> Result<CommitDetails, A
         message: commit.message().unwrap_or("").trim().to_string(),
         timestamp: commit.time().seconds(),
         relative_date: format_relative_date(commit.time().seconds()),
+        additions: Some(total_additions),
+        deletions: Some(total_deletions),
     };
-
-    let mut changed_files = Vec::new();
-    if let Ok(commit_tree) = commit.tree() {
-        let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
-        if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&commit_tree), None) {
-            for delta in diff.deltas() {
-                if let Some(path) = delta.new_file().path() {
-                    changed_files.push(path.to_string_lossy().to_string());
-                }
-            }
-        }
-    }
 
     Ok(CommitDetails {
         commit: commit_info,
         changed_files,
+        total_additions,
+        total_deletions,
+        file_stats,
     })
 }
 
