@@ -2,7 +2,7 @@ import React, { RefObject, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { SlidersHorizontal } from 'lucide-react';
 import { CommitOptions as CommitOptionsType } from '../../../store/useGitStore';
-import { Checkbox } from '../../Checkbox';
+import { Checkbox } from '../../common/Checkbox';
 
 interface CommitOptionsProps {
   options: CommitOptionsType;

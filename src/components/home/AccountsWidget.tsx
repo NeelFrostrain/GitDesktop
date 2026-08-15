@@ -6,7 +6,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useAccounts, useAccountServicesStore, ProviderAccount } from '../../features/account-services';
-import { UserAvatar } from '../UserAvatar';
+import { UserAvatar } from '../common/UserAvatar';
 
 export const AccountsWidget: React.FC = () => {
   const { accounts } = useAccounts();

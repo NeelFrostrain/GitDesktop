@@ -3,7 +3,7 @@ import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
 import { useHistoryDragAndDrop } from '../../../hooks/useHistoryDragAndDrop';
 import { CommitCard } from './CommitCard';
-import { CommitContextMenu } from '../../CommitContextMenu';
+import { CommitContextMenu } from '../../context-menus/CommitContextMenu';
 
 interface CommitListProps {
   commits: CommitInfo[];

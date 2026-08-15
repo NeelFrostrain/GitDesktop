@@ -1,6 +1,6 @@
 import React, { RefObject } from 'react';
 import { Upload, Trash2 } from 'lucide-react';
-import { UserAvatar } from '../UserAvatar';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface ProfileAvatarSectionProps {
   avatarUrl: string | null;

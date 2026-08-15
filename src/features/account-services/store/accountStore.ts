@@ -51,7 +51,8 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
           email: active.commit_email,
           avatar_url: active.avatar_url,
           provider: active.provider,
-          instance_url: active.instance_url,
+          server_url: active.instance_url,
+          web_url: active.instance_url,
         });
       }
     } catch (err: any) {

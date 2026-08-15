@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
-import { GitMerge, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { GitMerge, GitCommit, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
-import { UserAvatar } from '../../UserAvatar';
+import { UserAvatar } from '../../common/UserAvatar';
 import { useSigningStore } from '../../../store/signingStore';
 import { useGitStore } from '../../../store/useGitStore';
 
@@ -107,9 +107,10 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         <h4 className="text-xs font-bold truncate leading-snug flex-1">{commit.message}</h4>
         <div className="flex items-center gap-1 flex-shrink-0">
           {renderSigningBadge()}
-          <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded-md text-[10px] font-mono text-text-muted">
-            {commit.short_sha}
-          </span>
+          <div className="flex items-center gap-1 px-1.5 py-0.2 bg-base-3 border border-border rounded-md text-[10px] font-mono text-text-muted">
+            <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
+            <span>{commit.short_sha}</span>
+          </div>
         </div>
       </div>
 
@@ -118,12 +119,20 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           <UserAvatar
             name={commit.author_name}
             email={commit.author_email}
-            className="w-4 h-4"
+            className="w-4 h-4 rounded-full ring-1 ring-border/50"
             iconClassName="w-2.5 h-2.5"
           />
           <span className="truncate font-medium text-text-secondary">{commit.author_name}</span>
         </div>
-        <span className="font-mono text-[10px] text-text-faint">{commit.relative_date}</span>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {commit.additions !== undefined && commit.deletions !== undefined && (commit.additions > 0 || commit.deletions > 0) && (
+            <div className="flex items-center gap-1 font-mono text-[9px] font-semibold">
+              <span className="text-emerald-400">+{commit.additions}</span>
+              <span className="text-red-400">-{commit.deletions}</span>
+            </div>
+          )}
+          <span className="font-mono text-[10px] text-text-faint">{commit.relative_date}</span>
+        </div>
       </div>
 
       {/* Drop to Merge Overlay */}

@@ -1,7 +1,7 @@
 import React, { RefObject } from 'react';
 import { ChevronDown, Check, Unlink, Link } from 'lucide-react';
 import { AccountOption } from '../../hooks/useGitUserConfig';
-import { UserAvatar } from '../UserAvatar';
+import { UserAvatar } from '../common/UserAvatar';
 
 interface RemoteIdentitySectionProps {
   selectedSyncAccount: string;

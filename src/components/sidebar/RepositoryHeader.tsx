@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { ChevronsUpDown, Home, FolderGit2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { RepoDropdown } from '../RepoDropdown';
+import { RepoDropdown } from '../layout/RepoDropdown';
 
 export const RepositoryHeader: React.FC = () => {
   const { activeRepoPath, status, branches, currentNavView, setCurrentNavView } = useGitStore();

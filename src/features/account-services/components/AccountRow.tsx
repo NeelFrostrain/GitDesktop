@@ -9,7 +9,7 @@ import { ProviderAccount } from '../types';
 import { ProviderBadge } from './ProviderBadge';
 import { EditAccountDialog } from './EditAccountDialog';
 import { useAccountServicesStore } from '../store/accountStore';
-import { UserAvatar } from '../../../components/UserAvatar';
+import { UserAvatar } from '../../../components/common/UserAvatar';
 
 interface AccountRowProps {
   account: ProviderAccount;

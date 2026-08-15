@@ -1,5 +1,9 @@
-export * from './Button';
-export * from './Input';
-export * from './Badge';
-export * from './EmptyState';
-export * from './LoadingState';
+export { Badge } from './Badge';
+export { Button } from './Button';
+export { Input } from './Input';
+export { Checkbox } from '../common/Checkbox';
+export { Dropdown } from '../common/Dropdown';
+export { EmptyState } from './EmptyState';
+export { LoadingState } from './LoadingState';
+export { UserAvatar } from '../common/UserAvatar';
+export { ErrorBoundary } from './ErrorBoundary';

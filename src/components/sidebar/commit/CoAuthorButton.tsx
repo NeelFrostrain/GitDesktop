@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { UserPlus, Bot } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
-import { UserAvatar } from '../../UserAvatar';
+import { UserAvatar } from '../../common/UserAvatar';
 
 interface CoAuthorButtonProps {
   onAddCoAuthor: (trailer: string) => void;

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { FileText } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
-import { Checkbox } from '../../Checkbox';
-import { FileContextMenu } from '../../FileContextMenu';
+import { Checkbox } from '../../common/Checkbox';
+import { FileContextMenu } from '../../context-menus/FileContextMenu';
 
 interface ChangeFileListProps {
   filter: string;

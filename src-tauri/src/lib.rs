@@ -13,6 +13,7 @@ use commands::repo_commands::*;
 use commands::window_commands::*;
 use commands::accounts::*;
 use commands::remotes::*;
+use commands::terminal::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -157,6 +158,17 @@ pub fn run() {
             remotes_remove,
             remotes_set_url,
             remotes_set_default,
+            terminal_open,
+            terminal_write,
+            terminal_resize,
+            terminal_kill,
+            terminal_get_history,
+            terminal_record_history,
+            terminal_clear_history,
+            terminal_list_log_sessions,
+            terminal_get_log_session,
+            terminal_export_log_session,
+            autocomplete_suggest,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

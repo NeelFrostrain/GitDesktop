@@ -3,42 +3,43 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
-import { Sidebar } from './components/Sidebar';
-import { HomeDashboard } from './components/HomeDashboard';
-import { DiffViewer } from './components/DiffViewer';
-import { FileBrowser } from './components/FileBrowser';
-import { RepoModal } from './components/RepoModal';
-import { LogModal } from './components/LogModal';
-import { ConflictView } from './components/ConflictView';
-import { Header } from './components/Header';
-import { Titlebar } from './components/Titlebar';
+import { Sidebar } from './components/sidebar/Sidebar';
+import { ErrorBoundary } from './components/common';
+import { Titlebar, Header } from './components/layout';
+import {
+  HomeDashboard,
+  DiffViewer,
+  FileBrowser,
+  ConflictView,
+  BranchesView,
+  LfsView,
+  StashManagerView,
+  TagsView,
+  SubmodulesView,
+  BlameViewer,
+} from './components/views';
+import {
+  RepoModal,
+  CreateRepoModal,
+  MergeRequestModal,
+  WorktreeModal,
+  ConflictResolverModal,
+  RebaseModal,
+  CherryPickModal,
+  ReflogModal,
+  PatchModal,
+  GitConfigModal,
+  RewriteHistoryModal,
+  SigningSettings,
+  GitLabSignInModal,
+} from './components/modals';
+import { GitUserConfigModal } from './components/config/GitUserConfigModal';
+import { LogModal } from './components/logs/LogModal';
+import { AccountServicesModal } from './features/account-services';
+import { TerminalPanel, useTerminalStore } from './features/terminal';
 import { useGitStore } from './store/useGitStore';
 import { GitLabUser, GitHubUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
 import { RepoStatus } from './types/git';
-import { ErrorBoundary } from './components/ErrorBoundary';
-
-import { BranchesView } from './components/BranchesView';
-import { LfsView } from './components/LfsView';
-import { MergeRequestModal } from './components/MergeRequestModal';
-import { WorktreeModal } from './components/WorktreeModal';
-
-import { StashManagerView } from './components/StashManagerView';
-import { TagsView } from './components/TagsView';
-import { SubmodulesView } from './components/SubmodulesView';
-
-import { ConflictResolverModal } from './components/ConflictResolverModal';
-import { RebaseModal } from './components/RebaseModal';
-import { CherryPickModal } from './components/CherryPickModal';
-import { BlameViewer } from './components/BlameViewer';
-import { ReflogModal } from './components/ReflogModal';
-import { PatchModal } from './components/PatchModal';
-import { GitConfigModal } from './components/GitConfigModal';
-import { CreateRepoModal } from './components/CreateRepoModal';
-import { RewriteHistoryModal } from './components/RewriteHistoryModal';
-import { GitUserConfigModal } from './components/GitUserConfigModal';
-import { AccountServicesModal } from './features/account-services';
-import { GitLabSignInModal } from './components/GitLabSignInModal';
-import { SigningSettings } from './components/SigningSettings';
 
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
@@ -168,6 +169,18 @@ export const App: React.FC = () => {
   }, [activeRepoPath, setStatus]);
 
 
+  // Global shortcut Ctrl+` / Cmd+` to toggle repository terminal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        useTerminalStore.getState().toggleIsOpen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const renderMainContent = () => {
     if (currentNavView === 'files') {
       return <FileBrowser />;
@@ -208,8 +221,12 @@ export const App: React.FC = () => {
           {/* Header Bar */}
           <Header />
           <ConflictView />
-          <div className="flex-1 flex min-h-0 overflow-hidden">
-            {renderMainContent()}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex-1 flex min-h-0 overflow-hidden">
+              {renderMainContent()}
+            </div>
+            {/* Docked Per-Repo Terminal */}
+            <TerminalPanel />
           </div>
         </div>
       </div>

@@ -4,4 +4,5 @@ pub mod repo_commands;
 pub mod window_commands;
 pub mod accounts;
 pub mod remotes;
+pub mod terminal;
 
