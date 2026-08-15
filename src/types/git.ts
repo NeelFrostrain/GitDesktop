@@ -45,6 +45,13 @@ export interface DiffResult {
   file_size_bytes: number;
 }
 
+export interface CommitFileStat {
+  path: string;
+  additions: number;
+  deletions: number;
+  status: string;
+}
+
 export interface CommitInfo {
   sha: string;
   short_sha: string;
@@ -53,11 +60,16 @@ export interface CommitInfo {
   message: string;
   timestamp: number;
   relative_date: string;
+  additions?: number;
+  deletions?: number;
 }
 
 export interface CommitDetails {
   commit: CommitInfo;
   changed_files: string[];
+  total_additions?: number;
+  total_deletions?: number;
+  file_stats?: CommitFileStat[];
 }
 
 export interface PullResult {
