@@ -16,6 +16,7 @@ use commands::accounts::*;
 use commands::remotes::*;
 use commands::terminal::*;
 use commands::logs::*;
+use commands::settings::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -178,6 +179,13 @@ pub fn run() {
             logs_export,
             logs_clear,
             logs_add,
+            settings_get_all,
+            settings_save_value,
+            settings_reset_value,
+            settings_reset_all,
+            settings_get_repo,
+            settings_save_repo_value,
+            settings_reset_repo_value,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -37,6 +37,7 @@ import { GitUserConfigModal } from './components/config/GitUserConfigModal';
 import { LogModal } from './components/logs/LogModal';
 import { AccountServicesModal } from './features/account-services';
 import { TerminalPanel, useTerminalStore } from './features/terminal';
+import { SettingsPanel, useSettingsStore } from './features/settings';
 import { useGitStore } from './store/useGitStore';
 import { GitLabUser, GitHubUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
 import { RepoStatus } from './types/git';
@@ -169,12 +170,15 @@ export const App: React.FC = () => {
   }, [activeRepoPath, setStatus]);
 
 
-  // Global shortcut Ctrl+` / Cmd+` to toggle repository terminal
+  // Global shortcut Ctrl+` / Cmd+` (Terminal) and Ctrl+, / Cmd+, (Settings)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '`') {
         e.preventDefault();
         useTerminalStore.getState().toggleIsOpen();
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+        e.preventDefault();
+        useSettingsStore.getState().toggleSettings();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -251,6 +255,7 @@ export const App: React.FC = () => {
       <AccountServicesModal />
       <GitLabSignInModal />
       <SigningSettings />
+      <SettingsPanel />
 
     </div>
     </ErrorBoundary>

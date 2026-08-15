@@ -107,8 +107,9 @@ pub fn open_session(
     // Spawn reader thread for stdout/stderr stream
     thread::spawn(move || {
         let mut buf = [0u8; 4096];
-        let event_name = format!("terminal:{}:data", repo_id_owned);
-        let exit_event = format!("terminal:{}:exit", repo_id_owned);
+        let safe_repo_id = repo_id_owned.replace('\\', "/").replace(':', "_");
+        let event_name = format!("terminal:{}:data", safe_repo_id);
+        let exit_event = format!("terminal:{}:exit", safe_repo_id);
 
         while is_alive_clone.load(Ordering::SeqCst) {
             match reader.read(&mut buf) {

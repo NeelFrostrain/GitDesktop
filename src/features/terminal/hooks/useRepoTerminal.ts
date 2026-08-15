@@ -49,6 +49,9 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     setCursorPixelPos({ x, y });
   }, [repoId]);
 
+  const calculateCursorPositionRef = useRef(calculateCursorPosition);
+  calculateCursorPositionRef.current = calculateCursorPosition;
+
   const inputBufferRef = useRef<string>('');
   const cursorPosRef = useRef<number>(0);
   const historyIndexRef = useRef<number>(-1);
@@ -57,6 +60,10 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   const autocomplete = useGitAutocomplete(repoPath);
   const autocompleteRef = useRef(autocomplete);
   autocompleteRef.current = autocomplete;
+
+  const unlistenDataRef = useRef<UnlistenFn | null>(null);
+  const unlistenExitRef = useRef<UnlistenFn | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   // Initialize or retrieve cached terminal instance
   const getOrCreateTerminal = useCallback((id: string) => {
@@ -142,8 +149,12 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     [repoId]
   );
 
+  const applySuggestionRef = useRef(applySuggestion);
+  applySuggestionRef.current = applySuggestion;
+
   // Setup terminal mount, PTY connection, event listeners
   useEffect(() => {
+    isMountedRef.current = true;
     if (!repoId || !repoPath || !terminalContainerRef.current) {
       return;
     }
@@ -156,10 +167,11 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       terminal.open(terminalContainerRef.current);
     }
 
-    fitAddon.fit();
+    try {
+      fitAddon.fit();
+    } catch {}
 
-    let unlistenData: UnlistenFn | undefined;
-    let unlistenExit: UnlistenFn | undefined;
+    let isActive = true;
 
     const setupSession = async () => {
       try {
@@ -167,7 +179,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         if (!isInitialized) {
           try {
             const history = await ptyBridge.getHistory(repoId, 6, 0);
-            if (history && history.length > 0) {
+            if (history && history.length > 0 && isActive) {
               terminal.writeln('\x1b[90m┌── Previous Session Commands ──────────────────────────┐\x1b[0m');
               for (const entry of history) {
                 localHistoryRef.current.push(entry.cmd);
@@ -181,28 +193,56 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           if (cached) cached.isInitialized = true;
         }
 
+        if (!isActive) return;
+
         // Open backend PTY session
         const sessionInfo = await ptyBridge.open(repoId, repoPath);
+        if (!isActive) return;
+
         setIsSessionAlive(sessionInfo.is_alive);
         setSessionId(sessionInfo.session_id);
 
         // Sync size
         await ptyBridge.resize(repoId, terminal.cols, terminal.rows);
+        if (!isActive) return;
+
+        // Clean up previous listeners if any exist
+        if (unlistenDataRef.current) {
+          unlistenDataRef.current();
+          unlistenDataRef.current = null;
+        }
+        if (unlistenExitRef.current) {
+          unlistenExitRef.current();
+          unlistenExitRef.current = null;
+        }
 
         // Subscribe to PTY stream events
-        unlistenData = await listen<string>(`terminal:${repoId}:data`, (event) => {
-          if (event.payload) {
+        const safeRepoId = repoId.replace(/\\/g, '/').replace(/:/g, '_');
+        const unData = await listen<string>(`terminal:${safeRepoId}:data`, (event) => {
+          if (event.payload && isMountedRef.current) {
             terminal.write(event.payload);
           }
         });
 
-        unlistenExit = await listen<void>(`terminal:${repoId}:exit`, () => {
-          setIsSessionAlive(false);
-          terminal.writeln('\r\n\x1b[33m[Process completed]\x1b[0m\r\n');
+        const unExit = await listen<void>(`terminal:${safeRepoId}:exit`, () => {
+          if (isMountedRef.current) {
+            setIsSessionAlive(false);
+            terminal.writeln('\r\n\x1b[33m[Process completed]\x1b[0m\r\n');
+          }
         });
+
+        if (!isActive) {
+          unData();
+          unExit();
+        } else {
+          unlistenDataRef.current = unData;
+          unlistenExitRef.current = unExit;
+        }
       } catch (err) {
-        console.error('Failed to open terminal session:', err);
-        terminal.writeln(`\r\n\x1b[31m[Failed to launch terminal process: ${err}]\x1b[0m\r\n`);
+        if (isActive) {
+          console.error('Failed to open terminal session:', err);
+          terminal.writeln(`\r\n\x1b[31m[Failed to launch terminal process: ${err}]\x1b[0m\r\n`);
+        }
       }
     };
 
@@ -234,13 +274,13 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         if (auto.suggestions.length > 0) {
           const selected = auto.suggestions[auto.selectedIndex || 0];
           if (selected) {
-            applySuggestion(selected.value, auto.suggestions.length === 1);
+            applySuggestionRef.current(selected.value, auto.suggestions.length === 1);
             return;
           }
         }
         // If single candidate or trigger autocomplete
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
-        setTimeout(calculateCursorPosition, 0);
+        setTimeout(() => calculateCursorPositionRef.current(), 0);
         return;
       }
 
@@ -252,7 +292,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           !auto.isInsideQuotes(inputBufferRef.current, cursorPosRef.current)
         ) {
           const top = auto.suggestions[0];
-          applySuggestion(top.value, true);
+          applySuggestionRef.current(top.value, true);
           return;
         }
       }
@@ -283,7 +323,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
             inputBufferRef.current.slice(0, cursorPosRef.current) +
             inputBufferRef.current.slice(cursorPosRef.current + 1);
           auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
-          setTimeout(calculateCursorPosition, 0);
+          setTimeout(() => calculateCursorPositionRef.current(), 0);
         }
       } else if (data.length === 1 && data.charCodeAt(0) >= 32) {
         // Printable character
@@ -293,7 +333,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           inputBufferRef.current.slice(cursorPosRef.current);
         cursorPosRef.current += 1;
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
-        setTimeout(calculateCursorPosition, 0);
+        setTimeout(() => calculateCursorPositionRef.current(), 0);
       }
 
       // Forward keystroke to backend PTY
@@ -301,14 +341,14 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     });
 
     const onCursorMoveDisposable = terminal.onCursorMove(() => {
-      calculateCursorPosition();
+      calculateCursorPositionRef.current();
     });
 
     // Resize observer
     const resizeObserver = new ResizeObserver(() => {
       try {
         fitAddon.fit();
-        calculateCursorPosition();
+        calculateCursorPositionRef.current();
         if (repoId && terminal.cols > 0 && terminal.rows > 0) {
           ptyBridge.resize(repoId, terminal.cols, terminal.rows).catch(() => {});
         }
@@ -320,13 +360,20 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     }
 
     return () => {
+      isActive = false;
       onDataDisposable.dispose();
       onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();
-      if (unlistenData) unlistenData();
-      if (unlistenExit) unlistenExit();
+      if (unlistenDataRef.current) {
+        unlistenDataRef.current();
+        unlistenDataRef.current = null;
+      }
+      if (unlistenExitRef.current) {
+        unlistenExitRef.current();
+        unlistenExitRef.current = null;
+      }
     };
-  }, [repoId, repoPath, getOrCreateTerminal, applySuggestion, calculateCursorPosition]);
+  }, [repoId, repoPath, getOrCreateTerminal]);
 
   // Actions
   const clearTerminal = useCallback(() => {

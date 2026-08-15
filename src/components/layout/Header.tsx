@@ -19,6 +19,7 @@ import { useAccountServicesStore } from '../../features/account-services';
 import { useRemoteStore } from '../../store/remoteStore';
 import { useSigningStore } from '../../store/signingStore';
 import { useTerminalStore } from '../../features/terminal';
+import { useSettingsStore } from '../../features/settings';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { useRepositorySync } from '../../hooks/useRepositorySync';
@@ -34,7 +35,6 @@ export const Header: React.FC = () => {
     setIsCherryPickModalOpen,
     setIsReflogModalOpen,
     setIsPatchModalOpen,
-    setIsConfigModalOpen,
   } = useGitStore();
 
   const {
@@ -147,11 +147,11 @@ export const Header: React.FC = () => {
           </>
         )}
 
-        {/* Git Config */}
+        {/* Settings & Design Tokens */}
         <button
-          onClick={() => setIsConfigModalOpen(true)}
+          onClick={() => useSettingsStore.getState().openSettings()}
           className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
-          title="Repo Config & .gitignore"
+          title="Open Settings & CSS Design Tokens (Ctrl+,)"
         >
           <Settings className="w-3.5 h-3.5 text-text-secondary" />
         </button>

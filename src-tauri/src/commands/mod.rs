@@ -6,4 +6,4 @@ pub mod accounts;
 pub mod remotes;
 pub mod terminal;
 pub mod logs;
-
+pub mod settings;
