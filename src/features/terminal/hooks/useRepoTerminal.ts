@@ -167,9 +167,16 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       terminal.open(terminalContainerRef.current);
     }
 
-    try {
-      fitAddon.fit();
-    } catch {}
+    const fitAndRefresh = () => {
+      try {
+        fitAddon.fit();
+        terminal.refresh(0, terminal.rows - 1);
+      } catch {}
+    };
+
+    fitAndRefresh();
+    requestAnimationFrame(fitAndRefresh);
+    const fitTimer = setTimeout(fitAndRefresh, 60);
 
     let isActive = true;
 
@@ -361,6 +368,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
 
     return () => {
       isActive = false;
+      clearTimeout(fitTimer);
       onDataDisposable.dispose();
       onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();

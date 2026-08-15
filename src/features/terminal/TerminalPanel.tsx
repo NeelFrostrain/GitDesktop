@@ -42,10 +42,20 @@ export const TerminalPanel: React.FC = () => {
   // Re-fit xterm whenever tab switches or panel opens
   useEffect(() => {
     if (activeTab === 'shell' && isOpen) {
+      const raf = requestAnimationFrame(() => {
+        fitTerminal();
+      });
       const timer = setTimeout(() => {
         fitTerminal();
       }, 50);
-      return () => clearTimeout(timer);
+      const timer2 = setTimeout(() => {
+        fitTerminal();
+      }, 150);
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(timer);
+        clearTimeout(timer2);
+      };
     }
   }, [activeTab, isOpen, fitTerminal]);
 
@@ -118,23 +128,22 @@ export const TerminalPanel: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  if (!isOpen || !activeRepoPath) {
-    return (
-      <>
-        {/* Render LogViewer modal even if panel is collapsed */}
-        <LogViewer />
-      </>
-    );
+  if (!activeRepoPath) {
+    return <LogViewer />;
   }
 
   const repoName =
     activeRepoPath.replace(/\\/g, '/').split('/').filter(Boolean).pop() || 'Repository';
 
   return (
-    <div
-      style={{ height: `${panelHeight}px` }}
-      className="relative w-full bg-base-0 border-t border-border flex flex-col flex-shrink-0 select-none group/terminal z-20"
-    >
+    <>
+      <div
+        style={{
+          height: `${panelHeight}px`,
+          display: isOpen ? 'flex' : 'none',
+        }}
+        className="relative w-full bg-base-0 border-t border-border flex-col flex-shrink-0 select-none group/terminal z-20"
+      >
       {/* Resizable handle on top edge */}
       <div
         onMouseDown={startResizing}
@@ -330,9 +339,10 @@ export const TerminalPanel: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Log Viewer Modal */}
-      <LogViewer />
     </div>
-  );
+
+    {/* Log Viewer Modal */}
+    <LogViewer />
+  </>
+);
 };
