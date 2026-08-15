@@ -18,21 +18,14 @@ import {
 
 import { useLogStore } from './useLogStore';
 
-export type NavView = 
-  | 'overview' 
-  | 'files' 
-  | 'changes' 
-  | 'history' 
-  | 'branches' 
-  | 'locks' 
-  | 'reviews' 
-  | 'home' 
-  | 'projects' 
-  | 'groups' 
-  | 'work-items' 
-  | 'merge-requests' 
-  | 'todos' 
+export type NavView =
+  | 'home'
   | 'workspace'
+  | 'files'
+  | 'changes'
+  | 'history'
+  | 'branches'
+  | 'locks'
   | 'stashes'
   | 'tags'
   | 'submodules';
@@ -113,14 +106,11 @@ export interface GitState {
   isWorktreeModalOpen: boolean;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
-  isStashModalOpen: boolean;
-  isTagsModalOpen: boolean;
   isBlameModalOpen: boolean;
   isReflogModalOpen: boolean;
   isConflictResolverModalOpen: boolean;
   isPatchModalOpen: boolean;
   isConfigModalOpen: boolean;
-  isSubmodulesModalOpen: boolean;
   isRewriteModalOpen: boolean;
   pendingHistoryOp: HistoryOperation | null;
   isUserConfigModalOpen: boolean;
@@ -173,14 +163,11 @@ export interface GitState {
   setIsWorktreeModalOpen: (open: boolean) => void;
   setIsRebaseModalOpen: (open: boolean) => void;
   setIsCherryPickModalOpen: (open: boolean) => void;
-  setIsStashModalOpen: (open: boolean) => void;
-  setIsTagsModalOpen: (open: boolean) => void;
   setIsBlameModalOpen: (open: boolean) => void;
   setIsReflogModalOpen: (open: boolean) => void;
   setIsConflictResolverModalOpen: (open: boolean) => void;
   setIsPatchModalOpen: (open: boolean) => void;
   setIsConfigModalOpen: (open: boolean) => void;
-  setIsSubmodulesModalOpen: (open: boolean) => void;
   setIsRewriteModalOpen: (open: boolean) => void;
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
   setIsUserConfigModalOpen: (open: boolean) => void;
@@ -226,7 +213,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   activeTab: 'changes',
 
   diffViewMode: 'unified',
-  currentNavView: getCachedActiveRepoPath() ? 'workspace' : 'home',
+  currentNavView: 'home',
 
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
@@ -235,14 +222,11 @@ export const useGitStore = create<GitState>((set, get) => ({
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
-  isStashModalOpen: false,
-  isTagsModalOpen: false,
   isBlameModalOpen: false,
   isReflogModalOpen: false,
   isConflictResolverModalOpen: false,
   isPatchModalOpen: false,
   isConfigModalOpen: false,
-  isSubmodulesModalOpen: false,
   isRewriteModalOpen: false,
   pendingHistoryOp: null,
   isUserConfigModalOpen: false,
@@ -445,14 +429,11 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),
-  setIsStashModalOpen: (isStashModalOpen) => set({ isStashModalOpen }),
-  setIsTagsModalOpen: (isTagsModalOpen) => set({ isTagsModalOpen }),
   setIsBlameModalOpen: (isBlameModalOpen) => set({ isBlameModalOpen }),
   setIsReflogModalOpen: (isReflogModalOpen) => set({ isReflogModalOpen }),
   setIsConflictResolverModalOpen: (isConflictResolverModalOpen) => set({ isConflictResolverModalOpen }),
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
-  setIsSubmodulesModalOpen: (isSubmodulesModalOpen) => set({ isSubmodulesModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
   setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),

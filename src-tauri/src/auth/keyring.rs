@@ -24,6 +24,10 @@ pub struct SavedAccount {
     pub is_active: bool,
     #[serde(default = "default_provider")]
     pub provider: String, // "gitlab" | "github"
+    pub refresh_token: Option<String>,
+    pub expires_at: Option<i64>,
+    pub scopes: Option<Vec<String>>,
+    pub created_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -90,6 +94,10 @@ pub fn list_accounts() -> Vec<SavedAccount> {
                     avatar_url: None,
                     is_active: true,
                     provider: "gitlab".to_string(),
+                    refresh_token: None,
+                    expires_at: None,
+                    scopes: None,
+                    created_at: None,
                 };
                 store.accounts.push(acct);
                 write_local_store(&store);

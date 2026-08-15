@@ -1,6 +1,8 @@
 pub mod error;
 pub mod auth;
 pub mod git;
+pub mod repos;
+pub mod activity;
 pub mod commands;
 
 use commands::auth_commands::*;
@@ -119,6 +121,28 @@ pub fn run() {
             login_github_pat,
             get_github_user,
             log_action_cmd,
+            gitlab_ensure_fresh_token,
+            gitlab_get_token_info_cmd,
+            list_remotes_cmd,
+            add_remote_cmd,
+            remove_remote_cmd,
+            rename_remote_cmd,
+            set_remote_url_cmd,
+            fetch_specific_remote_cmd,
+            push_specific_remote_cmd,
+            pull_specific_remote_cmd,
+            signing_list_gpg_keys_cmd,
+            signing_list_ssh_keys_cmd,
+            signing_get_config_cmd,
+            signing_set_config_cmd,
+            signing_verify_commit_cmd,
+            list_known_repos_cmd,
+            add_repo_to_registry_cmd,
+            remove_repo_from_registry_cmd,
+            pin_repo_cmd,
+            get_repo_dashboard_status_cmd,
+            get_local_activity_cmd,
+            get_gitlab_activity_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

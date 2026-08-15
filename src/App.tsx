@@ -36,9 +36,10 @@ import { GitConfigModal } from './components/GitConfigModal';
 import { CreateRepoModal } from './components/CreateRepoModal';
 import { RewriteHistoryModal } from './components/RewriteHistoryModal';
 import { GitUserConfigModal } from './components/GitUserConfigModal';
-
-
-
+import { AccountPanel } from './components/AccountPanel';
+import { GitLabSignInModal } from './components/GitLabSignInModal';
+import { RemoteManager } from './components/RemoteManager';
+import { SigningSettings } from './components/SigningSettings';
 
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
@@ -231,7 +232,10 @@ export const App: React.FC = () => {
       <RewriteHistoryModal />
       <GitUserConfigModal />
       <LogModal />
-
+      <AccountPanel />
+      <GitLabSignInModal />
+      <RemoteManager />
+      <SigningSettings />
 
     </div>
     </ErrorBoundary>

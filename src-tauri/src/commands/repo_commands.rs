@@ -391,4 +391,77 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
     .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn list_known_repos_cmd() -> Result<Vec<crate::repos::registry::RepoEntry>, AppError> {
+    let res = tokio::task::spawn_blocking(crate::repos::registry::list_known_repos)
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+    Ok(res)
+}
+
+#[command]
+pub async fn add_repo_to_registry_cmd(path: String) -> Result<crate::repos::registry::RepoEntry, AppError> {
+    tokio::task::spawn_blocking(move || crate::repos::registry::add_repo(&path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn remove_repo_from_registry_cmd(id: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::repos::registry::remove_repo(&id))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn pin_repo_cmd(id: String, pinned: bool) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::repos::registry::pin_repo(&id, pinned))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_repo_dashboard_status_cmd(
+    path: String,
+) -> Result<crate::repos::status::RepoDashboardStatus, AppError> {
+    tokio::task::spawn_blocking(move || crate::repos::status::get_repo_dashboard_status(&path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_local_activity_cmd(
+    repo_paths: Vec<String>,
+    limit: Option<usize>,
+) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::activity::local::get_local_activity(repo_paths, limit.unwrap_or(30))
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_gitlab_activity_cmd(
+    account_id: String,
+    project_paths: Vec<String>,
+    limit: Option<usize>,
+) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
+    let accounts = keyring::list_accounts();
+    let account = accounts.into_iter().find(|a| a.id == account_id)
+        .or_else(|| keyring::get_active_account());
+
+    if let Some(acct) = account {
+        crate::activity::gitlab::get_gitlab_activity(
+            acct.server_url,
+            acct.token,
+            project_paths,
+            limit.unwrap_or(20),
+        ).await
+    } else {
+        Ok(Vec::new())
+    }
+}
+
+
 

@@ -9,10 +9,11 @@ import {
   ChevronDown
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useAccountStore } from '../store/accountStore';
 import { UserAvatar } from './UserAvatar';
 
 export const Titlebar: React.FC = () => {
-  const { user } = useGitStore();
+  const { user, setIsRepoModalOpen, setActiveModalTab, accounts, setUser, setAccounts, setActiveRepoPath, setStatus, setBranches } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -104,6 +105,24 @@ export const Titlebar: React.FC = () => {
   };
 
 
+  const handleSignOut = async () => {
+    try {
+      await invoke('logout_gitlab');
+    } catch {}
+    setUser(null);
+    setAccounts([]);
+    setActiveRepoPath(null);
+    setStatus(null);
+    setBranches([]);
+    setIsProfileOpen(false);
+  };
+
+  const handleSwitchAccount = () => {
+    setActiveModalTab('accounts');
+    setIsRepoModalOpen(true);
+    setIsProfileOpen(false);
+  };
+
   return (
     <header
       data-tauri-drag-region
@@ -116,24 +135,11 @@ export const Titlebar: React.FC = () => {
           {/* <span className="font-bold text-text-primary text-sm tracking-tight">Git Desktop</span> */}
         </div>
       </div>
-      {/* Right: Profile Dropdown + Window Action Buttons */}
+        {/* Right: Profile Dropdown + Window Action Buttons */}
       <div
         className="titlebar-no-drag flex items-center gap-2.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="relative w-full">
-          <input
-            type="text"
-            placeholder="Search or run a command"
-            className="w-full bg-base-2 border border-border rounded-md pl-8 pr-12 py-1 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
-          />
-          <svg className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <kbd className="absolute right-2 top-1 px-1.5 py-0.2 bg-base-3 border border-border rounded text-[9px] font-mono text-text-muted">
-            ⌘K
-          </kbd>
-        </div>
         {/* User Account Profile Dropdown */}
         <div className="relative" ref={menuRef}>
           <button
@@ -152,10 +158,58 @@ export const Titlebar: React.FC = () => {
             <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
           </button>
 
-          {/* Dropdown panel — add menu items here */}
+          {/* Profile dropdown panel */}
           {isProfileOpen && (
-            <div className="absolute right-0 top-full mt-1.5 w-56 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
-              {/* empty — items will be added here */}
+            <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
+              {/* Account info */}
+              <div className="px-3 py-2.5 border-b border-border">
+                <div className="font-semibold text-text-primary truncate">{user?.name || user?.username || 'Guest'}</div>
+                {user?.username && user.name && (
+                  <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
+                )}
+                {accounts.length > 0 && (
+                  <div className="text-[10px] text-text-faint mt-0.5">{accounts.length} account{accounts.length > 1 ? 's' : ''} saved</div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <button
+                onClick={() => {
+                  useAccountStore.getState().setIsAccountPanelOpen(true);
+                  setIsProfileOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5 text-gitlab-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Account Details & Scopes
+              </button>
+
+              <button
+                onClick={handleSwitchAccount}
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2"
+              >
+                <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Switch / Add Account
+              </button>
+
+              {user && (
+                <>
+                  <div className="h-px bg-border mx-2 my-1" />
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition flex items-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Sign Out
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

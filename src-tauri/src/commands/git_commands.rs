@@ -552,6 +552,117 @@ pub async fn get_git_user_identity_cmd(
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn list_remotes_cmd(repo_path: String) -> Result<Vec<crate::git::remote::RemoteInfo>, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::list_remotes(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn add_remote_cmd(repo_path: String, name: String, url: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::add_remote(&repo_path, &name, &url))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn remove_remote_cmd(repo_path: String, name: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::remove_remote(&repo_path, &name))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn rename_remote_cmd(repo_path: String, old_name: String, new_name: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::rename_remote(&repo_path, &old_name, &new_name))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn set_remote_url_cmd(repo_path: String, name: String, url: String, is_push: bool) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::set_remote_url(&repo_path, &name, &url, is_push))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn fetch_specific_remote_cmd(repo_path: String, remote_name: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::fetch_specific_remote(&repo_path, &remote_name))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn push_specific_remote_cmd(
+    repo_path: String,
+    remote_name: String,
+    branch_name: String,
+    force: bool,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::remote::push_specific_remote(&repo_path, &remote_name, &branch_name, force)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn pull_specific_remote_cmd(
+    repo_path: String,
+    remote_name: String,
+    branch_name: String,
+) -> Result<crate::git::remote::PullResult, AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::remote::pull_specific_remote(&repo_path, &remote_name, &branch_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn signing_list_gpg_keys_cmd() -> Result<Vec<crate::git::signing::GpgKeyInfo>, AppError> {
+    tokio::task::spawn_blocking(crate::git::signing::list_gpg_keys)
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn signing_list_ssh_keys_cmd() -> Result<Vec<crate::git::signing::SshKeyInfo>, AppError> {
+    tokio::task::spawn_blocking(crate::git::signing::list_ssh_keys)
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn signing_get_config_cmd(repo_path: String) -> Result<crate::git::signing::SigningConfig, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::signing::get_signing_config(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn signing_set_config_cmd(
+    repo_path: String,
+    config: crate::git::signing::SigningConfig,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::signing::set_signing_config(&repo_path, config))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn signing_verify_commit_cmd(
+    repo_path: String,
+    sha: String,
+) -> Result<crate::git::signing::VerifyResult, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::signing::verify_commit(&repo_path, &sha))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+
 
 
 

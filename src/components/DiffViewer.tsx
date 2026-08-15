@@ -17,9 +17,12 @@ import {
   FileCode,
   Copy,
   Check,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ShieldCheck,
+  ShieldAlert,
 } from 'lucide-react';
 import { useGitStore } from '../store/useGitStore';
+import { useSigningStore } from '../store/signingStore';
 import { DiffResult, CommitDetails, DiffLine } from '../types/git';
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'bmp', 'avif', 'icns']);
@@ -703,6 +706,33 @@ export const DiffViewer: React.FC = () => {
                 </button>
               </div>
               <div className="flex items-center gap-1.5">
+                {(() => {
+                  const verification = useSigningStore.getState().verifiedCommits[commitDetails.commit.sha];
+                  if (verification && verification.status === 'Verified') {
+                    const signer = typeof verification.details === 'object' ? verification.details.signer : '';
+                    return (
+                      <span
+                        title={`Cryptographically verified commit (Signed by ${signer || 'GPG/SSH'})`}
+                        className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md font-medium"
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        <span>Verified</span>
+                      </span>
+                    );
+                  }
+                  if (verification && verification.status === 'Unverified') {
+                    return (
+                      <span
+                        title="Unverified commit signature"
+                        className="flex items-center gap-1 text-amber-400 font-mono text-[11px] bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md font-medium"
+                      >
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                        <span>Unverified</span>
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
                 <span className="font-mono text-[11px] px-2 py-0.5 bg-base-1 border border-border rounded-md text-commito-coral font-medium">
                   {commitDetails.commit.short_sha}
                 </span>

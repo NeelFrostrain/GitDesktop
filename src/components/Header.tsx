@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   GitPullRequest,
   AlertCircle,
@@ -8,10 +8,14 @@ import {
   FileCode,
   Settings,
   GitCommit,
-  RefreshCw
+  RefreshCw,
+  Globe,
+  ShieldCheck,
 } from 'lucide-react';
 
 import { useGitStore } from '../store/useGitStore';
+import { useRemoteStore } from '../store/remoteStore';
+import { useSigningStore } from '../store/signingStore';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { useRepositorySync } from '../hooks/useRepositorySync';
@@ -29,7 +33,24 @@ export const Header: React.FC = () => {
     setIsConfigModalOpen,
   } = useGitStore();
 
+  const {
+    remotes,
+    activeRemote,
+    setActiveRemote,
+    setIsRemoteManagerOpen,
+    loadRemotes,
+  } = useRemoteStore();
+
+  const { setIsSigningSettingsOpen, config, loadConfig } = useSigningStore();
+
   const { refreshSync, isFetching } = useRepositorySync();
+
+  useEffect(() => {
+    if (activeRepoPath) {
+      loadRemotes(activeRepoPath);
+      loadConfig(activeRepoPath);
+    }
+  }, [activeRepoPath, loadRemotes, loadConfig]);
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
@@ -43,6 +64,28 @@ export const Header: React.FC = () => {
           title="Refresh Repository Status"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-commito-coral ${isFetching ? 'animate-spin' : ''}`} />
+        </button>
+
+        {/* Remote Manager */}
+        <button
+          onClick={() => setIsRemoteManagerOpen(true)}
+          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+          title="Manage Git Remotes"
+        >
+          <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
+        </button>
+
+        {/* Commit Signing Settings */}
+        <button
+          onClick={() => setIsSigningSettingsOpen(true)}
+          className={`p-1 rounded-md border border-border transition cursor-pointer ${
+            config?.enabled
+              ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/40 hover:bg-emerald-900/40'
+              : 'text-text-muted hover:text-text-primary hover:bg-base-2'
+          }`}
+          title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
+        >
+          <ShieldCheck className="w-3.5 h-3.5" />
         </button>
 
         {/* Rebase Tool */}
@@ -100,6 +143,24 @@ export const Header: React.FC = () => {
             <button onClick={() => setError(null)} className="ml-1 text-red-400 hover:text-white cursor-pointer">
               <X className="w-3 h-3" />
             </button>
+          </div>
+        )}
+
+        {/* Remote Selector Dropdown (when 2+ remotes exist) */}
+        {remotes.length > 1 && (
+          <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md px-2 py-1 text-xs text-text-secondary">
+            <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
+            <select
+              value={activeRemote}
+              onChange={(e) => setActiveRemote(e.target.value)}
+              className="bg-transparent text-text-primary text-xs font-mono font-semibold focus:outline-none cursor-pointer"
+            >
+              {remotes.map((r) => (
+                <option key={r.name} value={r.name} className="bg-base-1 text-text-primary font-mono">
+                  {r.name}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
