@@ -21,7 +21,7 @@ export const HomeSidebarAccountFooter: React.FC = () => {
       <button
         type="button"
         onClick={handleClick}
-        className="w-full p-2 rounded-lg bg-base-2/40 hover:bg-base-2 border border-border/60 hover:border-border-strong flex items-center justify-between gap-2.5 transition text-left cursor-pointer group"
+        className="w-full p-2 rounded-md bg-base-2/40 hover:bg-base-2 border border-border/60 hover:border-border-strong flex items-center justify-between gap-2.5 transition text-left cursor-pointer group"
         title="Manage linked accounts and services"
       >
         <div className="flex items-center gap-2.5 min-w-0 flex-1">

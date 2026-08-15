@@ -94,7 +94,7 @@ export const SettingsPanel: React.FC = () => {
         {/* Header bar: Title, Search, Scope Switcher, Close */}
         <header className="h-14 bg-base-1 border-b border-border px-5 flex items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="p-2 bg-commito-coral/15 rounded-lg border border-commito-coral/30 text-commito-coral">
+            <div className="p-2 bg-commito-coral/15 rounded-md border border-commito-coral/30 text-commito-coral">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
@@ -113,15 +113,14 @@ export const SettingsPanel: React.FC = () => {
           {/* Scope Selector & Actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Scope tabs */}
-            <div className="flex items-center bg-base-2 rounded-lg p-0.5 border border-border">
+            <div className="flex items-center bg-base-2 rounded-md p-0.5 border border-border">
               <button
                 type="button"
                 onClick={() => setActiveScope('app')}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${
-                  activeScope === 'app'
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${activeScope === 'app'
                     ? 'bg-base-0 text-text-primary shadow-xs font-semibold'
                     : 'text-text-muted hover:text-text-primary'
-                }`}
+                  }`}
                 title="Global application settings"
               >
                 <Laptop className="w-3.5 h-3.5 text-blue-400" />
@@ -132,13 +131,12 @@ export const SettingsPanel: React.FC = () => {
                 type="button"
                 onClick={() => setActiveScope('repo')}
                 disabled={!activeRepoPath}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${
-                  !activeRepoPath
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${!activeRepoPath
                     ? 'opacity-40 cursor-not-allowed text-text-muted'
                     : activeScope === 'repo'
-                    ? 'bg-base-0 text-text-primary shadow-xs font-semibold cursor-pointer'
-                    : 'text-text-muted hover:text-text-primary cursor-pointer'
-                }`}
+                      ? 'bg-base-0 text-text-primary shadow-xs font-semibold cursor-pointer'
+                      : 'text-text-muted hover:text-text-primary cursor-pointer'
+                  }`}
                 title={
                   activeRepoPath
                     ? 'Settings scoped to current repository workspace'
@@ -158,7 +156,7 @@ export const SettingsPanel: React.FC = () => {
                   resetAllSettings();
                 }
               }}
-              className="p-2 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-lg border border-transparent hover:border-border transition cursor-pointer"
+              className="p-2 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-md border border-transparent hover:border-border transition cursor-pointer"
               title="Reset all settings to default values"
             >
               <RotateCcw className="w-4 h-4" />
@@ -170,7 +168,7 @@ export const SettingsPanel: React.FC = () => {
             <button
               type="button"
               onClick={closeSettings}
-              className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-lg border border-transparent hover:border-border transition cursor-pointer"
+              className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-transparent hover:border-border transition cursor-pointer"
               title="Close Settings (Esc)"
             >
               <X className="w-4 h-4" />

@@ -88,7 +88,7 @@ export const AutocompletePopup: React.FC<AutocompletePopupProps> = ({
   return (
     <div
       style={{ left: `${left}px`, top: `${top}px` }}
-      className="absolute z-50 w-[420px] max-h-[260px] bg-base-2 border border-border shadow-2xl rounded-xl overflow-hidden flex flex-col font-sans select-none animate-in fade-in zoom-in-95 duration-100"
+      className="absolute z-50 w-[420px] max-h-[260px] bg-base-2 border border-border shadow-2xl rounded-md overflow-hidden flex flex-col font-sans select-none animate-in fade-in zoom-in-95 duration-100"
     >
       {/* Header bar */}
       <div className="px-3 py-1.5 bg-base-1 border-b border-border flex items-center justify-between text-[10px] text-text-muted flex-shrink-0">
@@ -124,11 +124,10 @@ export const AutocompletePopup: React.FC<AutocompletePopupProps> = ({
               ref={isSelected ? selectedItemRef : null}
               type="button"
               onClick={() => onSelect(item)}
-              className={`w-full px-3 py-2 rounded-lg text-left flex items-center justify-between gap-3 text-xs transition cursor-pointer ${
-                isSelected
-                  ? 'bg-commito-coral/15 text-text-primary border-l-2 border-commito-coral font-medium shadow-xs'
-                  : 'hover:bg-white/[0.04] text-text-secondary hover:text-text-primary border-l-2 border-transparent'
-              }`}
+              className={`w-full px-3 py-2 rounded-md text-left flex items-center justify-between gap-3 text-xs transition cursor-pointer ${isSelected
+                ? 'bg-commito-coral/15 text-text-primary border-l-2 border-commito-coral font-medium shadow-xs'
+                : 'hover:bg-white/[0.04] text-text-secondary hover:text-text-primary border-l-2 border-transparent'
+                }`}
             >
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 {getKindIcon(item.kind)}

@@ -42,7 +42,7 @@ export const AccountsWidget: React.FC = () => {
   };
 
   return (
-    <div className="bg-base-2/60 border border-border rounded-xl p-4 space-y-3 select-none">
+    <div className="bg-base-2/60 border border-border rounded-md p-4 space-y-3 select-none">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -68,7 +68,7 @@ export const AccountsWidget: React.FC = () => {
             <div
               key={acc.id}
               onClick={() => openModalWithTab('accounts')}
-              className="p-2 rounded-lg bg-base-1 border border-border/80 hover:border-[#fc6d26]/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
+              className="p-2 rounded-md bg-base-1 border border-border/80 hover:border-[#fc6d26]/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative">
@@ -103,7 +103,7 @@ export const AccountsWidget: React.FC = () => {
         </div>
       ) : (
         /* Empty State */
-        <div className="p-4 bg-base-1 border border-border rounded-lg text-center space-y-2">
+        <div className="p-4 bg-base-1 border border-border rounded-md text-center space-y-2">
           <p className="text-[11px] text-text-muted">
             No remote accounts connected yet.
           </p>

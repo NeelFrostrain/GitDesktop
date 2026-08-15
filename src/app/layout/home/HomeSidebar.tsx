@@ -57,7 +57,7 @@ export const HomeSidebar: React.FC = () => {
       <div className="p-2.5 border-b border-border space-y-2 flex-shrink-0">
         <button
           type="button"
-          className="w-full px-2.5 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between bg-commito-coral text-white shadow-sm cursor-default"
+          className="w-full px-2.5 py-1.5 rounded-md text-xs font-bold flex items-center justify-between bg-commito-coral text-white shadow-sm cursor-default"
         >
           <div className="flex items-center gap-2">
             <Home className="w-3.5 h-3.5" />
@@ -122,7 +122,7 @@ export const HomeSidebar: React.FC = () => {
           type="button"
           onClick={handleAddRepo}
           disabled={isAdding}
-          className="w-full p-2 mt-1 rounded-lg border border-dashed border-border/80 hover:border-commito-coral/50 hover:bg-base-2 text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer font-medium text-xs"
+          className="w-full p-2 mt-1 rounded-md border border-dashed border-border/80 hover:border-commito-coral/50 hover:bg-base-2 text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer font-medium text-xs"
         >
           <Plus className="w-3.5 h-3.5 text-commito-coral" />
           <span>{isAdding ? 'Selecting folder...' : 'Add Repository'}</span>

@@ -76,11 +76,10 @@ export const CategoryTree: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`w-full px-2.5 py-1.5 rounded-lg text-left flex items-center justify-between text-xs transition cursor-pointer ${
-                isSelected
+              className={`w-full px-2.5 py-1.5 rounded-md text-left flex items-center justify-between text-xs transition cursor-pointer ${isSelected
                   ? 'bg-commito-coral/15 text-text-primary font-semibold border-l-2 border-commito-coral'
                   : 'text-text-secondary hover:bg-base-2 hover:text-text-primary border-l-2 border-transparent'
-              }`}
+                }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 {getCategoryIcon(cat)}
@@ -104,11 +103,10 @@ export const CategoryTree: React.FC = () => {
                       key={subcat}
                       type="button"
                       onClick={() => setSelectedSubcategory(isSubSelected ? null : subcat)}
-                      className={`w-full px-2 py-1 rounded text-left text-[11px] transition cursor-pointer truncate ${
-                        isSubSelected
+                      className={`w-full px-2 py-1 rounded text-left text-[11px] transition cursor-pointer truncate ${isSubSelected
                           ? 'text-commito-coral font-medium bg-commito-coral/10'
                           : 'text-text-muted hover:text-text-primary hover:bg-base-2'
-                      }`}
+                        }`}
                     >
                       {subcat}
                     </button>

@@ -108,14 +108,13 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
   const formattedTime = new Date(entry.at).toLocaleTimeString();
 
   return (
-    <div className="border border-border/80 rounded-lg overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
+    <div className="border border-border/80 rounded-md overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
       {/* Header Bar */}
       <button
         type="button"
         onClick={() => hasDetails && setIsExpanded(!isExpanded)}
-        className={`w-full px-3 py-2 bg-base-2/60 hover:bg-base-2 text-left flex items-center justify-between gap-3 transition select-none ${
-          hasDetails ? 'cursor-pointer' : 'cursor-default'
-        }`}
+        className={`w-full px-3 py-2 bg-base-2/60 hover:bg-base-2 text-left flex items-center justify-between gap-3 transition select-none ${hasDetails ? 'cursor-pointer' : 'cursor-default'
+          }`}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {hasDetails ? (

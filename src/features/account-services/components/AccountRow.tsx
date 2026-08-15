@@ -44,11 +44,10 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
   return (
     <>
       <div
-        className={`p-4 rounded-xl border transition-all duration-150 flex items-center justify-between gap-4 select-none ${
-          account.is_active
-            ? 'bg-base-2 border-[#fc6d26]/40 shadow-xs'
-            : 'bg-base-2/50 border-border hover:border-border-strong hover:bg-base-2/80'
-        }`}
+        className={`p-4 rounded-md border transition-all duration-150 flex items-center justify-between gap-4 select-none ${account.is_active
+          ? 'bg-base-2 border-[#fc6d26]/40 shadow-xs'
+          : 'bg-base-2/50 border-border hover:border-border-strong hover:bg-base-2/80'
+          }`}
       >
         {/* Left: Avatar & Info */}
         <div className="flex items-center gap-3.5 min-w-0 flex-1">
@@ -97,7 +96,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
           {/* Edit Info Button */}
           <button
             onClick={() => setIsEditOpen(true)}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-text-muted hover:text-text-primary hover:bg-base-3 transition flex items-center gap-1.5 cursor-pointer"
+            className="px-2.5 py-1.5 rounded-md text-xs font-semibold text-text-muted hover:text-text-primary hover:bg-base-3 transition flex items-center gap-1.5 cursor-pointer"
             title="Edit local nickname or commit author email override"
           >
             <Pencil className="w-3.5 h-3.5" />
@@ -109,7 +108,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
             <button
               onClick={handleSwitch}
               disabled={isSwitching}
-              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               {isSwitching && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               <span>Switch to Account</span>
@@ -120,7 +119,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1.5 rounded-lg text-text-muted hover:text-red-400 hover:bg-red-950/40 transition cursor-pointer"
+            className="p-1.5 rounded-md text-text-muted hover:text-red-400 hover:bg-red-950/40 transition cursor-pointer"
             title="Remove account and delete tokens"
           >
             {isDeleting ? (

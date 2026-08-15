@@ -48,21 +48,21 @@ export const RepoList: React.FC = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Filter local repositories..."
-            className="w-full bg-base-2 border border-border rounded-lg pl-9 pr-3 py-1.5 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
+            className="w-full bg-base-2 border border-border rounded-md pl-9 pr-3 py-1.5 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
           />
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={handleCloneRepo}
-            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
           >
             <DownloadCloud className="w-3.5 h-3.5 text-gitlab-teal" />
             <span>Clone Repo</span>
           </button>
           <button
             onClick={handleOpenFolderDialog}
-            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
           >
             <FolderOpen className="w-3.5 h-3.5" />
             <span>Open Local</span>
@@ -84,7 +84,7 @@ export const RepoList: React.FC = () => {
           {/* Quick Add Repository Tile */}
           <div
             onClick={handleOpenFolderDialog}
-            className="border-2 border-dashed border-border hover:border-commito-coral/50 bg-base-2/20 hover:bg-base-2/40 rounded-xl p-5 flex flex-col items-center justify-center text-center cursor-pointer transition group min-h-[140px]"
+            className="border-2 border-dashed border-border hover:border-commito-coral/50 bg-base-2/20 hover:bg-base-2/40 rounded-md p-5 flex flex-col items-center justify-center text-center cursor-pointer transition group min-h-[140px]"
           >
             <div className="w-9 h-9 rounded-full bg-base-3 flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:scale-110 transition mb-2">
               <Plus className="w-5 h-5" />
@@ -99,7 +99,7 @@ export const RepoList: React.FC = () => {
         </div>
       ) : repos.length === 0 ? (
         /* Empty State */
-        <div className="py-16 px-4 bg-base-2/30 border border-border rounded-xl flex flex-col items-center justify-center text-center space-y-4">
+        <div className="py-16 px-4 bg-base-2/30 border border-border rounded-md flex flex-col items-center justify-center text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-base-2 border border-border flex items-center justify-center text-commito-coral shadow-inner">
             <FolderGit2 className="w-7 h-7" />
           </div>
@@ -112,14 +112,14 @@ export const RepoList: React.FC = () => {
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={handleOpenFolderDialog}
-              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-lg text-xs font-bold flex items-center gap-2 transition shadow-md cursor-pointer"
+              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-md cursor-pointer"
             >
               <FolderOpen className="w-4 h-4" />
               <span>Add Existing Repository</span>
             </button>
             <button
               onClick={handleCloneRepo}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-lg text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-md text-xs font-semibold flex items-center gap-2 transition cursor-pointer"
             >
               <DownloadCloud className="w-4 h-4 text-gitlab-teal" />
               <span>Clone from Remote</span>
@@ -127,7 +127,7 @@ export const RepoList: React.FC = () => {
           </div>
         </div>
       ) : (
-        <div className="p-8 text-center text-xs text-text-muted bg-base-2/40 border border-border rounded-xl">
+        <div className="p-8 text-center text-xs text-text-muted bg-base-2/40 border border-border rounded-md">
           No repositories match "{searchQuery}".
         </div>
       )}

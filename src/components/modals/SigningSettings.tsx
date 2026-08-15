@@ -79,7 +79,7 @@ export const SigningSettings: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
-      <div className="w-full max-w-lg bg-base-1 border border-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-lg bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="h-12 bg-base-0 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -99,21 +99,21 @@ export const SigningSettings: React.FC = () => {
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-5">
           {localError && (
-            <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-lg flex items-start gap-2.5 text-xs text-red-300">
+            <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-md flex items-start gap-2.5 text-xs text-red-300">
               <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">{localError}</div>
             </div>
           )}
 
           {savedSuccess && (
-            <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-lg flex items-center gap-2 text-xs text-emerald-300">
+            <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-md flex items-center gap-2 text-xs text-emerald-300">
               <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>Signing configuration saved successfully.</span>
             </div>
           )}
 
           {/* Toggle Enable Commit Signing */}
-          <div className="p-3.5 bg-base-2 border border-border rounded-lg flex items-center justify-between">
+          <div className="p-3.5 bg-base-2 border border-border rounded-md flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-xs font-bold text-text-primary block">
                 Sign Commits Automatically
@@ -146,11 +146,10 @@ export const SigningSettings: React.FC = () => {
                       setMethod('gpg');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-lg border cursor-pointer transition ${
-                      method === 'gpg'
-                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
-                        : 'bg-base-2/50 border-border hover:border-border-strong'
-                    }`}
+                    className={`p-3 rounded-md border cursor-pointer transition ${method === 'gpg'
+                      ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                      : 'bg-base-2/50 border-border hover:border-border-strong'
+                      }`}
                   >
                     <div className="flex items-center gap-2 font-bold text-xs text-text-primary mb-1">
                       <Shield className="w-3.5 h-3.5 text-commito-coral" />
@@ -164,11 +163,10 @@ export const SigningSettings: React.FC = () => {
                       setMethod('ssh');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-lg border cursor-pointer transition ${
-                      method === 'ssh'
-                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
-                        : 'bg-base-2/50 border-border hover:border-border-strong'
-                    }`}
+                    className={`p-3 rounded-md border cursor-pointer transition ${method === 'ssh'
+                      ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                      : 'bg-base-2/50 border-border hover:border-border-strong'
+                      }`}
                   >
                     <div className="flex items-center gap-2 font-bold text-xs text-text-primary mb-1">
                       <Key className="w-3.5 h-3.5 text-gitlab-teal" />
@@ -193,7 +191,7 @@ export const SigningSettings: React.FC = () => {
                     <select
                       value={keyId}
                       onChange={(e) => setKeyId(e.target.value)}
-                      className="w-full bg-base-2 border border-border rounded-lg px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                      className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
                     >
                       <option value="">Select a GPG key...</option>
                       {gpgKeys.map((k) => (
@@ -203,7 +201,7 @@ export const SigningSettings: React.FC = () => {
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 bg-base-2 border border-border rounded-lg text-xs text-text-muted space-y-1">
+                    <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
                       <div className="flex items-center gap-1 text-amber-400 font-semibold">
                         <AlertCircle className="w-3.5 h-3.5" />
                         <span>No GPG secret keys found</span>
@@ -218,7 +216,7 @@ export const SigningSettings: React.FC = () => {
                     <select
                       value={keyId}
                       onChange={(e) => setKeyId(e.target.value)}
-                      className="w-full bg-base-2 border border-border rounded-lg px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                      className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
                     >
                       <option value="">Select an SSH key...</option>
                       {sshKeys.map((k) => (
@@ -228,7 +226,7 @@ export const SigningSettings: React.FC = () => {
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 bg-base-2 border border-border rounded-lg text-xs text-text-muted space-y-1">
+                    <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
                       <div className="flex items-center gap-1 text-amber-400 font-semibold">
                         <AlertCircle className="w-3.5 h-3.5" />
                         <span>No SSH keys found</span>
@@ -277,14 +275,14 @@ export const SigningSettings: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSigningSettingsOpen(false)}
-              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-lg text-xs text-text-secondary font-medium transition cursor-pointer"
+              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-xs text-text-secondary font-medium transition cursor-pointer"
             >
               Close
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               <span>Save Configuration</span>

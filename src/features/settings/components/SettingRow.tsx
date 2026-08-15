@@ -28,7 +28,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               />
               <div
                 style={{ backgroundColor: hex }}
-                className="w-7 h-7 rounded-lg border border-border shadow-xs cursor-pointer transition transform hover:scale-105"
+                className="w-7 h-7 rounded-md border border-border shadow-xs cursor-pointer transition transform hover:scale-105"
                 title={`Click to pick color: ${hex}`}
               />
             </div>
@@ -54,7 +54,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               step={setting.step ?? 1}
               value={num}
               onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
-              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-3 rounded-lg"
+              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-3 rounded-md"
             />
             <div className="flex items-center gap-1 min-w-[50px] justify-end">
               <input
@@ -100,14 +100,12 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
             role="switch"
             aria-checked={checked}
             onClick={() => setSettingValue(setting.id, !checked)}
-            className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-              checked ? 'bg-commito-coral' : 'bg-base-3 border border-border'
-            }`}
+            className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${checked ? 'bg-commito-coral' : 'bg-base-3 border border-border'
+              }`}
           >
             <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
-                checked ? 'translate-x-5' : 'translate-x-0'
-              }`}
+              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'
+                }`}
             />
           </button>
         );
@@ -129,11 +127,10 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
   return (
     <div
-      className={`p-3.5 rounded-xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 group ${
-        modified
-          ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
-          : 'bg-base-1/60 border-border hover:border-border-strong hover:bg-base-1/90'
-      }`}
+      className={`p-3.5 rounded-md border transition flex flex-col md:flex-row md:items-center justify-between gap-4 group ${modified
+        ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
+        : 'bg-base-1/60 border-border hover:border-border-strong hover:bg-base-1/90'
+        }`}
     >
       {/* Left: Label, Description, Badges */}
       <div className="flex-1 min-w-0 pr-2">

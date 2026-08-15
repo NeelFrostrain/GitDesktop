@@ -64,7 +64,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
   };
 
   return (
-    <div className="p-3.5 rounded-xl bg-base-2/50 border border-border hover:border-border-strong transition flex flex-col gap-2 select-none">
+    <div className="p-3.5 rounded-md bg-base-2/50 border border-border hover:border-border-strong transition flex flex-col gap-2 select-none">
       <div className="flex items-center justify-between gap-3">
         {/* Remote Name & Default Badge */}
         <div className="flex items-center gap-2">

@@ -21,7 +21,7 @@ export const AccountsTab: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('add')}
-          className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md flex-shrink-0"
+          className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md flex-shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Account</span>
@@ -37,8 +37,8 @@ export const AccountsTab: React.FC = () => {
         </div>
       ) : (
         /* Empty State */
-        <div className="p-10 border border-dashed border-border rounded-xl bg-base-2/20 text-center space-y-3">
-          <div className="w-12 h-12 rounded-xl bg-base-3 flex items-center justify-center mx-auto text-text-muted">
+        <div className="p-10 border border-dashed border-border rounded-md bg-base-2/20 text-center space-y-3">
+          <div className="w-12 h-12 rounded-md bg-base-3 flex items-center justify-center mx-auto text-text-muted">
             <Users className="w-6 h-6" />
           </div>
           <div className="space-y-1">
@@ -49,7 +49,7 @@ export const AccountsTab: React.FC = () => {
           </div>
           <button
             onClick={() => setActiveTab('add')}
-            className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+            className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-md"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Connect Account</span>

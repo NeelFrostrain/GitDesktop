@@ -41,20 +41,18 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className={`w-full p-2 rounded-lg text-left transition flex items-center justify-between gap-2 group/repo cursor-pointer select-none border ${
-        isActive
+      className={`w-full p-2 rounded-md text-left transition flex items-center justify-between gap-2 group/repo cursor-pointer select-none border ${isActive
           ? 'bg-commito-card border-commito-coral/40 shadow-xs text-text-primary'
           : 'bg-base-2/40 hover:bg-base-2 text-text-secondary hover:text-text-primary border-border/50 hover:border-border-strong'
-      }`}
+        }`}
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* Repo Icon */}
         <div
-          className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${
-            repo.pinned
+          className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${repo.pinned
               ? 'bg-amber-950/40 text-amber-400 border-amber-800/40'
               : 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
-          }`}
+            }`}
         >
           {repo.pinned ? (
             <Pin className="w-3 h-3 rotate-45" />
@@ -92,9 +90,8 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
         type="button"
         onClick={handlePinToggle}
         title={repo.pinned ? 'Unpin repository' : 'Pin repository to top'}
-        className={`p-1 rounded text-text-muted hover:text-amber-400 hover:bg-base-3 transition flex-shrink-0 cursor-pointer ${
-          repo.pinned ? 'opacity-100 text-amber-400' : 'opacity-0 group-hover/repo:opacity-100'
-        }`}
+        className={`p-1 rounded text-text-muted hover:text-amber-400 hover:bg-base-3 transition flex-shrink-0 cursor-pointer ${repo.pinned ? 'opacity-100 text-amber-400' : 'opacity-0 group-hover/repo:opacity-100'
+          }`}
       >
         <Pin className={`w-3 h-3 ${repo.pinned ? 'rotate-45 fill-amber-400/20' : ''}`} />
       </button>

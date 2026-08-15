@@ -9,8 +9,8 @@ export const RemoteRepositoriesTab: React.FC = () => {
 
   if (!activeRepoPath) {
     return (
-      <div className="p-12 text-center border border-dashed border-border rounded-xl bg-base-2/20 space-y-3 select-none">
-        <div className="w-12 h-12 rounded-xl bg-base-3 flex items-center justify-center mx-auto text-text-muted">
+      <div className="p-12 text-center border border-dashed border-border rounded-md bg-base-2/20 space-y-3 select-none">
+        <div className="w-12 h-12 rounded-md bg-base-3 flex items-center justify-center mx-auto text-text-muted">
           <FolderGit2 className="w-6 h-6 text-commito-coral" />
         </div>
         <div className="space-y-1">
@@ -52,7 +52,7 @@ export const RemoteRepositoriesTab: React.FC = () => {
           ))}
         </div>
       ) : !isLoading ? (
-        <div className="p-6 bg-base-2/30 border border-border rounded-xl text-center text-xs text-text-muted">
+        <div className="p-6 bg-base-2/30 border border-border rounded-md text-center text-xs text-text-muted">
           No remotes configured for this repository yet.
         </div>
       ) : null}

@@ -144,205 +144,202 @@ export const TerminalPanel: React.FC = () => {
         }}
         className="relative w-full bg-base-0 border-t border-border flex-col flex-shrink-0 select-none group/terminal z-20"
       >
-      {/* Resizable handle on top edge */}
-      <div
-        onMouseDown={startResizing}
-        onDoubleClick={() => {
-          setPanelHeight(260);
-          setTimeout(fitTerminal, 50);
-        }}
-        title="Drag to resize terminal • Double-click to reset (260px)"
-        className={`absolute -top-1 left-0 w-full h-2 cursor-row-resize z-30 transition-colors flex items-center justify-center ${
-          isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/50'
-        }`}
-      >
-        <div className="w-12 h-1 rounded-full bg-border group-hover/terminal:bg-commito-coral/80 transition-colors" />
-      </div>
-
-      {/* Header bar with Shell / App Log tab selector */}
-      <TerminalTabBar
-        repoName={repoName}
-        branchName={status?.current_branch}
-        isAlive={isSessionAlive}
-        activeTab={activeTab}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'shell') {
-            setTimeout(fitTerminal, 20);
-          }
-        }}
-        onClear={activeTab === 'shell' ? clearTerminal : clearAllLogs}
-        onRestart={restartTerminal}
-        onSearch={(q) => {
-          if (activeTab === 'shell') {
-            searchInTerminal(q, true);
-          }
-        }}
-      />
-
-      {/* Viewport Area: Both views stay mounted in DOM to preserve state and stream buffer */}
-      <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-base-0">
-        {/* 1. Shell View (xterm.js PTY) */}
+        {/* Resizable handle on top edge */}
         <div
-          className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${
-            activeTab === 'shell' ? 'flex flex-col' : 'hidden'
-          }`}
+          onMouseDown={startResizing}
+          onDoubleClick={() => {
+            setPanelHeight(260);
+            setTimeout(fitTerminal, 50);
+          }}
+          title="Drag to resize terminal • Double-click to reset (260px)"
+          className={`absolute -top-1 left-0 w-full h-2 cursor-row-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/50'
+            }`}
         >
-          <div
-            ref={terminalContainerRef}
-            className="w-full h-full [&_.xterm]:p-0.5 [&_.xterm-viewport]:scrollbar-thin [&_.xterm-viewport]:scrollbar-thumb-base-3"
-          />
-
-          {/* Ghost Text Overlay if available */}
-          {autocomplete.ghostText && autocomplete.isVisible && (
-            <div className="absolute right-4 bottom-2 pointer-events-none text-xs font-mono text-text-muted bg-base-2/90 px-2.5 py-1 rounded-md border border-border shadow-md">
-              Suggestion remainder: <span className="text-text-primary font-semibold">{autocomplete.ghostText}</span>
-            </div>
-          )}
-
-          {/* Autocomplete Popup list */}
-          {autocomplete.isVisible && (
-            <AutocompletePopup
-              suggestions={autocomplete.suggestions}
-              selectedIndex={autocomplete.selectedIndex}
-              onSelect={(item) => applySuggestion(item.value, autocomplete.suggestions.length === 1)}
-              position={cursorPixelPos}
-              containerRef={terminalContainerRef}
-            />
-          )}
+          <div className="w-12 h-1 rounded-full bg-border group-hover/terminal:bg-commito-coral/80 transition-colors" />
         </div>
 
-        {/* 2. App Log View (Colorized live streaming logger) */}
-        <div
-          className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${
-            activeTab === 'app_log' ? 'flex' : 'hidden'
-          }`}
-        >
-          {/* Stream Toolbar */}
-          <div className="h-7 bg-base-1 border-b border-border px-3 flex items-center justify-between text-[11px] text-text-muted select-none flex-shrink-0">
-            <span className="flex items-center gap-2">
-              <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="font-semibold text-text-secondary">Live Application Log ({displayedLogs.length} events)</span>
-            </span>
+        {/* Header bar with Shell / App Log tab selector */}
+        <TerminalTabBar
+          repoName={repoName}
+          branchName={status?.current_branch}
+          isAlive={isSessionAlive}
+          activeTab={activeTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            if (tab === 'shell') {
+              setTimeout(fitTerminal, 20);
+            }
+          }}
+          onClear={activeTab === 'shell' ? clearTerminal : clearAllLogs}
+          onRestart={restartTerminal}
+          onSearch={(q) => {
+            if (activeTab === 'shell') {
+              searchInTerminal(q, true);
+            }
+          }}
+        />
 
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setAutoScroll(!autoScroll)}
-                className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition cursor-pointer"
-                title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
-              >
-                {autoScroll ? <Pause className="w-3 h-3 text-gitlab-teal" /> : <Play className="w-3 h-3" />}
-                <span>{autoScroll ? 'Auto-scroll ON' : 'Paused'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={clearAllLogs}
-                className="flex items-center gap-1.5 text-text-muted hover:text-red-400 transition cursor-pointer"
-                title="Clear current logs"
-              >
-                <Trash2 className="w-3 h-3" />
-                <span>Clear</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Log Stream Output */}
+        {/* Viewport Area: Both views stay mounted in DOM to preserve state and stream buffer */}
+        <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-base-0">
+          {/* 1. Shell View (xterm.js PTY) */}
           <div
-            ref={logContainerRef}
-            className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-base-3 bg-base-0"
+            className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${activeTab === 'shell' ? 'flex flex-col' : 'hidden'
+              }`}
           >
-            {displayedLogs.length === 0 ? (
-              <div className="p-8 text-center text-text-muted italic select-none">
-                No log entries recorded for this repository yet.
+            <div
+              ref={terminalContainerRef}
+              className="w-full h-full [&_.xterm]:p-0.5 [&_.xterm-viewport]:bg-base-0 [&_.xterm-viewport]:scrollbar-thin [&_.xterm-viewport]:scrollbar-thumb-base-3"
+            />
+
+            {/* Ghost Text Overlay if available */}
+            {autocomplete.ghostText && autocomplete.isVisible && (
+              <div className="absolute right-4 bottom-2 pointer-events-none text-xs font-mono text-text-muted bg-base-2/90 px-2.5 py-1 rounded-md border border-border shadow-md">
+                Suggestion remainder: <span className="text-text-primary font-semibold">{autocomplete.ghostText}</span>
               </div>
-            ) : (
-              displayedLogs.map((entry) => {
-                const timeStr = new Date(entry.at).toLocaleTimeString();
-                const levelTag = LOG_LEVEL_TERMINAL_TAG[entry.level];
-                const levelColor = LOG_LEVEL_TERMINAL_COLOR[entry.level];
-                const hasMeta = Boolean(entry.metadata);
-                const isExpanded = Boolean(expandedLogIds[entry.id]);
+            )}
 
-                return (
-                  <div
-                    key={entry.id}
-                    className="leading-snug hover:bg-base-2/60 px-1.5 py-0.5 rounded transition group/entry flex flex-col"
-                  >
-                    <div className="flex items-start gap-2 break-all">
-                      <span className="text-text-muted select-none flex-shrink-0 font-mono text-[11px]">
-                        [{timeStr}]
-                      </span>
-
-                      <span
-                        style={{ color: levelColor }}
-                        className="font-bold flex-shrink-0 text-[11px]"
-                      >
-                        [{levelTag}]
-                      </span>
-
-                      <span className="text-text-muted select-none flex-shrink-0 text-[11px]">
-                        [{entry.category}]
-                      </span>
-
-                      <span className="text-text-primary flex-1">
-                        {entry.message}
-                      </span>
-
-                      {hasMeta && (
-                        <button
-                          type="button"
-                          onClick={() => toggleLogExpand(entry.id)}
-                          className="text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 cursor-pointer select-none"
-                          title="Toggle metadata detail"
-                        >
-                          {isExpanded ? (
-                            <ChevronDown className="w-3 h-3" />
-                          ) : (
-                            <ChevronRight className="w-3 h-3" />
-                          )}
-                        </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={(e) =>
-                          handleCopyLog(
-                            e,
-                            entry.id,
-                            `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`
-                          )
-                        }
-                        className="opacity-0 group-hover/entry:opacity-100 text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 transition cursor-pointer select-none"
-                        title="Copy line"
-                      >
-                        {copiedId === entry.id ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
-                    </div>
-
-                    {isExpanded && entry.metadata && (
-                      <div className="mt-1 ml-6 p-2.5 bg-base-1 border border-border rounded text-xs text-text-muted overflow-x-auto select-text font-mono">
-                        <pre className="text-text-primary whitespace-pre-wrap break-words">
-                          {JSON.stringify(entry.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+            {/* Autocomplete Popup list */}
+            {autocomplete.isVisible && (
+              <AutocompletePopup
+                suggestions={autocomplete.suggestions}
+                selectedIndex={autocomplete.selectedIndex}
+                onSelect={(item) => applySuggestion(item.value, autocomplete.suggestions.length === 1)}
+                position={cursorPixelPos}
+                containerRef={terminalContainerRef}
+              />
             )}
           </div>
+
+          {/* 2. App Log View (Colorized live streaming logger) */}
+          <div
+            className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${activeTab === 'app_log' ? 'flex' : 'hidden'
+              }`}
+          >
+            {/* Stream Toolbar */}
+            <div className="h-7 bg-base-1 border-b border-border px-3 flex items-center justify-between text-[11px] text-text-muted select-none flex-shrink-0">
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="font-semibold text-text-secondary">Live Application Log ({displayedLogs.length} events)</span>
+              </span>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAutoScroll(!autoScroll)}
+                  className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition cursor-pointer"
+                  title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
+                >
+                  {autoScroll ? <Pause className="w-3 h-3 text-gitlab-teal" /> : <Play className="w-3 h-3" />}
+                  <span>{autoScroll ? 'Auto-scroll ON' : 'Paused'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={clearAllLogs}
+                  className="flex items-center gap-1.5 text-text-muted hover:text-red-400 transition cursor-pointer"
+                  title="Clear current logs"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Log Stream Output */}
+            <div
+              ref={logContainerRef}
+              className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-base-3 bg-base-0"
+            >
+              {displayedLogs.length === 0 ? (
+                <div className="p-8 text-center text-text-muted italic select-none">
+                  No log entries recorded for this repository yet.
+                </div>
+              ) : (
+                displayedLogs.map((entry) => {
+                  const timeStr = new Date(entry.at).toLocaleTimeString();
+                  const levelTag = LOG_LEVEL_TERMINAL_TAG[entry.level];
+                  const levelColor = LOG_LEVEL_TERMINAL_COLOR[entry.level];
+                  const hasMeta = Boolean(entry.metadata);
+                  const isExpanded = Boolean(expandedLogIds[entry.id]);
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className="leading-snug hover:bg-base-2/60 px-1.5 py-0.5 rounded transition group/entry flex flex-col"
+                    >
+                      <div className="flex items-start gap-2 break-all">
+                        <span className="text-text-muted select-none flex-shrink-0 font-mono text-[11px]">
+                          [{timeStr}]
+                        </span>
+
+                        <span
+                          style={{ color: levelColor }}
+                          className="font-bold flex-shrink-0 text-[11px]"
+                        >
+                          [{levelTag}]
+                        </span>
+
+                        <span className="text-text-muted select-none flex-shrink-0 text-[11px]">
+                          [{entry.category}]
+                        </span>
+
+                        <span className="text-text-primary flex-1">
+                          {entry.message}
+                        </span>
+
+                        {hasMeta && (
+                          <button
+                            type="button"
+                            onClick={() => toggleLogExpand(entry.id)}
+                            className="text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 cursor-pointer select-none"
+                            title="Toggle metadata detail"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="w-3 h-3" />
+                            ) : (
+                              <ChevronRight className="w-3 h-3" />
+                            )}
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={(e) =>
+                            handleCopyLog(
+                              e,
+                              entry.id,
+                              `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`
+                            )
+                          }
+                          className="opacity-0 group-hover/entry:opacity-100 text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 transition cursor-pointer select-none"
+                          title="Copy line"
+                        >
+                          {copiedId === entry.id ? (
+                            <Check className="w-3 h-3 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3 h-3" />
+                          )}
+                        </button>
+                      </div>
+
+                      {isExpanded && entry.metadata && (
+                        <div className="mt-1 ml-6 p-2.5 bg-base-1 border border-border rounded text-xs text-text-muted overflow-x-auto select-text font-mono">
+                          <pre className="text-text-primary whitespace-pre-wrap break-words">
+                            {JSON.stringify(entry.metadata, null, 2)}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    {/* Log Viewer Modal */}
-    <LogViewer />
-  </>
-);
+      {/* Log Viewer Modal */}
+      <LogViewer />
+    </>
+  );
 };

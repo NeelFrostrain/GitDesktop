@@ -25,9 +25,9 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
       setSelectedCommitSha(event.kind.sha);
       setCurrentNavView('history');
     } else if (event.kind.type === 'MergeRequest' && event.kind.url) {
-      openUrl(event.kind.url).catch(() => {});
+      openUrl(event.kind.url).catch(() => { });
     } else if (event.kind.type === 'Pipeline' && event.kind.url) {
-      openUrl(event.kind.url).catch(() => {});
+      openUrl(event.kind.url).catch(() => { });
     } else if (event.kind.type === 'Push') {
       setActiveRepoPath(event.repo_path);
       setCurrentNavView('history');
@@ -119,13 +119,12 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
                 {event.kind.title}
               </span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${
-                  event.kind.state === 'merged'
+                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${event.kind.state === 'merged'
                     ? 'bg-purple-950/60 text-purple-300 border border-purple-800/60'
                     : event.kind.state === 'closed'
-                    ? 'bg-red-950/60 text-red-300 border border-red-800/60'
-                    : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
-                }`}
+                      ? 'bg-red-950/60 text-red-300 border border-red-800/60'
+                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
+                  }`}
               >
                 {event.kind.state}
               </span>
@@ -146,13 +145,12 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
               <span>Pipeline on</span>
               <span className="font-mono text-commito-coral font-bold">{event.kind.branch}</span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${
-                  event.kind.status === 'success'
+                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${event.kind.status === 'success'
                     ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
                     : event.kind.status === 'failed'
-                    ? 'bg-red-950/60 text-red-300 border border-red-800/60'
-                    : 'bg-amber-950/60 text-amber-300 border border-amber-800/60'
-                }`}
+                      ? 'bg-red-950/60 text-red-300 border border-red-800/60'
+                      : 'bg-amber-950/60 text-amber-300 border border-amber-800/60'
+                  }`}
               >
                 {event.kind.status}
               </span>
@@ -169,7 +167,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
   return (
     <div
       onClick={handleItemClick}
-      className="p-2.5 rounded-lg bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
+      className="p-2.5 rounded-md bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
     >
       {renderIconAndBadge()}
       {renderContent()}

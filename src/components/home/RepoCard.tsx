@@ -74,11 +74,10 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
   return (
     <div
       onClick={handleCardClick}
-      className={`group p-3.5 rounded-xl border transition-all duration-150 cursor-pointer flex flex-col justify-between select-none relative ${
-        repo.pinned
-          ? 'bg-base-2 border-commito-coral/40 shadow-xs hover:border-commito-coral hover:shadow-md'
-          : 'bg-base-2/60 border-border hover:border-border-strong hover:bg-base-2 hover:shadow-sm'
-      }`}
+      className={`group p-3.5 rounded-md border transition-all duration-150 cursor-pointer flex flex-col justify-between select-none relative ${repo.pinned
+        ? 'bg-base-2 border-commito-coral/40 shadow-xs hover:border-commito-coral hover:shadow-md'
+        : 'bg-base-2/60 border-border hover:border-border-strong hover:bg-base-2 hover:shadow-sm'
+        }`}
     >
       {/* Top Header */}
       <div className="space-y-1.5">
@@ -98,9 +97,8 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition flex-shrink-0">
             <button
               onClick={handlePinClick}
-              className={`p-1 rounded hover:bg-base-3 transition cursor-pointer ${
-                repo.pinned ? 'text-commito-coral' : 'text-text-muted hover:text-text-primary'
-              }`}
+              className={`p-1 rounded hover:bg-base-3 transition cursor-pointer ${repo.pinned ? 'text-commito-coral' : 'text-text-muted hover:text-text-primary'
+                }`}
               title={repo.pinned ? 'Unpin repository' : 'Pin to top'}
             >
               <Pin className={`w-3.5 h-3.5 ${repo.pinned ? 'fill-commito-coral' : ''}`} />
