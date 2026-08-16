@@ -1,30 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { 
-  X, 
-  GitPullRequest, 
-  GitBranch, 
-  CheckCircle2, 
+import {
+  X,
+  GitPullRequest,
+  GitBranch,
+  CheckCircle2,
   ExternalLink,
   Plus,
-  RefreshCw
+  RefreshCw,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { UnifiedMergeRequest, BranchInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
 
+/**
+ * Modal dialogue for creating and browsing GitLab Merge Requests / GitHub Pull Requests.
+ */
 export const MergeRequestModal: React.FC = () => {
-
   const {
     activeRepoPath,
     isMergeRequestModalOpen,
     setIsMergeRequestModalOpen,
     user,
     status,
-    setError
+    setError,
   } = useGitStore();
 
   const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
@@ -40,41 +43,38 @@ export const MergeRequestModal: React.FC = () => {
   useEffect(() => {
     if (!isMergeRequestModalOpen || !activeRepoPath) return;
 
-    // Load available branches for source & target dropdowns
-    invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath })
+    GitService.listBranches(activeRepoPath)
       .then((res) => setBranches(res || []))
       .catch(() => {});
 
-    // Set default source branch
     if (status?.current_branch) {
       setSourceBranch(status.current_branch);
     }
   }, [isMergeRequestModalOpen, activeRepoPath, status?.current_branch]);
 
-  useEffect(() => {
-    if (!isMergeRequestModalOpen || activeTab !== 'list') return;
-    loadMergeRequests();
-  }, [isMergeRequestModalOpen, activeTab]);
-
   const loadMergeRequests = async () => {
     setIsLoading(true);
     try {
-      // Fetch MRs from GitLab backend endpoint
-      const res = await invoke<any>('get_open_merge_requests', { projectId: '1' });
+      const res = await invoke<Record<string, unknown>[]>('get_open_merge_requests', { projectId: '1' });
       if (Array.isArray(res)) {
-        setMergeRequests(res.map((mr: any) => ({
-          id: mr.id || mr.iid,
-          iid: mr.iid,
-          title: mr.title,
-          description: mr.description || '',
-          state: mr.state || 'opened',
-          source_branch: mr.source_branch || 'feature',
-          target_branch: mr.target_branch || 'main',
-          web_url: mr.web_url || '#',
-          author_name: mr.author?.name || 'GitLab User',
-          author_avatar: mr.author?.avatar_url,
-          created_at: mr.created_at || new Date().toISOString(),
-        })));
+        setMergeRequests(
+          res.map((mr) => {
+            const author = (mr.author as Record<string, unknown>) || {};
+            return {
+              id: (mr.id as number) || (mr.iid as number),
+              iid: mr.iid as number,
+              title: (mr.title as string) || '',
+              description: (mr.description as string) || '',
+              state: (mr.state as string) || 'opened',
+              source_branch: (mr.source_branch as string) || 'feature',
+              target_branch: (mr.target_branch as string) || 'main',
+              web_url: (mr.web_url as string) || '#',
+              author_name: (author.name as string) || 'GitLab User',
+              author_avatar: author.avatar_url as string | undefined,
+              created_at: (mr.created_at as string) || new Date().toISOString(),
+            };
+          })
+        );
       } else {
         setMergeRequests([]);
       }
@@ -85,13 +85,18 @@ export const MergeRequestModal: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!isMergeRequestModalOpen || activeTab !== 'list') return;
+    loadMergeRequests();
+  }, [isMergeRequestModalOpen, activeTab]);
+
   const handleCreateMergeRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     setIsSubmitting(true);
     try {
-      const res = await invoke<any>('create_merge_request', {
+      const res = await invoke<{ web_url?: string }>('create_merge_request', {
         projectId: '1',
         sourceBranch,
         targetBranch,
@@ -99,16 +104,18 @@ export const MergeRequestModal: React.FC = () => {
         description: description || null,
       });
 
-      useLogStore.getState().addLog('success', 'Merge Request', `Created Merge Request '${title}' (${sourceBranch} -> ${targetBranch})`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Merge Request', `Created Merge Request '${title}' (${sourceBranch} -> ${targetBranch})`);
       setTitle('');
       setDescription('');
       setActiveTab('list');
       if (res?.web_url) {
         openUrl(res.web_url).catch(() => {});
       }
-    } catch (err: any) {
-      const errorMsg = err.message || String(err);
-      setError({ code: 'MR_ERROR', message: errorMsg });
+    } catch (error: unknown) {
+      const errorMsg = getErrorMessage(error);
+      setError(toAppError(error, 'MR_ERROR'));
       useLogStore.getState().addLog('error', 'Merge Request', `Failed to create Merge Request: ${errorMsg}`);
     } finally {
       setIsSubmitting(false);
@@ -137,7 +144,7 @@ export const MergeRequestModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsMergeRequestModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -147,9 +154,9 @@ export const MergeRequestModal: React.FC = () => {
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
             onClick={() => setActiveTab('create')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'create'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -158,9 +165,9 @@ export const MergeRequestModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('list')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'list'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -205,7 +212,6 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
               </div>
 
-
               {/* Title Field */}
               <div>
                 <label className="text-[11px] font-bold text-text-secondary mb-1 block">
@@ -240,16 +246,14 @@ export const MergeRequestModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMergeRequestModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!title.trim() || isSubmitting}
-                  className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm ${
-                    !title.trim() || isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                  }`}
+                  className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50`}
                 >
                   <GitPullRequest className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? 'Submitting...' : 'Submit Request'}</span>
@@ -266,7 +270,7 @@ export const MergeRequestModal: React.FC = () => {
                 <button
                   onClick={loadMergeRequests}
                   disabled={isLoading}
-                  className="p-1.5 text-text-muted hover:text-text-primary bg-base-2 rounded-md border border-border"
+                  className="p-1.5 text-text-muted hover:text-text-primary bg-base-2 rounded-md border border-border cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                 </button>
@@ -306,7 +310,7 @@ export const MergeRequestModal: React.FC = () => {
 
                       <button
                         onClick={() => mr.web_url && openUrl(mr.web_url)}
-                        className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition"
+                        className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <span>View</span>
                         <ExternalLink className="w-3.5 h-3.5 text-text-muted" />

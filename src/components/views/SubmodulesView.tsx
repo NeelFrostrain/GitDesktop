@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  Boxes, 
-  RefreshCw, 
-  FolderGit2
+import {
+  Boxes,
+  RefreshCw,
+  FolderGit2,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { SubmoduleInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Main view for inspecting, initializing, syncing, and recursively updating Git submodules (.gitmodules).
+ */
 export const SubmodulesView: React.FC = () => {
   const { activeRepoPath, submodules, setSubmodules, setError } = useGitStore();
   const [isLoading, setIsLoading] = useState(false);
@@ -19,7 +21,7 @@ export const SubmodulesView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await invoke<SubmoduleInfo[]>('list_submodules_cmd', { repoPath: activeRepoPath });
+      const res = await GitService.listSubmodules(activeRepoPath);
       setSubmodules(res || []);
     } catch {
       setSubmodules([]);
@@ -36,11 +38,11 @@ export const SubmodulesView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('init_submodules_cmd', { repoPath: activeRepoPath });
+      await GitService.initSubmodules(activeRepoPath);
       useLogStore.getState().addLog('success', 'Git', 'Initialized repository submodules');
       loadSubmodules();
-    } catch (err: any) {
-      setError({ code: 'SUBMODULE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'SUBMODULE_ERROR'));
     }
   };
 
@@ -48,11 +50,11 @@ export const SubmodulesView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('update_submodules_cmd', { repoPath: activeRepoPath });
+      await GitService.updateSubmodules(activeRepoPath);
       useLogStore.getState().addLog('success', 'Git', 'Updated submodules recursively');
       loadSubmodules();
-    } catch (err: any) {
-      setError({ code: 'SUBMODULE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'SUBMODULE_ERROR'));
     }
   };
 
@@ -60,11 +62,11 @@ export const SubmodulesView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('sync_submodules_cmd', { repoPath: activeRepoPath });
+      await GitService.syncSubmodules(activeRepoPath);
       useLogStore.getState().addLog('success', 'Git', 'Synced submodule remote URLs');
       loadSubmodules();
-    } catch (err: any) {
-      setError({ code: 'SUBMODULE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'SUBMODULE_ERROR'));
     }
   };
 
@@ -86,28 +88,28 @@ export const SubmodulesView: React.FC = () => {
           <button
             onClick={loadSubmodules}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handleInitSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition cursor-pointer"
           >
             Init Submodules
           </button>
 
           <button
             onClick={handleSyncSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition cursor-pointer"
           >
             Sync Remotes
           </button>
 
           <button
             onClick={handleUpdateSubmodules}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
           >
             Update Recursive
           </button>

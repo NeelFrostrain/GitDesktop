@@ -1,27 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  GitCommit, 
-  GitBranch, 
-  Play, 
-  Search 
+import {
+  X,
+  GitCommit,
+  GitBranch,
+  Play,
+  Search,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { CommitInfo, BranchInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Checkbox } from '../common/Checkbox';
 import { Dropdown } from '../common/Dropdown';
 
+/**
+ * Modal dialogue for cherry-picking specific commits from any branch onto the current HEAD.
+ */
 export const CherryPickModal: React.FC = () => {
-
   const {
     activeRepoPath,
     isCherryPickModalOpen,
     setIsCherryPickModalOpen,
     setError,
-    setIsConflictResolverModalOpen
+    setIsConflictResolverModalOpen,
   } = useGitStore();
 
   const [branches, setBranches] = useState<BranchInfo[]>([]);
@@ -35,7 +38,7 @@ export const CherryPickModal: React.FC = () => {
   useEffect(() => {
     if (!isCherryPickModalOpen || !activeRepoPath) return;
 
-    invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath })
+    GitService.listBranches(activeRepoPath)
       .then((res) => {
         setBranches(res || []);
         const defaultBranch = res?.find((b) => !b.is_current)?.name || 'main';
@@ -49,17 +52,12 @@ export const CherryPickModal: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      const res = await invoke<CommitInfo[]>('get_commit_history', {
-        repoPath: activeRepoPath,
-        limit: 50,
-        offset: 0,
-      });
+      const res = await GitService.getCommitHistory(activeRepoPath, 50, 0);
       setCommits(res || []);
     } catch {
       setCommits([]);
     }
   };
-
 
   const toggleSelectCommit = (sha: string) => {
     if (selectedShas.includes(sha)) {
@@ -84,9 +82,9 @@ export const CherryPickModal: React.FC = () => {
       useLogStore.getState().addLog('success', 'Git', `Cherry-picked ${selectedShas.length} commit(s)`);
       setIsCherryPickModalOpen(false);
       setSelectedShas([]);
-    } catch (err: any) {
-      const errorMsg = err.message || String(err);
-      setError({ code: 'CHERRY_PICK_ERROR', message: errorMsg });
+    } catch (err: unknown) {
+      const errorMsg = getErrorMessage(err);
+      setError(toAppError(err, 'CHERRY_PICK_ERROR'));
       if (errorMsg.includes('conflict') || errorMsg.includes('Cherry-pick failed')) {
         setIsCherryPickModalOpen(false);
         setIsConflictResolverModalOpen(true);
@@ -96,10 +94,11 @@ export const CherryPickModal: React.FC = () => {
     }
   };
 
-  const filteredCommits = commits.filter((c) =>
-    c.message.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.short_sha.toLowerCase().includes(searchFilter.toLowerCase()) ||
-    c.author_name.toLowerCase().includes(searchFilter.toLowerCase())
+  const filteredCommits = commits.filter(
+    (c) =>
+      c.message.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.short_sha.toLowerCase().includes(searchFilter.toLowerCase()) ||
+      c.author_name.toLowerCase().includes(searchFilter.toLowerCase())
   );
 
   if (!isCherryPickModalOpen) return null;
@@ -124,7 +123,7 @@ export const CherryPickModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsCherryPickModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -185,7 +184,7 @@ export const CherryPickModal: React.FC = () => {
                     onClick={() => toggleSelectCommit(c.sha)}
                     className={`p-3 rounded-md border flex items-center justify-between cursor-pointer transition ${
                       isSelected
-                        ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
+                        ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-xs'
                         : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
                     }`}
                   >
@@ -213,22 +212,19 @@ export const CherryPickModal: React.FC = () => {
             )}
           </div>
 
-
           {/* Modal Footer Controls */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
             <button
               type="button"
               onClick={() => setIsCherryPickModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={selectedShas.length === 0 || isSubmitting}
-              className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm ${
-                selectedShas.length === 0 || isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-              }`}
+              className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50`}
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{isSubmitting ? 'Cherry-picking...' : `Cherry-pick ${selectedShas.length} Commit(s)`}</span>

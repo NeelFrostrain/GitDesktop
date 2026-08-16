@@ -11,7 +11,11 @@ import {
 import { useSigningStore } from '../../store/signingStore';
 import { useGitStore } from '../../store/useGitStore';
 import { SigningConfig } from '../../types/git';
+import { getErrorMessage } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialogue for configuring repository and global Git cryptographic commit signing (GPG / SSH).
+ */
 export const SigningSettings: React.FC = () => {
   const { activeRepoPath } = useGitStore();
   const {
@@ -70,8 +74,8 @@ export const SigningSettings: React.FC = () => {
       await saveConfig(activeRepoPath, signingConfig);
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 3000);
-    } catch (err: any) {
-      setLocalError(err?.message || String(err));
+    } catch (error: unknown) {
+      setLocalError(getErrorMessage(error));
     }
   };
 
@@ -146,10 +150,11 @@ export const SigningSettings: React.FC = () => {
                       setMethod('gpg');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-md border cursor-pointer transition ${method === 'gpg'
-                      ? 'bg-base-2 border-commito-coral/50 shadow-xs'
-                      : 'bg-base-2/50 border-border hover:border-border-strong'
-                      }`}
+                    className={`p-3 rounded-md border cursor-pointer transition ${
+                      method === 'gpg'
+                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                        : 'bg-base-2/50 border-border hover:border-border-strong'
+                    }`}
                   >
                     <div className="flex items-center gap-2 font-bold text-xs text-text-primary mb-1">
                       <Shield className="w-3.5 h-3.5 text-commito-coral" />
@@ -163,10 +168,11 @@ export const SigningSettings: React.FC = () => {
                       setMethod('ssh');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-md border cursor-pointer transition ${method === 'ssh'
-                      ? 'bg-base-2 border-commito-coral/50 shadow-xs'
-                      : 'bg-base-2/50 border-border hover:border-border-strong'
-                      }`}
+                    className={`p-3 rounded-md border cursor-pointer transition ${
+                      method === 'ssh'
+                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                        : 'bg-base-2/50 border-border hover:border-border-strong'
+                    }`}
                   >
                     <div className="flex items-center gap-2 font-bold text-xs text-text-primary mb-1">
                       <Key className="w-3.5 h-3.5 text-gitlab-teal" />
@@ -211,31 +217,29 @@ export const SigningSettings: React.FC = () => {
                       </p>
                     </div>
                   )
+                ) : sshKeys.length > 0 ? (
+                  <select
+                    value={keyId}
+                    onChange={(e) => setKeyId(e.target.value)}
+                    className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                  >
+                    <option value="">Select an SSH key...</option>
+                    {sshKeys.map((k) => (
+                      <option key={k.path} value={k.path}>
+                        {k.key_type} - {k.comment || k.path}
+                      </option>
+                    ))}
+                  </select>
                 ) : (
-                  sshKeys.length > 0 ? (
-                    <select
-                      value={keyId}
-                      onChange={(e) => setKeyId(e.target.value)}
-                      className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
-                    >
-                      <option value="">Select an SSH key...</option>
-                      {sshKeys.map((k) => (
-                        <option key={k.path} value={k.path}>
-                          {k.key_type} - {k.comment || k.path}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
-                      <div className="flex items-center gap-1 text-amber-400 font-semibold">
-                        <AlertCircle className="w-3.5 h-3.5" />
-                        <span>No SSH keys found</span>
-                      </div>
-                      <p className="text-[11px] text-text-muted">
-                        Generate one using <code className="text-commito-coral">ssh-keygen -t ed25519</code> in your terminal.
-                      </p>
+                  <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
+                    <div className="flex items-center gap-1 text-amber-400 font-semibold">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>No SSH keys found</span>
                     </div>
-                  )
+                    <p className="text-[11px] text-text-muted">
+                      Generate one using <code className="text-commito-coral">ssh-keygen -t ed25519</code> in your terminal.
+                    </p>
+                  </div>
                 )}
               </div>
 
@@ -282,7 +286,7 @@ export const SigningSettings: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               <span>Save Configuration</span>

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  FileText, 
-  RefreshCw 
+import {
+  X,
+  FileText,
+  RefreshCw,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { BlameLine } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
 
+/**
+ * Line-by-line file blame viewer for inspecting commit authorship, dates, and jump-to-commit navigation.
+ */
 export const BlameViewer: React.FC = () => {
   const {
     activeRepoPath,
@@ -16,7 +18,7 @@ export const BlameViewer: React.FC = () => {
     isBlameModalOpen,
     setIsBlameModalOpen,
     setSelectedCommitSha,
-    setCurrentNavView
+    setCurrentNavView,
   } = useGitStore();
 
   const [blameLines, setBlameLines] = useState<BlameLine[]>([]);
@@ -26,10 +28,7 @@ export const BlameViewer: React.FC = () => {
     if (!isBlameModalOpen || !activeRepoPath || !blameFile) return;
 
     setIsLoading(true);
-    invoke<BlameLine[]>('get_file_blame_cmd', {
-      repoPath: activeRepoPath,
-      filePath: blameFile,
-    })
+    GitService.getFileBlame(activeRepoPath, blameFile)
       .then((res) => setBlameLines(res || []))
       .catch(() => setBlameLines([]))
       .finally(() => setIsLoading(false));
@@ -57,7 +56,7 @@ export const BlameViewer: React.FC = () => {
           </div>
           <button
             onClick={() => setIsBlameModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition flex-shrink-0"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition flex-shrink-0 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -96,7 +95,7 @@ export const BlameViewer: React.FC = () => {
                         setIsBlameModalOpen(false);
                         setCurrentNavView('history');
                       }}
-                      className="px-1.5 py-0.2 bg-base-3 hover:bg-base-0 border border-border rounded text-[10px] font-mono text-commito-coral transition flex-shrink-0"
+                      className="px-1.5 py-0.2 bg-base-3 hover:bg-base-0 border border-border rounded text-[10px] font-mono text-commito-coral transition flex-shrink-0 cursor-pointer"
                       title={`Inspect commit ${line.commit_sha}`}
                     >
                       {line.short_sha}

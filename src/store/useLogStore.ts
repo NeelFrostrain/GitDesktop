@@ -1,9 +1,27 @@
 import { create } from 'zustand';
 import { useAppLogStore, LogLevel as CoreLogLevel, LogCategory as CoreLogCategory } from '../core/logging';
 
+/**
+ * Log severity levels.
+ */
 export type LogLevel = 'info' | 'success' | 'warning' | 'error';
-export type LogCategory = 'Git' | 'Auth' | 'Repo' | 'System' | 'Git LFS' | 'Merge Request' | 'Worktree' | 'Remote';
 
+/**
+ * Functional subsystem categories for log events.
+ */
+export type LogCategory =
+  | 'Git'
+  | 'Auth'
+  | 'Repo'
+  | 'System'
+  | 'Git LFS'
+  | 'Merge Request'
+  | 'Worktree'
+  | 'Remote';
+
+/**
+ * User-visible structured log entry.
+ */
 export interface LogEntry {
   id: string;
   timestamp: string;
@@ -13,6 +31,9 @@ export interface LogEntry {
   details?: string;
 }
 
+/**
+ * State and actions for the log console modal.
+ */
 interface LogState {
   logs: LogEntry[];
   isLogModalOpen: boolean;
@@ -28,8 +49,8 @@ interface LogState {
   setSearchQuery: (query: string) => void;
 }
 
-function mapToCoreLevel(lvl: LogLevel): CoreLogLevel {
-  switch (lvl) {
+function mapToCoreLevel(level: LogLevel): CoreLogLevel {
+  switch (level) {
     case 'success':
       return 'Success';
     case 'warning':
@@ -41,8 +62,8 @@ function mapToCoreLevel(lvl: LogLevel): CoreLogLevel {
   }
 }
 
-function mapToCoreCategory(cat: LogCategory): CoreLogCategory {
-  switch (cat) {
+function mapToCoreCategory(category: LogCategory): CoreLogCategory {
+  switch (category) {
     case 'Auth':
       return 'Account';
     case 'Remote':
@@ -54,6 +75,9 @@ function mapToCoreCategory(cat: LogCategory): CoreLogCategory {
   }
 }
 
+/**
+ * Zustand store for collecting, filtering, and persisting user-facing log streams.
+ */
 export const useLogStore = create<LogState>((set, get) => ({
   logs: [],
   isLogModalOpen: false,
@@ -73,10 +97,10 @@ export const useLogStore = create<LogState>((set, get) => ({
 
     // Forward to central app logging bus
     const coreLevel = mapToCoreLevel(level);
-    const coreCat = mapToCoreCategory(category);
+    const coreCategory = mapToCoreCategory(category);
     useAppLogStore.getState().addLog(
       coreLevel,
-      coreCat,
+      coreCategory,
       message,
       undefined,
       details ? { details } : undefined
@@ -96,4 +120,3 @@ export const useLogStore = create<LogState>((set, get) => ({
   setFilterCategory: (filterCategory) => set({ filterCategory }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
 }));
-

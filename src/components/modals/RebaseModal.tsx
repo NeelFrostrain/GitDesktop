@@ -1,20 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  GitBranch, 
-  ArrowUp, 
-  ArrowDown, 
-  Play, 
+import {
+  X,
+  GitBranch,
+  ArrowUp,
+  ArrowDown,
+  Play,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-
 import { useLogStore } from '../../store/useLogStore';
 import { RebaseCommitPlanItem, RebaseCommitAction, BranchInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
 
+/**
+ * Modal dialogue for executing interactive rebase plans with custom commit action ordering
+ * (pick, reword, edit, squash, fixup, drop).
+ */
 export const RebaseModal: React.FC = () => {
   const {
     activeRepoPath,
@@ -22,7 +27,7 @@ export const RebaseModal: React.FC = () => {
     setIsRebaseModalOpen,
     status,
     setError,
-    setIsConflictResolverModalOpen
+    setIsConflictResolverModalOpen,
   } = useGitStore();
 
   const [branches, setBranches] = useState<BranchInfo[]>([]);
@@ -34,7 +39,7 @@ export const RebaseModal: React.FC = () => {
   useEffect(() => {
     if (!isRebaseModalOpen || !activeRepoPath) return;
 
-    invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath })
+    GitService.listBranches(activeRepoPath)
       .then((res) => {
         setBranches(res || []);
         const defaultTarget = res?.find((b) => !b.is_current)?.name || 'main';
@@ -92,11 +97,13 @@ export const RebaseModal: React.FC = () => {
         plan: commitPlan,
       });
 
-      useLogStore.getState().addLog('success', 'Git', `Rebased ${status?.current_branch || 'current branch'} onto ${targetBranch}`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Rebased ${status?.current_branch || 'current branch'} onto ${targetBranch}`);
       setIsRebaseModalOpen(false);
-    } catch (err: any) {
-      const errorMsg = err.message || String(err);
-      setError({ code: 'REBASE_ERROR', message: errorMsg });
+    } catch (err: unknown) {
+      const errorMsg = getErrorMessage(err);
+      setError(toAppError(err, 'REBASE_ERROR'));
       if (errorMsg.includes('conflict') || errorMsg.includes('Rebase failed')) {
         setIsRebaseModalOpen(false);
         setIsConflictResolverModalOpen(true);
@@ -135,13 +142,17 @@ export const RebaseModal: React.FC = () => {
                 Interactive Rebase Studio
               </h2>
               <p className="text-[11px] text-text-muted">
-                Rebase <span className="font-mono text-commito-coral font-bold">{status?.current_branch || 'current branch'}</span> onto target branch with commit re-ordering
+                Rebase{' '}
+                <span className="font-mono text-commito-coral font-bold">
+                  {status?.current_branch || 'current branch'}
+                </span>{' '}
+                onto target branch with commit re-ordering
               </p>
             </div>
           </div>
           <button
             onClick={() => setIsRebaseModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -167,7 +178,7 @@ export const RebaseModal: React.FC = () => {
               type="button"
               onClick={() => loadCommits(targetBranch)}
               disabled={isLoading}
-              className="p-2 text-text-muted hover:text-text-primary bg-base-1 border border-border rounded-md"
+              className="p-2 text-text-muted hover:text-text-primary bg-base-1 border border-border rounded-md cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -196,7 +207,7 @@ export const RebaseModal: React.FC = () => {
                         type="button"
                         onClick={() => handleMoveCommit(index, 'up')}
                         disabled={index === 0}
-                        className="p-1 text-text-muted hover:text-white disabled:opacity-30"
+                        className="p-1 text-text-muted hover:text-white disabled:opacity-30 cursor-pointer"
                       >
                         <ArrowUp className="w-3 h-3" />
                       </button>
@@ -204,7 +215,7 @@ export const RebaseModal: React.FC = () => {
                         type="button"
                         onClick={() => handleMoveCommit(index, 'down')}
                         disabled={index === commitPlan.length - 1}
-                        className="p-1 text-text-muted hover:text-white disabled:opacity-30"
+                        className="p-1 text-text-muted hover:text-white disabled:opacity-30 cursor-pointer"
                       >
                         <ArrowDown className="w-3 h-3" />
                       </button>
@@ -233,20 +244,19 @@ export const RebaseModal: React.FC = () => {
             )}
           </div>
 
-
           {/* Modal Footer Controls */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
             <button
               type="button"
               onClick={() => setIsRebaseModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm cursor-pointer"
+              className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
               <span>{isSubmitting ? 'Rebasing...' : 'Execute Rebase Plan'}</span>

@@ -1,20 +1,25 @@
 import { useCallback, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { RepoStatus } from '../types/git';
+import { GitService } from '../services/git/gitService';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 
-// ─── Sync State ──────────────────────────────────────────────────────────────
-
+/**
+ * Git repository branch synchronization state relative to upstream remote.
+ */
 export type GitSyncStatus =
   | 'loading'
   | 'up-to-date'
-  | 'ahead'       // local has commits remote doesn't
-  | 'behind'      // remote has commits local doesn't
-  | 'diverged'    // both ahead and behind
-  | 'no-upstream' // branch has never been pushed / no remote ref
+  | 'ahead'       // Local has commits remote doesn't
+  | 'behind'      // Remote has commits local doesn't
+  | 'diverged'    // Both ahead and behind
+  | 'no-upstream' // Branch has never been pushed / no remote ref
   | 'detached';   // HEAD is detached
 
+/**
+ * Computed synchronization metrics for the active branch.
+ */
 export interface SyncInfo {
   syncStatus: GitSyncStatus;
   ahead: number;
@@ -24,7 +29,12 @@ export interface SyncInfo {
   hasConflicts: boolean;
 }
 
-/** Derive sync status from a RepoStatus object. */
+/**
+ * Derives user-facing sync status from a repository status model.
+ *
+ * @param status - The repository status object.
+ * @returns The derived GitSyncStatus category.
+ */
 export function deriveSyncStatus(status: RepoStatus): GitSyncStatus {
   const branch = status.current_branch;
   if (branch === 'HEAD' || branch.startsWith('(HEAD detached')) {
@@ -37,8 +47,9 @@ export function deriveSyncStatus(status: RepoStatus): GitSyncStatus {
   return 'up-to-date';
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
+/**
+ * Custom hook providing smart Git sync operations (push, pull, merge-sync) and deduplicated status refreshing.
+ */
 export function useRepositorySync() {
   const {
     activeRepoPath,
@@ -55,7 +66,7 @@ export function useRepositorySync() {
 
   const log = useLogStore.getState;
 
-  // Deduplication guard — prevents concurrent refreshes
+  // Deduplication guard — prevents concurrent refreshes from overlapping
   const refreshingRef = useRef(false);
 
   // ── Derived sync info ──────────────────────────────────────────────────────
@@ -77,50 +88,50 @@ export function useRepositorySync() {
         hasConflicts: false,
       };
 
-  // ── Light local refresh — no network ──────────────────────────────────────
+  // ── Light local refresh — fast, no network ────────────────────────────────
   const refreshLocal = useCallback(async () => {
     if (!activeRepoPath || refreshingRef.current) return;
     refreshingRef.current = true;
     try {
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-    } catch (err: any) {
-      log().addLog('warning', 'Git', `Local refresh failed: ${err?.message || String(err)}`);
+    } catch (error: unknown) {
+      log().addLog('warning', 'Git', `Local refresh failed: ${getErrorMessage(error)}`);
     } finally {
       refreshingRef.current = false;
     }
   }, [activeRepoPath, setStatus, log]);
 
-  // ── Full sync refresh — fetch remote + status ──────────────────────────────
+  // ── Full sync refresh — fetch remote + read status ─────────────────────────
   const refreshSync = useCallback(async () => {
     if (!activeRepoPath || refreshingRef.current) return;
     refreshingRef.current = true;
     setIsFetching(true);
     log().addLog('info', 'Git', 'Refreshing repository state');
     try {
-      await invoke('fetch_remote', { repoPath: activeRepoPath });
+      await GitService.fetchRemote(activeRepoPath);
       log().addLog('info', 'Git', 'Fetched origin');
 
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
 
       const derived = deriveSyncStatus(res);
       const labelMap: Record<GitSyncStatus, string> = {
-        'ahead':      `Branch is ${res.ahead} commit(s) ahead — Push available`,
-        'behind':     `Branch is ${res.behind} commit(s) behind — Pull available`,
-        'diverged':   `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
+        'ahead': `Branch is ${res.ahead} commit(s) ahead — Push available`,
+        'behind': `Branch is ${res.behind} commit(s) behind — Pull available`,
+        'diverged': `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
         'up-to-date': 'Branch is up to date with remote',
-        'no-upstream':'Branch has no upstream — Publish to push',
-        'detached':   'HEAD is detached',
-        'loading':    '',
+        'no-upstream': 'Branch has no upstream — Publish to push',
+        'detached': 'HEAD is detached',
+        'loading': '',
       };
       log().addLog('info', 'Git', labelMap[derived] || 'Repository state updated');
-    } catch (err: any) {
-      const msg: string = err?.message || String(err);
-      if (msg.includes('Authentication') || msg.includes('Access Denied')) {
-        setError({ code: 'AUTH_ERROR', message: msg });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      if (message.includes('Authentication') || message.includes('Access Denied')) {
+        setError({ code: 'AUTH_ERROR', message });
       } else {
-        log().addLog('warning', 'Git', `Unable to refresh remote state: ${msg}`);
+        log().addLog('warning', 'Git', `Unable to refresh remote state: ${message}`);
       }
     } finally {
       setIsFetching(false);
@@ -134,13 +145,13 @@ export function useRepositorySync() {
     setIsPushing(true);
     log().addLog('info', 'Git', `Pushing ${status.ahead} commit(s) to origin/${status.current_branch}`);
     try {
-      await invoke('push_to_remote', { repoPath: activeRepoPath, branch: status.current_branch });
+      await GitService.pushToRemote(activeRepoPath, status.current_branch);
       log().addLog('success', 'Git', `Pushed to origin/${status.current_branch}`);
       await refreshSync();
-    } catch (err: any) {
-      const msg: string = err?.message || String(err);
-      setError({ code: 'GIT_PUSH_ERROR', message: msg });
-      log().addLog('error', 'Git', `Push failed: ${msg}`);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setError({ code: 'GIT_PUSH_ERROR', message });
+      log().addLog('error', 'Git', `Push failed: ${message}`);
     } finally {
       setIsPushing(false);
     }
@@ -152,10 +163,7 @@ export function useRepositorySync() {
     setIsPulling(true);
     log().addLog('info', 'Git', `Pulling ${status.behind} commit(s) from origin/${status.current_branch}`);
     try {
-      const result = await invoke<{ success: boolean; conflicts: string[]; commits_pulled: number }>(
-        'pull_from_remote',
-        { repoPath: activeRepoPath, branch: status.current_branch }
-      );
+      const result = await GitService.pullFromRemote(activeRepoPath, status.current_branch);
       if (!result.success && result.conflicts.length > 0) {
         setError({
           code: 'GIT_CONFLICT',
@@ -166,16 +174,16 @@ export function useRepositorySync() {
         log().addLog('success', 'Git', `Pulled from origin/${status.current_branch}`);
       }
       await refreshSync();
-    } catch (err: any) {
-      const msg: string = err?.message || String(err);
-      setError({ code: 'GIT_PULL_ERROR', message: msg });
-      log().addLog('error', 'Git', `Pull failed: ${msg}`);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setError({ code: 'GIT_PULL_ERROR', message });
+      log().addLog('error', 'Git', `Pull failed: ${message}`);
     } finally {
       setIsPulling(false);
     }
   }, [activeRepoPath, status, setIsPulling, setError, refreshSync, log]);
 
-  // ── Sync (diverged) — pull --no-rebase then push ──────────────────────────
+  // ── Sync (diverged) — merge pull then push ────────────────────────────────
   const executeSync = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     log().addLog('info', 'Git', 'Syncing diverged branch (merge pull + push)');
@@ -183,10 +191,7 @@ export function useRepositorySync() {
     // Step 1: Pull (merge)
     setIsPulling(true);
     try {
-      const result = await invoke<{ success: boolean; conflicts: string[]; commits_pulled: number }>(
-        'pull_from_remote',
-        { repoPath: activeRepoPath, branch: status.current_branch }
-      );
+      const result = await GitService.pullFromRemote(activeRepoPath, status.current_branch);
       if (!result.success && result.conflicts.length > 0) {
         setError({
           code: 'GIT_CONFLICT',
@@ -196,10 +201,10 @@ export function useRepositorySync() {
         await refreshSync();
         return;
       }
-    } catch (err: any) {
-      const msg: string = err?.message || String(err);
-      setError({ code: 'GIT_SYNC_PULL_ERROR', message: msg });
-      log().addLog('error', 'Git', `Sync pull step failed: ${msg}`);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setError({ code: 'GIT_SYNC_PULL_ERROR', message });
+      log().addLog('error', 'Git', `Sync pull step failed: ${message}`);
       await refreshSync();
       return;
     } finally {
@@ -209,12 +214,12 @@ export function useRepositorySync() {
     // Step 2: Push
     setIsPushing(true);
     try {
-      await invoke('push_to_remote', { repoPath: activeRepoPath, branch: status.current_branch });
+      await GitService.pushToRemote(activeRepoPath, status.current_branch);
       log().addLog('success', 'Git', `Sync complete — pushed to origin/${status.current_branch}`);
-    } catch (err: any) {
-      const msg: string = err?.message || String(err);
-      setError({ code: 'GIT_SYNC_PUSH_ERROR', message: msg });
-      log().addLog('error', 'Git', `Sync push step failed: ${msg}`);
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setError({ code: 'GIT_SYNC_PUSH_ERROR', message });
+      log().addLog('error', 'Git', `Sync push step failed: ${message}`);
     } finally {
       setIsPushing(false);
       await refreshSync();

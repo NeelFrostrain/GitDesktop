@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  FileCode, 
-  Download, 
-  Upload 
+import {
+  X,
+  FileCode,
+  Download,
+  Upload,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialog supporting exporting commit ranges as .patch files or applying external patch files.
+ */
 export const PatchModal: React.FC = () => {
   const {
     activeRepoPath,
     isPatchModalOpen,
     setIsPatchModalOpen,
     setStatus,
-    setError
+    setError,
   } = useGitStore();
 
   const [activeTab, setActiveTab] = useState<'export' | 'apply'>('export');
@@ -40,8 +43,8 @@ export const PatchModal: React.FC = () => {
 
       useLogStore.getState().addLog('success', 'Git', `Exported patch to '${exportPath.trim()}'`);
       setIsPatchModalOpen(false);
-    } catch (err: any) {
-      setError({ code: 'PATCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'PATCH_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -59,11 +62,11 @@ export const PatchModal: React.FC = () => {
       });
 
       useLogStore.getState().addLog('success', 'Git', `Applied patch file '${patchFilePath.trim()}'`);
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       setIsPatchModalOpen(false);
-    } catch (err: any) {
-      setError({ code: 'PATCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'PATCH_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -91,7 +94,7 @@ export const PatchModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsPatchModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -101,9 +104,9 @@ export const PatchModal: React.FC = () => {
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
             onClick={() => setActiveTab('export')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'export'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -113,9 +116,9 @@ export const PatchModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('apply')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'apply'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -159,14 +162,14 @@ export const PatchModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsPatchModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!exportPath.trim() || isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm"
+                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   Export Patch File
                 </button>
@@ -192,14 +195,14 @@ export const PatchModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsPatchModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!patchFilePath.trim() || isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm"
+                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   Apply Patch File
                 </button>

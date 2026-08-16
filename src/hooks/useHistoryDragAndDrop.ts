@@ -2,27 +2,45 @@ import { useState, useRef } from 'react';
 import { CommitInfo } from '../types/git';
 import { useGitStore } from '../store/useGitStore';
 
+/**
+ * Drop target indicator state for drag & drop history reordering or commit merging.
+ */
+export interface DragTargetState {
+  sha: string;
+  dropZone: 'before' | 'after' | 'merge';
+}
+
+/**
+ * Custom hook providing smooth drag-and-drop commit reordering and merging operations
+ * in the history panel, featuring auto-scrolling and relative drop zone detection.
+ *
+ * @param commits - The active list of commits in the history view.
+ */
 export function useHistoryDragAndDrop(commits: CommitInfo[]) {
   const { setPendingHistoryOp, setIsRewriteModalOpen } = useGitStore();
   const [draggedSha, setDraggedSha] = useState<string | null>(null);
-  const [dragTarget, setDragTarget] = useState<{
-    sha: string;
-    dropZone: 'before' | 'after' | 'merge';
-  } | null>(null);
+  const [dragTarget, setDragTarget] = useState<DragTargetState | null>(null);
 
   const commitListRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDownOnCommit = (e: React.MouseEvent, commit: CommitInfo) => {
-    if (e.button !== 0) return; // Primary click only
+    // Only respond to primary (left) mouse button clicks
+    if (e.button !== 0) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
     let currentX = startX;
     let currentY = startY;
     let isDraggingStarted = false;
-    let currentTarget: { sha: string; dropZone: 'before' | 'after' | 'merge' } | null = null;
+    let currentTarget: DragTargetState | null = null;
     let animFrameId: number | null = null;
 
+    /**
+     * Finds the commit card element under current pointer coordinates and computes the drop zone:
+     * - Top 35%: reorder 'before'
+     * - Bottom 35%: reorder 'after'
+     * - Middle 30%: 'merge' (squash)
+     */
     const updateTargetFromPoint = (x: number, y: number) => {
       const elemBelow = document.elementFromPoint(x, y);
       if (!elemBelow) {
@@ -60,6 +78,9 @@ export function useHistoryDragAndDrop(commits: CommitInfo[]) {
       setDragTarget(currentTarget);
     };
 
+    /**
+     * Handles automatic container scrolling when dragging near top or bottom edges.
+     */
     const autoScrollLoop = () => {
       const container = commitListRef.current;
       if (container && isDraggingStarted) {
@@ -88,6 +109,7 @@ export function useHistoryDragAndDrop(commits: CommitInfo[]) {
       currentY = moveEvent.clientY;
 
       const dist = Math.hypot(currentX - startX, currentY - startY);
+      // Small 4px threshold prevents accidental drag when clicking to inspect
       if (!isDraggingStarted) {
         if (dist > 4) {
           isDraggingStarted = true;
@@ -132,7 +154,6 @@ export function useHistoryDragAndDrop(commits: CommitInfo[]) {
             });
             setIsRewriteModalOpen(true);
           }
-
         }
       }
 

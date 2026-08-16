@@ -1,5 +1,11 @@
+/**
+ * Supported cloud Git providers.
+ */
 export type Provider = 'gitlab' | 'github';
 
+/**
+ * GitLab API user entity.
+ */
 export interface GitLabUser {
   id: number;
   name: string;
@@ -10,6 +16,9 @@ export interface GitLabUser {
   server_url: string;
 }
 
+/**
+ * GitHub API user entity.
+ */
 export interface GitHubUser {
   id: number;
   login: string;
@@ -20,6 +29,9 @@ export interface GitHubUser {
   server_url: string;
 }
 
+/**
+ * Token scope and expiration metadata.
+ */
 export interface TokenInfo {
   scope: string[];
   created_at?: number | null;
@@ -27,21 +39,30 @@ export interface TokenInfo {
   resource_owner_id?: number | null;
 }
 
-/** Unified user shape used in the store — covers both GitLab and GitHub */
+/**
+ * Unified user shape used across application state covering both GitLab and GitHub.
+ */
 export interface UnifiedUser {
   id: number | string;
-  /** Display name */
+  /** Display name of the user */
   name: string;
-  /** Username / login handle */
+  /** Username or login handle */
   username: string;
+  /** Primary contact/commit email */
   email: string | null;
+  /** URL pointing to the user's avatar image */
   avatar_url: string | null;
-  /** Profile URL */
+  /** Profile page web URL */
   web_url: string;
+  /** Base instance server URL */
   server_url: string;
+  /** Provider service type */
   provider: Provider;
 }
 
+/**
+ * Stored account credentials and token state for saved sessions.
+ */
 export interface SavedAccount {
   id: string;
   server_url: string;
@@ -58,7 +79,9 @@ export interface SavedAccount {
   created_at?: number | null;
 }
 
-/** Unified repository shape from backend — works for both GitLab and GitHub */
+/**
+ * Unified repository representation from GitLab or GitHub.
+ */
 export interface UnifiedRepo {
   id: number;
   name: string;
@@ -72,7 +95,9 @@ export interface UnifiedRepo {
   provider: Provider;
 }
 
-/** Legacy alias for GitLab-only code paths that still use GitLabProject */
+/**
+ * Legacy alias for GitLab-only project representations.
+ */
 export interface GitLabProject {
   id: number;
   name: string;
@@ -85,12 +110,18 @@ export interface GitLabProject {
   visibility: string;
 }
 
+/**
+ * Generic paginated list wrapper.
+ */
 export interface PagedResult<T> {
   items: T[];
   page: number;
   total_pages: number;
 }
 
+/**
+ * Merge Request / Pull Request metadata.
+ */
 export interface MergeRequest {
   id: number;
   iid: number;
@@ -103,7 +134,9 @@ export interface MergeRequest {
   created_at: string;
 }
 
-// Helpers
+/**
+ * Transforms a raw GitLabUser response into the unified user format.
+ */
 export function gitLabUserToUnified(user: GitLabUser): UnifiedUser {
   return {
     id: user.id,
@@ -117,6 +150,9 @@ export function gitLabUserToUnified(user: GitLabUser): UnifiedUser {
   };
 }
 
+/**
+ * Transforms a raw GitHubUser response into the unified user format.
+ */
 export function gitHubUserToUnified(user: GitHubUser): UnifiedUser {
   return {
     id: user.id,

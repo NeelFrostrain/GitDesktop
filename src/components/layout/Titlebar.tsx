@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   Minus,
   Square,
   Copy,
   X,
-  ChevronDown
+  ChevronDown,
+  User,
+  Plus,
+  LogOut,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useAccountServicesStore } from '../../features/account-services';
 import { UserAvatar } from '../common/UserAvatar';
+import { SystemService } from '../../services/system/systemService';
+import { AccountService } from '../../services/accounts/accountService';
 
+/**
+ * Custom frameless application titlebar with drag region, user profile menu,
+ * and native window control buttons (minimize, maximize/restore, close).
+ */
 export const Titlebar: React.FC = () => {
   const { user, accounts, setUser, setAccounts, setActiveRepoPath, setStatus, setBranches } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
@@ -24,8 +32,8 @@ export const Titlebar: React.FC = () => {
       try {
         const maximized = await appWindow.isMaximized();
         setIsMaximized(maximized);
-      } catch (err) {
-        console.warn('Failed to check if window is maximized:', err);
+      } catch {
+        // Silently ignore window state read errors
       }
     };
     checkMaximized();
@@ -37,8 +45,8 @@ export const Titlebar: React.FC = () => {
           const maximized = await appWindow.isMaximized();
           setIsMaximized(maximized);
         });
-      } catch (err) {
-        console.warn('Failed to setup resize listener:', err);
+      } catch {
+        // Silently ignore resize listener setup errors
       }
     };
     setupListener();
@@ -46,9 +54,9 @@ export const Titlebar: React.FC = () => {
     return () => {
       if (unlisten) unlisten();
     };
-  }, []);
+  }, [appWindow]);
 
-  // Close dropdown on click outside
+  // Dismiss dropdown on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -63,13 +71,9 @@ export const Titlebar: React.FC = () => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      await invoke('minimize_window');
+      await SystemService.minimizeWindow();
     } catch {
-      try {
-        await appWindow.minimize();
-      } catch (err) {
-        console.error('Failed to minimize window:', err);
-      }
+      await appWindow.minimize().catch(() => {});
     }
   };
 
@@ -77,16 +81,12 @@ export const Titlebar: React.FC = () => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      const isNowMaximized = await invoke<boolean>('toggle_maximize_window');
+      const isNowMaximized = await SystemService.toggleMaximizeWindow();
       setIsMaximized(isNowMaximized);
     } catch {
-      try {
-        await appWindow.toggleMaximize();
-        const maximized = await appWindow.isMaximized();
-        setIsMaximized(maximized);
-      } catch (err) {
-        console.error('Failed to toggle maximize window:', err);
-      }
+      await appWindow.toggleMaximize().catch(() => {});
+      const maximized = await appWindow.isMaximized().catch(() => false);
+      setIsMaximized(maximized);
     }
   };
 
@@ -94,21 +94,18 @@ export const Titlebar: React.FC = () => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      await invoke('close_window');
+      await SystemService.closeWindow();
     } catch {
-      try {
-        await appWindow.close();
-      } catch (err) {
-        console.error('Failed to close window:', err);
-      }
+      await appWindow.close().catch(() => {});
     }
   };
 
-
   const handleSignOut = async () => {
     try {
-      await invoke('logout_gitlab');
-    } catch { }
+      await AccountService.logoutGitLab();
+    } catch {
+      // Ignore logout errors
+    }
     setUser(null);
     setAccounts([]);
     setActiveRepoPath(null);
@@ -122,24 +119,24 @@ export const Titlebar: React.FC = () => {
       data-tauri-drag-region
       className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Logo & Title */}
+      {/* Left: App Icon */}
       <div data-tauri-drag-region className="flex items-center gap-3">
         <div className="flex items-center gap-2 pointer-events-none">
-          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-sm" />
-          {/* <span className="font-bold text-text-primary text-sm tracking-tight">Git Desktop</span> */}
+          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-xs" />
         </div>
       </div>
-      {/* Right: Profile Dropdown + Window Action Buttons */}
+
+      {/* Right: Profile Dropdown + Window Action Controls */}
       <div
         className="titlebar-no-drag flex items-center gap-2.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* User Account Profile Dropdown */}
+        {/* User Account Profile Menu */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-sm"
+            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
@@ -149,24 +146,31 @@ export const Titlebar: React.FC = () => {
               className="w-5 h-5"
               iconClassName="w-3 h-3"
             />
-            <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${
+                isProfileOpen ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
-          {/* Profile dropdown panel */}
+          {/* Profile Dropdown Panel */}
           {isProfileOpen && (
             <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
-              {/* Account info */}
               <div className="px-3 py-2.5 border-b border-border">
-                <div className="font-semibold text-text-primary truncate">{user?.name || user?.username || 'Guest'}</div>
+                <div className="font-semibold text-text-primary truncate">
+                  {user?.name || user?.username || 'Guest'}
+                </div>
                 {user?.username && user.name && (
                   <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
                 )}
                 {accounts.length > 0 && (
-                  <div className="text-[10px] text-text-faint mt-0.5">{accounts.length} account{accounts.length > 1 ? 's' : ''} saved</div>
+                  <div className="text-[10px] text-text-faint mt-0.5">
+                    {accounts.length} account{accounts.length > 1 ? 's' : ''} saved
+                  </div>
                 )}
               </div>
 
-              {/* Actions */}
+              {/* Menu Actions */}
               <button
                 onClick={() => {
                   useAccountServicesStore.getState().openModalWithTab('accounts');
@@ -174,9 +178,7 @@ export const Titlebar: React.FC = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
               >
-                <svg className="w-3.5 h-3.5 text-gitlab-teal" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
+                <User className="w-3.5 h-3.5 text-gitlab-teal" />
                 Account Services & Repositories
               </button>
 
@@ -187,10 +189,8 @@ export const Titlebar: React.FC = () => {
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
               >
-                <svg className="w-3.5 h-3.5 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                + Add Remote Account
+                <Plus className="w-3.5 h-3.5 text-text-muted" />
+                Add Remote Account
               </button>
 
               {user && (
@@ -198,11 +198,9 @@ export const Titlebar: React.FC = () => {
                   <div className="h-px bg-border mx-2 my-1" />
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition flex items-center gap-2 cursor-pointer"
                   >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
+                    <LogOut className="w-3.5 h-3.5" />
                     Sign Out
                   </button>
                 </>
@@ -228,7 +226,7 @@ export const Titlebar: React.FC = () => {
           type="button"
           onClick={handleToggleMaximize}
           className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
-          title={isMaximized ? "Restore" : "Maximize"}
+          title={isMaximized ? 'Restore' : 'Maximize'}
         >
           {isMaximized ? (
             <Copy className="w-3 h-3 rotate-180 pointer-events-none" />
@@ -249,4 +247,3 @@ export const Titlebar: React.FC = () => {
     </header>
   );
 };
-

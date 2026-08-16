@@ -1,30 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  GitBranch, 
-  Search, 
-  Plus, 
-  Edit3, 
-  Trash2, 
-  Upload, 
-  Check, 
+import {
+  GitBranch,
+  Search,
+  Plus,
+  Edit3,
+  Trash2,
+  Upload,
+  Check,
   RefreshCw,
-  GitPullRequest
+  GitPullRequest,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { BranchInfo, RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
+ */
 export const BranchesView: React.FC = () => {
-  const { 
-    activeRepoPath, 
-    setStatus, 
-    branches, 
-    setBranches, 
+  const {
+    activeRepoPath,
+    setStatus,
+    branches,
+    setBranches,
     setError,
-    setIsMergeRequestModalOpen 
+    setIsMergeRequestModalOpen,
   } = useGitStore();
-
 
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,10 +40,10 @@ export const BranchesView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const res = await invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath });
+      const res = await GitService.listBranches(activeRepoPath);
       setBranches(res || []);
-    } catch (err: any) {
-      setError({ code: 'BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'BRANCH_ERROR'));
     } finally {
       setIsLoading(false);
     }
@@ -55,14 +57,14 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('checkout_branch', { repoPath: activeRepoPath, branch: branchName });
+      await GitService.checkoutBranch(activeRepoPath, branchName);
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
-      
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     }
   };
 
@@ -71,16 +73,16 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath || !newBranchName.trim()) return;
 
     try {
-      await invoke('create_branch', { repoPath: activeRepoPath, branch: newBranchName.trim() });
+      await GitService.createBranch(activeRepoPath, newBranchName.trim());
       useLogStore.getState().addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
       setNewBranchName('');
       setShowCreateModal(false);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'CREATE_BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     }
   };
 
@@ -88,16 +90,16 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath || !renameValue.trim()) return;
 
     try {
-      await invoke('rename_branch', { repoPath: activeRepoPath, oldName, newName: renameValue.trim() });
+      await GitService.renameBranch(activeRepoPath, oldName, renameValue.trim());
       useLogStore.getState().addLog('info', 'Git', `Renamed branch '${oldName}' to '${renameValue.trim()}'`);
       setEditingBranch(null);
       setRenameValue('');
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'RENAME_BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'RENAME_BRANCH_ERROR'));
     }
   };
 
@@ -109,11 +111,11 @@ export const BranchesView: React.FC = () => {
     }
 
     try {
-      await invoke('delete_branch', { repoPath: activeRepoPath, branch: branchName, force: true });
+      await GitService.deleteBranch(activeRepoPath, branchName, true);
       useLogStore.getState().addLog('info', 'Git', `Deleted branch '${branchName}'`);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'DELETE_BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
     }
   };
 
@@ -121,11 +123,11 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('push_branch', { repoPath: activeRepoPath, branch: branchName, setUpstream: true });
+      await GitService.pushBranch(activeRepoPath, branchName, true);
       useLogStore.getState().addLog('success', 'Git', `Pushed branch '${branchName}' to origin with upstream set`);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'PUSH_BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'PUSH_BRANCH_ERROR'));
     }
   };
 
@@ -155,7 +157,7 @@ export const BranchesView: React.FC = () => {
           <button
             onClick={loadBranches}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
             title="Refresh branches"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -163,7 +165,7 @@ export const BranchesView: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Branch</span>
@@ -193,7 +195,7 @@ export const BranchesView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="px-3 py-1.5 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition"
+              className="px-3 py-1.5 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
             >
               Cancel
             </button>
@@ -201,7 +203,7 @@ export const BranchesView: React.FC = () => {
             <button
               type="submit"
               disabled={!newBranchName.trim()}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
             >
               Create & Checkout
             </button>
@@ -224,13 +226,13 @@ export const BranchesView: React.FC = () => {
                 key={b.name}
                 className={`p-3 rounded-md border flex items-center justify-between transition ${
                   b.is_current
-                    ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
+                    ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-xs'
                     : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                   <GitBranch className={`w-4 h-4 flex-shrink-0 ${b.is_current ? 'text-commito-coral' : 'text-text-muted'}`} />
-                  
+
                   {isEditing ? (
                     <div className="flex items-center gap-2 flex-1 max-w-sm">
                       <input
@@ -242,7 +244,7 @@ export const BranchesView: React.FC = () => {
                       />
                       <button
                         onClick={() => handleRenameBranch(b.name)}
-                        className="p-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded"
+                        className="p-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded cursor-pointer"
                         title="Save rename"
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -269,7 +271,7 @@ export const BranchesView: React.FC = () => {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => handlePushBranch(b.name)}
-                    className="p-1.5 text-text-muted hover:text-commito-coral bg-base-3 hover:bg-base-1 border border-border rounded-md transition"
+                    className="p-1.5 text-text-muted hover:text-commito-coral bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                     title="Push branch to origin"
                   >
                     <Upload className="w-3.5 h-3.5" />
@@ -277,7 +279,7 @@ export const BranchesView: React.FC = () => {
 
                   <button
                     onClick={() => setIsMergeRequestModalOpen(true)}
-                    className="p-1.5 text-text-muted hover:text-github-dark-accent bg-base-3 hover:bg-base-1 border border-border rounded-md transition"
+                    className="p-1.5 text-text-muted hover:text-github-dark-accent bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                     title="Create Merge / Pull Request"
                   >
                     <GitPullRequest className="w-3.5 h-3.5" />
@@ -288,7 +290,7 @@ export const BranchesView: React.FC = () => {
                       setEditingBranch(b.name);
                       setRenameValue(b.name);
                     }}
-                    className="p-1.5 text-text-muted hover:text-text-primary bg-base-3 hover:bg-base-1 border border-border rounded-md transition"
+                    className="p-1.5 text-text-muted hover:text-text-primary bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                     title="Rename branch"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -298,14 +300,14 @@ export const BranchesView: React.FC = () => {
                     <>
                       <button
                         onClick={() => handleCheckout(b.name)}
-                        className="px-2.5 py-1 bg-base-3 hover:bg-base-0 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+                        className="px-2.5 py-1 bg-base-3 hover:bg-base-0 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
                       >
                         Checkout
                       </button>
 
                       <button
                         onClick={() => handleDeleteBranch(b.name)}
-                        className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition"
+                        className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                         title="Delete branch"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  RotateCcw, 
-  RefreshCw, 
-  History 
+import {
+  X,
+  RotateCcw,
+  RefreshCw,
+  History,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { ReflogEntry, RepoStatus } from '../../types/git';
+import { ReflogEntry } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialogue for reviewing the repository's HEAD reflog entries and executing safe recovery resets.
+ */
 export const ReflogModal: React.FC = () => {
   const {
     activeRepoPath,
     isReflogModalOpen,
     setIsReflogModalOpen,
     setStatus,
-    setError
+    setError,
   } = useGitStore();
 
   const [reflogEntries, setReflogEntries] = useState<ReflogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-
   const loadReflog = async () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
 
     try {
-      const res = await invoke<ReflogEntry[]>('list_reflog_cmd', { repoPath: activeRepoPath, limit: 50 });
+      const res = await GitService.listReflog(activeRepoPath, 50);
       setReflogEntries(res || []);
     } catch {
       setReflogEntries([]);
@@ -55,11 +59,11 @@ export const ReflogModal: React.FC = () => {
       await invoke('restore_reflog_target_cmd', { repoPath: activeRepoPath, sha, force: true });
       useLogStore.getState().addLog('success', 'Git', `Restored branch HEAD to ${sha.slice(0, 7)} via Reflog`);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       setIsReflogModalOpen(false);
-    } catch (err: any) {
-      setError({ code: 'REFLOG_RESTORE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'REFLOG_RESTORE_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -87,7 +91,7 @@ export const ReflogModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsReflogModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -133,7 +137,7 @@ export const ReflogModal: React.FC = () => {
                 <button
                   onClick={() => handleRestoreTarget(entry.sha)}
                   disabled={isSubmitting}
-                  className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm flex-shrink-0"
+                  className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs flex-shrink-0 cursor-pointer disabled:opacity-50"
                   title={`Restore HEAD to ${entry.sha.slice(0, 7)}`}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
-import { RepoStatus } from '../types/git';
-import { SavedAccount } from '../types/gitlab';
+import { GitService } from '../services/git/gitService';
+import { AccountService } from '../services/accounts/accountService';
+import { getErrorMessage, toAppError } from '../shared/utils/errorUtils';
 
+/**
+ * Account option representation for the identity selector dropdown.
+ */
 export interface AccountOption {
   id: string;
   name: string;
@@ -14,6 +17,10 @@ export interface AccountOption {
   provider: string;
 }
 
+/**
+ * Hook managing Git user identity configuration modal state, avatar file uploads,
+ * synchronization with connected accounts, and optional commit resumption.
+ */
 export function useGitUserConfig() {
   const {
     activeRepoPath,
@@ -55,15 +62,17 @@ export function useGitUserConfig() {
     if (!isUserConfigModalOpen) return;
 
     // Load connected accounts list
-    invoke<SavedAccount[]>('list_accounts_cmd')
+    AccountService.listSavedAccounts()
       .then((accs) => {
         if (accs && accs.length > 0) {
           setAccounts(accs);
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Silently handle account fetch failures
+      });
 
-    // Load initial values
+    // Load initial values from global store
     setName(user?.name || user?.username || '');
     setEmail(user?.email || '');
     setAvatarUrl(user?.avatar_url || null);
@@ -73,29 +82,32 @@ export function useGitUserConfig() {
     }
     setSelectedSyncAccount(user ? `active:${user.id}` : 'custom');
 
+    // Read configured user identity from active repository
     if (activeRepoPath) {
-      invoke<any>('get_git_user_identity_cmd', { repoPath: activeRepoPath })
+      GitService.getUserIdentity(activeRepoPath)
         .then((res) => {
           if (res) {
             if (res.name) setName(res.name);
             if (res.email) setEmail(res.email);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          // Silently handle config read errors
+        });
     }
-  }, [isUserConfigModalOpen, activeRepoPath, user]);
+  }, [isUserConfigModalOpen, activeRepoPath, user, setAccounts]);
 
   // Build unique deduplicated list of accounts
   const allAvailableAccounts: AccountOption[] = [];
   const seenAccountKeys = new Set<string>();
 
-  const getAccountKeys = (provider: string, email?: string | null, username?: string | null, name?: string | null) => {
+  const getAccountKeys = (provider: string, accountEmail?: string | null, username?: string | null, accountName?: string | null) => {
     const keys: string[] = [];
     const prov = (provider || 'git').toLowerCase();
-    if (email && email.trim()) {
-      keys.push(`${prov}:email:${email.trim().toLowerCase()}`);
+    if (accountEmail && accountEmail.trim()) {
+      keys.push(`${prov}:email:${accountEmail.trim().toLowerCase()}`);
     }
-    const cleanHandle = (username || name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const cleanHandle = (username || accountName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     if (cleanHandle) {
       keys.push(`${prov}:handle:${cleanHandle}`);
     }
@@ -141,18 +153,18 @@ export function useGitUserConfig() {
 
     if (accId === 'custom') return;
 
-    const targetAcc = allAvailableAccounts.find((a) => a.id === accId);
+    const targetAccount = allAvailableAccounts.find((a) => a.id === accId);
 
-    if (targetAcc) {
-      const syncName = targetAcc.name || targetAcc.username;
+    if (targetAccount) {
+      const syncName = targetAccount.name || targetAccount.username;
       if (syncName) setName(syncName);
-      if (targetAcc.email) setEmail(targetAcc.email);
-      if (targetAcc.avatar_url) setAvatarUrl(targetAcc.avatar_url);
-      if (targetAcc.provider === 'github' || targetAcc.provider === 'gitlab') {
-        setSelectedProvider(targetAcc.provider as 'github' | 'gitlab');
+      if (targetAccount.email) setEmail(targetAccount.email);
+      if (targetAccount.avatar_url) setAvatarUrl(targetAccount.avatar_url);
+      if (targetAccount.provider === 'github' || targetAccount.provider === 'gitlab') {
+        setSelectedProvider(targetAccount.provider as 'github' | 'gitlab');
       }
 
-      const providerLabel = targetAcc.provider ? targetAcc.provider.toUpperCase() : 'Remote';
+      const providerLabel = targetAccount.provider ? targetAccount.provider.toUpperCase() : 'Remote';
       useLogStore.getState().addLog('info', 'Git', `Synced identity with ${providerLabel} account: ${syncName}`);
     }
   };
@@ -200,17 +212,8 @@ export function useGitUserConfig() {
 
     try {
       if (activeRepoPath) {
-        await invoke('set_repo_git_config_cmd', {
-          repoPath: activeRepoPath,
-          key: 'user.name',
-          value: trimmedName,
-        });
-
-        await invoke('set_repo_git_config_cmd', {
-          repoPath: activeRepoPath,
-          key: 'user.email',
-          value: trimmedEmail,
-        });
+        await GitService.setRepoConfig(activeRepoPath, 'user.name', trimmedName);
+        await GitService.setRepoConfig(activeRepoPath, 'user.email', trimmedEmail);
       }
 
       const updatedUser = {
@@ -227,14 +230,15 @@ export function useGitUserConfig() {
 
       useLogStore.getState().addLog('success', 'Git', `Configured Git user: '${trimmedName} <${trimmedEmail}>'`);
 
+      // Resume pending commit operation if one was waiting for user identity setup
       if (pendingCommitData && activeRepoPath) {
-        useLogStore.getState().addLog('info', 'Git', `Resuming original commit operation...`);
+        useLogStore.getState().addLog('info', 'Git', 'Resuming original commit operation...');
 
         const { commitOptions: opts, stagedFiles } = useGitStore.getState();
         if (stagedFiles.length > 0) {
-          await invoke('stage_files', { repoPath: activeRepoPath, files: stagedFiles });
+          await GitService.stageFiles(activeRepoPath, stagedFiles);
         }
-        await invoke('commit_changes', {
+        await GitService.commit({
           repoPath: activeRepoPath,
           summary: pendingCommitData.summary,
           description: pendingCommitData.description || null,
@@ -249,16 +253,16 @@ export function useGitUserConfig() {
           `Committed changes to ${activeRepoPath.split(/[/\\]/).pop()}: '${pendingCommitData.summary}'`
         );
 
-        const statusRes = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        const statusRes = await GitService.getRepoStatus(activeRepoPath);
         setStatus(statusRes);
       }
 
       setPendingCommitData(null);
       setIsUserConfigModalOpen(false);
-    } catch (err: any) {
-      const msg = err.message || String(err);
-      setModalError(`Failed to save configuration or execute commit: ${msg}`);
-      setError({ code: 'GIT_CONFIG_ERROR', message: msg });
+    } catch (error: unknown) {
+      const message = getErrorMessage(error);
+      setModalError(`Failed to save configuration or execute commit: ${message}`);
+      setError(toAppError(error, 'GIT_CONFIG_ERROR'));
     } finally {
       setIsSubmitting(false);
     }

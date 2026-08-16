@@ -13,7 +13,11 @@ import {
 import { useAccountStore } from '../../store/accountStore';
 import { useGitStore } from '../../store/useGitStore';
 import { gitLabUserToUnified, GitLabUser } from '../../types/gitlab';
+import { getErrorMessage } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialogue for authenticating with GitLab via OAuth 2.0 PKCE loopback or Personal Access Tokens (PAT).
+ */
 export const GitLabSignInModal: React.FC = () => {
   const { isSignInModalOpen, setIsSignInModalOpen, fetchAccounts } = useAccountStore();
   const { setUser } = useGitStore();
@@ -57,10 +61,8 @@ export const GitLabSignInModal: React.FC = () => {
         clientSecret: null,
         useLoopback: true,
       });
-
-      // Browser will open; user will be redirected back via deep-link or loopback
-    } catch (err: any) {
-      setLocalError(err?.message || String(err));
+    } catch (error: unknown) {
+      setLocalError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -93,8 +95,8 @@ export const GitLabSignInModal: React.FC = () => {
       setUser(gitLabUserToUnified(user));
       await fetchAccounts();
       setIsSignInModalOpen(false);
-    } catch (err: any) {
-      setLocalError(err?.message || String(err));
+    } catch (error: unknown) {
+      setLocalError(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -127,10 +129,11 @@ export const GitLabSignInModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setAuthMode('oauth')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${authMode === 'oauth'
-                ? 'bg-commito-coral text-white shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-                }`}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                authMode === 'oauth'
+                  ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
             >
               <Shield className="w-3.5 h-3.5" />
               <span>OAuth 2.0 (PKCE)</span>
@@ -138,10 +141,11 @@ export const GitLabSignInModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setAuthMode('pat')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${authMode === 'pat'
-                ? 'bg-commito-coral text-white shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-                }`}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${
+                authMode === 'pat'
+                  ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
             >
               <Key className="w-3.5 h-3.5" />
               <span>Access Token (PAT)</span>
@@ -207,7 +211,7 @@ export const GitLabSignInModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -260,7 +264,7 @@ export const GitLabSignInModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
               >
                 {isLoading ? (
                   <>

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import {
   Search,
   FolderGit2,
@@ -9,8 +8,14 @@ import {
 } from 'lucide-react';
 import { useRepoStore } from '../../store/repoStore';
 import { useGitStore } from '../../store/useGitStore';
+import { SystemService } from '../../services/system/systemService';
+import { getErrorMessage } from '../../shared/utils/errorUtils';
 import { RepoCard } from './RepoCard';
 
+/**
+ * Dashboard repository grid showing active repositories with branch status, ahead/behind indicators,
+ * and quick-launch buttons for opening or cloning repositories.
+ */
 export const RepoList: React.FC = () => {
   const { repos, statuses, addRepo } = useRepoStore();
   const { setIsRepoModalOpen, setActiveModalTab } = useGitStore();
@@ -18,12 +23,12 @@ export const RepoList: React.FC = () => {
 
   const handleOpenFolderDialog = async () => {
     try {
-      const selectedPath = await invoke<string | null>('select_folder_cmd');
+      const selectedPath = await SystemService.selectFolder();
       if (selectedPath) {
         await addRepo(selectedPath);
       }
-    } catch (err: any) {
-      alert(`Could not open repository: ${err?.message || err}`);
+    } catch (error: unknown) {
+      alert(`Could not open repository: ${getErrorMessage(error)}`);
     }
   };
 
@@ -32,9 +37,10 @@ export const RepoList: React.FC = () => {
     setIsRepoModalOpen(true);
   };
 
-  const filteredRepos = repos.filter((r) =>
-    r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.path.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredRepos = repos.filter(
+    (r) =>
+      r.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.path.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -62,7 +68,7 @@ export const RepoList: React.FC = () => {
           </button>
           <button
             onClick={handleOpenFolderDialog}
-            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <FolderOpen className="w-3.5 h-3.5" />
             <span>Open Local</span>
@@ -112,7 +118,7 @@ export const RepoList: React.FC = () => {
           <div className="flex items-center gap-3 pt-2">
             <button
               onClick={handleOpenFolderDialog}
-              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-md cursor-pointer"
+              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-md cursor-pointer"
             >
               <FolderOpen className="w-4 h-4" />
               <span>Add Existing Repository</span>
@@ -128,7 +134,7 @@ export const RepoList: React.FC = () => {
         </div>
       ) : (
         <div className="p-8 text-center text-xs text-text-muted bg-base-2/40 border border-border rounded-md">
-          No repositories match "{searchQuery}".
+          No repositories match &quot;{searchQuery}&quot;.
         </div>
       )}
     </div>

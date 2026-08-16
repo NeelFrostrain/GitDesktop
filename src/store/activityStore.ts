@@ -1,9 +1,14 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { ActivityEvent } from '../types/home';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useRepoStore } from './repoStore';
 import { useAccountStore } from './accountStore';
+import { useLogStore } from './useLogStore';
 
+/**
+ * State and actions for the global activity feed on the Home dashboard.
+ */
 interface ActivityStoreState {
   events: ActivityEvent[];
   isLoadingLocal: boolean;
@@ -14,6 +19,9 @@ interface ActivityStoreState {
   refresh: () => Promise<void>;
 }
 
+/**
+ * Zustand store managing aggregated local and remote activity event streams.
+ */
 export const useActivityStore = create<ActivityStoreState>((set, get) => ({
   events: [],
   isLoadingLocal: false,
@@ -34,15 +42,15 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
         limit,
       });
 
-      // Merge with any existing remote events, sorted descending by timestamp
+      // Merge with existing remote events, sorted descending by timestamp
       set((state) => {
         const remoteEvents = state.events.filter((e) => e.id.startsWith('gl-'));
         const combined = [...localEvents, ...remoteEvents];
         combined.sort((a, b) => b.at - a.at);
         return { events: combined };
       });
-    } catch (err: any) {
-      console.warn('Failed to load local activity:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'System', `Failed to load local activity: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoadingLocal: false });
     }
@@ -75,8 +83,8 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
           return { events: combined };
         });
       }
-    } catch (err: any) {
-      console.warn('Failed to load remote GitLab activity:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'System', `Failed to load remote GitLab activity: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoadingRemote: false });
     }

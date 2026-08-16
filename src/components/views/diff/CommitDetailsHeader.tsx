@@ -1,0 +1,150 @@
+import React, { useState } from 'react';
+import { AlignJustify, Columns, ShieldCheck, ShieldAlert, GitCommit, Clock } from 'lucide-react';
+import { CommitDetails } from '../../../types/git';
+import { useSigningStore } from '../../../store/signingStore';
+import { UserAvatar } from '../../common/UserAvatar';
+import { CopyButton } from './diffUtils';
+
+interface CommitDetailsHeaderProps {
+  commitDetails: CommitDetails;
+  diffViewMode: 'unified' | 'split';
+  onChangeViewMode: (mode: 'unified' | 'split') => void;
+}
+
+/**
+ * Header card for Commit details in History view, displaying author, verification status, and stats.
+ */
+export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
+  commitDetails,
+  diffViewMode,
+  onChangeViewMode,
+}) => {
+  const [showCommitBody, setShowCommitBody] = useState(false);
+
+  const fullMessage = commitDetails.commit.message || '';
+  const firstNewlineIndex = fullMessage.indexOf('\n');
+  const commitTitle = firstNewlineIndex !== -1 ? fullMessage.substring(0, firstNewlineIndex).trim() : fullMessage;
+  const commitBody = firstNewlineIndex !== -1 ? fullMessage.substring(firstNewlineIndex + 1).trim() : '';
+
+  const verification = useSigningStore.getState().verifiedCommits[commitDetails.commit.sha];
+
+  return (
+    <div className="p-3 bg-base-2 border-b border-border space-y-2.5 flex-shrink-0">
+      <div className="flex items-center justify-between gap-4">
+        <h2 className="text-xs font-semibold text-text-primary truncate" title={commitTitle}>
+          {commitTitle}
+        </h2>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1 bg-base-1 border border-border rounded-md p-0.5">
+            <button
+              onClick={() => onChangeViewMode('unified')}
+              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
+                diffViewMode === 'unified'
+                  ? 'bg-commito-coral text-white font-medium shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="Unified View"
+            >
+              <AlignJustify className="w-3 h-3" />
+              Unified
+            </button>
+            <button
+              onClick={() => onChangeViewMode('split')}
+              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
+                diffViewMode === 'split'
+                  ? 'bg-commito-coral text-white font-medium shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="Split View"
+            >
+              <Columns className="w-3 h-3" />
+              Split
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {verification && verification.status === 'Verified' && (
+              <span
+                title={`Cryptographically verified commit (Signed by ${
+                  typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
+                })`}
+                className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md font-medium"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Verified</span>
+              </span>
+            )}
+            {verification && verification.status === 'Unverified' && (
+              <span
+                title="Unverified commit signature"
+                className="flex items-center gap-1 text-amber-400 font-mono text-[11px] bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md font-medium"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Unverified</span>
+              </span>
+            )}
+
+            <CopyButton text={commitDetails.commit.sha} label="SHA" />
+            <CopyButton text={commitDetails.commit.message} label="Msg" />
+          </div>
+        </div>
+      </div>
+
+      {/* Author & Commit Info Bar */}
+      <div className="flex items-center justify-between text-[11px] bg-base-1 px-2.5 py-1.5 rounded-md border border-border/80 shadow-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <UserAvatar
+            name={commitDetails.commit.author_name}
+            email={commitDetails.commit.author_email}
+            className="w-4 h-4 rounded-full ring-1 ring-border/60 flex-shrink-0"
+            iconClassName="w-2.5 h-2.5"
+          />
+          <span className="font-semibold text-text-primary truncate">{commitDetails.commit.author_name}</span>
+
+          {/* Commit node badge */}
+          <div className="flex items-center gap-1 text-text-muted font-mono text-[10px] px-1.5 py-0.2 rounded bg-base-2 border border-border/60">
+            <GitCommit className="w-3 h-3 text-commito-coral flex-shrink-0" />
+            <span className="font-semibold text-text-secondary">{commitDetails.commit.short_sha}</span>
+            <CopyButton
+              text={commitDetails.commit.sha}
+              className="p-0.5 border-0 bg-transparent hover:bg-base-3 text-[9px]"
+            />
+          </div>
+
+          <div className="flex items-center gap-1 text-text-faint">
+            <Clock className="w-3 h-3" />
+            <span>{commitDetails.commit.relative_date}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 font-mono font-bold text-xs flex-shrink-0">
+          {(commitDetails.total_additions !== undefined || commitDetails.commit.additions !== undefined) && (
+            <span className="text-emerald-400">
+              +{commitDetails.total_additions ?? commitDetails.commit.additions ?? 0}
+            </span>
+          )}
+          {(commitDetails.total_deletions !== undefined || commitDetails.commit.deletions !== undefined) && (
+            <span className="text-red-400">
+              -{commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0}
+            </span>
+          )}
+
+          {commitBody && (
+            <button
+              onClick={() => setShowCommitBody(!showCommitBody)}
+              className="text-[11px] text-commito-coral hover:underline font-medium font-sans ml-1 cursor-pointer"
+            >
+              {showCommitBody ? 'Hide Details' : 'Show Details'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {commitBody && showCommitBody && (
+        <div className="p-2 bg-base-0 border border-border rounded-md text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+          {commitBody}
+        </div>
+      )}
+    </div>
+  );
+};

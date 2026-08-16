@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  Tag, 
-  Plus, 
-  Trash2, 
-  Upload, 
-  RefreshCw, 
+import {
+  Tag,
+  Plus,
+  Trash2,
+  Upload,
+  RefreshCw,
   Search,
-  Bookmark
+  Bookmark,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { TagInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Main view for managing, creating, pushing, and deleting lightweight and annotated Git release tags.
+ */
 export const TagsView: React.FC = () => {
   const { activeRepoPath, tags, setTags, setError } = useGitStore();
 
@@ -27,7 +29,7 @@ export const TagsView: React.FC = () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
-      const res = await invoke<TagInfo[]>('list_tags_cmd', { repoPath: activeRepoPath });
+      const res = await GitService.listTags(activeRepoPath);
       setTags(res || []);
     } catch {
       setTags([]);
@@ -45,20 +47,15 @@ export const TagsView: React.FC = () => {
     if (!activeRepoPath || !tagName.trim()) return;
 
     try {
-      await invoke('create_tag_cmd', {
-        repoPath: activeRepoPath,
-        name: tagName.trim(),
-        message: tagMessage.trim() || null,
-        targetSha: null,
-      });
+      await GitService.createTag(activeRepoPath, tagName.trim(), tagMessage.trim() || undefined);
 
       useLogStore.getState().addLog('success', 'Git', `Created tag '${tagName.trim()}'`);
       setTagName('');
       setTagMessage('');
       setShowCreateModal(false);
       loadTags();
-    } catch (err: any) {
-      setError({ code: 'TAG_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'TAG_ERROR'));
     }
   };
 
@@ -67,11 +64,11 @@ export const TagsView: React.FC = () => {
     if (!confirm(`Are you sure you want to delete tag '${name}'?`)) return;
 
     try {
-      await invoke('delete_tag_cmd', { repoPath: activeRepoPath, name });
+      await GitService.deleteTag(activeRepoPath, name);
       useLogStore.getState().addLog('info', 'Git', `Deleted tag '${name}'`);
       loadTags();
-    } catch (err: any) {
-      setError({ code: 'TAG_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'TAG_ERROR'));
     }
   };
 
@@ -79,11 +76,11 @@ export const TagsView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('push_tags_cmd', { repoPath: activeRepoPath });
+      await GitService.pushTags(activeRepoPath);
       useLogStore.getState().addLog('success', 'Git', 'Pushed all local tags to remote origin');
       loadTags();
-    } catch (err: any) {
-      setError({ code: 'TAG_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'TAG_ERROR'));
     }
   };
 
@@ -118,14 +115,14 @@ export const TagsView: React.FC = () => {
           <button
             onClick={loadTags}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handlePushTags}
-            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition"
+            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
             title="Push tags to remote origin"
           >
             <Upload className="w-3.5 h-3.5 text-text-muted" />
@@ -134,7 +131,7 @@ export const TagsView: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create Tag</span>
@@ -174,14 +171,14 @@ export const TagsView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition"
+              className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!tagName.trim()}
-              className="px-4 py-1 bg-commito-coral text-white rounded-md text-xs font-bold transition shadow-sm"
+              className="px-4 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
             >
               Create Tag
             </button>
@@ -230,7 +227,7 @@ export const TagsView: React.FC = () => {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => handleDeleteTag(tag.name)}
-                  className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition"
+                  className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                   title="Delete tag"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

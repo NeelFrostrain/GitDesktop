@@ -1,25 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { 
-  X, 
-  Layers, 
-  Plus, 
-  Trash2, 
-  FolderOpen, 
-  GitBranch, 
-  RefreshCw 
+import {
+  X,
+  Layers,
+  Plus,
+  Trash2,
+  FolderOpen,
+  GitBranch,
+  RefreshCw,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { WorktreeInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialogue for listing, creating, and removing linked Git worktrees for concurrent branch working copies.
+ */
 export const WorktreeModal: React.FC = () => {
   const {
     activeRepoPath,
     isWorktreeModalOpen,
     setIsWorktreeModalOpen,
-    setError
+    setError,
   } = useGitStore();
 
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
@@ -28,16 +33,11 @@ export const WorktreeModal: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (!isWorktreeModalOpen || !activeRepoPath) return;
-    loadWorktrees();
-  }, [isWorktreeModalOpen, activeRepoPath]);
-
   const loadWorktrees = async () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
-      const res = await invoke<WorktreeInfo[]>('list_worktrees', { repoPath: activeRepoPath });
+      const res = await GitService.listWorktrees(activeRepoPath);
       setWorktrees(res || []);
     } catch {
       setWorktrees([]);
@@ -45,6 +45,11 @@ export const WorktreeModal: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isWorktreeModalOpen || !activeRepoPath) return;
+    loadWorktrees();
+  }, [isWorktreeModalOpen, activeRepoPath]);
 
   const handleCreateWorktree = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,9 +67,8 @@ export const WorktreeModal: React.FC = () => {
       setNewWorktreePath('');
       setNewWorktreeBranch('');
       loadWorktrees();
-    } catch (err: any) {
-      const errorMsg = err.message || String(err);
-      setError({ code: 'WORKTREE_ERROR', message: errorMsg });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'WORKTREE_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -77,8 +81,8 @@ export const WorktreeModal: React.FC = () => {
       await invoke('remove_worktree', { repoPath: activeRepoPath, path, force: false });
       useLogStore.getState().addLog('info', 'Worktree', `Removed worktree '${path}'`);
       loadWorktrees();
-    } catch (err: any) {
-      setError({ code: 'WORKTREE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'WORKTREE_ERROR'));
     }
   };
 
@@ -104,7 +108,7 @@ export const WorktreeModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsWorktreeModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -152,9 +156,7 @@ export const WorktreeModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={!newWorktreePath.trim() || isSubmitting}
-                className={`px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
-                  !newWorktreePath.trim() || isSubmitting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
-                }`}
+                className={`px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50`}
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{isSubmitting ? 'Adding...' : 'Add Worktree'}</span>
@@ -171,7 +173,7 @@ export const WorktreeModal: React.FC = () => {
               <button
                 onClick={loadWorktrees}
                 disabled={isLoading}
-                className="p-1 text-text-muted hover:text-text-primary"
+                className="p-1 text-text-muted hover:text-text-primary cursor-pointer"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
@@ -199,14 +201,14 @@ export const WorktreeModal: React.FC = () => {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={() => openUrl(wt.path)}
-                      className="px-2.5 py-1 bg-base-3 hover:bg-base-0 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+                      className="px-2.5 py-1 bg-base-3 hover:bg-base-0 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
                     >
                       Open
                     </button>
                     {!wt.path.endsWith('.git') && (
                       <button
                         onClick={() => handleRemoveWorktree(wt.path)}
-                        className="p-1.5 text-text-muted hover:text-red-400 transition"
+                        className="p-1.5 text-text-muted hover:text-red-400 transition cursor-pointer"
                         title="Remove worktree"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

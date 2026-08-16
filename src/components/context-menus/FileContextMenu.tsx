@@ -1,19 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  RotateCcw, 
-  FileX, 
-  FileStack, 
-  Copy, 
-  FileText, 
-  FolderOpen, 
-  Code, 
-  ExternalLink 
+import {
+  RotateCcw,
+  FileX,
+  FileStack,
+  Copy,
+  FileText,
+  FolderOpen,
+  Code,
+  ExternalLink,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { SystemService } from '../../services/system/systemService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 
 interface FileContextMenuProps {
   filePath: string;
@@ -22,6 +24,10 @@ interface FileContextMenuProps {
   onClose: () => void;
 }
 
+/**
+ * Context menu for changed file items in the working tree, offering discard,
+ * ignore (.gitignore), path copying, and external editor / file explorer openers.
+ */
 export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   filePath,
   x,
@@ -41,11 +47,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [onClose]);
 
-  // Extract file extension for dynamic ignore label
   const fileName = filePath.split(/[/\\]/).filter(Boolean).pop() || filePath;
   const extParts = fileName.split('.');
   const extension = extParts.length > 1 ? extParts.pop() : '';
-  const ignoreExtLabel = extension ? `Ignore all .${extension} files (add to .gitignore)` : `Ignore extension (add to .gitignore)`;
+  const ignoreExtLabel = extension
+    ? `Ignore all .${extension} files (add to .gitignore)`
+    : `Ignore extension (add to .gitignore)`;
 
   const fullPath = activeRepoPath
     ? `${activeRepoPath.replace(/[\/\\]+$/, '')}/${filePath.replace(/^[\/\\]+/, '')}`
@@ -59,16 +66,12 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
     if (confirm(`Are you sure you want to discard changes in '${filePath}'? This action cannot be undone.`)) {
       try {
-        await invoke('discard_file_changes_cmd', {
-          repoPath: activeRepoPath,
-          filePath,
-        });
-
+        await GitService.discardFileChanges(activeRepoPath, filePath);
         useLogStore.getState().addLog('info', 'Git', `Discarded changes in '${filePath}'`);
-        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
-      } catch (err: any) {
-        setError({ code: 'DISCARD_ERROR', message: err.message || String(err) });
+      } catch (error: unknown) {
+        setError(toAppError(error, 'DISCARD_ERROR'));
       }
     }
     onClose();
@@ -85,10 +88,10 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       });
 
       useLogStore.getState().addLog('success', 'Git', `Added '${filePath}' to .gitignore`);
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-    } catch (err: any) {
-      setError({ code: 'GITIGNORE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'GITIGNORE_ERROR'));
     }
     onClose();
   };
@@ -105,10 +108,10 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       });
 
       useLogStore.getState().addLog('success', 'Git', `Added '${pattern}' to .gitignore`);
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-    } catch (err: any) {
-      setError({ code: 'GITIGNORE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'GITIGNORE_ERROR'));
     }
     onClose();
   };
@@ -130,10 +133,11 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   // 6. Show in Explorer
   const handleShowInExplorer = async () => {
     try {
-      await invoke('show_in_explorer_cmd', { repoPath: fullDir || fullPath });
+      await SystemService.showInExplorer(fullDir || fullPath);
       useLogStore.getState().addLog('info', 'System', `Opened file manager at '${fullDir || fullPath}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open Explorer: ${err.message || err}`);
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'System', `Failed to open Explorer: ${msg}`);
     }
     onClose();
   };
@@ -141,10 +145,11 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   // 7. Open in Visual Studio Code
   const handleOpenVSCode = async () => {
     try {
-      await invoke('open_in_vscode_cmd', { repoPath: fullPath });
+      await SystemService.openInVSCode(fullPath);
       useLogStore.getState().addLog('info', 'System', `Opened '${filePath}' in Visual Studio Code`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open VS Code: ${err.message || err}`);
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'System', `Failed to open VS Code: ${msg}`);
     }
     onClose();
   };
@@ -152,15 +157,15 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
   // 8. Open with default program
   const handleOpenDefault = async () => {
     try {
-      await invoke('open_file_default_cmd', { filePath: fullPath });
+      await SystemService.openFileDefault(fullPath);
       useLogStore.getState().addLog('info', 'System', `Opened '${filePath}' in default application`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open file: ${err.message || err}`);
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'System', `Failed to open file: ${msg}`);
     }
     onClose();
   };
 
-  // Prevent menu overflow off-screen
   const adjustedX = Math.min(x, window.innerWidth - 250);
   const adjustedY = Math.min(y, window.innerHeight - 340);
 
@@ -174,7 +179,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1">
         <button
           onClick={handleDiscardChanges}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition text-left font-medium"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition text-left font-medium cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Discard changes</span>
@@ -187,7 +192,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleIgnoreFile}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <FileX className="w-3.5 h-3.5 text-text-muted" />
           <span>Ignore file (add to .gitignore)</span>
@@ -196,7 +201,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
         {extension && (
           <button
             onClick={handleIgnoreExtension}
-            className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+            className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
           >
             <FileStack className="w-3.5 h-3.5 text-text-muted" />
             <span>{ignoreExtLabel}</span>
@@ -210,7 +215,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCopyFullPath}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy file path</span>
@@ -218,7 +223,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleCopyRelativePath}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <FileText className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy relative file path</span>
@@ -231,7 +236,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleShowInExplorer}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
           <span>Show in Explorer</span>
@@ -239,7 +244,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleOpenVSCode}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Code className="w-3.5 h-3.5 text-blue-400" />
           <span>Open in Visual Studio Code</span>
@@ -247,9 +252,8 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
 
         <button
           onClick={handleOpenDefault}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
-
           <ExternalLink className="w-3.5 h-3.5 text-emerald-400" />
           <span>Open with default program</span>
         </button>

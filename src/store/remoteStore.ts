@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { RemoteInfo, PullResult } from '../types/git';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
 
+/**
+ * State and actions for managing Git remotes (origin, upstream, forks) for active repository.
+ */
 interface RemoteState {
   remotes: RemoteInfo[];
   activeRemote: string;
@@ -22,6 +26,9 @@ interface RemoteState {
   pullRemote: (repoPath: string, remoteName: string, branchName: string) => Promise<PullResult>;
 }
 
+/**
+ * Zustand store managing configured Git remotes for the local repository.
+ */
 export const useRemoteStore = create<RemoteState>((set, get) => ({
   remotes: [],
   activeRemote: 'origin',
@@ -41,8 +48,8 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       if (remotes && remotes.length > 0 && !remotes.some((r) => r.name === currentActive)) {
         set({ activeRemote: remotes[0].name });
       }
-    } catch (err: any) {
-      console.warn('Failed to load remotes:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Git', `Failed to load remotes: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -55,9 +62,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await get().loadRemotes(repoPath);
       set({ activeRemote: name });
       useLogStore.getState().addLog('info', 'Git', `Added remote '${name}' (${url})`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to add remote: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to add remote: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }
@@ -69,9 +77,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await invoke('remove_remote_cmd', { repoPath, name });
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Git', `Removed remote '${name}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to remove remote: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to remove remote: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }
@@ -86,9 +95,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
         set({ activeRemote: newName });
       }
       useLogStore.getState().addLog('info', 'Git', `Renamed remote '${oldName}' to '${newName}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to rename remote: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to rename remote: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }
@@ -100,9 +110,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await invoke('set_remote_url_cmd', { repoPath, name, url, isPush });
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Git', `Updated ${isPush ? 'push ' : ''}URL for remote '${name}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to set remote URL: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to set remote URL: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }
@@ -115,9 +126,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await invoke('fetch_specific_remote_cmd', { repoPath, remoteName: target || '' });
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Git', `Fetched changes from remote '${target || 'all'}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to fetch remote: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to fetch remote: ${msg}`);
+      throw new Error(msg);
     } finally {
       useGitStore.getState().setIsFetching(false);
     }
@@ -129,9 +141,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await invoke('push_specific_remote_cmd', { repoPath, remoteName, branchName, force });
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Git', `Pushed branch '${branchName}' to remote '${remoteName}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to push: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to push: ${msg}`);
+      throw new Error(msg);
     } finally {
       useGitStore.getState().setIsPushing(false);
     }
@@ -144,9 +157,10 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Git', `Pulled ${result.commits_pulled} commit(s) from '${remoteName}/${branchName}'`);
       return result;
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to pull: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to pull: ${msg}`);
+      throw new Error(msg);
     } finally {
       useGitStore.getState().setIsPulling(false);
     }
