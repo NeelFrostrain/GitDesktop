@@ -61,11 +61,10 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           <button
             type="button"
             onClick={() => onChangeViewMode('unified')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${
-              diffViewMode === 'unified'
-                ? 'bg-base-2 text-text-primary shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
+            className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'unified'
+              ? 'bg-base-2 text-text-primary shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+              }`}
             title="Unified View"
           >
             <AlignJustify className="w-3.5 h-3.5" />
@@ -73,11 +72,10 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           <button
             type="button"
             onClick={() => onChangeViewMode('split')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${
-              diffViewMode === 'split'
-                ? 'bg-base-2 text-text-primary shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
+            className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'split'
+              ? 'bg-base-2 text-text-primary shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+              }`}
             title="Split (Side-by-Side) View"
           >
             <Columns className="w-3.5 h-3.5" />

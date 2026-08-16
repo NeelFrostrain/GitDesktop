@@ -35,39 +35,36 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           {commitTitle}
         </h2>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1 bg-base-1 border border-border rounded-md p-0.5">
+          <div className="flex items-center bg-base-0 border border-border rounded-md p-0.5">
             <button
+              type="button"
               onClick={() => onChangeViewMode('unified')}
-              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
-                diffViewMode === 'unified'
-                  ? 'bg-commito-coral text-white font-medium shadow-xs'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
+              className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'unified'
+                ? 'bg-base-2 text-text-primary shadow-xs'
+                : 'text-text-muted hover:text-text-primary'
+                }`}
               title="Unified View"
             >
-              <AlignJustify className="w-3 h-3" />
-              Unified
+              <AlignJustify className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => onChangeViewMode('split')}
-              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
-                diffViewMode === 'split'
-                  ? 'bg-commito-coral text-white font-medium shadow-xs'
-                  : 'text-text-muted hover:text-text-primary'
-              }`}
-              title="Split View"
+              className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'split'
+                ? 'bg-base-2 text-text-primary shadow-xs'
+                : 'text-text-muted hover:text-text-primary'
+                }`}
+              title="Split (Side-by-Side) View"
             >
-              <Columns className="w-3 h-3" />
-              Split
+              <Columns className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="flex items-center gap-1.5">
             {verification && verification.status === 'Verified' && (
               <span
-                title={`Cryptographically verified commit (Signed by ${
-                  typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
-                })`}
+                title={`Cryptographically verified commit (Signed by ${typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
+                  })`}
                 className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md font-medium"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
