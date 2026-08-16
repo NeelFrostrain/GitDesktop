@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { FileText } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';
@@ -8,23 +7,26 @@ interface ChangeFileListProps {
   filter: string;
 }
 
+/**
+ * Renders a visual git status badge character (+, -, R, M) corresponding to the modification state.
+ */
 const getStatusBadge = (statusStr?: string) => {
-  const s = (statusStr || '').toUpperCase();
-  if (s.includes('NEW') || s.includes('ADD') || s.includes('UNTRACKED')) {
+  const statusUpper = (statusStr || '').toUpperCase();
+  if (statusUpper.includes('NEW') || statusUpper.includes('ADD') || statusUpper.includes('UNTRACKED')) {
     return (
       <span className="w-4 h-4 rounded-xs bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
         +
       </span>
     );
   }
-  if (s.includes('DELETE') || s.includes('REMOVE')) {
+  if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
     return (
       <span className="w-4 h-4 rounded-xs bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
         -
       </span>
     );
   }
-  if (s.includes('RENAME')) {
+  if (statusUpper.includes('RENAME')) {
     return (
       <span className="w-4 h-4 rounded-xs bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
         R
@@ -38,6 +40,9 @@ const getStatusBadge = (statusStr?: string) => {
   );
 };
 
+/**
+ * List of modified, staged, and untracked files in the working directory with filter and context menu support.
+ */
 export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   const { status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } = useGitStore();
   const [fileContextMenu, setFileContextMenu] = useState<{
@@ -47,16 +52,16 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   } | null>(null);
 
   const allFiles = status?.files || [];
-  const uniqueFilesMap = new Map<string, typeof allFiles[0]>();
-  allFiles.forEach((f) => {
-    if (!uniqueFilesMap.has(f.path)) {
-      uniqueFilesMap.set(f.path, f);
+  const uniqueFilesMap = new Map<string, (typeof allFiles)[0]>();
+  allFiles.forEach((file) => {
+    if (!uniqueFilesMap.has(file.path)) {
+      uniqueFilesMap.set(file.path, file);
     }
   });
   const uniqueFiles = Array.from(uniqueFilesMap.values());
 
-  const filteredFiles = uniqueFiles.filter((f) =>
-    f.path.toLowerCase().includes(filter.toLowerCase())
+  const filteredFiles = uniqueFiles.filter((file) =>
+    file.path.toLowerCase().includes(filter.toLowerCase())
   );
 
   if (filteredFiles.length === 0) {
@@ -84,14 +89,14 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 setSelectedFile(file.path);
                 setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
               }}
-              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md text-xs cursor-pointer transition ${isSelected
-                ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
-                : 'hover:bg-base-2 text-text-secondary'
-                }`}
+              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md text-xs cursor-pointer transition ${
+                isSelected
+                  ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
+                  : 'hover:bg-base-2 text-text-secondary'
+              }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
               {getStatusBadge(file.status)}
-              {/* <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" /> */}
               <span className="truncate flex-1 font-mono text-[11px]">{file.path}</span>
             </div>
           );

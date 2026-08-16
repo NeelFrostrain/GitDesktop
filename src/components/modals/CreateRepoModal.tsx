@@ -5,8 +5,11 @@ import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { Checkbox } from '../common/Checkbox';
 import { Dropdown } from '../common/Dropdown';
+import { SystemService } from '../../services/system/systemService';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
-const gitignoreOptions = [
+const GITIGNORE_TEMPLATES = [
   { value: 'None', label: 'None' },
   { value: 'Node', label: 'Node (JavaScript / TypeScript)' },
   { value: 'Rust', label: 'Rust (Cargo)' },
@@ -18,13 +21,17 @@ const gitignoreOptions = [
   { value: 'UnrealEngine', label: 'Unreal Engine' },
 ];
 
-const licenseOptions = [
+const LICENSE_TEMPLATES = [
   { value: 'None', label: 'None' },
   { value: 'MIT', label: 'MIT License' },
   { value: 'Apache-2.0', label: 'Apache License 2.0' },
   { value: 'GPL-3.0', label: 'GNU General Public License v3.0' },
 ];
 
+/**
+ * Modal dialogue for initializing a brand new local Git repository with optional README,
+ * .gitignore preset, and Open Source license template.
+ */
 export const CreateRepoModal: React.FC = () => {
   const {
     isCreateRepoModalOpen,
@@ -46,12 +53,12 @@ export const CreateRepoModal: React.FC = () => {
 
   const handleSelectParentFolder = async () => {
     try {
-      const folder = await invoke<string | null>('select_folder_cmd');
+      const folder = await SystemService.selectFolder();
       if (folder) {
         setParentPath(folder);
       }
-    } catch (err: any) {
-      console.error('Failed to select folder:', err);
+    } catch {
+      // Silently ignore folder selection cancel
     }
   };
 
@@ -75,19 +82,19 @@ export const CreateRepoModal: React.FC = () => {
       useLogStore.getState().addLog('success', 'Git', `Created new local Git repository at '${createdPath}'`);
 
       setActiveRepoPath(createdPath);
-      const statusRes = await invoke<any>('get_repo_status', { repoPath: createdPath });
+      const statusRes = await GitService.getRepoStatus(createdPath);
       setStatus(statusRes);
 
       setIsCreateRepoModalOpen(false);
       setName('');
-    } catch (err: any) {
-      setError({ code: 'CREATE_REPO_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CREATE_REPO_ERROR'));
     } finally {
       setIsCreating(false);
     }
   };
 
-  const fullDestinationPath = parentPath 
+  const fullDestinationPath = parentPath
     ? `${parentPath.replace(/[/\\]+$/, '')}\\${name.trim() || 'repository-name'}`
     : name.trim() || 'repository-name';
 
@@ -188,7 +195,7 @@ export const CreateRepoModal: React.FC = () => {
                 Git ignore
               </label>
               <Dropdown
-                options={gitignoreOptions}
+                options={GITIGNORE_TEMPLATES}
                 value={gitignoreTemplate}
                 onChange={setGitignoreTemplate}
                 className="w-full"
@@ -201,7 +208,7 @@ export const CreateRepoModal: React.FC = () => {
                 License
               </label>
               <Dropdown
-                options={licenseOptions}
+                options={LICENSE_TEMPLATES}
                 value={licenseTemplate}
                 onChange={setLicenseTemplate}
                 className="w-full"
@@ -221,7 +228,7 @@ export const CreateRepoModal: React.FC = () => {
             <button
               type="submit"
               disabled={isCreating || !name.trim()}
-              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm cursor-pointer"
+              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isCreating ? 'Creating Repository...' : 'Create Repository'}</span>
@@ -231,5 +238,4 @@ export const CreateRepoModal: React.FC = () => {
       </div>
     </div>
   );
-
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
+import { GitService } from '../../../services/git/gitService';
 import { CommitFilters } from './CommitFilters';
 import { CommitList } from './CommitList';
 
@@ -26,7 +26,10 @@ const sampleCommits: CommitInfo[] = [
   },
 ];
 
-
+/**
+ * Sidebar panel displaying the repository commit log timeline with text search filtering
+ * and interactive drag-and-drop history rewriting.
+ */
 export const HistoryPanel: React.FC = () => {
   const [commitFilter, setCommitFilter] = useState('');
   const [commits, setCommits] = useState<CommitInfo[]>([]);
@@ -43,7 +46,7 @@ export const HistoryPanel: React.FC = () => {
       return;
     }
 
-    invoke<CommitInfo[]>('get_commit_history', { repoPath: activeRepoPath, limit: 50, offset: 0 })
+    GitService.getCommitHistory(activeRepoPath, 50, 0)
       .then((res) => {
         if (res && res.length > 0) {
           setCommits(res);
@@ -55,7 +58,7 @@ export const HistoryPanel: React.FC = () => {
       .catch(() => {
         setCommits(sampleCommits);
       });
-  }, [activeTab, activeRepoPath]);
+  }, [activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha]);
 
   const filteredCommits = commits.filter(
     (c) =>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { invoke } from '@tauri-apps/api/core';
 import {
   Search,
   FolderGit2,
@@ -17,19 +16,20 @@ import {
   Layers,
   UserCheck,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { RepoStatus } from '../../types/git';
 import { UnifiedRepo } from '../../types/gitlab';
+import { GitService } from '../../services/git/gitService';
+import { AccountService } from '../../services/accounts/accountService';
+import { SystemService } from '../../services/system/systemService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
 interface RepoDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   triggerRect: DOMRect | null;
 }
-
-// ─── Utility Helpers ─────────────────────────────────────────────────────────
 
 function getRepoName(path: string): string {
   return path.split(/[/\\]/).filter(Boolean).pop() || path;
@@ -42,16 +42,12 @@ function truncatePath(path: string, maxLen = 38): string {
   return `${parts[0]}/.../${parts[parts.length - 1]}`;
 }
 
-// ─── Sub-Components ───────────────────────────────────────────────────────────
-
 /** Section Label Header */
 function SectionHeader({ title, count, badge }: { title: string; count?: number; badge?: string }) {
   return (
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1 select-none">
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
-          {title}
-        </span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">{title}</span>
         {badge && (
           <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-base-3 text-text-secondary border border-border">
             {badge}
@@ -85,7 +81,7 @@ function ActiveRepoCard({
   return (
     <div
       onClick={onClick}
-      className="mx-2 my-1 p-2.5 rounded-md bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-sm"
+      className="mx-2 my-1 p-2.5 rounded-md bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-xs"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -208,8 +204,10 @@ function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => voi
   );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
+/**
+ * Fast repository switcher dropdown portal supporting active repository status preview,
+ * recent repositories list, cloud projects list, and quick creation/cloning shortcuts.
+ */
 export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, triggerRect }) => {
   const {
     activeRepoPath,
@@ -254,35 +252,22 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose]);
 
-  // Close Add sub-menu on click outside
-  useEffect(() => {
-    const handleAddMenuOutside = (e: MouseEvent) => {
-      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
-        setShowAddMenu(false);
-      }
-    };
-    if (showAddMenu) {
-      document.addEventListener('mousedown', handleAddMenuOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleAddMenuOutside);
-  }, [showAddMenu]);
-
   // Fetch remote projects when dropdown opens
   useEffect(() => {
     if (isOpen && user) {
       setIsLoadingRepos(true);
-      invoke<any>('fetch_user_repositories', { page: 1, provider: user.provider })
+      AccountService.fetchUserRepositories(1, 20)
         .then((res) => {
           if (res && res.items) {
             setUserRepos(res.items);
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          // Silently handle remote repo fetch errors
+        })
         .finally(() => setIsLoadingRepos(false));
     }
   }, [isOpen, user]);
-
-  // ── Filtering ───────────────────────────────────────────────────────────────
 
   const queryLower = filterQuery.trim().toLowerCase();
 
@@ -306,18 +291,16 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
 
   if (!isOpen || !triggerRect) return null;
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
-
   const handleSelectRepoPath = async (repoPath: string) => {
     try {
       setActiveRepoPath(repoPath);
       addRecentRepo(repoPath);
       useLogStore.getState().addLog('info', 'Repo', `Switched repository to '${repoPath}'`);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath });
+      const newStatus = await GitService.getRepoStatus(repoPath);
       setStatus(newStatus);
-    } catch (err: any) {
-      setError({ code: 'REPO_SWITCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'REPO_SWITCH_ERROR'));
     }
     onClose();
   };
@@ -325,12 +308,12 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
   const handleOpenLocalRepo = async () => {
     setShowAddMenu(false);
     try {
-      const selected = await invoke<string | null>('select_folder_cmd');
+      const selected = await SystemService.selectFolder();
       if (selected) {
         await handleSelectRepoPath(selected);
       }
-    } catch (err: any) {
-      setError({ code: 'SELECT_FOLDER_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'SELECT_FOLDER_ERROR'));
     }
   };
 
@@ -359,7 +342,6 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     setIsRepoModalOpen(true);
   };
 
-  // Positioning
   const menuWidth = Math.max(triggerRect.width, 360);
   const leftPos = Math.min(triggerRect.left, window.innerWidth - menuWidth - 12);
   const topPos = triggerRect.bottom + 6;
@@ -381,14 +363,13 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
           <span className="font-extrabold text-xs text-text-primary tracking-wide">Switch Repository</span>
         </div>
 
-        {/* Compact Add Toggle Button */}
         <button
           type="button"
           onClick={() => setShowAddMenu(!showAddMenu)}
           className={`px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 transition shadow-xs cursor-pointer ${
             showAddMenu
               ? 'bg-base-2 text-text-primary border border-border'
-              : 'bg-commito-coral hover:bg-commito-coralHover text-white'
+              : 'bg-commito-coral hover:bg-commito-coralLight text-white'
           }`}
           title="Add or create repository"
         >
@@ -397,7 +378,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
         </button>
       </div>
 
-      {/* Expanded Inline Add Actions (Collision Free) */}
+      {/* Expanded Inline Add Actions */}
       {showAddMenu && (
         <div className="p-1.5 border-b border-border bg-base-2/80 grid grid-cols-3 gap-1 flex-shrink-0 animate-in slide-in-from-top-1 duration-150">
           <button
@@ -455,7 +436,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
 
       {/* 3. Dedicated Scrollable Repository Content */}
       <div className="flex-1 overflow-y-auto py-1 space-y-2 min-h-0">
-        {/* CURRENT REPOSITORY SECTION (Shown if active & no search query or matches query) */}
+        {/* CURRENT REPOSITORY SECTION */}
         {activeRepoPath && (!filterQuery || getRepoName(activeRepoPath).toLowerCase().includes(queryLower)) && (
           <div>
             <SectionHeader title="Current Repository" />

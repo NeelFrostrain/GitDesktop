@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { ChevronRight, ChevronDown, Folder, FileText, RefreshCw, MousePointer, Copy } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
+import { GitService } from '../../services/git/gitService';
 
 interface FileNode {
   name: string;
@@ -11,6 +12,22 @@ interface FileNode {
   children?: FileNode[];
 }
 
+const SAMPLE_TREE: FileNode[] = [
+  { name: '.diversion', path: '.diversion', is_dir: true },
+  { name: 'Config', path: 'Config', is_dir: true },
+  { name: 'Content', path: 'Content', is_dir: true },
+  { name: 'DerivedDataCache', path: 'DerivedDataCache', is_dir: true },
+  { name: 'Intermediate', path: 'Intermediate', is_dir: true },
+  { name: 'Saved', path: 'Saved', is_dir: true },
+  { name: '.dvignore', path: '.dvignore', is_dir: false, size: '2.5 KB' },
+  { name: '.loreignore', path: '.loreignore', is_dir: false, size: '335 B' },
+  { name: 'NicolasN_BunnyMP.uproject', path: 'NicolasN_BunnyMP.uproject', is_dir: false, size: '625 B' },
+  { name: 'README.md', path: 'README.md', is_dir: false, size: '26 B' },
+];
+
+/**
+ * File tree explorer for inspecting the working copy file directory and text previews.
+ */
 export const FileBrowser: React.FC = () => {
   const { activeRepoPath, selectedFile, setSelectedFile } = useGitStore();
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
@@ -21,43 +38,29 @@ export const FileBrowser: React.FC = () => {
   });
   const [fileContent, setFileContent] = useState<string | null>(null);
 
-  // Mock / Sample working copy directory tree if no active repo or default view
-  const sampleTree: FileNode[] = [
-    { name: '.diversion', path: '.diversion', is_dir: true },
-    { name: 'Config', path: 'Config', is_dir: true },
-    { name: 'Content', path: 'Content', is_dir: true },
-    { name: 'DerivedDataCache', path: 'DerivedDataCache', is_dir: true },
-    { name: 'Intermediate', path: 'Intermediate', is_dir: true },
-    { name: 'Saved', path: 'Saved', is_dir: true },
-    { name: '.dvignore', path: '.dvignore', is_dir: false, size: '2.5 KB' },
-    { name: '.loreignore', path: '.loreignore', is_dir: false, size: '335 B' },
-    { name: 'NicolasN_BunnyMP.uproject', path: 'NicolasN_BunnyMP.uproject', is_dir: false, size: '625 B' },
-    { name: 'README.md', path: 'README.md', is_dir: false, size: '26 B' },
-  ];
-
   useEffect(() => {
     if (!activeRepoPath) {
-      setFileTree(sampleTree);
+      setFileTree(SAMPLE_TREE);
       return;
     }
 
     // Fetch file list from git repo
-    invoke<any[]>('get_repo_files_cmd', { repoPath: activeRepoPath })
+    invoke<Record<string, unknown>[]>('get_repo_files_cmd', { repoPath: activeRepoPath })
       .then((files) => {
         if (files && files.length > 0) {
-          const nodes: FileNode[] = files.map((f: any) => ({
-            name: f.name || f.path.split('/').pop(),
-            path: f.path,
-            is_dir: f.is_dir || false,
-            size: f.size || (f.is_dir ? undefined : '1.2 KB'),
+          const nodes: FileNode[] = files.map((f) => ({
+            name: (f.name as string) || (f.path as string).split('/').pop() || '',
+            path: f.path as string,
+            is_dir: Boolean(f.is_dir),
+            size: (f.size as string) || (f.is_dir ? undefined : '1.2 KB'),
           }));
           setFileTree(nodes);
         } else {
-          setFileTree(sampleTree);
+          setFileTree(SAMPLE_TREE);
         }
       })
       .catch(() => {
-        setFileTree(sampleTree);
+        setFileTree(SAMPLE_TREE);
       });
   }, [activeRepoPath]);
 
@@ -70,9 +73,8 @@ export const FileBrowser: React.FC = () => {
       toggleFolder(file.path);
     } else {
       setSelectedFile(file.path);
-      // Fetch file content preview
       if (activeRepoPath) {
-        invoke<string>('read_file_content_cmd', { repoPath: activeRepoPath, filePath: file.path })
+        GitService.getFileContent(activeRepoPath, file.path)
           .then((text) => setFileContent(text))
           .catch(() => setFileContent('// Binary or unreadable preview file'));
       }
@@ -91,8 +93,8 @@ export const FileBrowser: React.FC = () => {
             <span className="text-text-secondary font-medium">current branch</span>
           </div>
           <button
-            onClick={() => { }}
-            className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition"
+            onClick={() => {}}
+            className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
             title="Refresh working copy"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -109,10 +111,11 @@ export const FileBrowser: React.FC = () => {
               <div
                 key={node.path}
                 onClick={() => handleSelectFile(node)}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer transition ${isSelected
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer transition ${
+                  isSelected
                     ? 'bg-commito-activeBg text-commito-activeText font-semibold'
                     : 'text-text-primary hover:bg-base-2'
-                  }`}
+                }`}
               >
                 <div className="flex items-center gap-2 truncate min-w-0">
                   {node.is_dir ? (
@@ -122,7 +125,7 @@ export const FileBrowser: React.FC = () => {
                           e.stopPropagation();
                           toggleFolder(node.path);
                         }}
-                        className="text-text-muted hover:text-text-primary p-0.5"
+                        className="text-text-muted hover:text-text-primary p-0.5 cursor-pointer"
                       >
                         {isExpanded ? (
                           <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
@@ -162,7 +165,7 @@ export const FileBrowser: React.FC = () => {
               </span>
               <button
                 onClick={() => navigator.clipboard.writeText(selectedFile)}
-                className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-3 rounded transition"
+                className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-3 rounded transition cursor-pointer"
                 title="Copy Path"
               >
                 <Copy className="w-3.5 h-3.5" />

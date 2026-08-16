@@ -1,0 +1,386 @@
+import { invoke } from '@tauri-apps/api/core';
+import {
+  RepoStatus,
+  DiffResult,
+  BranchInfo,
+  CommitInfo,
+  CommitDetails,
+  PullResult,
+  LfsFile,
+  LfsLock,
+  WorktreeInfo,
+  StashEntry,
+  TagInfo,
+  BlameLine,
+  ReflogEntry,
+  SubmoduleInfo,
+  GitConfigItem,
+} from '../../types/git';
+
+/**
+ * Options for committing staged changes.
+ */
+export interface CommitExecutionParams {
+  repoPath: string;
+  summary: string;
+  description?: string | null;
+  noVerify?: boolean;
+  signOff?: boolean;
+  allowEmpty?: boolean;
+}
+
+/**
+ * Git user identity stored in repository local or global configuration.
+ */
+export interface GitUserIdentity {
+  name?: string;
+  email?: string;
+}
+
+/**
+ * Typed client service for all Tauri backend Git commands.
+ */
+export class GitService {
+  /**
+   * Retrieves the current repository status (branches, clean/dirty state, modified/staged files).
+   */
+  static async getRepoStatus(repoPath: string): Promise<RepoStatus> {
+    return invoke<RepoStatus>('get_repo_status', { repoPath });
+  }
+
+  /**
+   * Retrieves line-by-line diff for a specific file in the working tree.
+   */
+  static async getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<DiffResult> {
+    return invoke<DiffResult>('get_file_diff', { repoPath, filePath, staged });
+  }
+
+  /**
+   * Retrieves line-by-line diff for a file in a historical commit.
+   */
+  static async getCommitFileDiff(repoPath: string, sha: string, filePath: string): Promise<DiffResult> {
+    return invoke<DiffResult>('get_commit_file_diff', { repoPath, sha, filePath });
+  }
+
+  /**
+   * Retrieves text contents for a repository file.
+   */
+  static async getFileContent(repoPath: string, filePath: string): Promise<string> {
+    return invoke<string>('read_file_content_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Stages specified files. If files array is empty, all modified files are staged.
+   */
+  static async stageFiles(repoPath: string, files: string[]): Promise<void> {
+    return invoke('stage_files', { repoPath, files });
+  }
+
+  /**
+   * Unstages specified files from index.
+   */
+  static async unstageFiles(repoPath: string, files: string[]): Promise<void> {
+    return invoke('unstage_files', { repoPath, files });
+  }
+
+  /**
+   * Commits staged changes to the repository.
+   */
+  static async commit(params: CommitExecutionParams): Promise<void> {
+    return invoke('commit_changes', {
+      repoPath: params.repoPath,
+      summary: params.summary,
+      description: params.description || null,
+      noVerify: params.noVerify ?? false,
+      signOff: params.signOff ?? false,
+      allowEmpty: params.allowEmpty ?? false,
+    });
+  }
+
+  /**
+   * Fetches remote branches and updates references from origin.
+   */
+  static async fetchRemote(repoPath: string): Promise<void> {
+    return invoke('fetch_remote', { repoPath });
+  }
+
+  /**
+   * Pushes the given local branch to its upstream remote.
+   */
+  static async pushToRemote(repoPath: string, branch: string): Promise<void> {
+    return invoke('push_to_remote', { repoPath, branch });
+  }
+
+  /**
+   * Pushes branch to origin with upstream configuration.
+   */
+  static async pushBranch(repoPath: string, branch: string, setUpstream = true): Promise<void> {
+    return invoke('push_branch', { repoPath, branch, setUpstream });
+  }
+
+  /**
+   * Pulls latest changes from remote for the current branch.
+   */
+  static async pullFromRemote(repoPath: string, branch: string): Promise<PullResult> {
+    return invoke<PullResult>('pull_from_remote', { repoPath, branch });
+  }
+
+  /**
+   * Fetches paginated commit log history.
+   */
+  static async getCommitHistory(repoPath: string, limit = 50, offset = 0): Promise<CommitInfo[]> {
+    return invoke<CommitInfo[]>('get_commit_history', { repoPath, limit, offset });
+  }
+
+  /**
+   * Fetches full commit details including affected file stats and parents.
+   */
+  static async getCommitDetails(repoPath: string, sha: string): Promise<CommitDetails> {
+    return invoke<CommitDetails>('get_commit_details', { repoPath, sha });
+  }
+
+  /**
+   * Lists all local and remote branches for the repository.
+   */
+  static async listBranches(repoPath: string): Promise<BranchInfo[]> {
+    return invoke<BranchInfo[]>('list_branches', { repoPath });
+  }
+
+  /**
+   * Checks out an existing branch.
+   */
+  static async checkoutBranch(repoPath: string, branch: string): Promise<void> {
+    return invoke('checkout_branch', { repoPath, branch });
+  }
+
+  /**
+   * Creates and checks out a new branch.
+   */
+  static async createBranch(repoPath: string, branch: string, startPoint?: string): Promise<void> {
+    return invoke('create_branch', { repoPath, branch, startPoint: startPoint || null });
+  }
+
+  /**
+   * Renames an existing branch.
+   */
+  static async renameBranch(repoPath: string, oldName: string, newName: string): Promise<void> {
+    return invoke('rename_branch', { repoPath, oldName, newName });
+  }
+
+  /**
+   * Deletes a local branch.
+   */
+  static async deleteBranch(repoPath: string, branch: string, force = false): Promise<void> {
+    return invoke('delete_branch', { repoPath, branch, force });
+  }
+
+  /**
+   * Discards uncommitted changes for a file in working directory.
+   */
+  static async discardFileChanges(repoPath: string, filePath: string): Promise<void> {
+    return invoke('discard_file_changes_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Reads the configured Git identity for a repository.
+   */
+  static async getUserIdentity(repoPath: string): Promise<GitUserIdentity | null> {
+    try {
+      return await invoke<GitUserIdentity>('get_git_user_identity_cmd', { repoPath });
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Sets a Git configuration key in the repository's local config.
+   */
+  static async setRepoConfig(repoPath: string, key: string, value: string): Promise<void> {
+    return invoke('set_repo_git_config_cmd', { repoPath, key, value });
+  }
+
+  /**
+   * Retrieves all Git configuration settings for the repository.
+   */
+  static async getRepoConfig(repoPath: string): Promise<GitConfigItem[]> {
+    return invoke<GitConfigItem[]>('get_repo_git_config_cmd', { repoPath });
+  }
+
+  /**
+   * Returns blame data line by line for a file.
+   */
+  static async getFileBlame(repoPath: string, filePath: string): Promise<BlameLine[]> {
+    return invoke<BlameLine[]>('get_file_blame_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Lists all reflog entries for HEAD.
+   */
+  static async listReflog(repoPath: string, limit = 100): Promise<ReflogEntry[]> {
+    return invoke<ReflogEntry[]>('list_reflog_cmd', { repoPath, limit });
+  }
+
+  // ── Stashes ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Lists all stashes.
+   */
+  static async listStashes(repoPath: string): Promise<StashEntry[]> {
+    return invoke<StashEntry[]>('list_stashes_cmd', { repoPath });
+  }
+
+  /**
+   * Creates a new stash entry.
+   */
+  static async createStash(repoPath: string, message?: string, includeUntracked = true): Promise<void> {
+    return invoke('create_stash_cmd', { repoPath, message: message || null, includeUntracked });
+  }
+
+  /**
+   * Applies a stash entry without removing it.
+   */
+  static async applyStash(repoPath: string, index: number): Promise<void> {
+    return invoke('apply_stash_cmd', { repoPath, index });
+  }
+
+  /**
+   * Applies and drops a stash entry.
+   */
+  static async popStash(repoPath: string, index: number): Promise<void> {
+    return invoke('pop_stash_cmd', { repoPath, index });
+  }
+
+  /**
+   * Drops a stash entry.
+   */
+  static async dropStash(repoPath: string, index: number): Promise<void> {
+    return invoke('drop_stash_cmd', { repoPath, index });
+  }
+
+  /**
+   * Retrieves diff representation of a stash entry.
+   */
+  static async getStashDiff(repoPath: string, index: number): Promise<string> {
+    return invoke<string>('get_stash_diff_cmd', { repoPath, index });
+  }
+
+  // ── Tags ─────────────────────────────────────────────────────────────────────
+
+  /**
+   * Lists all tags.
+   */
+  static async listTags(repoPath: string): Promise<TagInfo[]> {
+    return invoke<TagInfo[]>('list_tags_cmd', { repoPath });
+  }
+
+  /**
+   * Creates a tag.
+   */
+  static async createTag(repoPath: string, name: string, message?: string, targetSha?: string | null): Promise<void> {
+    return invoke('create_tag_cmd', { repoPath, name, message: message || null, targetSha: targetSha || null });
+  }
+
+  /**
+   * Deletes a tag.
+   */
+  static async deleteTag(repoPath: string, name: string): Promise<void> {
+    return invoke('delete_tag_cmd', { repoPath, name });
+  }
+
+  /**
+   * Pushes all local tags to remote origin.
+   */
+  static async pushTags(repoPath: string): Promise<void> {
+    return invoke('push_tags_cmd', { repoPath });
+  }
+
+  // ── Submodules ───────────────────────────────────────────────────────────────
+
+  /**
+   * Lists submodules configured in the repository.
+   */
+  static async listSubmodules(repoPath: string): Promise<SubmoduleInfo[]> {
+    return invoke<SubmoduleInfo[]>('list_submodules_cmd', { repoPath });
+  }
+
+  /**
+   * Initializes registered submodules.
+   */
+  static async initSubmodules(repoPath: string): Promise<void> {
+    return invoke('init_submodules_cmd', { repoPath });
+  }
+
+  /**
+   * Recursively updates submodules.
+   */
+  static async updateSubmodules(repoPath: string): Promise<void> {
+    return invoke('update_submodules_cmd', { repoPath });
+  }
+
+  /**
+   * Synchronizes submodule remote URLs with .gitmodules.
+   */
+  static async syncSubmodules(repoPath: string): Promise<void> {
+    return invoke('sync_submodules_cmd', { repoPath });
+  }
+
+  // ── Git LFS ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Checks if Git LFS CLI binary is installed.
+   */
+  static async checkLfsInstalled(): Promise<boolean> {
+    return invoke<boolean>('check_lfs_installed');
+  }
+
+  /**
+   * Lists Git LFS tracked files.
+   */
+  static async listLfsFiles(repoPath: string): Promise<LfsFile[]> {
+    return invoke<LfsFile[]>('list_lfs_files', { repoPath });
+  }
+
+  /**
+   * Tracks a pattern with Git LFS.
+   */
+  static async trackLfsPattern(repoPath: string, pattern: string): Promise<void> {
+    return invoke('track_lfs_pattern', { repoPath, pattern });
+  }
+
+  /**
+   * Untracks a pattern from Git LFS.
+   */
+  static async untrackLfsPattern(repoPath: string, pattern: string): Promise<void> {
+    return invoke('untrack_lfs_pattern', { repoPath, pattern });
+  }
+
+  /**
+   * Lists active Git LFS locks.
+   */
+  static async listLfsLocks(repoPath: string): Promise<LfsLock[]> {
+    return invoke<LfsLock[]>('list_lfs_locks', { repoPath });
+  }
+
+  /**
+   * Locks an LFS file path.
+   */
+  static async lockLfsFile(repoPath: string, path: string): Promise<void> {
+    return invoke('lock_lfs_file', { repoPath, path });
+  }
+
+  /**
+   * Unlocks an LFS file path.
+   */
+  static async unlockLfsFile(repoPath: string, path: string, force = false): Promise<void> {
+    return invoke('unlock_lfs_file', { repoPath, path, force });
+  }
+
+  // ── Worktrees ────────────────────────────────────────────────────────────────
+
+  /**
+   * Lists active worktrees.
+   */
+  static async listWorktrees(repoPath: string): Promise<WorktreeInfo[]> {
+    return invoke<WorktreeInfo[]>('list_worktrees', { repoPath });
+  }
+}

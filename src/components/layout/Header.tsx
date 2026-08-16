@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { 
+import {
   GitPullRequest,
   AlertCircle,
   X,
@@ -13,7 +13,6 @@ import {
   ShieldCheck,
   Terminal,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useAccountServicesStore } from '../../features/account-services';
 import { useRemoteStore } from '../../store/remoteStore';
@@ -24,6 +23,10 @@ import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { useRepositorySync } from '../../hooks/useRepositorySync';
 
+/**
+ * Top application header bar displaying quick tool shortcuts (Rebase, Cherry-pick, Reflog, Patch,
+ * Terminal, Settings), active sync status button, remote selector, and branch switcher.
+ */
 export const Header: React.FC = () => {
   const {
     activeRepoPath,
@@ -46,7 +49,6 @@ export const Header: React.FC = () => {
 
   const { setIsSigningSettingsOpen, config, loadConfig } = useSigningStore();
   const isTerminalOpen = useTerminalStore((s) => s.isOpen);
-
   const { refreshSync, isFetching } = useRepositorySync();
 
   useEffect(() => {
@@ -160,7 +162,10 @@ export const Header: React.FC = () => {
       {/* Right: Sync, Push, Branch & PR Action Group */}
       <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !error.message?.includes('Not authenticated') && (
-          <div className="flex items-center gap-1 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded-md max-w-xs truncate" title={error.message}>
+          <div
+            className="flex items-center gap-1 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded-md max-w-xs truncate"
+            title={error.message}
+          >
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
             <button onClick={() => setError(null)} className="ml-1 text-red-400 hover:text-white cursor-pointer">

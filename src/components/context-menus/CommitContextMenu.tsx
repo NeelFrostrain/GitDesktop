@@ -2,20 +2,21 @@ import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import { 
-  Edit3, 
-  RotateCcw, 
-  GitCommit, 
-  Undo2, 
-  GitBranch, 
-  Tag, 
-  Copy, 
-  ExternalLink 
+import {
+  Edit3,
+  RotateCcw,
+  GitCommit,
+  Undo2,
+  GitBranch,
+  Tag,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { CommitInfo, RepoStatus } from '../../types/git';
+import { CommitInfo } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
 interface CommitContextMenuProps {
   commit: CommitInfo;
@@ -24,6 +25,10 @@ interface CommitContextMenuProps {
   onClose: () => void;
 }
 
+/**
+ * Context menu for historical commit entries offering undo/soft-reset, amend,
+ * checkout, revert, branching, tagging, cherry-picking, and remote web inspection.
+ */
 export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   commit,
   x,
@@ -37,8 +42,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     setCommitSummary,
     setActiveTab,
     setIsCherryPickModalOpen,
-    user
-
+    user,
   } = useGitStore();
 
   const menuRef = useRef<HTMLDivElement>(null);
@@ -60,11 +64,15 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       const undoneMsg = await invoke<string>('undo_commit_cmd', { repoPath: activeRepoPath });
       setCommitSummary(undoneMsg || commit.message);
       setActiveTab('changes');
-      useLogStore.getState().addLog('success', 'Git', `Undone commit '${undoneMsg || commit.message}' — changes preserved in working directory`);
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      useLogStore.getState().addLog(
+        'success',
+        'Git',
+        `Undone commit '${undoneMsg || commit.message}' — changes preserved in working directory`
+      );
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-    } catch (err: any) {
-      setError({ code: 'UNDO_COMMIT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'UNDO_COMMIT_ERROR'));
     }
     onClose();
   };
@@ -90,10 +98,10 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         });
 
         useLogStore.getState().addLog('success', 'Git', `Reset branch HEAD to commit ${commit.short_sha}`);
-        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
-      } catch (err: any) {
-        setError({ code: 'RESET_ERROR', message: err.message || String(err) });
+      } catch (error: unknown) {
+        setError(toAppError(error, 'RESET_ERROR'));
       }
     }
     onClose();
@@ -104,22 +112,17 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     if (!activeRepoPath) return;
 
     try {
-      await invoke('checkout_branch', {
-        repoPath: activeRepoPath,
-        branch: commit.sha,
-      });
-
+      await GitService.checkoutBranch(activeRepoPath, commit.sha);
       useLogStore.getState().addLog('info', 'Git', `Checked out commit ${commit.short_sha} (Detached HEAD)`);
-      const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     }
     onClose();
   };
 
   // 4. Revert changes in commit
-
   const handleRevertCommit = async () => {
     if (!activeRepoPath) return;
 
@@ -131,38 +134,36 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         });
 
         useLogStore.getState().addLog('success', 'Git', `Reverted commit ${commit.short_sha}`);
-        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
-      } catch (err: any) {
-        setError({ code: 'REVERT_ERROR', message: err.message || String(err) });
+      } catch (error: unknown) {
+        setError(toAppError(error, 'REVERT_ERROR'));
       }
     }
     onClose();
   };
 
-  // 6. Create branch from commit
+  // 5. Create branch from commit
   const handleCreateBranchFromCommit = async () => {
     if (!activeRepoPath) return;
 
     const branchName = prompt(`Enter new branch name to create from commit ${commit.short_sha}:`);
     if (branchName && branchName.trim()) {
       try {
-        await invoke('create_branch', {
-          repoPath: activeRepoPath,
-          branch: branchName.trim(),
-        });
-
-        useLogStore.getState().addLog('success', 'Git', `Created branch '${branchName.trim()}' from commit ${commit.short_sha}`);
-        const res = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        await GitService.createBranch(activeRepoPath, branchName.trim(), commit.sha);
+        useLogStore
+          .getState()
+          .addLog('success', 'Git', `Created branch '${branchName.trim()}' from commit ${commit.short_sha}`);
+        const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
-      } catch (err: any) {
-        setError({ code: 'BRANCH_CREATE_ERROR', message: err.message || String(err) });
+      } catch (error: unknown) {
+        setError(toAppError(error, 'BRANCH_CREATE_ERROR'));
       }
     }
     onClose();
   };
 
-  // 7. Create Tag...
+  // 6. Create Tag...
   const handleCreateTag = async () => {
     if (!activeRepoPath) return;
 
@@ -177,41 +178,42 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         });
 
         useLogStore.getState().addLog('success', 'Git', `Created tag '${tagName.trim()}' at commit ${commit.short_sha}`);
-      } catch (err: any) {
-        setError({ code: 'TAG_ERROR', message: err.message || String(err) });
+      } catch (error: unknown) {
+        setError(toAppError(error, 'TAG_ERROR'));
       }
     }
     onClose();
   };
 
-  // 8. Cherry-pick commit...
+  // 7. Cherry-pick commit...
   const handleCherryPickCommit = () => {
     setIsCherryPickModalOpen(true);
     onClose();
   };
 
-  // 9. Copy SHA
+  // 8. Copy SHA
   const handleCopySha = () => {
     navigator.clipboard.writeText(commit.sha);
     useLogStore.getState().addLog('info', 'System', `Copied commit SHA '${commit.sha}' to clipboard`);
     onClose();
   };
 
-  // 10. Copy tag / message
+  // 9. Copy message
   const handleCopyTag = () => {
     navigator.clipboard.writeText(commit.message);
     useLogStore.getState().addLog('info', 'System', `Copied commit message to clipboard`);
     onClose();
   };
 
-  // 11. View on GitHub / GitLab
+  // 10. View on GitHub / GitLab
   const handleViewOnRemote = async () => {
     if (!activeRepoPath) return;
     const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'repo';
     const provider = user?.provider === 'github' ? 'github.com' : 'gitlab.com';
-    const commitUrl = user?.provider === 'github'
-      ? `https://${provider}/${repoName}/commit/${commit.sha}`
-      : `https://${provider}/${repoName}/-/commit/${commit.sha}`;
+    const commitUrl =
+      user?.provider === 'github'
+        ? `https://${provider}/${repoName}/commit/${commit.sha}`
+        : `https://${provider}/${repoName}/-/commit/${commit.sha}`;
 
     try {
       await openUrl(commitUrl);
@@ -221,7 +223,6 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
     onClose();
   };
 
-  // Prevent menu overflow off-screen
   const adjustedX = Math.min(x, window.innerWidth - 250);
   const adjustedY = Math.min(y, window.innerHeight - 390);
 
@@ -231,12 +232,11 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
       className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-md shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
-
       {/* Group 1: Commit Modifications */}
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleUndoCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left font-bold"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left font-bold cursor-pointer"
         >
           <Undo2 className="w-3.5 h-3.5 text-commito-coral" />
           <span>Undo commit (Soft Reset)</span>
@@ -244,7 +244,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleAmendCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5 text-commito-coral" />
           <span>Amend commit...</span>
@@ -252,7 +252,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleRevertCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 text-red-400" />
           <span>Revert commit</span>
@@ -265,7 +265,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCheckoutCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
           <span>Checkout commit</span>
@@ -273,7 +273,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleResetToCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
           <span>Reset HEAD to commit...</span>
@@ -281,7 +281,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCreateBranchFromCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
           <span>Create branch from commit</span>
@@ -289,7 +289,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCreateTag}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Tag className="w-3.5 h-3.5 text-amber-400" />
           <span>Create Tag...</span>
@@ -297,7 +297,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCherryPickCommit}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
           <span>Cherry-pick commit...</span>
@@ -310,7 +310,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       <div className="p-1 space-y-0.5">
         <button
           onClick={handleCopySha}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy SHA</span>
@@ -318,7 +318,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleCopyTag}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <Copy className="w-3.5 h-3.5 text-text-muted" />
           <span>Copy commit message</span>
@@ -326,15 +326,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
         <button
           onClick={handleViewOnRemote}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
           <ExternalLink className="w-3.5 h-3.5 text-github-dark-accent" />
           <span>Open in remote</span>
         </button>
       </div>
-
     </div>,
     document.body
   );
 };
-

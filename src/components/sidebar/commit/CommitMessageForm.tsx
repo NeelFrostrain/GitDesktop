@@ -49,7 +49,7 @@ export const CommitMessageForm: React.FC<CommitMessageFormProps> = ({
       <div className="bg-base-0 border border-border rounded-md focus-within:border-commito-coral/50 transition flex flex-col overflow-hidden">
         <textarea
           placeholder="Description"
-          rows={5}
+          rows={4}
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           className="w-full px-2.5 py-1.5 bg-transparent text-xs text-text-primary placeholder-text-muted focus:outline-none resize-y min-h-[48px] max-h-[160px] font-sans"

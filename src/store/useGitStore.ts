@@ -1,12 +1,11 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
 import { UnifiedUser, SavedAccount } from '../types/gitlab';
-import { 
-  RepoStatus, 
-  AppError, 
-  BranchInfo, 
-  LfsFile, 
-  LfsLock, 
+import {
+  RepoStatus,
+  AppError,
+  BranchInfo,
+  LfsFile,
+  LfsLock,
   WorktreeInfo,
   StashEntry,
   TagInfo,
@@ -14,10 +13,13 @@ import {
   SubmoduleInfo,
   HistoryOperation,
 } from '../types/git';
-
-
+import { GitService } from '../services/git/gitService';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
 
+/**
+ * Top-level application navigation views.
+ */
 export type NavView =
   | 'home'
   | 'workspace'
@@ -33,7 +35,7 @@ export type NavView =
 const getCachedUser = (): UnifiedUser | null => {
   try {
     const cached = localStorage.getItem('cached_user');
-    return cached ? JSON.parse(cached) : null;
+    return cached ? (JSON.parse(cached) as UnifiedUser) : null;
   } catch {
     return null;
   }
@@ -50,7 +52,7 @@ const getCachedActiveRepoPath = (): string | null => {
 const getCachedRecentRepos = (): string[] => {
   try {
     const cached = localStorage.getItem('recent_repos');
-    return cached ? JSON.parse(cached) : [];
+    return cached ? (JSON.parse(cached) as string[]) : [];
   } catch {
     return [];
   }
@@ -59,21 +61,26 @@ const getCachedRecentRepos = (): string[] => {
 const getCachedAliases = (): Record<string, string> => {
   try {
     const cached = localStorage.getItem('repo_aliases');
-    return cached ? JSON.parse(cached) : {};
+    return cached ? (JSON.parse(cached) as Record<string, string>) : {};
   } catch {
     return {};
   }
 };
 
+/**
+ * Flags controlling commit creation behavior.
+ */
 export interface CommitOptions {
   bypassHooks: boolean;
   signOff: boolean;
   allowEmpty: boolean;
 }
 
+/**
+ * Main application state interface for Git workspace and navigation.
+ */
 export interface GitState {
   activeRepoPath: string | null;
-
   recentRepos: string[];
   repoAliases: Record<string, string>;
   user: UnifiedUser | null;
@@ -98,11 +105,10 @@ export interface GitState {
   diffViewMode: 'unified' | 'split';
   currentNavView: NavView;
 
-  // Modals
+  // Modal dialog visibility states
   isRepoModalOpen: boolean;
   isCreateRepoModalOpen: boolean;
   isMergeRequestModalOpen: boolean;
-
   isWorktreeModalOpen: boolean;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
@@ -118,13 +124,14 @@ export interface GitState {
 
   activeModalTab: 'accounts' | 'login' | 'repos';
 
-
+  // Remote network action states
   isFetching: boolean;
   isPushing: boolean;
   isPulling: boolean;
   lastFetchedTimestamp: number | null;
   error: AppError | null;
 
+  // Action methods
   setActiveRepoPath: (path: string | null) => void;
   addRecentRepo: (path: string) => void;
   removeRecentRepo: (path: string) => void;
@@ -143,8 +150,8 @@ export interface GitState {
   setBlameFile: (file: string | null) => void;
   setBlameLines: (lines: BlameLine[]) => void;
   setSelectedFile: (file: string | null) => void;
-  toggleStageFile: (file: string) => void;
-  setAllStaged: (staged: boolean) => void;
+  toggleStageFile: (file: string) => Promise<void>;
+  setAllStaged: (staged: boolean) => Promise<void>;
   setSelectedCommitSha: (sha: string | null) => void;
   setCommitSummary: (summary: string) => void;
   setCommitDescription: (desc: string) => void;
@@ -152,14 +159,12 @@ export interface GitState {
   setCommitOptions: (opts: Partial<CommitOptions>) => void;
   resetCommitOptions: () => void;
   setActiveTab: (tab: 'changes' | 'history') => void;
-
   setDiffViewMode: (mode: 'unified' | 'split') => void;
   setCurrentNavView: (view: NavView) => void;
 
   setIsRepoModalOpen: (open: boolean) => void;
   setIsCreateRepoModalOpen: (open: boolean) => void;
   setIsMergeRequestModalOpen: (open: boolean) => void;
-
   setIsWorktreeModalOpen: (open: boolean) => void;
   setIsRebaseModalOpen: (open: boolean) => void;
   setIsCherryPickModalOpen: (open: boolean) => void;
@@ -172,17 +177,18 @@ export interface GitState {
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
   setIsUserConfigModalOpen: (open: boolean) => void;
   setPendingCommitData: (data: { summary: string; description?: string } | null) => void;
-
   setActiveModalTab: (tab: 'accounts' | 'login' | 'repos') => void;
-
 
   setIsFetching: (fetching: boolean) => void;
   setIsPushing: (pushing: boolean) => void;
-  setIsPulling: (pushing: boolean) => void;
+  setIsPulling: (pulling: boolean) => void;
   setLastFetchedTimestamp: (time: number | null) => void;
   setError: (error: AppError | null) => void;
 }
 
+/**
+ * Primary Zustand store managing repository state, modals, active user, and navigation.
+ */
 export const useGitStore = create<GitState>((set, get) => ({
   activeRepoPath: getCachedActiveRepoPath(),
   recentRepos: getCachedRecentRepos(),
@@ -211,14 +217,12 @@ export const useGitStore = create<GitState>((set, get) => ({
     allowEmpty: false,
   },
   activeTab: 'changes',
-
   diffViewMode: 'unified',
   currentNavView: 'home',
 
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
   isMergeRequestModalOpen: false,
-
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
@@ -232,8 +236,6 @@ export const useGitStore = create<GitState>((set, get) => ({
   isUserConfigModalOpen: false,
   pendingCommitData: null,
 
-
-
   activeModalTab: 'accounts',
   isFetching: false,
   isPushing: false,
@@ -245,22 +247,26 @@ export const useGitStore = create<GitState>((set, get) => ({
     if (path) {
       try {
         localStorage.setItem('active_repo_path', path);
-      } catch {}
+      } catch {
+        // Ignore localStorage quota errors
+      }
       get().addRecentRepo(path);
       useLogStore.getState().addLog('info', 'Repo', `Opened repository at '${path}'`);
     } else {
       try {
         localStorage.removeItem('active_repo_path');
-      } catch {}
-      useLogStore.getState().addLog('info', 'Repo', `Closed active repository`);
+      } catch {
+        // Ignore localStorage errors
+      }
+      useLogStore.getState().addLog('info', 'Repo', 'Closed active repository');
     }
 
-    set({ 
+    set({
       activeRepoPath: path,
       selectedFile: null,
       selectedCommitSha: null,
       stagedFiles: [],
-      currentNavView: path ? 'workspace' : 'home'
+      currentNavView: path ? 'workspace' : 'home',
     });
   },
 
@@ -271,7 +277,9 @@ export const useGitStore = create<GitState>((set, get) => ({
     const updated = [normalized, ...recentRepos.filter((r) => r.replace(/\\/g, '/') !== normalized)].slice(0, 20);
     try {
       localStorage.setItem('recent_repos', JSON.stringify(updated));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
     set({ recentRepos: updated });
   },
 
@@ -281,7 +289,9 @@ export const useGitStore = create<GitState>((set, get) => ({
     const updated = recentRepos.filter((r) => r.replace(/\\/g, '/') !== normalized);
     try {
       localStorage.setItem('recent_repos', JSON.stringify(updated));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
     useLogStore.getState().addLog('info', 'Repo', `Removed repository '${normalized}' from recent list`);
 
     const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === normalized;
@@ -298,7 +308,9 @@ export const useGitStore = create<GitState>((set, get) => ({
     const updated = { ...repoAliases, [normalized]: alias.trim() };
     try {
       localStorage.setItem('repo_aliases', JSON.stringify(updated));
-    } catch {}
+    } catch {
+      // Ignore localStorage errors
+    }
     set({ repoAliases: updated });
   },
 
@@ -306,21 +318,28 @@ export const useGitStore = create<GitState>((set, get) => ({
     if (user) {
       try {
         localStorage.setItem('cached_user', JSON.stringify(user));
-      } catch {}
+      } catch {
+        // Ignore localStorage errors
+      }
       useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name}) [${user.provider}]`);
     } else {
       try {
         localStorage.removeItem('cached_user');
-      } catch {}
-      useLogStore.getState().addLog('info', 'Auth', `User session logged out`);
+      } catch {
+        // Ignore localStorage errors
+      }
+      useLogStore.getState().addLog('info', 'Auth', 'User session logged out');
     }
     set((state) => ({ user, error: user ? null : state.error }));
   },
+
   setAccounts: (accounts) => set({ accounts }),
+
   setStatus: (status) => {
-    const currentStaged = status ? status.files.filter(f => f.staged).map(f => f.path) : [];
+    const currentStaged = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
     set({ status, stagedFiles: currentStaged });
   },
+
   setBranches: (branches) => set({ branches }),
   setLfsFiles: (lfsFiles) => set({ lfsFiles }),
   setLfsLocks: (lfsLocks) => set({ lfsLocks }),
@@ -331,25 +350,27 @@ export const useGitStore = create<GitState>((set, get) => ({
   setSubmodules: (submodules) => set({ submodules }),
   setBlameFile: (blameFile) => set({ blameFile }),
   setBlameLines: (blameLines) => set({ blameLines }),
+
   setSelectedFile: (file) => {
     if (file) {
       useLogStore.getState().addLog('info', 'Git', `Selected file '${file}' for diff inspection`);
     }
     set({ selectedFile: file });
   },
+
   toggleStageFile: async (file) => {
     const { activeRepoPath, stagedFiles, setStatus } = get();
     const isStaged = stagedFiles.includes(file);
     if (isStaged) {
       useLogStore.getState().addLog('info', 'Git', `Unstaged file '${file}'`);
-      set({ stagedFiles: stagedFiles.filter(f => f !== file) });
+      set({ stagedFiles: stagedFiles.filter((f) => f !== file) });
       if (activeRepoPath) {
         try {
-          await invoke('unstage_files', { repoPath: activeRepoPath, files: [file] });
-          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          await GitService.unstageFiles(activeRepoPath, [file]);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
-        } catch (e: any) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to unstage file '${file}': ${e?.message || e}`);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage file '${file}': ${getErrorMessage(error)}`);
         }
       }
     } else {
@@ -357,66 +378,72 @@ export const useGitStore = create<GitState>((set, get) => ({
       set({ stagedFiles: [...stagedFiles, file] });
       if (activeRepoPath) {
         try {
-          await invoke('stage_files', { repoPath: activeRepoPath, files: [file] });
-          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          await GitService.stageFiles(activeRepoPath, [file]);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
-        } catch (e: any) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to stage file '${file}': ${e?.message || e}`);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage file '${file}': ${getErrorMessage(error)}`);
         }
       }
     }
   },
+
   setAllStaged: async (staged) => {
     const { activeRepoPath, status, setStatus } = get();
     if (!status) return;
+
     if (staged) {
       useLogStore.getState().addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
-      set({ stagedFiles: status.files.map(f => f.path) });
+      set({ stagedFiles: status.files.map((f) => f.path) });
       if (activeRepoPath) {
         try {
-          await invoke('stage_files', { repoPath: activeRepoPath, files: [] });
-          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          await GitService.stageFiles(activeRepoPath, []);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
-        } catch (e: any) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to stage all files: ${e?.message || e}`);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage all files: ${getErrorMessage(error)}`);
         }
       }
     } else {
-      useLogStore.getState().addLog('info', 'Git', `Unstaged all files`);
-      const allPaths = status.files.map(f => f.path);
+      useLogStore.getState().addLog('info', 'Git', 'Unstaged all files');
+      const allPaths = status.files.map((f) => f.path);
       set({ stagedFiles: [] });
       if (activeRepoPath) {
         try {
-          await invoke('unstage_files', { repoPath: activeRepoPath, files: allPaths });
-          const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+          await GitService.unstageFiles(activeRepoPath, allPaths);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
-        } catch (e: any) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to unstage all files: ${e?.message || e}`);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage all files: ${getErrorMessage(error)}`);
         }
       }
     }
   },
+
   setSelectedCommitSha: (sha) => {
     if (sha) {
       useLogStore.getState().addLog('info', 'Git', `Inspecting details for commit ${sha.slice(0, 8)}`);
     }
     set({ selectedCommitSha: sha });
   },
+
   setCommitSummary: (commitSummary) => set({ commitSummary }),
   setCommitDescription: (commitDescription) => set({ commitDescription }),
   setCommitOptions: (opts) =>
     set((state) => ({ commitOptions: { ...state.commitOptions, ...opts } })),
   resetCommitOptions: () =>
     set({ commitOptions: { bypassHooks: false, signOff: false, allowEmpty: false } }),
-  setActiveTab: (activeTab) => {
 
+  setActiveTab: (activeTab) => {
     useLogStore.getState().addLog('info', 'System', `Switched workspace tab to '${activeTab}'`);
     set({ activeTab });
   },
+
   setDiffViewMode: (diffViewMode) => {
     useLogStore.getState().addLog('info', 'System', `Changed diff layout view to '${diffViewMode}' mode`);
     set({ diffViewMode });
   },
+
   setCurrentNavView: (currentNavView) => {
     useLogStore.getState().addLog('info', 'System', `Navigated to view '${currentNavView}'`);
     set({ currentNavView });
@@ -425,7 +452,6 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
   setIsCreateRepoModalOpen: (isCreateRepoModalOpen) => set({ isCreateRepoModalOpen }),
   setIsMergeRequestModalOpen: (isMergeRequestModalOpen) => set({ isMergeRequestModalOpen }),
-
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),
@@ -438,10 +464,8 @@ export const useGitStore = create<GitState>((set, get) => ({
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
   setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),
   setPendingCommitData: (pendingCommitData) => set({ pendingCommitData }),
-
-
-
   setActiveModalTab: (activeModalTab) => set({ activeModalTab }),
+
   setIsFetching: (isFetching) => set({ isFetching }),
   setIsPushing: (isPushing) => set({ isPushing }),
   setIsPulling: (isPulling) => set({ isPulling }),

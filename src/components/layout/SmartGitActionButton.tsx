@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Upload,
   Download,
@@ -10,8 +10,6 @@ import {
 } from 'lucide-react';
 import { useRepositorySync, GitSyncStatus } from '../../hooks/useRepositorySync';
 
-// ─── Button config per state ──────────────────────────────────────────────────
-
 interface ButtonConfig {
   icon: React.ReactNode;
   label: string;
@@ -20,6 +18,10 @@ interface ButtonConfig {
   disabled: boolean;
 }
 
+/**
+ * Computes button presentation properties (icon, label, tooltip, styling)
+ * based on current ahead/behind synchronization status.
+ */
 function getButtonConfig(
   syncStatus: GitSyncStatus,
   ahead: number,
@@ -30,13 +32,13 @@ function getButtonConfig(
   hasRepo: boolean,
   isPushing: boolean,
   isPulling: boolean,
-  isFetching: boolean,
+  isFetching: boolean
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const busyCls =
     'px-2.5 py-1 rounded-md bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none';
   const primaryCls =
-    'px-2.5 py-1 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-md bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
   const secondaryCls =
     'px-2.5 py-1 rounded-md bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
   const mutedCls =
@@ -55,7 +57,13 @@ function getButtonConfig(
   }
 
   if (isBusy) {
-    const opLabel = isPushing ? 'Pushing...' : isPulling ? 'Pulling...' : isFetching ? 'Fetching...' : 'Working...';
+    const opLabel = isPushing
+      ? 'Pushing...'
+      : isPulling
+      ? 'Pulling...'
+      : isFetching
+      ? 'Fetching...'
+      : 'Working...';
     return {
       icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
       label: opLabel,
@@ -128,8 +136,9 @@ function getButtonConfig(
   }
 }
 
-// ─── Dirty working tree warning ───────────────────────────────────────────────
-
+/**
+ * Warning badge displayed when local working tree has uncommitted modifications.
+ */
 function DirtyWarningBanner() {
   return (
     <span
@@ -141,8 +150,9 @@ function DirtyWarningBanner() {
   );
 }
 
-// ─── Indeterminate progress bar ───────────────────────────────────────────────
-
+/**
+ * Animated bottom sweep progress line during active network operations.
+ */
 function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: boolean }) {
   const barColor = isPushing
     ? 'bg-commito-coral'
@@ -160,8 +170,10 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
   );
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
+/**
+ * Smart reactive action button adapting automatically to the repository's sync state
+ * (Push, Pull, Sync, Publish, or Up-to-date).
+ */
 export const SmartGitActionButton: React.FC = () => {
   const {
     syncInfo,
@@ -176,9 +188,16 @@ export const SmartGitActionButton: React.FC = () => {
   const { syncStatus, ahead, behind, branch, isClean } = syncInfo;
 
   const config = getButtonConfig(
-    syncStatus, ahead, behind, branch,
-    isBusy, isClean, hasRepo,
-    isPushing, isPulling, isFetching,
+    syncStatus,
+    ahead,
+    behind,
+    branch,
+    isBusy,
+    isClean,
+    hasRepo,
+    isPushing,
+    isPulling,
+    isFetching
   );
 
   const showDirtyWarning =
@@ -193,7 +212,6 @@ export const SmartGitActionButton: React.FC = () => {
     <div className="flex items-center gap-1.5">
       {showDirtyWarning && <DirtyWarningBanner />}
 
-      {/* Relative wrapper so progress bar can overlay the bottom edge */}
       <div className="relative">
         <button
           type="button"

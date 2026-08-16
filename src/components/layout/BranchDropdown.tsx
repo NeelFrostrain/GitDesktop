@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { invoke } from '@tauri-apps/api/core';
 import {
   GitBranch,
   Search,
@@ -13,9 +12,15 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { BranchInfo, RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { BranchInfo } from '../../types/git';
+import { toAppError } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
 
+/**
+ * Dropdown component displaying current branch, local/remote branch search lists,
+ * inline branch creation, and dirty working tree safe-checkout confirmation.
+ */
 export const BranchDropdown: React.FC = () => {
   const { activeRepoPath, status, setStatus, branches, setBranches, setError } = useGitStore();
 
@@ -24,12 +29,12 @@ export const BranchDropdown: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
-  // New Branch Inline Modal
+  // New branch modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newBranchName, setNewBranchName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
-  // Checkout Dialog state
+  // Pending target branch for safe checkout with uncommitted changes
   const [pendingTargetBranch, setPendingTargetBranch] = useState<string | null>(null);
 
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -43,10 +48,10 @@ export const BranchDropdown: React.FC = () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
-      const res = await invoke<BranchInfo[]>('list_branches', { repoPath: activeRepoPath });
+      const res = await GitService.listBranches(activeRepoPath);
       setBranches(res || []);
-    } catch (err: any) {
-      // Ignore background branch fetch errors
+    } catch {
+      // Silently ignore background branch fetch errors
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +64,7 @@ export const BranchDropdown: React.FC = () => {
     }
   }, [isOpen, activeRepoPath]);
 
-  // Handle click outside to close dropdown
+  // Handle click outside to dismiss dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -85,12 +90,10 @@ export const BranchDropdown: React.FC = () => {
     setIsOpen(!isOpen);
   };
 
-  // Branch Selection Logic
   const handleSelectBranch = (branchName: string) => {
     setIsOpen(false);
     if (branchName === currentBranch) return;
 
-    // Check if there are uncommitted changes
     if (uncommittedFilesCount > 0) {
       setPendingTargetBranch(branchName);
     } else {
@@ -101,14 +104,14 @@ export const BranchDropdown: React.FC = () => {
   const executeDirectCheckout = async (branchName: string) => {
     if (!activeRepoPath) return;
     try {
-      await invoke('checkout_branch', { repoPath: activeRepoPath, branch: branchName });
+      await GitService.checkoutBranch(activeRepoPath, branchName);
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     }
   };
 
@@ -118,34 +121,34 @@ export const BranchDropdown: React.FC = () => {
     setIsCreating(true);
 
     try {
-      await invoke('create_branch', { repoPath: activeRepoPath, branch: newBranchName.trim() });
+      await GitService.createBranch(activeRepoPath, newBranchName.trim());
       useLogStore.getState().addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
       setNewBranchName('');
       setShowCreateModal(false);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
-    } catch (err: any) {
-      setError({ code: 'CREATE_BRANCH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Filtering
+  // Branch Filtering
   const queryLower = filterQuery.trim().toLowerCase();
 
   const localBranches = useMemo(() => {
     return branches
-      .filter((b) => !b.is_remote)
-      .filter((b) => b.name.toLowerCase().includes(queryLower));
+      .filter((b: BranchInfo) => !b.is_remote)
+      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
   }, [branches, queryLower]);
 
   const remoteBranches = useMemo(() => {
     return branches
-      .filter((b) => b.is_remote)
-      .filter((b) => b.name.toLowerCase().includes(queryLower));
+      .filter((b: BranchInfo) => b.is_remote)
+      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
   }, [branches, queryLower]);
 
   const menuWidth = 320;
@@ -170,144 +173,146 @@ export const BranchDropdown: React.FC = () => {
       </button>
 
       {/* Dropdown Menu Portal */}
-      {isOpen && triggerRect && createPortal(
-        <div
-          ref={menuRef}
-          style={{
-            left: `${leftPos}px`,
-            top: `${topPos}px`,
-            width: `${menuWidth}px`,
-          }}
-          className="fixed z-[9999] bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
-        >
-          {/* Header Bar */}
-          <div className="px-3 py-2 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
-            <div className="flex items-center gap-1.5">
-              <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
-              <span className="font-extrabold text-xs text-text-primary">Switch Branch</span>
-              {isLoading && <Loader2 className="w-3 h-3 text-commito-coral animate-spin ml-1" />}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="px-2 py-0.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
-              title="Create new branch"
-            >
-              <Plus className="w-3 h-3" />
-              <span>New</span>
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="p-2 border-b border-border bg-base-0/50 flex-shrink-0">
-            <div className="relative flex items-center">
-              <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Filter branches..."
-                value={filterQuery}
-                onChange={(e) => setFilterQuery(e.target.value)}
-                className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
-              />
-              {filterQuery && (
-                <button
-                  type="button"
-                  onClick={() => setFilterQuery('')}
-                  className="absolute right-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Scrollable Branch List */}
-          <div className="flex-1 overflow-y-auto py-1 space-y-2 min-h-0">
-            {/* Local Branches Section */}
-            <div>
-              <div className="px-3 pt-1.5 pb-1 select-none flex items-center justify-between">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
-                  LOCAL BRANCHES
-                </span>
-                <span className="text-[10px] font-mono text-text-muted bg-base-2 px-1.5 py-0.2 rounded border border-border">
-                  {localBranches.length}
-                </span>
+      {isOpen &&
+        triggerRect &&
+        createPortal(
+          <div
+            ref={menuRef}
+            style={{
+              left: `${leftPos}px`,
+              top: `${topPos}px`,
+              width: `${menuWidth}px`,
+            }}
+            className="fixed z-[9999] bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+          >
+            {/* Header Bar */}
+            <div className="px-3 py-2 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
+              <div className="flex items-center gap-1.5">
+                <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
+                <span className="font-extrabold text-xs text-text-primary">Switch Branch</span>
+                {isLoading && <Loader2 className="w-3 h-3 text-commito-coral animate-spin ml-1" />}
               </div>
 
-              {localBranches.length === 0 ? (
-                <div className="px-3 py-2 text-text-muted text-[11px] italic">
-                  {filterQuery ? 'No local branches match search.' : 'No local branches.'}
-                </div>
-              ) : (
-                <div className="space-y-0.5">
-                  {localBranches.map((b) => {
-                    const isCurrent = b.name === currentBranch;
-                    return (
-                      <div
-                        key={b.name}
-                        onClick={() => handleSelectBranch(b.name)}
-                        className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-md cursor-pointer transition ${
-                          isCurrent
-                            ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
-                            : 'hover:bg-base-2 text-text-primary'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <GitBranch
-                            className={`w-3.5 h-3.5 flex-shrink-0 ${
-                              isCurrent ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
-                            }`}
-                          />
-                          <span className="truncate text-xs font-mono">{b.name}</span>
-                        </div>
-
-                        {isCurrent && (
-                          <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30">
-                              CURRENT
-                            </span>
-                            <Check className="w-3.5 h-3.5 text-commito-coral" />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="px-2 py-0.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                title="Create new branch"
+              >
+                <Plus className="w-3 h-3" />
+                <span>New</span>
+              </button>
             </div>
 
-            {/* Remote Branches Section */}
-            {remoteBranches.length > 0 && (
-              <div className="pt-1 border-t border-border/40">
+            {/* Search Bar */}
+            <div className="p-2 border-b border-border bg-base-0/50 flex-shrink-0">
+              <div className="relative flex items-center">
+                <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Filter branches..."
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                />
+                {filterQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterQuery('')}
+                    className="absolute right-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Scrollable Branch List */}
+            <div className="flex-1 overflow-y-auto py-1 space-y-2 min-h-0">
+              {/* Local Branches Section */}
+              <div>
                 <div className="px-3 pt-1.5 pb-1 select-none flex items-center justify-between">
                   <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
-                    REMOTE BRANCHES
+                    LOCAL BRANCHES
                   </span>
                   <span className="text-[10px] font-mono text-text-muted bg-base-2 px-1.5 py-0.2 rounded border border-border">
-                    {remoteBranches.length}
+                    {localBranches.length}
                   </span>
                 </div>
 
-                <div className="space-y-0.5">
-                  {remoteBranches.map((b) => (
-                    <div
-                      key={b.name}
-                      onClick={() => handleSelectBranch(b.name)}
-                      className="group flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md hover:bg-base-2 text-text-primary cursor-pointer transition"
-                    >
-                      <Globe className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
-                      <span className="truncate text-xs font-mono">{b.name}</span>
-                    </div>
-                  ))}
-                </div>
+                {localBranches.length === 0 ? (
+                  <div className="px-3 py-2 text-text-muted text-[11px] italic">
+                    {filterQuery ? 'No local branches match search.' : 'No local branches.'}
+                  </div>
+                ) : (
+                  <div className="space-y-0.5">
+                    {localBranches.map((branchItem: BranchInfo) => {
+                      const isCurrent = branchItem.name === currentBranch;
+                      return (
+                        <div
+                          key={branchItem.name}
+                          onClick={() => handleSelectBranch(branchItem.name)}
+                          className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-md cursor-pointer transition ${
+                            isCurrent
+                              ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
+                              : 'hover:bg-base-2 text-text-primary'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <GitBranch
+                              className={`w-3.5 h-3.5 flex-shrink-0 ${
+                                isCurrent ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
+                              }`}
+                            />
+                            <span className="truncate text-xs font-mono">{branchItem.name}</span>
+                          </div>
+
+                          {isCurrent && (
+                            <div className="flex items-center gap-1.5 flex-shrink-0">
+                              <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30">
+                                CURRENT
+                              </span>
+                              <Check className="w-3.5 h-3.5 text-commito-coral" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </div>,
-        document.body
-      )}
+
+              {/* Remote Branches Section */}
+              {remoteBranches.length > 0 && (
+                <div className="pt-1 border-t border-border/40">
+                  <div className="px-3 pt-1.5 pb-1 select-none flex items-center justify-between">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
+                      REMOTE BRANCHES
+                    </span>
+                    <span className="text-[10px] font-mono text-text-muted bg-base-2 px-1.5 py-0.2 rounded border border-border">
+                      {remoteBranches.length}
+                    </span>
+                  </div>
+
+                  <div className="space-y-0.5">
+                    {remoteBranches.map((remoteBranchItem: BranchInfo) => (
+                      <div
+                        key={remoteBranchItem.name}
+                        onClick={() => handleSelectBranch(remoteBranchItem.name)}
+                        className="group flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md hover:bg-base-2 text-text-primary cursor-pointer transition"
+                      >
+                        <Globe className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
+                        <span className="truncate text-xs font-mono">{remoteBranchItem.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* Create New Branch Modal */}
       {showCreateModal && (
@@ -332,9 +337,7 @@ export const BranchDropdown: React.FC = () => {
 
             <div className="p-4 space-y-3">
               <div>
-                <label className="text-[11px] font-semibold text-text-muted block mb-1">
-                  Branch Name
-                </label>
+                <label className="text-[11px] font-semibold text-text-muted block mb-1">Branch Name</label>
                 <input
                   type="text"
                   autoFocus
@@ -357,7 +360,7 @@ export const BranchDropdown: React.FC = () => {
               <button
                 type="submit"
                 disabled={!newBranchName.trim() || isCreating}
-                className="px-3 py-1 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                className="px-3 py-1 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
               >
                 {isCreating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Create & Checkout</span>

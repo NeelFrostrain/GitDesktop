@@ -1,3 +1,6 @@
+/**
+ * Stored repository registry item.
+ */
 export interface RepoEntry {
   id: string;
   path: string;
@@ -6,6 +9,9 @@ export interface RepoEntry {
   pinned: boolean;
 }
 
+/**
+ * Summary status displayed for a repository on the Home Dashboard.
+ */
 export interface RepoDashboardStatus {
   current_branch: string;
   ahead: number;
@@ -18,6 +24,9 @@ export interface RepoDashboardStatus {
   remote_provider?: 'gitlab' | 'github' | 'other' | null;
 }
 
+/**
+ * Local or remote Git commit activity event payload.
+ */
 export interface CommitActivity {
   type: 'Commit';
   sha: string;
@@ -27,6 +36,9 @@ export interface CommitActivity {
   author_email: string;
 }
 
+/**
+ * Remote branch push activity event payload.
+ */
 export interface PushActivity {
   type: 'Push';
   remote: string;
@@ -34,6 +46,9 @@ export interface PushActivity {
   commit_count: number;
 }
 
+/**
+ * Merge request / Pull request lifecycle activity event.
+ */
 export interface MergeRequestActivity {
   type: 'MergeRequest';
   title: string;
@@ -44,6 +59,9 @@ export interface MergeRequestActivity {
   target_branch: string;
 }
 
+/**
+ * CI/CD pipeline run activity event.
+ */
 export interface PipelineActivity {
   type: 'Pipeline';
   status: 'success' | 'failed' | 'running' | 'canceled' | string;
@@ -51,13 +69,20 @@ export interface PipelineActivity {
   url: string;
 }
 
+/**
+ * Union of all activity event payload kinds.
+ */
 export type ActivityKind = CommitActivity | PushActivity | MergeRequestActivity | PipelineActivity;
 
+/**
+ * Unified activity feed entry displaying timestamped events across repositories.
+ */
 export interface ActivityEvent {
   id: string;
   kind: ActivityKind;
   repo_path: string;
   repo_name: string;
-  at: number; // Unix timestamp
+  /** Unix timestamp in milliseconds or seconds */
+  at: number;
   relative_date: string;
 }

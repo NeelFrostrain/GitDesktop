@@ -1,9 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
-import { GitCommitService } from '../services/git/GitCommitService';
+import { GitService } from '../services/git/gitService';
+import { toAppError } from '../shared/utils/errorUtils';
 
+/**
+ * Hook providing form state, identity checks, and execution dispatch for creating Git commits.
+ */
 export function useCommitForm() {
   const {
     activeRepoPath,
@@ -47,8 +50,8 @@ export function useCommitForm() {
   const handleCommit = async () => {
     if (!activeRepoPath || !commitSummary.trim()) return;
 
-    // Check Git user identity first
-    const identity = await GitCommitService.getIdentity(activeRepoPath);
+    // Verify Git author identity is configured before committing
+    const identity = await GitService.getUserIdentity(activeRepoPath);
     if (!identity?.name || !identity?.email || !identity.name.trim() || !identity.email.trim()) {
       setPendingCommitData({
         summary: commitSummary,
@@ -62,9 +65,9 @@ export function useCommitForm() {
 
     try {
       if (stagedFiles.length > 0) {
-        await invoke('stage_files', { repoPath: activeRepoPath, files: stagedFiles });
+        await GitService.stageFiles(activeRepoPath, stagedFiles);
       }
-      await GitCommitService.commit({
+      await GitService.commit({
         repoPath: activeRepoPath,
         summary: commitSummary,
         description: commitDescription,
@@ -77,10 +80,10 @@ export function useCommitForm() {
       setCommitDescription('');
       useLogStore.getState().addLog('success', 'Git', `Committed: ${commitSummary}`);
 
-      const newStatus = await GitCommitService.getStatus(activeRepoPath);
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
-    } catch (err: any) {
-      setError({ code: err.code || 'GIT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'GIT_ERROR'));
     } finally {
       setIsCommitting(false);
     }

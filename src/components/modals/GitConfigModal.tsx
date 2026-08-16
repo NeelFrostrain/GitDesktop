@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  Settings, 
-  FileCode, 
-  Save, 
-  Wrench, 
-  Plus 
+import {
+  X,
+  Settings,
+  FileCode,
+  Save,
+  Wrench,
+  Plus,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitConfigItem } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
 const GITIGNORE_TEMPLATES: Record<string, string> = {
   'Node.js / React': `# Node / JS / React
@@ -54,12 +55,15 @@ Logs/
 `,
 };
 
+/**
+ * Modal dialogue for editing repository .gitignore rules and inspecting/setting local Git configuration keys.
+ */
 export const GitConfigModal: React.FC = () => {
   const {
     activeRepoPath,
     isConfigModalOpen,
     setIsConfigModalOpen,
-    setError
+    setError,
   } = useGitStore();
 
   const [activeTab, setActiveTab] = useState<'gitignore' | 'config'>('gitignore');
@@ -78,7 +82,7 @@ export const GitConfigModal: React.FC = () => {
       .catch(() => setGitignoreContent(''));
 
     // Load repo git config
-    invoke<GitConfigItem[]>('get_repo_git_config_cmd', { repoPath: activeRepoPath })
+    GitService.getRepoConfig(activeRepoPath)
       .then((items) => setConfigItems(items || []))
       .catch(() => setConfigItems([]));
   }, [isConfigModalOpen, activeRepoPath]);
@@ -96,8 +100,8 @@ export const GitConfigModal: React.FC = () => {
 
       useLogStore.getState().addLog('success', 'Git', 'Updated repository .gitignore file');
       setIsConfigModalOpen(false);
-    } catch (err: any) {
-      setError({ code: 'CONFIG_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CONFIG_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -112,20 +116,15 @@ export const GitConfigModal: React.FC = () => {
     if (!activeRepoPath || !key.trim()) return;
 
     try {
-      await invoke('set_repo_git_config_cmd', {
-        repoPath: activeRepoPath,
-        key: key.trim(),
-        value: val.trim(),
-      });
-
+      await GitService.setRepoConfig(activeRepoPath, key.trim(), val.trim());
       useLogStore.getState().addLog('info', 'Git', `Set repo config ${key} = ${val}`);
-      
-      const items = await invoke<GitConfigItem[]>('get_repo_git_config_cmd', { repoPath: activeRepoPath });
+
+      const items = await GitService.getRepoConfig(activeRepoPath);
       setConfigItems(items || []);
       setNewKey('');
       setNewValue('');
-    } catch (err: any) {
-      setError({ code: 'CONFIG_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CONFIG_ERROR'));
     }
   };
 
@@ -151,7 +150,7 @@ export const GitConfigModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsConfigModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -161,9 +160,9 @@ export const GitConfigModal: React.FC = () => {
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
             onClick={() => setActiveTab('gitignore')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'gitignore'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -173,9 +172,9 @@ export const GitConfigModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('config')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition ${
+            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'config'
-                ? 'bg-commito-coral text-white shadow-sm'
+                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
             }`}
           >
@@ -196,7 +195,7 @@ export const GitConfigModal: React.FC = () => {
                     key={name}
                     type="button"
                     onClick={() => handleAddTemplate(name)}
-                    className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-[11px] font-semibold text-text-secondary transition"
+                    className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-[11px] font-semibold text-text-secondary transition cursor-pointer"
                   >
                     + {name}
                   </button>
@@ -217,14 +216,14 @@ export const GitConfigModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsConfigModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition shadow-sm flex items-center gap-1.5"
+                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   <Save className="w-3.5 h-3.5" />
                   <span>Save .gitignore</span>
@@ -257,7 +256,7 @@ export const GitConfigModal: React.FC = () => {
                   <button
                     onClick={() => handleSaveConfigItem(newKey, newValue)}
                     disabled={!newKey.trim()}
-                    className="px-3.5 py-1.5 bg-commito-coral text-white rounded-md text-xs font-bold transition shadow-sm"
+                    className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                   >
                     Save
                   </button>

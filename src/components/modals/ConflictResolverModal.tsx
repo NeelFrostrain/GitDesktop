@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  AlertTriangle, 
-  CheckCircle2, 
-  FileText, 
-  Check, 
-  ArrowRight
+import {
+  X,
+  AlertTriangle,
+  CheckCircle2,
+  FileText,
+  Check,
+  ArrowRight,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
 interface ConflictFile {
   path: string;
@@ -18,6 +19,9 @@ interface ConflictFile {
   resolved: boolean;
 }
 
+/**
+ * Modal dialogue for guiding 3-way merge and rebase conflict resolution across colliding files.
+ */
 export const ConflictResolverModal: React.FC = () => {
   const {
     activeRepoPath,
@@ -25,13 +29,12 @@ export const ConflictResolverModal: React.FC = () => {
     setIsConflictResolverModalOpen,
     status,
     setStatus,
-    setError
+    setError,
   } = useGitStore();
 
   const [conflictFiles, setConflictFiles] = useState<ConflictFile[]>([]);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
 
   useEffect(() => {
     if (!isConflictResolverModalOpen || !status) return;
@@ -44,30 +47,28 @@ export const ConflictResolverModal: React.FC = () => {
     if (conflicted.length > 0 && !selectedFilePath) {
       setSelectedFilePath(conflicted[0].path);
     }
-  }, [isConflictResolverModalOpen, status]);
-
-
+  }, [isConflictResolverModalOpen, status, selectedFilePath]);
 
   const handleResolveFile = async (filePath: string) => {
     if (!activeRepoPath) return;
 
     setIsSubmitting(true);
     try {
-      await invoke('stage_files', { repoPath: activeRepoPath, files: [filePath] });
+      await GitService.stageFiles(activeRepoPath, [filePath]);
       useLogStore.getState().addLog('success', 'Git', `Marked file '${filePath}' as resolved`);
 
       setConflictFiles((prev) =>
         prev.map((f) => (f.path === filePath ? { ...f, resolved: true } : f))
       );
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
 
       if (!newStatus.has_conflicts) {
         setIsConflictResolverModalOpen(false);
       }
-    } catch (err: any) {
-      setError({ code: 'CONFLICT_RESOLVE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CONFLICT_RESOLVE_ERROR'));
     } finally {
       setIsSubmitting(false);
     }
@@ -86,10 +87,10 @@ export const ConflictResolverModal: React.FC = () => {
       }
 
       setIsConflictResolverModalOpen(false);
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
-    } catch (err: any) {
-      setError({ code: 'CONTINUE_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CONTINUE_ERROR'));
     }
   };
 
@@ -106,10 +107,10 @@ export const ConflictResolverModal: React.FC = () => {
       }
 
       setIsConflictResolverModalOpen(false);
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
-    } catch (err: any) {
-      setError({ code: 'ABORT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'ABORT_ERROR'));
     }
   };
 
@@ -135,7 +136,7 @@ export const ConflictResolverModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsConflictResolverModalOpen(false)}
-            className="p-1.5 text-amber-300/80 hover:text-white rounded-md hover:bg-amber-900/60 transition"
+            className="p-1.5 text-amber-300/80 hover:text-white rounded-md hover:bg-amber-900/60 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -190,7 +191,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <button
                     onClick={() => handleResolveFile(selectedFilePath)}
                     disabled={isSubmitting}
-                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+                    className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Mark Resolved</span>
@@ -201,7 +202,7 @@ export const ConflictResolverModal: React.FC = () => {
                 <div className="grid grid-cols-3 gap-3">
                   <button
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-commito-coral rounded-md text-left space-y-1 transition group"
+                    className="p-3 bg-base-2 border border-border hover:border-commito-coral rounded-md text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-commito-coral group-hover:underline">
                       Accept Current (Ours)
@@ -213,7 +214,7 @@ export const ConflictResolverModal: React.FC = () => {
 
                   <button
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-emerald-400 rounded-md text-left space-y-1 transition group"
+                    className="p-3 bg-base-2 border border-border hover:border-emerald-400 rounded-md text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-emerald-400 group-hover:underline">
                       Accept Incoming (Theirs)
@@ -225,7 +226,7 @@ export const ConflictResolverModal: React.FC = () => {
 
                   <button
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-github-dark-accent rounded-md text-left space-y-1 transition group"
+                    className="p-3 bg-base-2 border border-border hover:border-github-dark-accent rounded-md text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-github-dark-accent group-hover:underline">
                       Accept Both Changes
@@ -267,7 +268,7 @@ export const ConflictResolverModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleAbortOperation('rebase')}
-              className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/60 rounded-md text-xs font-semibold transition"
+              className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-400 border border-red-800/60 rounded-md text-xs font-semibold transition cursor-pointer"
             >
               Abort Operation
             </button>
@@ -276,13 +277,13 @@ export const ConflictResolverModal: React.FC = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsConflictResolverModalOpen(false)}
-              className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Close
             </button>
             <button
               onClick={() => handleContinueOperation('rebase')}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <span>Continue Operation</span>
               <ArrowRight className="w-3.5 h-3.5" />

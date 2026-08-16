@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  Archive, 
-  Plus, 
-  Trash2, 
-  RefreshCw 
+import {
+  Archive,
+  Plus,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { StashEntry, RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 import { Checkbox } from '../common/Checkbox';
 
+/**
+ * Main view for inspecting, creating, applying, popping, and dropping Git stashes with live diff preview.
+ */
 export const StashManagerView: React.FC = () => {
   const {
     activeRepoPath,
     stashes,
     setStashes,
     setStatus,
-    setError
+    setError,
   } = useGitStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -32,7 +34,7 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
-      const res = await invoke<StashEntry[]>('list_stashes_cmd', { repoPath: activeRepoPath });
+      const res = await GitService.listStashes(activeRepoPath);
       setStashes(res || []);
       if (res && res.length > 0 && selectedStashIndex === null) {
         handleViewDiff(0);
@@ -53,21 +55,17 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('create_stash_cmd', {
-        repoPath: activeRepoPath,
-        message: stashMessage.trim() || null,
-        includeUntracked,
-      });
+      await GitService.createStash(activeRepoPath, stashMessage.trim() || undefined, includeUntracked);
 
       useLogStore.getState().addLog('success', 'Git', `Created stash: '${stashMessage || 'WIP'}'`);
       setStashMessage('');
       setShowCreateModal(false);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadStashes();
-    } catch (err: any) {
-      setError({ code: 'STASH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'STASH_ERROR'));
     }
   };
 
@@ -75,13 +73,13 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('apply_stash_cmd', { repoPath: activeRepoPath, index });
+      await GitService.applyStash(activeRepoPath, index);
       useLogStore.getState().addLog('success', 'Git', `Applied stash@{${index}}`);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
-    } catch (err: any) {
-      setError({ code: 'STASH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'STASH_ERROR'));
     }
   };
 
@@ -89,14 +87,14 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('pop_stash_cmd', { repoPath: activeRepoPath, index });
+      await GitService.popStash(activeRepoPath, index);
       useLogStore.getState().addLog('success', 'Git', `Popped stash@{${index}}`);
 
-      const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadStashes();
-    } catch (err: any) {
-      setError({ code: 'STASH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'STASH_ERROR'));
     }
   };
 
@@ -106,11 +104,11 @@ export const StashManagerView: React.FC = () => {
     if (!confirm(`Are you sure you want to drop stash@{${index}}?`)) return;
 
     try {
-      await invoke('drop_stash_cmd', { repoPath: activeRepoPath, index });
+      await GitService.dropStash(activeRepoPath, index);
       useLogStore.getState().addLog('info', 'Git', `Dropped stash@{${index}}`);
       loadStashes();
-    } catch (err: any) {
-      setError({ code: 'STASH_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'STASH_ERROR'));
     }
   };
 
@@ -118,8 +116,8 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
     setSelectedStashIndex(index);
     try {
-      const diffStr = await invoke<string>('get_stash_diff_cmd', { repoPath: activeRepoPath, index });
-      setStashDiff(diffStr);
+      const diffStr = await GitService.getStashDiff(activeRepoPath, index);
+      setStashDiff(diffStr || '');
     } catch {
       setStashDiff('');
     }
@@ -143,14 +141,14 @@ export const StashManagerView: React.FC = () => {
           <button
             onClick={loadStashes}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Stash Changes</span>
@@ -183,17 +181,16 @@ export const StashManagerView: React.FC = () => {
             />
 
             <div className="flex items-center gap-2">
-
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition"
+                className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-1 bg-commito-coral text-white rounded-md text-xs font-bold transition shadow-sm"
+                className="px-4 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
               >
                 Save Stash
               </button>
@@ -220,7 +217,7 @@ export const StashManagerView: React.FC = () => {
                   onClick={() => handleViewDiff(s.index)}
                   className={`p-3.5 rounded-md border flex items-center justify-between cursor-pointer transition ${
                     isSelected
-                      ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
+                      ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-xs'
                       : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
                   }`}
                 >
@@ -242,7 +239,7 @@ export const StashManagerView: React.FC = () => {
                         e.stopPropagation();
                         handleApplyStash(s.index);
                       }}
-                      className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border rounded text-[11px] font-semibold text-text-secondary transition"
+                      className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border rounded text-[11px] font-semibold text-text-secondary transition cursor-pointer"
                       title="Apply stash without removing from stack"
                     >
                       Apply
@@ -252,7 +249,7 @@ export const StashManagerView: React.FC = () => {
                         e.stopPropagation();
                         handlePopStash(s.index);
                       }}
-                      className="px-2 py-1 bg-commito-coral text-white rounded text-[11px] font-bold transition shadow-sm"
+                      className="px-2 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded text-[11px] font-bold transition shadow-xs cursor-pointer"
                       title="Pop stash (apply & drop)"
                     >
                       Pop
@@ -262,7 +259,7 @@ export const StashManagerView: React.FC = () => {
                         e.stopPropagation();
                         handleDropStash(s.index);
                       }}
-                      className="p-1 text-text-muted hover:text-red-400 transition"
+                      className="p-1 text-text-muted hover:text-red-400 transition cursor-pointer"
                       title="Drop stash"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

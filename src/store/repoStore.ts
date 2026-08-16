@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { RepoEntry, RepoDashboardStatus } from '../types/home';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
 
+/**
+ * State and actions for managing the local repository registry and dashboard summaries.
+ */
 interface RepoStoreState {
   repos: RepoEntry[];
   statuses: Record<string, RepoDashboardStatus>;
@@ -17,6 +21,9 @@ interface RepoStoreState {
   openRepo: (path: string) => Promise<void>;
 }
 
+/**
+ * Zustand store managing known repositories registry and dashboard quick-status summaries.
+ */
 export const useRepoStore = create<RepoStoreState>((set, get) => ({
   repos: [],
   statuses: {},
@@ -28,14 +35,14 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       const repos = await invoke<RepoEntry[]>('list_known_repos_cmd');
       set({ repos: repos || [] });
 
-      // Fetch statuses in parallel (fast, local git2)
+      // Fetch statuses in parallel (fast local git2 inspection)
       if (repos && repos.length > 0) {
         repos.forEach((repo) => {
           get().refreshStatus(repo.path);
         });
       }
-    } catch (err: any) {
-      console.warn('Failed to list known repos:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Repo', `Failed to list known repos: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -48,8 +55,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       set((state) => ({
         statuses: { ...state.statuses, [path]: status },
       }));
-    } catch (err: any) {
-      console.warn(`Failed to get status for '${path}':`, err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Repo', `Failed to get status for '${path}': ${getErrorMessage(error)}`);
     }
   },
 
@@ -60,9 +67,10 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       await get().loadRepos();
       useLogStore.getState().addLog('info', 'Repo', `Added repository '${entry.name}' (${path})`);
       return entry;
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Repo', `Failed to add repo: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Repo', `Failed to add repo: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }
@@ -72,10 +80,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     try {
       await invoke('remove_repo_from_registry_cmd', { id });
       await get().loadRepos();
-      useLogStore.getState().addLog('info', 'Repo', `Removed repository from dashboard`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Repo', `Failed to remove repo: ${err?.message || err}`);
-      throw err;
+      useLogStore.getState().addLog('info', 'Repo', 'Removed repository from dashboard');
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Repo', `Failed to remove repo: ${msg}`);
+      throw new Error(msg);
     }
   },
 
@@ -83,8 +92,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     try {
       await invoke('pin_repo_cmd', { id, pinned });
       await get().loadRepos();
-    } catch (err: any) {
-      console.warn('Failed to pin repo:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Repo', `Failed to pin repo: ${getErrorMessage(error)}`);
     }
   },
 
@@ -92,7 +101,7 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     const gitStore = useGitStore.getState();
     gitStore.setActiveRepoPath(path);
     gitStore.setCurrentNavView('changes');
-    // Also touch last_opened_at in registry
+    // Touch last_opened_at timestamp in backend registry
     invoke('add_repo_to_registry_cmd', { path }).catch(() => {});
   },
 }));

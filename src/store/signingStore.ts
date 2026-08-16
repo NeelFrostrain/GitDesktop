@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 import { GpgKeyInfo, SshKeyInfo, SigningConfig, VerifyResult } from '../types/git';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
 
+/**
+ * State and actions for GPG and SSH commit cryptographic signing.
+ */
 interface SigningState {
   gpgKeys: GpgKeyInfo[];
   sshKeys: SshKeyInfo[];
@@ -18,6 +22,9 @@ interface SigningState {
   verifyCommit: (repoPath: string, sha: string) => Promise<VerifyResult>;
 }
 
+/**
+ * Zustand store managing commit signing configuration and verification cache.
+ */
 export const useSigningStore = create<SigningState>((set, get) => ({
   gpgKeys: [],
   sshKeys: [],
@@ -36,8 +43,8 @@ export const useSigningStore = create<SigningState>((set, get) => ({
         invoke<SshKeyInfo[]>('signing_list_ssh_keys_cmd').catch(() => []),
       ]);
       set({ gpgKeys: gpg || [], sshKeys: ssh || [] });
-    } catch (err: any) {
-      console.warn('Failed to load signing keys:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Git', `Failed to load signing keys: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -48,8 +55,8 @@ export const useSigningStore = create<SigningState>((set, get) => ({
     try {
       const config = await invoke<SigningConfig>('signing_get_config_cmd', { repoPath });
       set({ config });
-    } catch (err: any) {
-      console.warn('Failed to load signing config:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Git', `Failed to load signing config: ${getErrorMessage(error)}`);
     }
   },
 
@@ -63,9 +70,10 @@ export const useSigningStore = create<SigningState>((set, get) => ({
         'Git',
         `Commit signing ${config.enabled ? 'enabled' : 'disabled'} (${config.method.toUpperCase()}, ${config.scope} scope)`
       );
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Git', `Failed to save signing config: ${err?.message || err}`);
-      throw err;
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to save signing config: ${msg}`);
+      throw new Error(msg);
     } finally {
       set({ isLoading: false });
     }

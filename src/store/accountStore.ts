@@ -1,9 +1,13 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
 import { SavedAccount, TokenInfo, gitLabUserToUnified } from '../types/gitlab';
+import { AccountService } from '../services/accounts/accountService';
+import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
 
+/**
+ * State and actions for legacy account credentials and OAuth token persistence.
+ */
 interface AccountState {
   accounts: SavedAccount[];
   activeAccount: SavedAccount | null;
@@ -21,6 +25,9 @@ interface AccountState {
   refreshToken: (accountId: string) => Promise<void>;
 }
 
+/**
+ * Zustand store for managing authenticated accounts and OAuth token lifetimes.
+ */
 export const useAccountStore = create<AccountState>((set, get) => ({
   accounts: [],
   activeAccount: null,
@@ -35,14 +42,14 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   fetchAccounts: async () => {
     set({ isLoading: true });
     try {
-      const accounts = await invoke<SavedAccount[]>('list_accounts_cmd');
+      const accounts = await AccountService.listSavedAccounts();
       const active = accounts.find((a) => a.is_active) || accounts[0] || null;
       set({ accounts: accounts || [], activeAccount: active });
       if (active) {
         get().fetchTokenInfo(active.id);
       }
-    } catch (err: any) {
-      console.warn('Failed to fetch accounts:', err);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Auth', `Failed to fetch accounts: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -50,7 +57,7 @@ export const useAccountStore = create<AccountState>((set, get) => ({
 
   fetchTokenInfo: async (accountId: string) => {
     try {
-      const info = await invoke<TokenInfo>('gitlab_get_token_info_cmd', { accountId });
+      const info = await AccountService.getTokenInfo(accountId);
       set({ tokenInfo: info });
     } catch {
       set({ tokenInfo: null });
@@ -60,14 +67,14 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   switchAccount: async (accountId: string) => {
     set({ isLoading: true });
     try {
-      const glUser = await invoke<any>('switch_account_cmd', { accountId });
+      const gitLabUser = await AccountService.switchAccount(accountId);
       await get().fetchAccounts();
-      if (glUser) {
-        useGitStore.getState().setUser(gitLabUserToUnified(glUser));
+      if (gitLabUser) {
+        useGitStore.getState().setUser(gitLabUserToUnified(gitLabUser));
       }
       useLogStore.getState().addLog('info', 'Auth', `Switched active account to '${accountId}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to switch account: ${err?.message || err}`);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('error', 'Auth', `Failed to switch account: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -76,15 +83,15 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   signOut: async (accountId: string) => {
     set({ isLoading: true });
     try {
-      await invoke('remove_account_cmd', { accountId });
+      await AccountService.removeAccount(accountId);
       await get().fetchAccounts();
       const { accounts } = get();
       if (accounts.length === 0) {
         useGitStore.getState().setUser(null);
       }
       useLogStore.getState().addLog('info', 'Auth', `Signed out account '${accountId}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to sign out: ${err?.message || err}`);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('error', 'Auth', `Failed to sign out: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -93,11 +100,11 @@ export const useAccountStore = create<AccountState>((set, get) => ({
   refreshToken: async (accountId: string) => {
     set({ isLoading: true });
     try {
-      await invoke<string>('gitlab_ensure_fresh_token', { accountId });
+      await AccountService.ensureFreshToken(accountId);
       await get().fetchAccounts();
       useLogStore.getState().addLog('info', 'Auth', `Refreshed token for '${accountId}'`);
-    } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to refresh token: ${err?.message || err}`);
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('error', 'Auth', `Failed to refresh token: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }

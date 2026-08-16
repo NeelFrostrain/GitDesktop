@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { 
-  Lock, 
-  Unlock, 
-  FileText, 
-  Plus, 
-  Trash2, 
+import {
+  Lock,
+  Unlock,
+  FileText,
+  Plus,
+  Trash2,
   RefreshCw,
   Layers,
-  AlertTriangle
+  AlertTriangle,
 } from 'lucide-react';
-
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { LfsFile, LfsLock } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Main view for managing Git Large File Storage (LFS) tracking rules and exclusive binary lock acquisition/release.
+ */
 export const LfsView: React.FC = () => {
   const { activeRepoPath, setError } = useGitStore();
 
@@ -28,8 +31,7 @@ export const LfsView: React.FC = () => {
   useEffect(() => {
     if (!activeRepoPath) return;
 
-    // Check if LFS is installed
-    invoke<boolean>('check_lfs_installed')
+    GitService.checkLfsInstalled()
       .then((installed) => setIsLfsInstalled(installed))
       .catch(() => setIsLfsInstalled(false));
 
@@ -41,14 +43,14 @@ export const LfsView: React.FC = () => {
     setIsLoading(true);
 
     try {
-      const files = await invoke<LfsFile[]>('list_lfs_files', { repoPath: activeRepoPath });
+      const files = await GitService.listLfsFiles(activeRepoPath);
       setLfsFiles(files || []);
     } catch {
       setLfsFiles([]);
     }
 
     try {
-      const locks = await invoke<LfsLock[]>('list_lfs_locks', { repoPath: activeRepoPath });
+      const locks = await GitService.listLfsLocks(activeRepoPath);
       setLfsLocks(locks || []);
     } catch {
       setLfsLocks([]);
@@ -62,12 +64,12 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath || !trackPattern.trim()) return;
 
     try {
-      await invoke('track_lfs_pattern', { repoPath: activeRepoPath, pattern: trackPattern.trim() });
+      await GitService.trackLfsPattern(activeRepoPath, trackPattern.trim());
       useLogStore.getState().addLog('success', 'Git LFS', `Tracking pattern '${trackPattern.trim()}' with LFS`);
       setTrackPattern('');
       loadLfsData();
-    } catch (err: any) {
-      setError({ code: 'LFS_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'LFS_ERROR'));
     }
   };
 
@@ -75,11 +77,11 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('untrack_lfs_pattern', { repoPath: activeRepoPath, pattern });
+      await GitService.untrackLfsPattern(activeRepoPath, pattern);
       useLogStore.getState().addLog('info', 'Git LFS', `Untracked LFS pattern '${pattern}'`);
       loadLfsData();
-    } catch (err: any) {
-      setError({ code: 'LFS_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'LFS_ERROR'));
     }
   };
 
@@ -88,12 +90,12 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath || !lockFilePath.trim()) return;
 
     try {
-      await invoke('lock_lfs_file', { repoPath: activeRepoPath, path: lockFilePath.trim() });
+      await GitService.lockLfsFile(activeRepoPath, lockFilePath.trim());
       useLogStore.getState().addLog('success', 'Git LFS', `Locked LFS file '${lockFilePath.trim()}'`);
       setLockFilePath('');
       loadLfsData();
-    } catch (err: any) {
-      setError({ code: 'LFS_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'LFS_ERROR'));
     }
   };
 
@@ -101,11 +103,11 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await invoke('unlock_lfs_file', { repoPath: activeRepoPath, path, force: false });
+      await GitService.unlockLfsFile(activeRepoPath, path, false);
       useLogStore.getState().addLog('info', 'Git LFS', `Unlocked LFS file '${path}'`);
       loadLfsData();
-    } catch (err: any) {
-      setError({ code: 'LFS_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'LFS_ERROR'));
     }
   };
 
@@ -126,7 +128,7 @@ export const LfsView: React.FC = () => {
         <button
           onClick={loadLfsData}
           disabled={isLoading}
-          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition"
+          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-text-muted ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -145,7 +147,7 @@ export const LfsView: React.FC = () => {
       {/* Grid layout for Track Patterns & Lock Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: LFS Tracking Patterns */}
-        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-sm">
+        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-2">
               <Layers className="w-4 h-4 text-gitlab-teal" />
@@ -165,7 +167,7 @@ export const LfsView: React.FC = () => {
             <button
               type="submit"
               disabled={!trackPattern.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Track</span>
@@ -190,7 +192,7 @@ export const LfsView: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleUntrackPattern(file.path)}
-                    className="p-1 text-text-muted hover:text-red-400 transition"
+                    className="p-1 text-text-muted hover:text-red-400 transition cursor-pointer"
                     title="Untrack pattern"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -202,7 +204,7 @@ export const LfsView: React.FC = () => {
         </div>
 
         {/* Card 2: Exclusive LFS File Locks */}
-        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-sm">
+        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-2">
               <Lock className="w-4 h-4 text-commito-coral" />
@@ -222,7 +224,7 @@ export const LfsView: React.FC = () => {
             <button
               type="submit"
               disabled={!lockFilePath.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Lock</span>
@@ -251,7 +253,7 @@ export const LfsView: React.FC = () => {
                   </div>
                   <button
                     onClick={() => handleUnlockFile(lock.path)}
-                    className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border text-text-secondary rounded text-[11px] font-semibold flex items-center gap-1 transition"
+                    className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border text-text-secondary rounded text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
                   >
                     <Unlock className="w-3 h-3 text-emerald-400" />
                     <span>Unlock</span>

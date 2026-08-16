@@ -10,7 +10,8 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 
 interface BranchCheckoutModalProps {
   isOpen: boolean;
@@ -21,6 +22,10 @@ interface BranchCheckoutModalProps {
   onSuccess: () => void;
 }
 
+/**
+ * Modal dialogue displayed when switching branches while working tree has dirty/uncommitted modifications.
+ * Offers options to Bring Changes (auto-stash/pop), Leave Changes (stash and leave), or Discard/Force checkout.
+ */
 export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   isOpen,
   targetBranch,
@@ -36,7 +41,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
   const refreshRepoStatus = async () => {
     if (!activeRepoPath) return;
-    const newStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+    const newStatus = await GitService.getRepoStatus(activeRepoPath);
     setStatus(newStatus);
   };
 
@@ -45,34 +50,35 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      // 1. Create stash with untracked files
       await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Auto-stash before checkout to ${targetBranch}`,
         includeUntracked: true,
       });
 
-      // 2. Checkout target branch
-      await invoke('checkout_branch', {
-        repoPath: activeRepoPath,
-        branch: targetBranch,
-      });
+      await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
-      // 3. Pop stash
       try {
         await invoke('pop_stash_cmd', {
           repoPath: activeRepoPath,
           index: 0,
         });
         useLogStore.getState().addLog('success', 'Git', `Switched to '${targetBranch}' and brought changes along`);
-      } catch (popErr: any) {
-        useLogStore.getState().addLog('warning', 'Git', `Switched to '${targetBranch}', but stash pop had conflicts: ${popErr.message || String(popErr)}`);
+      } catch (popErr: unknown) {
+        const popMsg = getErrorMessage(popErr);
+        useLogStore
+          .getState()
+          .addLog(
+            'warning',
+            'Git',
+            `Switched to '${targetBranch}', but stash pop had conflicts: ${popMsg}`
+          );
       }
 
       await refreshRepoStatus();
       onSuccess();
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -84,24 +90,21 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      // 1. Create stash
       await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Saved changes on ${currentBranch} before checkout`,
         includeUntracked: true,
       });
 
-      // 2. Checkout target branch
-      await invoke('checkout_branch', {
-        repoPath: activeRepoPath,
-        branch: targetBranch,
-      });
+      await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
-      useLogStore.getState().addLog('info', 'Git', `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`);
       await refreshRepoStatus();
       onSuccess();
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -113,16 +116,13 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      await invoke('checkout_branch', {
-        repoPath: activeRepoPath,
-        branch: targetBranch,
-      });
+      await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
       useLogStore.getState().addLog('warning', 'Git', `Force checked out '${targetBranch}'`);
       await refreshRepoStatus();
       onSuccess();
-    } catch (err: any) {
-      setError({ code: 'CHECKOUT_ERROR', message: err.message || String(err) });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -143,109 +143,102 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Uncommitted Changes Detected
               </h2>
               <p className="text-[11px] text-text-muted">
-                Switching branch from <span className="font-mono text-amber-400">{currentBranch}</span> to <span className="font-mono text-commito-coral">{targetBranch}</span>
+                Switching branch from <span className="font-mono text-amber-400">{currentBranch}</span> to{' '}
+                <span className="font-mono text-commito-coral">{targetBranch}</span>
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            disabled={isProcessing}
-            className="text-text-muted hover:text-text-primary p-1 rounded-md transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Content Body */}
+        {/* Content Body with 3 Action Choices */}
         <div className="p-5 space-y-3">
-          <p className="text-xs text-text-secondary leading-relaxed">
-            You have <span className="font-extrabold text-amber-400 font-mono">{uncommittedCount}</span> uncommitted change{uncommittedCount === 1 ? '' : 's'} in your working directory. How would you like to proceed?
+          <p className="text-xs text-text-secondary">
+            You have <span className="font-bold text-text-primary">{uncommittedCount}</span> uncommitted file change
+            {uncommittedCount === 1 ? '' : 's'}. Choose how you would like to handle them before switching branches:
           </p>
 
-          <div className="space-y-2 pt-1">
-            {/* Option 1: Bring Changes */}
-            <button
-              type="button"
-              onClick={handleBringChanges}
-              disabled={isProcessing}
-              className="w-full text-left p-3 rounded-md bg-base-2 hover:bg-commito-activeBg border border-border hover:border-commito-coral/40 group transition cursor-pointer flex items-start gap-3"
-            >
-              <div className="w-7 h-7 rounded bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 mt-0.5">
-                <ArrowRightLeft className="w-3.5 h-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-text-primary group-hover:text-commito-coral transition">
-                    Bring Changes to '{targetBranch}'
-                  </span>
-                  <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30 uppercase">
-                    Smart Checkout
-                  </span>
-                </div>
-                <p className="text-[11px] text-text-muted mt-0.5">
-                  Stash changes temporarily, checkout '{targetBranch}', and automatically re-apply them.
-                </p>
-              </div>
-            </button>
-
-            {/* Option 2: Leave Changes */}
-            <button
-              type="button"
-              onClick={handleLeaveChanges}
-              disabled={isProcessing}
-              className="w-full text-left p-3 rounded-md bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong group transition cursor-pointer flex items-start gap-3"
-            >
-              <div className="w-7 h-7 rounded bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Archive className="w-3.5 h-3.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-xs font-bold text-text-primary group-hover:text-gitlab-blue transition">
-                  Leave Changes on '{currentBranch}'
+          {/* Option 1: Bring Changes */}
+          <button
+            onClick={handleBringChanges}
+            disabled={isProcessing}
+            className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-commito-coral/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+              <ArrowRightLeft className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+                <span>Bring Changes Along</span>
+                <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30">
+                  Recommended
                 </span>
-                <p className="text-[11px] text-text-muted mt-0.5">
-                  Save your changes into a stash entry on '{currentBranch}' and switch with a clean working tree.
-                </p>
               </div>
-            </button>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                Stashes your modifications, checks out <span className="font-mono text-text-secondary">{targetBranch}</span>, and reapplies them immediately.
+              </p>
+            </div>
+          </button>
 
-            {/* Option 3: Discard Changes */}
-            <button
-              type="button"
-              onClick={handleForceCheckout}
-              disabled={isProcessing}
-              className="w-full text-left p-3 rounded-md bg-base-2 hover:bg-red-950/40 border border-border hover:border-red-800/40 group transition cursor-pointer flex items-start gap-3"
-            >
-              <div className="w-7 h-7 rounded bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <Trash2 className="w-3.5 h-3.5" />
+          {/* Option 2: Leave Changes */}
+          <button
+            onClick={handleLeaveChanges}
+            disabled={isProcessing}
+            className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-text-muted rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+              <Archive className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-text-primary">
+                Leave Changes on {currentBranch}
               </div>
-              <div className="min-w-0 flex-1">
-                <span className="text-xs font-bold text-text-primary group-hover:text-red-400 transition">
-                  Discard Local Changes
-                </span>
-                <p className="text-[11px] text-text-muted mt-0.5">
-                  Permanently drop uncommitted changes and force checkout '{targetBranch}'.
-                </p>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                Saves your changes in a stash associated with <span className="font-mono text-text-secondary">{currentBranch}</span> so you can resume later.
+              </p>
+            </div>
+          </button>
+
+          {/* Option 3: Discard / Force */}
+          <button
+            onClick={handleForceCheckout}
+            disabled={isProcessing}
+            className="w-full p-3.5 bg-base-2 hover:bg-red-950/30 border border-border hover:border-red-800/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
+          >
+            <div className="w-7 h-7 rounded bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+              <Trash2 className="w-3.5 h-3.5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-red-400">
+                Discard Changes & Force Checkout
               </div>
-            </button>
-          </div>
+              <p className="text-[11px] text-text-muted mt-0.5">
+                Permanently overwrites and discards local modifications when switching to <span className="font-mono text-text-secondary">{targetBranch}</span>.
+              </p>
+            </div>
+          </button>
         </div>
 
         {/* Footer */}
         <div className="px-5 py-3 bg-base-0 border-t border-border flex items-center justify-between">
-          {isProcessing ? (
-            <div className="flex items-center gap-2 text-xs text-text-muted animate-pulse">
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
-              <span>Switching branch...</span>
-            </div>
-          ) : (
-            <div />
-          )}
-
+          <div className="text-[11px] text-text-muted">
+            {isProcessing && (
+              <span className="flex items-center gap-1 text-commito-coral">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Processing checkout...
+              </span>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="px-3 py-1.5 rounded-md bg-base-2 hover:bg-base-3 border border-border text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer"
+            className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded text-xs font-semibold text-text-secondary transition cursor-pointer"
           >
             Cancel
           </button>

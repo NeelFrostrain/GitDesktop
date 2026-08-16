@@ -1,17 +1,29 @@
+/**
+ * Represents the modification category of a file in the Git working tree.
+ */
 export type FileStatusKind = 'Modified' | 'Staged' | 'Untracked' | 'Deleted' | 'Renamed' | 'Conflicted';
 
+/**
+ * Status information for an individual file in a repository.
+ */
 export interface FileStatus {
   path: string;
   status: FileStatusKind;
   staged: boolean;
 }
 
+/**
+ * Branch metadata returned by branch listing operations.
+ */
 export interface BranchInfo {
   name: string;
   is_current: boolean;
   is_remote: boolean;
 }
 
+/**
+ * Information regarding a configured Git remote.
+ */
 export interface RemoteInfo {
   name: string;
   url: string;
@@ -21,6 +33,9 @@ export interface RemoteInfo {
   behind: number;
 }
 
+/**
+ * Aggregate working directory status and branch tracking state.
+ */
 export interface RepoStatus {
   current_branch: string;
   ahead: number;
@@ -30,6 +45,9 @@ export interface RepoStatus {
   has_conflicts: boolean;
 }
 
+/**
+ * Line item in a diff output with line numbering and modification category.
+ */
 export interface DiffLine {
   line_type: 'addition' | 'deletion' | 'context' | 'header';
   old_line_num: number | null;
@@ -37,6 +55,9 @@ export interface DiffLine {
   content: string;
 }
 
+/**
+ * Structured diff result for a file.
+ */
 export interface DiffResult {
   file_path: string;
   lines: DiffLine[];
@@ -45,6 +66,9 @@ export interface DiffResult {
   file_size_bytes: number;
 }
 
+/**
+ * Per-file addition and deletion counters within a commit.
+ */
 export interface CommitFileStat {
   path: string;
   additions: number;
@@ -52,6 +76,9 @@ export interface CommitFileStat {
   status: string;
 }
 
+/**
+ * Metadata for a single Git commit.
+ */
 export interface CommitInfo {
   sha: string;
   short_sha: string;
@@ -64,6 +91,9 @@ export interface CommitInfo {
   deletions?: number;
 }
 
+/**
+ * Detailed commit inspection including changed files and delta counts.
+ */
 export interface CommitDetails {
   commit: CommitInfo;
   changed_files: string[];
@@ -72,23 +102,35 @@ export interface CommitDetails {
   file_stats?: CommitFileStat[];
 }
 
+/**
+ * Result of a remote pull operation.
+ */
 export interface PullResult {
   success: boolean;
   conflicts: string[];
   commits_pulled: number;
 }
 
+/**
+ * Standardized application error shape across IPC boundaries.
+ */
 export interface AppError {
   code: string;
   message: string;
 }
 
+/**
+ * Git LFS tracked file entry.
+ */
 export interface LfsFile {
   path: string;
   oid: string;
   size: number;
 }
 
+/**
+ * Git LFS lock record.
+ */
 export interface LfsLock {
   id: string;
   path: string;
@@ -96,6 +138,9 @@ export interface LfsLock {
   locked_at: string;
 }
 
+/**
+ * Metadata for a linked or bare Git worktree.
+ */
 export interface WorktreeInfo {
   path: string;
   head_sha: string;
@@ -106,6 +151,9 @@ export interface WorktreeInfo {
   lock_reason?: string;
 }
 
+/**
+ * Unified Merge Request / Pull Request representation.
+ */
 export interface UnifiedMergeRequest {
   id: string | number;
   iid?: number;
@@ -120,8 +168,14 @@ export interface UnifiedMergeRequest {
   created_at: string;
 }
 
+/**
+ * Action verb applied to a commit during interactive rebase.
+ */
 export type RebaseCommitAction = 'pick' | 'reword' | 'edit' | 'squash' | 'fixup' | 'drop';
 
+/**
+ * Rebase instruction plan row item.
+ */
 export interface RebaseCommitPlanItem {
   sha: string;
   short_sha: string;
@@ -129,6 +183,9 @@ export interface RebaseCommitPlanItem {
   action: RebaseCommitAction;
 }
 
+/**
+ * Git stash record.
+ */
 export interface StashEntry {
   index: number;
   sha: string;
@@ -137,6 +194,9 @@ export interface StashEntry {
   date: string;
 }
 
+/**
+ * Git tag metadata.
+ */
 export interface TagInfo {
   name: string;
   sha: string;
@@ -145,6 +205,9 @@ export interface TagInfo {
   tagger_name?: string;
 }
 
+/**
+ * Single line blame metadata.
+ */
 export interface BlameLine {
   line_num: number;
   commit_sha: string;
@@ -154,6 +217,9 @@ export interface BlameLine {
   content: string;
 }
 
+/**
+ * Git reflog history entry.
+ */
 export interface ReflogEntry {
   index: number;
   sha: string;
@@ -162,6 +228,9 @@ export interface ReflogEntry {
   date: string;
 }
 
+/**
+ * Three-way conflict hunk in a merge conflict file.
+ */
 export interface ConflictHunk {
   id: string;
   file_path: string;
@@ -171,6 +240,9 @@ export interface ConflictHunk {
   start_line: number;
 }
 
+/**
+ * Git submodule tracking information.
+ */
 export interface SubmoduleInfo {
   name: string;
   path: string;
@@ -180,6 +252,9 @@ export interface SubmoduleInfo {
   is_initialized: boolean;
 }
 
+/**
+ * Key-value pair in Git repository or global config.
+ */
 export interface GitConfigItem {
   key: string;
   value: string;
@@ -209,6 +284,9 @@ export interface RemoveOperation {
 
 export type HistoryOperation = ReorderOperation | MergeOperation | RemoveOperation;
 
+/**
+ * GPG cryptographic key info.
+ */
 export interface GpgKeyInfo {
   key_id: string;
   user_id: string;
@@ -217,6 +295,9 @@ export interface GpgKeyInfo {
   expires_at?: string | null;
 }
 
+/**
+ * SSH signing key information.
+ */
 export interface SshKeyInfo {
   path: string;
   public_key: string;
@@ -225,6 +306,9 @@ export interface SshKeyInfo {
   is_agent: boolean;
 }
 
+/**
+ * Commit cryptographic signing configuration.
+ */
 export interface SigningConfig {
   enabled: boolean;
   method: 'gpg' | 'ssh';
@@ -234,6 +318,9 @@ export interface SigningConfig {
 
 export type VerifyStatus = 'Verified' | 'Unverified' | 'NoSignature' | 'Error';
 
+/**
+ * Cryptographic signature verification result for a commit.
+ */
 export interface VerifyResult {
   status: VerifyStatus;
   details?: {

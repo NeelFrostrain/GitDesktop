@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { 
-  X, 
-  AlertTriangle, 
-  ArrowUpDown, 
-  GitMerge, 
+import {
+  X,
+  AlertTriangle,
+  ArrowUpDown,
+  GitMerge,
   Info,
-  Play
+  Play,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
 import { UserAvatar } from '../common/UserAvatar';
+import { GitService } from '../../services/git/gitService';
+import { toAppError } from '../../shared/utils/errorUtils';
 
+/**
+ * Modal dialogue for confirming and executing history rewrite operations triggered by drag-and-drop
+ * reordering or commit squashing/merging.
+ */
 export const RewriteHistoryModal: React.FC = () => {
   const {
     activeRepoPath,
@@ -56,7 +61,7 @@ export const RewriteHistoryModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      let payload: any;
+      let payload: Record<string, unknown>;
       if (pendingHistoryOp.type === 'reorder') {
         payload = {
           type: 'reorder',
@@ -88,25 +93,23 @@ export const RewriteHistoryModal: React.FC = () => {
           : `Merged commits ${pendingHistoryOp.sourceCommit.short_sha} into ${pendingHistoryOp.targetCommit.short_sha}`
       );
 
-      // Refresh repository status
-      const updatedStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+      const updatedStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(updatedStatus);
 
-      // Update selected commit SHA if available
       if (pendingHistoryOp.type === 'merge') {
         setSelectedCommitSha(pendingHistoryOp.targetCommit.sha);
       }
 
       handleClose();
-    } catch (err: any) {
-      const errorMsg = err.message || String(err);
-      setError({ code: 'HISTORY_REWRITE_ERROR', message: errorMsg });
+    } catch (error: unknown) {
+      setError(toAppError(error, 'HISTORY_REWRITE_ERROR'));
 
-      // Refresh status on failure as well
       try {
-        const refreshedStatus = await invoke<RepoStatus>('get_repo_status', { repoPath: activeRepoPath });
+        const refreshedStatus = await GitService.getRepoStatus(activeRepoPath);
         setStatus(refreshedStatus);
-      } catch {}
+      } catch {
+        // Silently ignore secondary status fetch failure
+      }
 
       handleClose();
     } finally {
@@ -140,7 +143,7 @@ export const RewriteHistoryModal: React.FC = () => {
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -270,17 +273,17 @@ export const RewriteHistoryModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
-              className={`px-5 py-2 rounded-md text-xs font-bold flex items-center gap-2 transition shadow-sm ${
+              className={`px-5 py-2 rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs ${
                 hasUncommittedChanges
                   ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed'
-                  : 'bg-commito-coral hover:bg-commito-coralHover text-white cursor-pointer'
+                  : 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer'
               }`}
             >
               <Play className="w-3.5 h-3.5 fill-current" />
