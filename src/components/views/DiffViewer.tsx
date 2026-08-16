@@ -240,9 +240,9 @@ export const DiffViewer: React.FC = () => {
 
         {/* Changed Files with Accordion Diffs */}
         <div className="flex-1 p-2 overflow-y-auto space-y-3 bg-base-0">
-          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center justify-between">
+          <div className="text-xs font-semibold text-text-muted p-1 px-0.5 tracking-wider flex items-center justify-between">
             <span className="text-xs">Changed Files ({commitDetails.changed_files.length})</span>
-            <span className="font-mono text-[11px] font-medium text-text-faint">
+            <span className="font-mono text-[11px] font-medium text-text-faint text-center">
               {commitDetails.changed_files.length} file{commitDetails.changed_files.length !== 1 ? 's' : ''} modified
             </span>
           </div>
@@ -327,11 +327,10 @@ export const DiffViewer: React.FC = () => {
           <button
             onClick={handleOpenMergeRequest}
             disabled={!user || !isCurrentBranchPushed}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${
-              user && isCurrentBranchPushed
-                ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user && isCurrentBranchPushed
+              ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
+              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              }`}
             title={!isCurrentBranchPushed ? 'Push branch to origin before creating Merge Request' : ''}
           >
             <GitPullRequest className="w-3.5 h-3.5" />
@@ -341,11 +340,10 @@ export const DiffViewer: React.FC = () => {
           <button
             onClick={handleViewPipelines}
             disabled={!user}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${
-              user
-                ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user
+              ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
+              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />
             View Pipelines
