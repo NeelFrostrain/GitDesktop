@@ -1,8 +1,8 @@
+use crate::core::logging::model::LogEntry;
+use crate::core::logging::store;
 use std::collections::VecDeque;
 use std::sync::{Mutex, OnceLock, RwLock};
 use tauri::{AppHandle, Emitter};
-use crate::core::logging::model::LogEntry;
-use crate::core::logging::store;
 
 const RING_BUFFER_CAPACITY: usize = 500;
 

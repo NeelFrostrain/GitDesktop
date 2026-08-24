@@ -1,23 +1,23 @@
-pub mod error;
-pub mod core;
-pub mod auth;
-pub mod git;
-pub mod repos;
 pub mod activity;
-pub mod domain;
-pub mod integrations;
+pub mod auth;
 pub mod commands;
+pub mod core;
+pub mod domain;
+pub mod error;
+pub mod git;
+pub mod integrations;
+pub mod repos;
 
+use commands::accounts::*;
 use commands::auth_commands::*;
 use commands::git_commands::*;
-use commands::repo_commands::*;
-use commands::window_commands::*;
-use commands::accounts::*;
-use commands::remotes::*;
-use commands::terminal::*;
-use commands::logs::*;
-use commands::settings::*;
 use commands::git_runtime::*;
+use commands::logs::*;
+use commands::remotes::*;
+use commands::repo_commands::*;
+use commands::settings::*;
+use commands::terminal::*;
+use commands::window_commands::*;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -238,6 +238,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-
-

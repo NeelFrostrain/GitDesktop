@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use git2::{Repository, DiffOptions};
-use std::path::Path;
-use std::fs;
 use crate::error::AppError;
+use git2::{DiffOptions, Repository};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 const MAX_FILE_SIZE_BYTES: u64 = 2 * 1024 * 1024; // 2 MB
 
@@ -23,7 +23,11 @@ pub struct DiffResult {
     pub file_size_bytes: u64,
 }
 
-pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<DiffResult, AppError> {
+pub fn get_file_diff(
+    repo_path: &str,
+    file_path: &str,
+    staged: bool,
+) -> Result<DiffResult, AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
@@ -58,7 +62,12 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
 
             let content = String::from_utf8_lossy(line.content()).to_string();
 
-            if origin == '>' || origin == '<' || content.trim_start().starts_with("\\ No newline at end of file") {
+            if origin == '>'
+                || origin == '<'
+                || content
+                    .trim_start()
+                    .starts_with("\\ No newline at end of file")
+            {
                 return true;
             }
 
@@ -93,10 +102,15 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
 
     let diff = if staged {
         let index = repo.index().ok();
-        repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts)).ok()
+        repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts))
+            .ok()
     } else {
-        repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut opts)).ok()
-            .or_else(|| repo.diff_tree_to_workdir(head_tree.as_ref(), Some(&mut opts)).ok())
+        repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut opts))
+            .ok()
+            .or_else(|| {
+                repo.diff_tree_to_workdir(head_tree.as_ref(), Some(&mut opts))
+                    .ok()
+            })
             .or_else(|| repo.diff_index_to_workdir(None, Some(&mut opts)).ok())
     };
 
@@ -141,7 +155,11 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
     })
 }
 
-pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Result<DiffResult, AppError> {
+pub fn get_commit_file_diff(
+    repo_path: &str,
+    sha: &str,
+    file_path: &str,
+) -> Result<DiffResult, AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
     let oid = git2::Oid::from_str(sha)
@@ -167,7 +185,12 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
 
         let content = String::from_utf8_lossy(line.content()).to_string();
 
-        if origin == '>' || origin == '<' || content.trim_start().starts_with("\\ No newline at end of file") {
+        if origin == '>'
+            || origin == '<'
+            || content
+                .trim_start()
+                .starts_with("\\ No newline at end of file")
+        {
             return true;
         }
 
@@ -188,7 +211,6 @@ pub fn get_commit_file_diff(repo_path: &str, sha: &str, file_path: &str) -> Resu
 
         true
     })?;
-
 
     Ok(DiffResult {
         file_path: file_path.to_string(),

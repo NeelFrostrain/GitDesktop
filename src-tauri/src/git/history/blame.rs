@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BlameLine {
@@ -22,7 +22,10 @@ pub fn get_file_blame(repo_path: &str, file_path: &str) -> Result<Vec<BlameLine>
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to get file blame: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to get file blame: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);

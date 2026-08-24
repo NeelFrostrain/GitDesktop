@@ -38,7 +38,9 @@ impl AppError {
             AppError::Auth(msg) => msg.clone(),
             AppError::Network(msg) => msg.clone(),
             AppError::Git(msg) => msg.clone(),
-            AppError::GitConflict(files) => format!("Merge conflicts detected in: {}", files.join(", ")),
+            AppError::GitConflict(files) => {
+                format!("Merge conflicts detected in: {}", files.join(", "))
+            }
             AppError::Filesystem(msg) => msg.clone(),
             AppError::NotFound(msg) => msg.clone(),
             AppError::Validation(msg) => msg.clone(),
@@ -80,7 +82,10 @@ impl From<reqwest::Error> for AppError {
             AppError::Network(format!("Network error: {}", err))
         } else if let Some(status) = err.status() {
             if status.as_u16() == 401 || status.as_u16() == 403 {
-                AppError::Auth("GitLab authentication failed or token expired. Please re-authenticate.".to_string())
+                AppError::Auth(
+                    "GitLab authentication failed or token expired. Please re-authenticate."
+                        .to_string(),
+                )
             } else {
                 AppError::Network(format!("GitLab API error (Status {}): {}", status, err))
             }

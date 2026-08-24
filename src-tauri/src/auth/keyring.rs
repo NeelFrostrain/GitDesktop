@@ -1,8 +1,8 @@
-use std::fs;
-use std::path::PathBuf;
-use serde::{Deserialize, Serialize};
 use crate::error::AppError;
 use keyring::Entry;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::PathBuf;
 
 const SERVICE_NAME: &str = "gitlab-desktop";
 const TOKEN_KEY: &str = "gitlab_token";
@@ -83,7 +83,11 @@ pub fn list_accounts() -> Vec<SavedAccount> {
     if store.accounts.is_empty() {
         if let (Some(token), Some(server_url)) = (store.token.take(), store.server_url.take()) {
             if !token.trim().is_empty() {
-                let host = server_url.trim_start_matches("https://").trim_start_matches("http://").trim_end_matches('/').to_string();
+                let host = server_url
+                    .trim_start_matches("https://")
+                    .trim_start_matches("http://")
+                    .trim_end_matches('/')
+                    .to_string();
                 let acct = SavedAccount {
                     id: format!("user@{}", host),
                     server_url,
@@ -109,7 +113,7 @@ pub fn list_accounts() -> Vec<SavedAccount> {
 
 pub fn add_or_update_account(account: SavedAccount) -> Result<(), AppError> {
     let mut store = read_local_store();
-    
+
     // Purge legacy dummy migration entries
     store.accounts.retain(|a| !a.id.starts_with("user@"));
 
@@ -122,22 +126,34 @@ pub fn add_or_update_account(account: SavedAccount) -> Result<(), AppError> {
     }
 
     if let Some(existing) = store.accounts.iter_mut().find(|a| a.id == account.id) {
-        *existing = SavedAccount { is_active: should_activate, ..account };
+        *existing = SavedAccount {
+            is_active: should_activate,
+            ..account
+        };
     } else {
-        store.accounts.push(SavedAccount { is_active: should_activate, ..account });
+        store.accounts.push(SavedAccount {
+            is_active: should_activate,
+            ..account
+        });
     }
 
     write_local_store(&store);
     Ok(())
 }
 
-pub fn update_account_profile(account_id: &str, name: &str, email: Option<String>) -> Result<(), AppError> {
+pub fn update_account_profile(
+    account_id: &str,
+    name: &str,
+    email: Option<String>,
+) -> Result<(), AppError> {
     let mut store = read_local_store();
     if let Some(acct) = store.accounts.iter_mut().find(|a| a.id == account_id) {
         if !name.trim().is_empty() {
             acct.name = name.trim().to_string();
         }
-        acct.email = email.map(|e| e.trim().to_string()).filter(|e| !e.is_empty());
+        acct.email = email
+            .map(|e| e.trim().to_string())
+            .filter(|e| !e.is_empty());
     }
     write_local_store(&store);
     Ok(())
@@ -145,7 +161,10 @@ pub fn update_account_profile(account_id: &str, name: &str, email: Option<String
 
 pub fn remove_account(account_id: &str) -> Result<(), AppError> {
     let mut store = read_local_store();
-    let was_active = store.accounts.iter().any(|a| a.id == account_id && a.is_active);
+    let was_active = store
+        .accounts
+        .iter()
+        .any(|a| a.id == account_id && a.is_active);
     store.accounts.retain(|a| a.id != account_id);
     if was_active {
         if let Some(first) = store.accounts.first_mut() {
@@ -167,7 +186,10 @@ pub fn switch_active_account(account_id: &str) -> Result<(), AppError> {
 
 pub fn get_active_account() -> Option<SavedAccount> {
     let accounts = list_accounts();
-    accounts.iter().find(|a| a.is_active).cloned()
+    accounts
+        .iter()
+        .find(|a| a.is_active)
+        .cloned()
         .or_else(|| accounts.into_iter().next())
 }
 
@@ -226,7 +248,8 @@ pub fn set_account_for_repo(repo_path: &str, account_id: &str) -> Result<(), App
         .ok()
         .and_then(|c| serde_json::from_str(&c).ok())
         .unwrap_or_default();
-    map.entries.insert(repo_path.to_string(), account_id.to_string());
+    map.entries
+        .insert(repo_path.to_string(), account_id.to_string());
     if let Ok(content) = serde_json::to_string_pretty(&map) {
         let _ = fs::write(file, content);
     }

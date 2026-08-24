@@ -1,13 +1,13 @@
+use crate::auth::github::{GitHubClient, GitHubUser};
+use crate::auth::gitlab::{
+    exchange_code_for_token_response, generate_pkce, listen_for_oauth_callback,
+    refresh_oauth_token, GitLabClient, GitLabUser, PkcePair, TokenInfo, DEFAULT_CLIENT_ID,
+    DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
+};
+use crate::auth::keyring::{self, SavedAccount};
+use crate::error::AppError;
 use tauri::command;
 use tauri_plugin_opener::OpenerExt;
-use crate::error::AppError;
-use crate::auth::gitlab::{
-    GitLabClient, GitLabUser, PkcePair, TokenInfo, generate_pkce,
-    exchange_code_for_token_response, refresh_oauth_token,
-    listen_for_oauth_callback, DEFAULT_CLIENT_ID, DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
-};
-use crate::auth::github::{GitHubClient, GitHubUser};
-use crate::auth::keyring::{self, SavedAccount};
 
 #[command]
 pub async fn generate_pkce_cmd() -> Result<PkcePair, AppError> {
@@ -24,7 +24,9 @@ pub async fn login_gitlab_pat(
         return Err(AppError::Validation("Server URL is required".to_string()));
     }
     if token.trim().is_empty() {
-        return Err(AppError::Validation("Personal Access Token is required".to_string()));
+        return Err(AppError::Validation(
+            "Personal Access Token is required".to_string(),
+        ));
     }
 
     let client = GitLabClient::new(server_url.clone(), token.clone(), custom_ca_pem)?;
@@ -138,12 +140,14 @@ pub async fn complete_oauth_login(
     let user = client.get_current_user().await?;
 
     let scopes_list = token_resp.scope.as_ref().map(|s| {
-        s.split_whitespace().map(|x| x.to_string()).collect::<Vec<String>>()
+        s.split_whitespace()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
     });
 
-    let expires_at = token_resp.expires_in.map(|exp| {
-        chrono::Utc::now().timestamp() + exp
-    });
+    let expires_at = token_resp
+        .expires_in
+        .map(|exp| chrono::Utc::now().timestamp() + exp);
 
     let account_id = keyring::make_account_id(&user.username, &server_url);
     let account = SavedAccount {
@@ -178,20 +182,20 @@ pub async fn complete_oauth_login(
 #[command]
 pub async fn gitlab_ensure_fresh_token(account_id: String) -> Result<String, AppError> {
     let accounts = keyring::list_accounts();
-    let account = accounts.iter().find(|a| a.id == account_id)
+    let account = accounts
+        .iter()
+        .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
     // If no expires_at or refresh_token, token is static PAT or does not expire
     let now = chrono::Utc::now().timestamp();
-    if let (Some(expires_at), Some(ref refresh_tok)) = (account.expires_at, &account.refresh_token) {
+    if let (Some(expires_at), Some(ref refresh_tok)) = (account.expires_at, &account.refresh_token)
+    {
         // If token expires in less than 5 minutes (300 seconds), refresh it
         if expires_at - now < 300 {
-            let refreshed = refresh_oauth_token(
-                &account.server_url,
-                DEFAULT_CLIENT_ID,
-                None,
-                refresh_tok,
-            ).await?;
+            let refreshed =
+                refresh_oauth_token(&account.server_url, DEFAULT_CLIENT_ID, None, refresh_tok)
+                    .await?;
 
             let new_expires_at = refreshed.expires_in.map(|exp| now + exp);
             let mut updated_account = account.clone();
@@ -219,7 +223,9 @@ pub async fn gitlab_ensure_fresh_token(account_id: String) -> Result<String, App
 #[command]
 pub async fn gitlab_get_token_info_cmd(account_id: String) -> Result<TokenInfo, AppError> {
     let accounts = keyring::list_accounts();
-    let account = accounts.iter().find(|a| a.id == account_id)
+    let account = accounts
+        .iter()
+        .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
     let client = GitLabClient::new(account.server_url.clone(), account.token.clone(), None)?;
@@ -322,7 +328,9 @@ pub async fn set_repo_account_cmd(repo_path: String, account_id: String) -> Resu
 #[command]
 pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
     if token.trim().is_empty() {
-        return Err(AppError::Validation("GitHub Personal Access Token is required".to_string()));
+        return Err(AppError::Validation(
+            "GitHub Personal Access Token is required".to_string(),
+        ));
     }
 
     let client = GitHubClient::new(&token)?;
@@ -334,7 +342,10 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
         id: account_id.clone(),
         server_url: server_url.clone(),
         token: token.clone(),
-        name: gh_user.name.clone().unwrap_or_else(|| gh_user.login.clone()),
+        name: gh_user
+            .name
+            .clone()
+            .unwrap_or_else(|| gh_user.login.clone()),
         username: gh_user.login.clone(),
         email: gh_user.email.clone(),
         avatar_url: gh_user.avatar_url.clone(),

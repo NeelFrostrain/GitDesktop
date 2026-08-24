@@ -1,8 +1,8 @@
+use crate::error::AppError;
+use git2::{Repository, Status, StatusOptions};
 use serde::{Deserialize, Serialize};
-use git2::{Repository, StatusOptions, Status};
 use std::path::Path;
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum FileStatusKind {
@@ -41,11 +41,18 @@ pub struct RepoStatus {
 pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
     let path = Path::new(repo_path);
     if !path.exists() {
-        return Err(AppError::NotFound(format!("Path does not exist: {}", repo_path)));
+        return Err(AppError::NotFound(format!(
+            "Path does not exist: {}",
+            repo_path
+        )));
     }
 
-    let repo = Repository::open(path)
-        .map_err(|e| AppError::Git(format!("Failed to open repository at '{}': {}", repo_path, e)))?;
+    let repo = Repository::open(path).map_err(|e| {
+        AppError::Git(format!(
+            "Failed to open repository at '{}': {}",
+            repo_path, e
+        ))
+    })?;
 
     // Determine current branch
     let current_branch = match repo.head() {
@@ -139,7 +146,8 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
 }
 
 fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usize), AppError> {
-    let repo_path = repo.workdir()
+    let repo_path = repo
+        .workdir()
         .or_else(|| repo.path().parent())
         .ok_or_else(|| AppError::Git("Cannot determine repo workdir".to_string()))?;
 
@@ -163,7 +171,12 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
 
     // Check if the remote tracking ref exists (i.e. branch has been pushed at least once)
     let ref_exists = Command::new("git")
-        .args(["show-ref", "--quiet", "--verify", &format!("refs/remotes/{}", remote_ref)])
+        .args([
+            "show-ref",
+            "--quiet",
+            "--verify",
+            &format!("refs/remotes/{}", remote_ref),
+        ])
         .current_dir(repo_path)
         .output()
         .map(|o| o.status.success())
@@ -209,7 +222,6 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
 
     Ok((ahead, behind))
 }
-
 
 #[cfg(test)]
 mod tests {

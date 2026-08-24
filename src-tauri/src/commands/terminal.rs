@@ -1,6 +1,6 @@
 use crate::domain::terminal::{
-    autocomplete, history, log_store, pty, AutocompleteSuggestion, HistoryEntry,
-    LogSessionSummary, TerminalSessionInfo,
+    autocomplete, history, log_store, pty, AutocompleteSuggestion, HistoryEntry, LogSessionSummary,
+    TerminalSessionInfo,
 };
 use crate::error::AppError;
 use tauri::AppHandle;

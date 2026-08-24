@@ -52,8 +52,14 @@ pub fn autocomplete_suggest(
         None => return Ok(Vec::new()),
     };
 
-    let git_subcmd = preceding_tokens.get(git_idx + 1).map(|s| s.as_str()).unwrap_or("");
-    let git_subsubcmd = preceding_tokens.get(git_idx + 2).map(|s| s.as_str()).unwrap_or("");
+    let git_subcmd = preceding_tokens
+        .get(git_idx + 1)
+        .map(|s| s.as_str())
+        .unwrap_or("");
+    let git_subsubcmd = preceding_tokens
+        .get(git_idx + 2)
+        .map(|s| s.as_str())
+        .unwrap_or("");
 
     let mut suggestions = Vec::new();
 
@@ -62,7 +68,9 @@ pub fn autocomplete_suggest(
             // Branch and Tag completions
             let branches = get_branches(&repo)?;
             for b in branches {
-                if current_prefix.is_empty() || b.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                if current_prefix.is_empty()
+                    || b.to_lowercase().contains(&current_prefix.to_lowercase())
+                {
                     suggestions.push(AutocompleteSuggestion {
                         text: b.clone(),
                         value: b,
@@ -74,7 +82,9 @@ pub fn autocomplete_suggest(
 
             let tags = get_tags(&repo)?;
             for t in tags {
-                if current_prefix.is_empty() || t.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                if current_prefix.is_empty()
+                    || t.to_lowercase().contains(&current_prefix.to_lowercase())
+                {
                     suggestions.push(AutocompleteSuggestion {
                         text: t.clone(),
                         value: t,
@@ -90,7 +100,9 @@ pub fn autocomplete_suggest(
             if !has_remote {
                 let remotes = get_remotes(&repo)?;
                 for r in remotes {
-                    if current_prefix.is_empty() || r.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                    if current_prefix.is_empty()
+                        || r.to_lowercase().contains(&current_prefix.to_lowercase())
+                    {
                         suggestions.push(AutocompleteSuggestion {
                             text: r.clone(),
                             value: r,
@@ -102,7 +114,9 @@ pub fn autocomplete_suggest(
             } else {
                 let branches = get_branches(&repo)?;
                 for b in branches {
-                    if current_prefix.is_empty() || b.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                    if current_prefix.is_empty()
+                        || b.to_lowercase().contains(&current_prefix.to_lowercase())
+                    {
                         suggestions.push(AutocompleteSuggestion {
                             text: b.clone(),
                             value: b,
@@ -114,10 +128,17 @@ pub fn autocomplete_suggest(
             }
         }
         "remote" => {
-            if git_subsubcmd == "remove" || git_subsubcmd == "rename" || git_subsubcmd == "set-url" || git_subsubcmd == "get-url" || git_subsubcmd == "show" {
+            if git_subsubcmd == "remove"
+                || git_subsubcmd == "rename"
+                || git_subsubcmd == "set-url"
+                || git_subsubcmd == "get-url"
+                || git_subsubcmd == "show"
+            {
                 let remotes = get_remotes(&repo)?;
                 for r in remotes {
-                    if current_prefix.is_empty() || r.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                    if current_prefix.is_empty()
+                        || r.to_lowercase().contains(&current_prefix.to_lowercase())
+                    {
                         suggestions.push(AutocompleteSuggestion {
                             text: r.clone(),
                             value: r,
@@ -129,7 +150,12 @@ pub fn autocomplete_suggest(
             }
         }
         "stash" => {
-            if git_subsubcmd == "apply" || git_subsubcmd == "pop" || git_subsubcmd == "drop" || git_subsubcmd == "show" || git_subsubcmd == "branch" {
+            if git_subsubcmd == "apply"
+                || git_subsubcmd == "pop"
+                || git_subsubcmd == "drop"
+                || git_subsubcmd == "show"
+                || git_subsubcmd == "branch"
+            {
                 let stashes = get_stashes(&repo)?;
                 for (idx, msg) in stashes {
                     let text = format!("stash@{{{}}}", idx);
@@ -148,7 +174,9 @@ pub fn autocomplete_suggest(
             // Changed or tracked file paths
             let files = get_changed_and_tracked_files(&repo, clean_path)?;
             for f in files {
-                if current_prefix.is_empty() || f.to_lowercase().contains(&current_prefix.to_lowercase()) {
+                if current_prefix.is_empty()
+                    || f.to_lowercase().contains(&current_prefix.to_lowercase())
+                {
                     suggestions.push(AutocompleteSuggestion {
                         text: f.clone(),
                         value: f,
@@ -264,8 +292,7 @@ fn get_remotes(repo: &Repository) -> Result<Vec<String>, AppError> {
 
 fn get_stashes(repo: &Repository) -> Result<Vec<(usize, String)>, AppError> {
     let mut stashes = Vec::new();
-    let mut mut_repo = Repository::open(repo.path())
-        .map_err(|e| AppError::Git(e.to_string()))?;
+    let mut mut_repo = Repository::open(repo.path()).map_err(|e| AppError::Git(e.to_string()))?;
 
     let _ = mut_repo.stash_foreach(|idx, name, _| {
         stashes.push((idx, name.to_string()));
@@ -275,7 +302,10 @@ fn get_stashes(repo: &Repository) -> Result<Vec<(usize, String)>, AppError> {
     Ok(stashes)
 }
 
-fn get_changed_and_tracked_files(repo: &Repository, repo_path: &str) -> Result<Vec<String>, AppError> {
+fn get_changed_and_tracked_files(
+    repo: &Repository,
+    repo_path: &str,
+) -> Result<Vec<String>, AppError> {
     let mut files = Vec::new();
 
     // 1. Modified and untracked files
@@ -293,7 +323,9 @@ fn get_changed_and_tracked_files(repo: &Repository, repo_path: &str) -> Result<V
     if files.len() < 30 {
         if let Ok(index) = repo.index() {
             for entry in index.iter() {
-                let path = String::from_utf8_lossy(&entry.path).to_string().replace('\\', "/");
+                let path = String::from_utf8_lossy(&entry.path)
+                    .to_string()
+                    .replace('\\', "/");
                 if !files.contains(&path) {
                     files.push(path);
                 }

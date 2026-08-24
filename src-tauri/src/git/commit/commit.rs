@@ -1,9 +1,8 @@
-use git2::{Repository, IndexAddOption, Signature};
+use crate::auth::keyring;
+use crate::error::AppError;
+use git2::{IndexAddOption, Repository, Signature};
 use std::path::Path;
 use std::process::Command;
-use crate::error::AppError;
-use crate::auth::keyring;
-
 
 pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
     let repo = Repository::open(repo_path)
@@ -52,7 +51,10 @@ pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError
             let output = cmd.output()?;
             if !output.status.success() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(AppError::Git(format!("Failed to unstage files: {}", stderr.trim())));
+                return Err(AppError::Git(format!(
+                    "Failed to unstage files: {}",
+                    stderr.trim()
+                )));
             }
         }
     }
@@ -68,7 +70,9 @@ pub fn commit_changes(
     allow_empty: Option<bool>,
 ) -> Result<(), AppError> {
     if summary.trim().is_empty() {
-        return Err(AppError::Validation("Commit summary cannot be empty".to_string()));
+        return Err(AppError::Validation(
+            "Commit summary cannot be empty".to_string(),
+        ));
     }
 
     let is_no_verify = no_verify.unwrap_or(false);
@@ -80,17 +84,25 @@ pub fn commit_changes(
 
     let (name, email) = if let Some(acct) = keyring::get_account_for_repo(repo_path) {
         let name = if acct.name.trim().is_empty() || acct.name == "GitLab User" {
-            config.get_string("user.name").unwrap_or_else(|_| acct.username.clone())
+            config
+                .get_string("user.name")
+                .unwrap_or_else(|_| acct.username.clone())
         } else {
             acct.name.clone()
         };
         let email = acct.email.unwrap_or_else(|| {
-            config.get_string("user.email").unwrap_or_else(|_| format!("{}@git.local", acct.username))
+            config
+                .get_string("user.email")
+                .unwrap_or_else(|_| format!("{}@git.local", acct.username))
         });
         (name, email)
     } else {
-        let name = config.get_string("user.name").unwrap_or_else(|_| "Git Desktop User".to_string());
-        let email = config.get_string("user.email").unwrap_or_else(|_| "user@git.local".to_string());
+        let name = config
+            .get_string("user.name")
+            .unwrap_or_else(|_| "Git Desktop User".to_string());
+        let email = config
+            .get_string("user.email")
+            .unwrap_or_else(|_| "user@git.local".to_string());
         (name, email)
     };
 
@@ -100,7 +112,12 @@ pub fn commit_changes(
     };
 
     if is_sign_off && !full_message.contains("Signed-off-by:") {
-        full_message = format!("{}\n\nSigned-off-by: {} <{}>", full_message.trim(), name, email);
+        full_message = format!(
+            "{}\n\nSigned-off-by: {} <{}>",
+            full_message.trim(),
+            name,
+            email
+        );
     }
 
     if is_no_verify || is_allow_empty {
@@ -121,7 +138,10 @@ pub fn commit_changes(
         let output = cmd.output()?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AppError::Git(format!("Git commit failed: {}", stderr.trim())));
+            return Err(AppError::Git(format!(
+                "Git commit failed: {}",
+                stderr.trim()
+            )));
         }
         return Ok(());
     }
@@ -168,7 +188,6 @@ pub fn commit_changes(
 
     Ok(())
 }
-
 
 pub fn list_branches(repo_path: &str) -> Result<Vec<crate::git::status::BranchInfo>, AppError> {
     let repo = Repository::open(repo_path)?;
@@ -250,7 +269,11 @@ pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<
             .output()?;
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AppError::Git(format!("Failed to force-delete branch '{}': {}", branch_name, stderr.trim())));
+            return Err(AppError::Git(format!(
+                "Failed to force-delete branch '{}': {}",
+                branch_name,
+                stderr.trim()
+            )));
         }
     } else {
         // Safe delete: use `git branch -d` which refuses to delete unmerged branches
@@ -267,15 +290,19 @@ pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<
                     branch_name
                 )));
             }
-            return Err(AppError::Git(format!("Failed to delete branch '{}': {}", branch_name, stderr.trim())));
+            return Err(AppError::Git(format!(
+                "Failed to delete branch '{}': {}",
+                branch_name,
+                stderr.trim()
+            )));
         }
     }
     Ok(())
 }
 
 pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Result<(), AppError> {
+    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
     use std::process::Command;
-    use crate::git::remote::{get_git_auth_info, apply_git_auth_args_pub};
 
     let auth_info = get_git_auth_info(repo_path);
     let mut cmd = Command::new("git");
@@ -291,7 +318,10 @@ pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Re
     let output = cmd.output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to push branch: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to push branch: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -316,5 +346,3 @@ pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppE
     }
     Ok(())
 }
-
-

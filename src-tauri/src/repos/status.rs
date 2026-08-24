@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use git2::{Repository, StatusOptions};
-use std::path::Path;
 use crate::error::AppError;
+use git2::{Repository, StatusOptions};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RepoDashboardStatus {
@@ -22,7 +22,9 @@ pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppE
         .map_err(|e| AppError::Git(format!("Failed to open repo '{}': {}", path, e)))?;
 
     // 1. Current branch
-    let current_branch = repo.head().ok()
+    let current_branch = repo
+        .head()
+        .ok()
         .and_then(|h| h.shorthand().map(|s| s.to_string()))
         .unwrap_or_else(|| "HEAD (detached)".to_string());
 
@@ -31,7 +33,8 @@ pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppE
     status_opts.include_untracked(true);
     status_opts.include_ignored(false);
 
-    let dirty_files = repo.statuses(Some(&mut status_opts))
+    let dirty_files = repo
+        .statuses(Some(&mut status_opts))
         .map(|s| s.iter().count() as u32)
         .unwrap_or(0);
 
@@ -81,10 +84,9 @@ pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppE
 
     if let Ok(head_branch) = repo.find_branch(&current_branch, git2::BranchType::Local) {
         if let Ok(upstream) = head_branch.upstream() {
-            if let (Some(local_oid), Some(upstream_oid)) = (
-                head_branch.get().target(),
-                upstream.get().target(),
-            ) {
+            if let (Some(local_oid), Some(upstream_oid)) =
+                (head_branch.get().target(), upstream.get().target())
+            {
                 if let Ok((a, b)) = repo.graph_ahead_behind(local_oid, upstream_oid) {
                     ahead = a as u32;
                     behind = b as u32;

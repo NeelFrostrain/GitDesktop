@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use crate::error::AppError;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -41,7 +41,19 @@ pub trait AuthProvider: Send + Sync {
     fn provider_kind(&self) -> ProviderKind;
     fn default_instance_url(&self) -> &'static str;
     fn start_oauth(&self, instance_url: &str) -> Result<String, AppError>;
-    fn exchange_code(&self, instance_url: &str, code: &str, code_verifier: &str) -> impl std::future::Future<Output = Result<ProviderAccount, AppError>> + Send;
-    fn refresh_token(&self, account: &ProviderAccount, refresh_token: &str) -> impl std::future::Future<Output = Result<ProviderAccount, AppError>> + Send;
-    fn revoke_token(&self, account: &ProviderAccount) -> impl std::future::Future<Output = Result<(), AppError>> + Send;
+    fn exchange_code(
+        &self,
+        instance_url: &str,
+        code: &str,
+        code_verifier: &str,
+    ) -> impl std::future::Future<Output = Result<ProviderAccount, AppError>> + Send;
+    fn refresh_token(
+        &self,
+        account: &ProviderAccount,
+        refresh_token: &str,
+    ) -> impl std::future::Future<Output = Result<ProviderAccount, AppError>> + Send;
+    fn revoke_token(
+        &self,
+        account: &ProviderAccount,
+    ) -> impl std::future::Future<Output = Result<(), AppError>> + Send;
 }

@@ -1,8 +1,8 @@
+use super::provider::{AccountPatch, ProviderAccount, ProviderKind, TokenStatus};
+use crate::error::AppError;
 use keyring::Entry;
 use std::fs;
 use std::path::PathBuf;
-use crate::error::AppError;
-use super::provider::{ProviderAccount, ProviderKind, TokenStatus, AccountPatch};
 
 const KEYRING_SERVICE: &str = "gitlab-desktop-accounts";
 
@@ -51,14 +51,26 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
     if reg.accounts.is_empty() {
         let legacy_accounts = crate::auth::keyring::list_accounts();
         for leg in legacy_accounts {
-            let kind = if leg.provider == "github" { ProviderKind::Github } else { ProviderKind::Gitlab };
-            let handle = if leg.username.starts_with('@') { leg.username } else { format!("@{}", leg.username) };
+            let kind = if leg.provider == "github" {
+                ProviderKind::Github
+            } else {
+                ProviderKind::Gitlab
+            };
+            let handle = if leg.username.starts_with('@') {
+                leg.username
+            } else {
+                format!("@{}", leg.username)
+            };
             let acc = ProviderAccount {
                 id: leg.id.clone(),
                 provider: kind,
                 instance_url: leg.server_url.clone(),
                 handle,
-                display_name: if !leg.name.is_empty() { leg.name } else { leg.id.clone() },
+                display_name: if !leg.name.is_empty() {
+                    leg.name
+                } else {
+                    leg.id.clone()
+                },
                 avatar_url: leg.avatar_url.unwrap_or_default(),
                 commit_email: leg.email.unwrap_or_default(),
                 is_active: leg.is_active,
@@ -95,7 +107,11 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
     reg.accounts
 }
 
-pub fn save_account(mut account: ProviderAccount, token: &str, refresh_token: Option<&str>) -> Result<(), AppError> {
+pub fn save_account(
+    mut account: ProviderAccount,
+    token: &str,
+    refresh_token: Option<&str>,
+) -> Result<(), AppError> {
     let mut reg = read_registry();
 
     // Store secret token in OS keyring
@@ -146,7 +162,10 @@ pub fn update_account(account_id: &str, patch: AccountPatch) -> Result<ProviderA
         write_registry(&reg);
         Ok(updated)
     } else {
-        Err(AppError::NotFound(format!("Account '{}' not found", account_id)))
+        Err(AppError::NotFound(format!(
+            "Account '{}' not found",
+            account_id
+        )))
     }
 }
 
@@ -178,7 +197,8 @@ pub fn get_token(account_id: &str) -> Result<Option<String>, AppError> {
 fn store_token(account_id: &str, token: &str) -> Result<(), AppError> {
     let entry = Entry::new(KEYRING_SERVICE, account_id)
         .map_err(|e| AppError::Auth(format!("Keyring error: {}", e)))?;
-    entry.set_password(token)
+    entry
+        .set_password(token)
         .map_err(|e| AppError::Auth(format!("Failed to store token: {}", e)))
 }
 
@@ -186,7 +206,8 @@ fn store_refresh_token(account_id: &str, token: &str) -> Result<(), AppError> {
     let key = format!("{}_refresh", account_id);
     let entry = Entry::new(KEYRING_SERVICE, &key)
         .map_err(|e| AppError::Auth(format!("Keyring error: {}", e)))?;
-    entry.set_password(token)
+    entry
+        .set_password(token)
         .map_err(|e| AppError::Auth(format!("Failed to store refresh token: {}", e)))
 }
 

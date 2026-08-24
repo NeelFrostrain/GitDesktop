@@ -1,8 +1,8 @@
-use serde::Deserialize;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, ACCEPT, USER_AGENT};
-use crate::error::AppError;
-use crate::domain::accounts::provider::{AuthProvider, ProviderAccount, ProviderKind, TokenStatus};
 use crate::domain::accounts::oauth_pkce;
+use crate::domain::accounts::provider::{AuthProvider, ProviderAccount, ProviderKind, TokenStatus};
+use crate::error::AppError;
+use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
+use serde::Deserialize;
 
 pub const GITHUB_CLIENT_ID: &str = "Ov23li3kX5zN6H4dYx3E";
 pub const GITHUB_REDIRECT_URI: &str = "gitlab-desktop://oauth/github/callback";
@@ -52,7 +52,12 @@ impl AuthProvider for GitHubAuthProvider {
         Ok(auth_url)
     }
 
-    async fn exchange_code(&self, instance_url: &str, code: &str, _code_verifier: &str) -> Result<ProviderAccount, AppError> {
+    async fn exchange_code(
+        &self,
+        instance_url: &str,
+        code: &str,
+        _code_verifier: &str,
+    ) -> Result<ProviderAccount, AppError> {
         let clean_url = instance_url.trim_end_matches('/');
         let token_url = format!("{}/login/oauth/access_token", clean_url);
 
@@ -67,14 +72,16 @@ impl AuthProvider for GitHubAuthProvider {
         ];
 
         let client = reqwest::Client::new();
-        let resp = client.post(&token_url)
+        let resp = client
+            .post(&token_url)
             .headers(headers)
             .form(&params)
             .send()
             .await
             .map_err(|e| AppError::Auth(format!("GitHub token exchange failed: {}", e)))?;
 
-        let token_data: GitHubTokenResponse = resp.json()
+        let token_data: GitHubTokenResponse = resp
+            .json()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to parse GitHub token response: {}", e)))?;
 
@@ -93,17 +100,23 @@ impl AuthProvider for GitHubAuthProvider {
         );
         user_headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
 
-        let user_resp = client.get(format!("{}/user", api_base))
+        let user_resp = client
+            .get(format!("{}/user", api_base))
             .headers(user_headers)
             .send()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to fetch GitHub profile: {}", e)))?;
 
-        let user_data: GitHubUserResponse = user_resp.json()
+        let user_data: GitHubUserResponse = user_resp
+            .json()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to parse GitHub user: {}", e)))?;
 
-        let account_id = format!("github:{}:{}", clean_url.replace("https://", "").replace("http://", ""), user_data.id);
+        let account_id = format!(
+            "github:{}:{}",
+            clean_url.replace("https://", "").replace("http://", ""),
+            user_data.id
+        );
         let handle = format!("@{}", user_data.login.trim_start_matches('@'));
         let display_name = user_data.name.unwrap_or_else(|| user_data.login.clone());
 
@@ -117,7 +130,10 @@ impl AuthProvider for GitHubAuthProvider {
             commit_email: user_data.email.unwrap_or_default(),
             is_active: false,
             token_status: TokenStatus::Valid,
-            scopes: token_data.scope.map(|s| s.split(',').map(|x| x.trim().to_string()).collect()).unwrap_or_default(),
+            scopes: token_data
+                .scope
+                .map(|s| s.split(',').map(|x| x.trim().to_string()).collect())
+                .unwrap_or_default(),
             expires_at: None,
         };
 
@@ -130,7 +146,11 @@ impl AuthProvider for GitHubAuthProvider {
         Ok(account)
     }
 
-    async fn refresh_token(&self, account: &ProviderAccount, _refresh_token: &str) -> Result<ProviderAccount, AppError> {
+    async fn refresh_token(
+        &self,
+        account: &ProviderAccount,
+        _refresh_token: &str,
+    ) -> Result<ProviderAccount, AppError> {
         Ok(account.clone())
     }
 

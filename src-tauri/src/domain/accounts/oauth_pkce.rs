@@ -1,8 +1,8 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::Rng;
 use sha2::{Digest, Sha256};
-use std::sync::{Mutex, OnceLock};
 use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 static PKCE_STORAGE: OnceLock<Mutex<HashMap<String, PkceSession>>> = OnceLock::new();
 
@@ -23,9 +23,7 @@ pub fn generate_pkce_session(provider: &str, instance_url: &str) -> (String, Str
     let mut rng = rand::thread_rng();
 
     // 1. Generate 64-byte random string for verifier
-    let verifier_bytes: Vec<u8> = (0..64)
-        .map(|_| rng.gen_range(b'A'..=b'z'))
-        .collect();
+    let verifier_bytes: Vec<u8> = (0..64).map(|_| rng.gen_range(b'A'..=b'z')).collect();
     let verifier = String::from_utf8_lossy(&verifier_bytes).to_string();
 
     // 2. Compute SHA-256 and base64url-encode for challenge
@@ -35,9 +33,7 @@ pub fn generate_pkce_session(provider: &str, instance_url: &str) -> (String, Str
     let challenge = URL_SAFE_NO_PAD.encode(challenge_hash);
 
     // 3. Generate random state string
-    let state_bytes: Vec<u8> = (0..32)
-        .map(|_| rng.gen_range(b'a'..=b'z'))
-        .collect();
+    let state_bytes: Vec<u8> = (0..32).map(|_| rng.gen_range(b'a'..=b'z')).collect();
     let state = String::from_utf8_lossy(&state_bytes).to_string();
 
     let session = PkceSession {

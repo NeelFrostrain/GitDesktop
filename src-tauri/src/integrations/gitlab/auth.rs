@@ -1,10 +1,11 @@
-use serde::Deserialize;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
-use crate::error::AppError;
-use crate::domain::accounts::provider::{AuthProvider, ProviderAccount, ProviderKind, TokenStatus};
 use crate::domain::accounts::oauth_pkce;
+use crate::domain::accounts::provider::{AuthProvider, ProviderAccount, ProviderKind, TokenStatus};
+use crate::error::AppError;
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use serde::Deserialize;
 
-pub const GITLAB_DEFAULT_CLIENT_ID: &str = "0e59a43a08832a83adbb0c03632e8c2ecad1586a111a43a6d97e7fbe6b1bb85f";
+pub const GITLAB_DEFAULT_CLIENT_ID: &str =
+    "0e59a43a08832a83adbb0c03632e8c2ecad1586a111a43a6d97e7fbe6b1bb85f";
 pub const REDIRECT_URI: &str = "gitlab-desktop://oauth/gitlab/callback";
 
 #[allow(dead_code)]
@@ -55,7 +56,12 @@ impl AuthProvider for GitLabAuthProvider {
         Ok(auth_url)
     }
 
-    async fn exchange_code(&self, instance_url: &str, code: &str, code_verifier: &str) -> Result<ProviderAccount, AppError> {
+    async fn exchange_code(
+        &self,
+        instance_url: &str,
+        code: &str,
+        code_verifier: &str,
+    ) -> Result<ProviderAccount, AppError> {
         let clean_url = instance_url.trim_end_matches('/');
         let token_url = format!("{}/oauth/token", clean_url);
 
@@ -68,7 +74,8 @@ impl AuthProvider for GitLabAuthProvider {
         ];
 
         let client = reqwest::Client::new();
-        let resp = client.post(&token_url)
+        let resp = client
+            .post(&token_url)
             .form(&params)
             .send()
             .await
@@ -77,10 +84,14 @@ impl AuthProvider for GitLabAuthProvider {
         if !resp.status().is_success() {
             let status = resp.status();
             let text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Auth(format!("GitLab OAuth error {}: {}", status, text)));
+            return Err(AppError::Auth(format!(
+                "GitLab OAuth error {}: {}",
+                status, text
+            )));
         }
 
-        let token_resp: GitLabOAuthTokenResponse = resp.json()
+        let token_resp: GitLabOAuthTokenResponse = resp
+            .json()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to parse GitLab token response: {}", e)))?;
 
@@ -93,21 +104,30 @@ impl AuthProvider for GitLabAuthProvider {
                 .map_err(|e| AppError::Auth(e.to_string()))?,
         );
 
-        let user_resp = client.get(&user_url)
+        let user_resp = client
+            .get(&user_url)
             .headers(headers)
             .send()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to fetch user profile: {}", e)))?;
 
-        let user_data: GitLabUserResponse = user_resp.json()
+        let user_data: GitLabUserResponse = user_resp
+            .json()
             .await
             .map_err(|e| AppError::Auth(format!("Failed to parse user profile: {}", e)))?;
 
         let now = chrono::Utc::now().timestamp();
         let expires_at = token_resp.expires_in.map(|exp| now + exp);
-        let scopes = token_resp.scope.map(|s| s.split_whitespace().map(|x| x.to_string()).collect()).unwrap_or_default();
+        let scopes = token_resp
+            .scope
+            .map(|s| s.split_whitespace().map(|x| x.to_string()).collect())
+            .unwrap_or_default();
 
-        let account_id = format!("gitlab:{}:{}", clean_url.replace("https://", "").replace("http://", ""), user_data.id);
+        let account_id = format!(
+            "gitlab:{}:{}",
+            clean_url.replace("https://", "").replace("http://", ""),
+            user_data.id
+        );
         let handle = format!("@{}", user_data.username.trim_start_matches('@'));
 
         let account = ProviderAccount {
@@ -133,7 +153,11 @@ impl AuthProvider for GitLabAuthProvider {
         Ok(account)
     }
 
-    async fn refresh_token(&self, account: &ProviderAccount, refresh_token: &str) -> Result<ProviderAccount, AppError> {
+    async fn refresh_token(
+        &self,
+        account: &ProviderAccount,
+        refresh_token: &str,
+    ) -> Result<ProviderAccount, AppError> {
         let clean_url = account.instance_url.trim_end_matches('/');
         let token_url = format!("{}/oauth/token", clean_url);
 
@@ -145,7 +169,8 @@ impl AuthProvider for GitLabAuthProvider {
         ];
 
         let client = reqwest::Client::new();
-        let resp = client.post(&token_url)
+        let resp = client
+            .post(&token_url)
             .form(&params)
             .send()
             .await
@@ -155,7 +180,9 @@ impl AuthProvider for GitLabAuthProvider {
             return Err(AppError::Auth("Failed to refresh GitLab token".to_string()));
         }
 
-        let token_resp: GitLabOAuthTokenResponse = resp.json().await
+        let token_resp: GitLabOAuthTokenResponse = resp
+            .json()
+            .await
             .map_err(|e| AppError::Auth(e.to_string()))?;
 
         let now = chrono::Utc::now().timestamp();
@@ -177,7 +204,8 @@ impl AuthProvider for GitLabAuthProvider {
         let revoke_url = format!("{}/oauth/revoke", clean_url);
         if let Ok(Some(token)) = crate::domain::accounts::token_store::get_token(&account.id) {
             let client = reqwest::Client::new();
-            let _ = client.post(&revoke_url)
+            let _ = client
+                .post(&revoke_url)
                 .form(&[
                     ("client_id", GITLAB_DEFAULT_CLIENT_ID),
                     ("token", token.as_str()),

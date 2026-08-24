@@ -1,10 +1,10 @@
-use serde::{Deserialize, Serialize};
-use git2::Repository;
-use std::process::Command;
-use std::path::Path;
-use crate::error::AppError;
 use crate::auth::keyring;
+use crate::error::AppError;
 use base64::{engine::general_purpose::STANDARD, Engine};
+use git2::Repository;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PullResult {
@@ -37,12 +37,13 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
     if let Some(url) = remote_url {
         let url_lower = url.to_lowercase();
         for acct in &accounts {
-            let host = acct.server_url
+            let host = acct
+                .server_url
                 .trim_start_matches("https://")
                 .trim_start_matches("http://")
                 .trim_end_matches('/')
                 .to_lowercase();
-            
+
             if !host.is_empty() && url_lower.contains(&host) {
                 return GitAuthInfo {
                     token: Some(acct.token.clone()),
@@ -110,7 +111,11 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
         (None, None)
     };
 
-    GitAuthInfo { token, username, provider }
+    GitAuthInfo {
+        token,
+        username,
+        provider,
+    }
 }
 
 pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
@@ -125,14 +130,18 @@ fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
     if let Some(ref t) = auth_info.token {
         let t_clean = t.trim();
         if !t_clean.is_empty() {
-            let auth_user = if auth_info.provider == "github" { "x-access-token" } else { "oauth2" };
+            let auth_user = if auth_info.provider == "github" {
+                "x-access-token"
+            } else {
+                "oauth2"
+            };
             let auth_str = format!("{}:{}", auth_user, t_clean);
             let encoded = STANDARD.encode(auth_str.as_bytes());
 
             cmd.arg("-c")
-               .arg(format!("http.extraHeader=Authorization: Basic {}", encoded))
-               .arg("-c")
-               .arg("credential.helper=");
+                .arg(format!("http.extraHeader=Authorization: Basic {}", encoded))
+                .arg("-c")
+                .arg("credential.helper=");
         }
     }
 }
@@ -141,7 +150,9 @@ fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
 pub fn list_remotes(repo_path: &str) -> Result<Vec<RemoteInfo>, AppError> {
     let repo = Repository::open(repo_path)?;
     let remotes_str = repo.remotes()?;
-    let current_branch = repo.head().ok()
+    let current_branch = repo
+        .head()
+        .ok()
         .and_then(|h| h.shorthand().map(|s| s.to_string()))
         .unwrap_or_else(|| "main".to_string());
 
@@ -175,7 +186,12 @@ pub fn list_remotes(repo_path: &str) -> Result<Vec<RemoteInfo>, AppError> {
 
 fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) {
     let ref_exists = Command::new("git")
-        .args(["show-ref", "--quiet", "--verify", &format!("refs/remotes/{}", remote_ref)])
+        .args([
+            "show-ref",
+            "--quiet",
+            "--verify",
+            &format!("refs/remotes/{}", remote_ref),
+        ])
         .current_dir(repo_path)
         .output()
         .map(|o| o.status.success())
@@ -187,7 +203,12 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
             .current_dir(repo_path)
             .output()
             .ok()
-            .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<usize>().ok())
+            .and_then(|o| {
+                String::from_utf8_lossy(&o.stdout)
+                    .trim()
+                    .parse::<usize>()
+                    .ok()
+            })
             .unwrap_or(0);
         return (count, 0);
     }
@@ -197,7 +218,12 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
         .current_dir(repo_path)
         .output()
         .ok()
-        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<usize>().ok())
+        .and_then(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .trim()
+                .parse::<usize>()
+                .ok()
+        })
         .unwrap_or(0);
 
     let behind = Command::new("git")
@@ -205,7 +231,12 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
         .current_dir(repo_path)
         .output()
         .ok()
-        .and_then(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<usize>().ok())
+        .and_then(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .trim()
+                .parse::<usize>()
+                .ok()
+        })
         .unwrap_or(0);
 
     (ahead, behind)
@@ -217,7 +248,9 @@ pub fn add_remote(repo_path: &str, name: &str, url: &str) -> Result<(), AppError
     let clean_url = url.trim();
 
     if clean_name.is_empty() || clean_url.is_empty() {
-        return Err(AppError::Validation("Remote name and URL cannot be empty".to_string()));
+        return Err(AppError::Validation(
+            "Remote name and URL cannot be empty".to_string(),
+        ));
     }
 
     let output = Command::new("git")
@@ -227,7 +260,10 @@ pub fn add_remote(repo_path: &str, name: &str, url: &str) -> Result<(), AppError
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to add remote: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to add remote: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -237,7 +273,9 @@ pub fn add_remote(repo_path: &str, name: &str, url: &str) -> Result<(), AppError
 pub fn remove_remote(repo_path: &str, name: &str) -> Result<(), AppError> {
     let clean_name = name.trim();
     if clean_name.is_empty() {
-        return Err(AppError::Validation("Remote name cannot be empty".to_string()));
+        return Err(AppError::Validation(
+            "Remote name cannot be empty".to_string(),
+        ));
     }
 
     let output = Command::new("git")
@@ -247,7 +285,10 @@ pub fn remove_remote(repo_path: &str, name: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to remove remote: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to remove remote: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -259,7 +300,9 @@ pub fn rename_remote(repo_path: &str, old_name: &str, new_name: &str) -> Result<
     let clean_new = new_name.trim();
 
     if clean_old.is_empty() || clean_new.is_empty() {
-        return Err(AppError::Validation("Remote names cannot be empty".to_string()));
+        return Err(AppError::Validation(
+            "Remote names cannot be empty".to_string(),
+        ));
     }
 
     let output = Command::new("git")
@@ -269,19 +312,29 @@ pub fn rename_remote(repo_path: &str, old_name: &str, new_name: &str) -> Result<
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to rename remote: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to rename remote: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
 }
 
 /// Set URL or Push URL for a remote
-pub fn set_remote_url(repo_path: &str, name: &str, url: &str, is_push: bool) -> Result<(), AppError> {
+pub fn set_remote_url(
+    repo_path: &str,
+    name: &str,
+    url: &str,
+    is_push: bool,
+) -> Result<(), AppError> {
     let clean_name = name.trim();
     let clean_url = url.trim();
 
     if clean_name.is_empty() || clean_url.is_empty() {
-        return Err(AppError::Validation("Remote name and URL cannot be empty".to_string()));
+        return Err(AppError::Validation(
+            "Remote name and URL cannot be empty".to_string(),
+        ));
     }
 
     let mut cmd = Command::new("git");
@@ -296,7 +349,10 @@ pub fn set_remote_url(repo_path: &str, name: &str, url: &str, is_push: bool) -> 
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to set remote URL: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to set remote URL: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -325,10 +381,12 @@ pub fn fetch_specific_remote(repo_path: &str, remote_name: &str) -> Result<(), A
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
-            return Err(AppError::Auth(
-                format!("Authentication failed for remote fetch: {}", stderr.trim())
-            ));
+        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed")
+        {
+            return Err(AppError::Auth(format!(
+                "Authentication failed for remote fetch: {}",
+                stderr.trim()
+            )));
         }
         return Err(AppError::Git(format!("Fetch failed: {}", stderr.trim())));
     }
@@ -347,7 +405,11 @@ pub fn push_specific_remote(
     branch_name: &str,
     force: bool,
 ) -> Result<(), AppError> {
-    let clean_remote = if remote_name.trim().is_empty() { "origin" } else { remote_name.trim() };
+    let clean_remote = if remote_name.trim().is_empty() {
+        "origin"
+    } else {
+        remote_name.trim()
+    };
     let clean_branch = branch_name.trim();
     let auth_info = get_git_auth_info(repo_path);
 
@@ -377,7 +439,10 @@ pub fn push_specific_remote(
             )));
         }
 
-        if lower.contains("fetch first") || lower.contains("non-fast-forward") || lower.contains("remote contains work") {
+        if lower.contains("fetch first")
+            || lower.contains("non-fast-forward")
+            || lower.contains("remote contains work")
+        {
             return Err(AppError::Git(format!(
                 "Push rejected: Remote '{}' has newer changes. Please Pull/Fetch first before pushing.",
                 clean_remote
@@ -416,7 +481,10 @@ pub fn push_specific_remote(
         }
 
         if let Some(idx) = err_msg.find("! [remote rejected]") {
-            let rejection_line = err_msg[idx..].lines().next().unwrap_or("! [remote rejected]");
+            let rejection_line = err_msg[idx..]
+                .lines()
+                .next()
+                .unwrap_or("! [remote rejected]");
             return Err(AppError::Git(format!("Push rejected: {}", rejection_line)));
         }
 
@@ -424,12 +492,24 @@ pub fn push_specific_remote(
         let clean_summary: String = err_msg
             .lines()
             .map(str::trim)
-            .filter(|l| !l.is_empty() && !l.starts_with("To http") && !l.starts_with("To git@") && !l.starts_with("To ssh://"))
+            .filter(|l| {
+                !l.is_empty()
+                    && !l.starts_with("To http")
+                    && !l.starts_with("To git@")
+                    && !l.starts_with("To ssh://")
+            })
             .collect::<Vec<_>>()
             .join(" | ");
 
-        let final_err = if !clean_summary.is_empty() { clean_summary } else { err_msg };
-        return Err(AppError::Git(format!("Failed to push to remote '{}': {}", clean_remote, final_err)));
+        let final_err = if !clean_summary.is_empty() {
+            clean_summary
+        } else {
+            err_msg
+        };
+        return Err(AppError::Git(format!(
+            "Failed to push to remote '{}': {}",
+            clean_remote, final_err
+        )));
     }
 
     Ok(())
@@ -445,7 +525,11 @@ pub fn pull_specific_remote(
     remote_name: &str,
     branch_name: &str,
 ) -> Result<PullResult, AppError> {
-    let clean_remote = if remote_name.trim().is_empty() { "origin" } else { remote_name.trim() };
+    let clean_remote = if remote_name.trim().is_empty() {
+        "origin"
+    } else {
+        remote_name.trim()
+    };
     let clean_branch = branch_name.trim();
     let auth_info = get_git_auth_info(repo_path);
 
@@ -454,10 +538,12 @@ pub fn pull_specific_remote(
         .current_dir(repo_path)
         .output()
         .ok()
-        .and_then(|o| if o.status.success() {
-            Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
-        } else {
-            None
+        .and_then(|o| {
+            if o.status.success() {
+                Some(String::from_utf8_lossy(&o.stdout).trim().to_string())
+            } else {
+                None
+            }
         });
 
     let mut cmd = Command::new("git");
@@ -473,7 +559,7 @@ pub fn pull_specific_remote(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        
+
         let repo = Repository::open(repo_path)?;
         let mut conflicts = Vec::new();
         let statuses = repo.statuses(None)?;
@@ -493,13 +579,19 @@ pub fn pull_specific_remote(
             });
         }
 
-        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed") {
-            return Err(AppError::Auth(
-                format!("Access Denied: Stored token is invalid for remote '{}'.", clean_remote)
-            ));
+        if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed")
+        {
+            return Err(AppError::Auth(format!(
+                "Access Denied: Stored token is invalid for remote '{}'.",
+                clean_remote
+            )));
         }
 
-        return Err(AppError::Git(format!("Git pull failed from '{}': {}", clean_remote, stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Git pull failed from '{}': {}",
+            clean_remote,
+            stderr.trim()
+        )));
     }
 
     let commits_pulled = if let Some(ref old_head) = head_before {
@@ -508,10 +600,15 @@ pub fn pull_specific_remote(
             .current_dir(repo_path)
             .output()
             .ok()
-            .and_then(|o| if o.status.success() {
-                String::from_utf8_lossy(&o.stdout).trim().parse::<usize>().ok()
-            } else {
-                None
+            .and_then(|o| {
+                if o.status.success() {
+                    String::from_utf8_lossy(&o.stdout)
+                        .trim()
+                        .parse::<usize>()
+                        .ok()
+                } else {
+                    None
+                }
             })
             .unwrap_or(0)
     } else {
@@ -528,7 +625,10 @@ pub fn pull_specific_remote(
 pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppError> {
     let path = Path::new(local_path);
     if path.exists() && fs_is_not_empty(path) {
-        return Err(AppError::Validation(format!("Destination path '{}' is not empty", local_path)));
+        return Err(AppError::Validation(format!(
+            "Destination path '{}' is not empty",
+            local_path
+        )));
     }
 
     let auth_info = get_git_auth_info_for_url(".", Some(remote_url));
@@ -541,7 +641,10 @@ pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppErr
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        return Err(AppError::Git(format!("Failed to clone repository: {}", stderr)));
+        return Err(AppError::Git(format!(
+            "Failed to clone repository: {}",
+            stderr
+        )));
     }
 
     Ok(())

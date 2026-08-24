@@ -17,7 +17,9 @@ pub struct MinGitProgressPayload {
     pub message: String,
 }
 
-pub async fn download_and_install_mingit(app_handle: &AppHandle) -> Result<GitRuntimeInfo, AppError> {
+pub async fn download_and_install_mingit(
+    app_handle: &AppHandle,
+) -> Result<GitRuntimeInfo, AppError> {
     let client = reqwest::Client::builder()
         .user_agent("GitDesktop-MinGitDownloader/1.0")
         .build()
@@ -36,11 +38,10 @@ pub async fn download_and_install_mingit(app_handle: &AppHandle) -> Result<GitRu
 
     emit_progress("starting", 0, 0, 0.0, "Initiating MinGit download...");
 
-    let mut res = client
-        .get(MINGIT_DOWNLOAD_URL)
-        .send()
-        .await
-        .map_err(|e| AppError::Network(format!("Failed to connect to MinGit release: {}", e)))?;
+    let mut res =
+        client.get(MINGIT_DOWNLOAD_URL).send().await.map_err(|e| {
+            AppError::Network(format!("Failed to connect to MinGit release: {}", e))
+        })?;
 
     if !res.status().is_success() {
         let err_msg = format!("HTTP error {} downloading MinGit", res.status());
@@ -79,25 +80,33 @@ pub async fn download_and_install_mingit(app_handle: &AppHandle) -> Result<GitRu
         );
     }
 
-    emit_progress("extracting", downloaded_bytes, total_bytes, 99.0, "Extracting portable MinGit files...");
+    emit_progress(
+        "extracting",
+        downloaded_bytes,
+        total_bytes,
+        99.0,
+        "Extracting portable MinGit files...",
+    );
 
     let mingit_dir = get_mingit_dir();
     if mingit_dir.exists() {
         let _ = fs::remove_dir_all(&mingit_dir);
     }
-    fs::create_dir_all(&mingit_dir).map_err(|e| AppError::Filesystem(format!("Failed to create MinGit dir: {}", e)))?;
+    fs::create_dir_all(&mingit_dir)
+        .map_err(|e| AppError::Filesystem(format!("Failed to create MinGit dir: {}", e)))?;
 
     // Extract ZIP archive in a background worker thread
     let mingit_dir_clone = mingit_dir.clone();
     tokio::task::spawn_blocking(move || -> Result<(), AppError> {
         let cursor = Cursor::new(zip_buffer);
-        let mut archive = zip::ZipArchive::new(cursor)
-            .map_err(|e| AppError::Filesystem(format!("Failed to read MinGit zip archive: {}", e)))?;
+        let mut archive = zip::ZipArchive::new(cursor).map_err(|e| {
+            AppError::Filesystem(format!("Failed to read MinGit zip archive: {}", e))
+        })?;
 
         for i in 0..archive.len() {
-            let mut file = archive
-                .by_index(i)
-                .map_err(|e| AppError::Filesystem(format!("Failed to read archive entry: {}", e)))?;
+            let mut file = archive.by_index(i).map_err(|e| {
+                AppError::Filesystem(format!("Failed to read archive entry: {}", e))
+            })?;
 
             let outpath = match file.enclosed_name() {
                 Some(path) => mingit_dir_clone.join(path),
@@ -105,19 +114,23 @@ pub async fn download_and_install_mingit(app_handle: &AppHandle) -> Result<GitRu
             };
 
             if file.is_dir() {
-                fs::create_dir_all(&outpath)
-                    .map_err(|e| AppError::Filesystem(format!("Failed to create directory: {}", e)))?;
+                fs::create_dir_all(&outpath).map_err(|e| {
+                    AppError::Filesystem(format!("Failed to create directory: {}", e))
+                })?;
             } else {
                 if let Some(p) = outpath.parent() {
                     if !p.exists() {
-                        fs::create_dir_all(p)
-                            .map_err(|e| AppError::Filesystem(format!("Failed to create parent dir: {}", e)))?;
+                        fs::create_dir_all(p).map_err(|e| {
+                            AppError::Filesystem(format!("Failed to create parent dir: {}", e))
+                        })?;
                     }
                 }
-                let mut outfile = File::create(&outpath)
-                    .map_err(|e| AppError::Filesystem(format!("Failed to create file {:?}: {}", outpath, e)))?;
-                io::copy(&mut file, &mut outfile)
-                    .map_err(|e| AppError::Filesystem(format!("Failed to write file {:?}: {}", outpath, e)))?;
+                let mut outfile = File::create(&outpath).map_err(|e| {
+                    AppError::Filesystem(format!("Failed to create file {:?}: {}", outpath, e))
+                })?;
+                io::copy(&mut file, &mut outfile).map_err(|e| {
+                    AppError::Filesystem(format!("Failed to write file {:?}: {}", outpath, e))
+                })?;
             }
 
             // Set unix permissions on unix targets if available
@@ -138,7 +151,13 @@ pub async fn download_and_install_mingit(app_handle: &AppHandle) -> Result<GitRu
     // Verify installation
     let info = detect_git_runtime();
     if info.is_available {
-        emit_progress("completed", total_bytes, total_bytes, 100.0, "MinGit installed successfully!");
+        emit_progress(
+            "completed",
+            total_bytes,
+            total_bytes,
+            100.0,
+            "MinGit installed successfully!",
+        );
         Ok(info)
     } else {
         let err_msg = "MinGit extracted but git.exe execution verification failed.".to_string();

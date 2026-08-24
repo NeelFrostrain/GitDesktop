@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use std::process::Command;
-use std::path::Path;
 use crate::error::AppError;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitConfigItem {
@@ -32,7 +32,11 @@ pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppErro
     let name = if let Ok(out) = name_output {
         if out.status.success() {
             let val = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if !val.is_empty() { Some(val) } else { None }
+            if !val.is_empty() {
+                Some(val)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -43,7 +47,11 @@ pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppErro
     let email = if let Ok(out) = email_output {
         if out.status.success() {
             let val = String::from_utf8_lossy(&out.stdout).trim().to_string();
-            if !val.is_empty() { Some(val) } else { None }
+            if !val.is_empty() {
+                Some(val)
+            } else {
+                None
+            }
         } else {
             None
         }
@@ -53,7 +61,6 @@ pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppErro
 
     Ok(GitUserIdentity { name, email })
 }
-
 
 pub fn get_repo_git_config(repo_path: &str) -> Result<Vec<GitConfigItem>, AppError> {
     let output = Command::new("git")
@@ -93,7 +100,10 @@ pub fn set_repo_git_config(repo_path: &str, key: &str, value: &str) -> Result<()
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to set git config: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to set git config: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

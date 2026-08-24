@@ -1,11 +1,11 @@
-pub mod pty;
+pub mod autocomplete;
 pub mod history;
 pub mod log_store;
-pub mod autocomplete;
+pub mod pty;
 
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use sha2::{Digest, Sha256};
+use std::path::PathBuf;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TerminalSessionInfo {
@@ -144,4 +144,3 @@ mod tests {
         assert_eq!(sessions[0].session_id, session_id);
     }
 }
-

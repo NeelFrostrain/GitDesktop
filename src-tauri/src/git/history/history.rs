@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use git2::Repository;
 use crate::error::AppError;
+use git2::Repository;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct CommitFileStat {
@@ -34,12 +34,18 @@ pub struct CommitDetails {
     pub file_stats: Vec<CommitFileStat>,
 }
 
-pub fn get_commit_history(repo_path: &str, limit: usize, offset: usize) -> Result<Vec<CommitInfo>, AppError> {
+pub fn get_commit_history(
+    repo_path: &str,
+    limit: usize,
+    offset: usize,
+) -> Result<Vec<CommitInfo>, AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
     let mut revwalk = repo.revwalk()?;
-    revwalk.push_head().map_err(|_| AppError::Git("Repository has no HEAD commit".to_string()))?;
+    revwalk
+        .push_head()
+        .map_err(|_| AppError::Git("Repository has no HEAD commit".to_string()))?;
 
     let mut commits = Vec::new();
     let entries: Vec<_> = revwalk.skip(offset).take(limit).collect();

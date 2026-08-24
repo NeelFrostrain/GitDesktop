@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use std::process::Command;
-use std::path::Path;
-use std::fs;
 use crate::error::AppError;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GpgKeyInfo {
@@ -27,14 +27,19 @@ pub struct SigningConfig {
     pub enabled: bool,
     pub method: String, // "gpg" | "ssh"
     pub key_id: String,
-    pub scope: String,  // "repo" | "global"
+    pub scope: String, // "repo" | "global"
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "status", content = "details")]
 pub enum VerifyResult {
-    Verified { signer: String, key_id: Option<String> },
-    Unverified { reason: String },
+    Verified {
+        signer: String,
+        key_id: Option<String>,
+    },
+    Unverified {
+        reason: String,
+    },
     NoSignature,
     Error(String),
 }
@@ -42,7 +47,12 @@ pub enum VerifyResult {
 /// List all GPG secret keys installed on the machine
 pub fn list_gpg_keys() -> Result<Vec<GpgKeyInfo>, AppError> {
     let output = Command::new("gpg")
-        .args(["--list-secret-keys", "--with-colons", "--keyid-format", "LONG"])
+        .args([
+            "--list-secret-keys",
+            "--with-colons",
+            "--keyid-format",
+            "LONG",
+        ])
         .output();
 
     let output = match output {
@@ -87,15 +97,16 @@ pub fn list_gpg_keys() -> Result<Vec<GpgKeyInfo>, AppError> {
                         kid.clone()
                     };
 
-                    let email = if let (Some(start), Some(end)) = (user_id.find('<'), user_id.find('>')) {
-                        if start < end {
-                            Some(user_id[start + 1..end].to_string())
+                    let email =
+                        if let (Some(start), Some(end)) = (user_id.find('<'), user_id.find('>')) {
+                            if start < end {
+                                Some(user_id[start + 1..end].to_string())
+                            } else {
+                                None
+                            }
                         } else {
                             None
-                        }
-                    } else {
-                        None
-                    };
+                        };
 
                     keys.push(GpgKeyInfo {
                         key_id: kid.clone(),
@@ -118,7 +129,8 @@ pub fn list_ssh_keys() -> Result<Vec<SshKeyInfo>, AppError> {
     let mut keys = Vec::new();
 
     // 1. Check ~/.ssh directory for *.pub files
-    let ssh_dir = if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
+    let ssh_dir = if let Ok(home) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME"))
+    {
         Path::new(&home).join(".ssh")
     } else {
         Path::new(".").to_path_buf()
@@ -205,7 +217,10 @@ pub fn get_signing_config(repo_path: &str) -> Result<SigningConfig, AppError> {
         .ok()
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string());
 
-    let is_local_set = local_gpgsign.as_ref().map(|s| !s.is_empty()).unwrap_or(false);
+    let is_local_set = local_gpgsign
+        .as_ref()
+        .map(|s| !s.is_empty())
+        .unwrap_or(false);
 
     let (scope, gpgsign_val) = if is_local_set {
         ("repo".to_string(), local_gpgsign.unwrap_or_default())
@@ -266,7 +281,11 @@ pub fn set_signing_config(repo_path: &str, config: SigningConfig) -> Result<(), 
         .output()?;
 
     // 2. Set gpg.format
-    let format_val = if config.method == "ssh" { "ssh" } else { "openpgp" };
+    let format_val = if config.method == "ssh" {
+        "ssh"
+    } else {
+        "openpgp"
+    };
     let _ = Command::new("git")
         .args(["config", scope_arg, "gpg.format", format_val])
         .current_dir(repo_path)
@@ -302,7 +321,10 @@ pub fn verify_commit(repo_path: &str, sha: &str) -> Result<VerifyResult, AppErro
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Ok(VerifyResult::Error(format!("Failed to verify commit: {}", stderr.trim())));
+        return Ok(VerifyResult::Error(format!(
+            "Failed to verify commit: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -321,7 +343,9 @@ pub fn verify_commit(repo_path: &str, sha: &str) -> Result<VerifyResult, AppErro
     let signer = if parts.len() > 2 && !parts[2].trim().is_empty() {
         parts[2].trim().to_string()
     } else {
-        key_id.clone().unwrap_or_else(|| "Unknown Signer".to_string())
+        key_id
+            .clone()
+            .unwrap_or_else(|| "Unknown Signer".to_string())
     };
 
     match status_code {

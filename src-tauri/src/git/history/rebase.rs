@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RebaseCommitPlanItem {
@@ -10,7 +10,10 @@ pub struct RebaseCommitPlanItem {
     pub action: String, // "pick", "reword", "edit", "squash", "fixup", "drop"
 }
 
-pub fn get_rebase_commits(repo_path: &str, target_branch: &str) -> Result<Vec<RebaseCommitPlanItem>, AppError> {
+pub fn get_rebase_commits(
+    repo_path: &str,
+    target_branch: &str,
+) -> Result<Vec<RebaseCommitPlanItem>, AppError> {
     let output = Command::new("git")
         .arg("log")
         .arg("--oneline")
@@ -20,7 +23,10 @@ pub fn get_rebase_commits(repo_path: &str, target_branch: &str) -> Result<Vec<Re
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to get commits for rebase: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to get commits for rebase: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -65,7 +71,10 @@ pub fn execute_rebase(
     // Write a temporary instruction todo sequence
     let mut todo_content = String::new();
     for item in &plan {
-        todo_content.push_str(&format!("{} {} {}\n", item.action, item.short_sha, item.message));
+        todo_content.push_str(&format!(
+            "{} {} {}\n",
+            item.action, item.short_sha, item.message
+        ));
     }
 
     let temp_dir = std::env::temp_dir();
@@ -92,7 +101,10 @@ pub fn execute_rebase(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Interactive rebase failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Interactive rebase failed: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -108,7 +120,10 @@ pub fn rebase_continue(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Rebase continue failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Rebase continue failed: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -122,7 +137,10 @@ pub fn rebase_abort(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Rebase abort failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Rebase abort failed: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -136,7 +154,10 @@ pub fn rebase_skip(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Rebase skip failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Rebase skip failed: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
