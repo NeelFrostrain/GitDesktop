@@ -26,7 +26,7 @@ export const CleanWorkingTreeView: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-200">
-      <div className="max-w-md w-full flex flex-col items-center space-y-4">
+      <div className="max-w-xl w-full flex flex-col items-center space-y-4">
         {/* Status Icon */}
         <div className="w-12 h-12 rounded-full bg-git-added/10 border border-git-added/25 text-git-added flex items-center justify-center shadow-xs">
           <Check className="w-6 h-6 stroke-[2.5]" />
@@ -41,7 +41,7 @@ export const CleanWorkingTreeView: React.FC = () => {
         </div>
 
         {/* Quick Launch & Explorer Actions */}
-        <div className="w-full pt-1 flex items-center justify-center flex-wrap gap-2">
+        <div className="pt-1 flex items-center justify-center gap-2 flex-wrap">
           <button
             onClick={() => setActiveTab('history')}
             className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-xs"
