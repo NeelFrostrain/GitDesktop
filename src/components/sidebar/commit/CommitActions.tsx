@@ -14,7 +14,7 @@ export const CommitActions: React.FC<CommitActionsProps> = ({ isVisible, onClear
       type="button"
       onClick={onClear}
       title="Clear Commit Message"
-      className="p-1 rounded-sm bg-base-2/80 border border-border hover:bg-base-3 text-text-muted hover:text-git-removed transition cursor-pointer text-xs flex items-center justify-center"
+      className="p-1 rounded-sm text-text-muted hover:text-git-removed hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95"
     >
       <RotateCcw className="w-3.5 h-3.5" />
     </button>

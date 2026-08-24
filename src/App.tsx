@@ -245,7 +245,7 @@ export const App: React.FC = () => {
             <HomeDashboard />
           ) : (
             /* ── Repo page: sidebar + main content ── */
-            <div className="flex flex-1 min-w-[960px] overflow-hidden">
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               {/* Left rail navigation & tabs */}
               <Sidebar />
 

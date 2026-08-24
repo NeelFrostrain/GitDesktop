@@ -19,11 +19,11 @@ export const SidebarTabs: React.FC = () => {
         >
           <span>Changes</span>
           <span
-            className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono leading-none text-center transition-colors ${
+            className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none text-center transition-colors ${
               fileCount > 0
                 ? activeTab === 'changes'
-                  ? 'bg-commito-coral text-white font-bold'
-                  : 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/25'
+                  ? 'bg-commito-coral text-white'
+                  : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/25'
                 : 'bg-base-0 text-text-muted border border-border/60'
             }`}
           >

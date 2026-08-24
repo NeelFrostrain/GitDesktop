@@ -52,10 +52,10 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({ onGenerate }
       onClick={handleGenerate}
       disabled={isGenerating}
       title="Generate Commit Message with AI"
-      className="p-1 rounded-sm bg-commito-coral/15 border border-commito-coral/40 hover:bg-commito-coral/25 text-commito-coral transition cursor-pointer text-xs flex items-center justify-center shadow-xs"
+      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-50"
     >
       {isGenerating ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
       ) : (
         <Sparkles className="w-3.5 h-3.5" />
       )}

@@ -4,7 +4,6 @@ import {
   Binary,
   HardDrive,
   Clock,
-  ChevronDown,
   ChevronRight,
   FileCode,
 } from 'lucide-react';
@@ -267,12 +266,34 @@ export const DiffViewer: React.FC = () => {
         />
 
         {/* Changed Files with Accordion Diffs */}
-        <div className="flex-1 p-2 overflow-y-auto space-y-3 bg-base-0">
-          <div className="text-xs font-semibold text-text-muted p-1 px-0.5 tracking-wider flex items-center justify-between">
-            <span className="text-xs">Changed Files ({commitDetails.changed_files.length})</span>
-            <span className="font-mono text-[11px] font-medium text-text-faint text-center">
-              {commitDetails.changed_files.length} file{commitDetails.changed_files.length !== 1 ? 's' : ''} modified
-            </span>
+        <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-base-0">
+          <div className="px-1 flex items-center justify-between text-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-text-primary">Changed Files</span>
+              <span className="text-[10px] font-mono font-bold bg-base-2 text-text-muted px-1.5 py-0.5 rounded-sm border border-border">
+                {commitDetails.changed_files.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+                  const nextState: Record<string, boolean> = {};
+                  commitDetails.changed_files.forEach((f) => {
+                    nextState[f] = !allOpen;
+                    if (!allOpen && selectedCommitSha && !expandedHistoryFiles[f]) {
+                      fetchCommitFileDiff(selectedCommitSha, f);
+                    }
+                  });
+                  setOpenFiles(nextState);
+                }}
+                className="text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-1 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
+              >
+                {commitDetails.changed_files.every((f) => openFiles[f]) ? 'Collapse All' : 'Expand All'}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -282,41 +303,53 @@ export const DiffViewer: React.FC = () => {
               const isFileLoading = Boolean(loadingHistoryFiles[file]);
               const fileStat = commitDetails.file_stats?.find((s) => s.path === file);
 
+              // Split directory and filename for clean visual hierarchy
+              const lastSlashIndex = file.lastIndexOf('/');
+              const dirPath = lastSlashIndex !== -1 ? file.substring(0, lastSlashIndex + 1) : '';
+              const fileName = lastSlashIndex !== -1 ? file.substring(lastSlashIndex + 1) : file;
+
               return (
-                <div key={file} className="border border-border rounded-sm overflow-hidden bg-base-1 shadow-xs">
+                <div
+                  key={file}
+                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
+                    isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
+                  }`}
+                >
                   {/* File Accordion Header */}
                   <button
                     onClick={() => toggleFileExpansion(file)}
-                    className="w-full px-3.5 py-2 text-xs font-mono text-text-primary hover:bg-base-2 flex items-center justify-between text-left transition cursor-pointer"
+                    className="w-full px-3 py-2 text-xs font-mono text-text-primary hover:bg-base-2/80 flex items-center justify-between text-left transition cursor-pointer select-none"
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0">
-                      {isOpen ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-git-modified flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
-                      )}
-                      <span className="text-text-muted select-none">-</span>
-                      <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0" />
-                      <span className="truncate font-mono font-medium">{file}</span>
+                    <div className="flex items-center gap-2 truncate min-w-0 flex-1">
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+                          isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
+                        }`}
+                      />
+                      <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
+                      <div className="truncate min-w-0 flex items-baseline gap-0.5">
+                        {dirPath && <span className="text-text-faint text-[11px] truncate">{dirPath}</span>}
+                        <span className="font-semibold text-text-primary text-xs truncate">{fileName}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
                       {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono font-semibold">
+                        <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-base-0 border border-border">
                           {fileStat.additions > 0 && <span className="text-git-added">+{fileStat.additions}</span>}
                           {fileStat.deletions > 0 && <span className="text-git-removed">-{fileStat.deletions}</span>}
                         </div>
                       )}
-                      <CopyButton text={file} />
+                      <CopyButton text={file} className="!h-5 !px-1.5 !text-[10px]" />
                       {isFileLoading && (
-                        <span className="text-[11px] text-text-muted animate-pulse font-sans">Loading diff...</span>
+                        <span className="text-[10px] text-text-muted animate-pulse font-sans">Loading...</span>
                       )}
                     </div>
                   </button>
 
                   {/* Expanded File Diff Body */}
                   {isOpen && (
-                    <div className="border-t border-border bg-base-0">
+                    <div className="border-t border-border bg-base-0 animate-in fade-in duration-150">
                       {isFileLoading ? (
                         <div className="p-4 text-xs text-text-muted font-mono text-center">Fetching file changes...</div>
                       ) : fileDiff ? (

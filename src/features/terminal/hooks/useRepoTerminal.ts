@@ -195,18 +195,13 @@ export function useRepoTerminal(
     const setupSession = async () => {
       try {
         if (!entry.isSessionActive) {
-          terminal.reset();
-
-          // Replay recent history header on initial open
+          // Populate command history silently without spamming ASCII art in terminal buffer
           try {
-            const history = await ptyBridge.getHistory(currentRepoId, 4, 0);
-            if (history && history.length > 0 && isEffectActive) {
-              terminal.writeln('\x1b[90m┌── Previous Session Commands ──────────────────────────┐\x1b[0m');
+            const history = await ptyBridge.getHistory(currentRepoId, 50, 0);
+            if (history && history.length > 0) {
               for (const h of history) {
                 localHistoryRef.current.push(h.cmd);
-                terminal.writeln(`\x1b[90m│ $ ${h.cmd}\x1b[0m`);
               }
-              terminal.writeln('\x1b[90m└── live interactive session started ────────────────────┘\x1b[0m\r\n');
             }
           } catch {}
 

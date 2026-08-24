@@ -7,11 +7,12 @@ import {
   GitCommit,
   Clock,
   ChevronDown,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { CommitDetails } from '../../../types/git';
 import { useSigningStore } from '../../../store/signingStore';
 import { UserAvatar } from '../../common/UserAvatar';
-import { CopyButton } from './diffUtils';
 
 interface CommitDetailsHeaderProps {
   commitDetails: CommitDetails;
@@ -20,7 +21,7 @@ interface CommitDetailsHeaderProps {
 }
 
 /**
- * Redesigned commit metadata header — clean, minimal, information-dense without feeling cluttered.
+ * Modern, clean, high-density commit header with metadata, diff stats, and view controls.
  */
 export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   commitDetails,
@@ -28,6 +29,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   onChangeViewMode,
 }) => {
   const [showCommitBody, setShowCommitBody] = useState(false);
+  const [copiedSha, setCopiedSha] = useState(false);
 
   const fullMessage = commitDetails.commit.message || '';
   const firstNewlineIndex = fullMessage.indexOf('\n');
@@ -39,50 +41,58 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   const additions = commitDetails.total_additions ?? commitDetails.commit.additions ?? 0;
   const deletions = commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0;
 
+  const handleCopySha = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(commitDetails.commit.sha);
+    setCopiedSha(true);
+    setTimeout(() => setCopiedSha(false), 1500);
+  };
+
   return (
-    <div className="bg-base-2 border-b border-border flex-shrink-0">
-      {/* Row 1: Commit title + controls */}
+    <div className="bg-base-1/60 border-b border-border flex-shrink-0 select-none">
+      {/* Top Row: Title + View Switcher & Actions */}
       <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
-        <h2 className="text-xs font-semibold text-text-primary leading-snug" title={commitTitle}>
+        <h2
+          className="text-xs font-semibold text-text-primary leading-snug truncate min-w-0 flex-1"
+          title={commitTitle}
+        >
           {commitTitle}
         </h2>
 
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-2 flex-shrink-0">
           {/* View mode toggle */}
-          <div className="flex items-center bg-base-1 border border-border rounded-sm p-0.5">
+          <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5">
             <button
               type="button"
               onClick={() => onChangeViewMode('unified')}
-              className={`w-5 h-5 flex items-center justify-center rounded text-xs transition cursor-pointer ${diffViewMode === 'unified'
-                ? 'bg-base-3 text-text-primary'
-                : 'text-text-muted hover:text-text-primary'
-                }`}
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${
+                diffViewMode === 'unified'
+                  ? 'bg-base-2 text-text-primary shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
               title="Unified View"
             >
-              <AlignJustify className="w-3 h-3" />
+              <AlignJustify className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
               onClick={() => onChangeViewMode('split')}
-              className={`w-5 h-5 flex items-center justify-center rounded text-xs transition cursor-pointer ${diffViewMode === 'split'
-                ? 'bg-base-3 text-text-primary'
-                : 'text-text-muted hover:text-text-primary'
-                }`}
-              title="Split View"
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${
+                diffViewMode === 'split'
+                  ? 'bg-base-2 text-text-primary shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
+              }`}
+              title="Split (Side-by-Side) View"
             >
-              <Columns className="w-3 h-3" />
+              <Columns className="w-3.5 h-3.5" />
             </button>
           </div>
-
-          {/* Copy buttons — same h-6 as the toggle buttons */}
-          <CopyButton text={commitDetails.commit.sha} label="SHA" className="!h-6 !px-2 !py-0" />
-          <CopyButton text={commitDetails.commit.message} label="Msg" className="!h-6 !px-2 !py-0" />
 
           {/* Verification badge */}
           {verification?.status === 'Verified' && (
             <span
               title="Cryptographically verified"
-              className="flex items-center gap-1 text-git-added text-[11px] bg-git-added/8 border border-git-added/20 px-1.5 py-0.5 rounded-sm font-medium"
+              className="flex items-center gap-1 text-git-added text-[10px] bg-git-added/10 border border-git-added/25 px-1.5 py-0.5 rounded-sm font-semibold"
             >
               <ShieldCheck className="w-3 h-3" />
               Verified
@@ -91,7 +101,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           {verification?.status === 'Unverified' && (
             <span
               title="Unverified signature"
-              className="flex items-center gap-1 text-git-modified text-[11px] bg-git-modified/8 border border-git-modified/20 px-1.5 py-0.5 rounded-sm font-medium"
+              className="flex items-center gap-1 text-git-modified text-[10px] bg-git-modified/10 border border-git-modified/25 px-1.5 py-0.5 rounded-sm font-semibold"
             >
               <ShieldAlert className="w-3 h-3" />
               Unverified
@@ -100,71 +110,78 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
         </div>
       </div>
 
-      {/* Row 2: Author meta bar */}
-      <div className="px-4 pb-2.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-0.5 min-w-0 text-[11px] text-text-muted">
-          {/* Avatar + name */}
-          <div className="flex items-center gap-1.5 min-w-0 mr-5">
+      {/* Bottom Row: Author meta bar, SHA pill, Time, Diff Stats */}
+      <div className="px-4 pb-2.5 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0 text-[11px] text-text-muted">
+          {/* Author */}
+          <div className="flex items-center gap-1.5 min-w-0">
             <UserAvatar
               name={commitDetails.commit.author_name}
               email={commitDetails.commit.author_email}
-              className="w-4 h-4 rounded-full ring-1 ring-border/50 flex-shrink-0"
+              className="w-4 h-4 rounded-full ring-1 ring-border/60 flex-shrink-0"
               iconClassName="w-2.5 h-2.5"
             />
-            <span className="font-medium text-text-secondary truncate">
+            <span className="font-medium text-text-primary truncate">
               {commitDetails.commit.author_name}
             </span>
           </div>
 
-          {/* Divider */}
-          <span className="text-border select-none">·</span>
+          <span className="text-text-faint select-none">/</span>
 
-          {/* SHA badge */}
-          <div className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-1 border border-border/60 px-1.5 h-6 rounded-sm flex-shrink-0">
-            <GitCommit className="w-2.5 h-2.5 text-commito-coral flex-shrink-0" />
+          {/* Click-to-copy SHA badge */}
+          <button
+            type="button"
+            onClick={handleCopySha}
+            title="Click to copy full commit SHA"
+            className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-1.5 py-0.5 transition cursor-pointer active:scale-95"
+          >
+            <GitCommit className="w-3 h-3 text-commito-coral flex-shrink-0" />
             <span>{commitDetails.commit.short_sha}</span>
-            <CopyButton
-              text={commitDetails.commit.sha}
-              className="!p-0 !px-0.5 !py-0 !border-0 !bg-transparent hover:!bg-base-2 !text-[9px] !leading-none"
-            />
-          </div>
+            {copiedSha ? (
+              <Check className="w-2.5 h-2.5 text-git-added ml-0.5" />
+            ) : (
+              <Copy className="w-2.5 h-2.5 text-text-faint ml-0.5 opacity-70" />
+            )}
+          </button>
 
-          {/* Divider */}
-          <span className="text-border select-none">·</span>
+          <span className="text-text-faint select-none">/</span>
 
           {/* Time */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0 text-text-faint">
             <Clock className="w-3 h-3" />
             <span>{commitDetails.commit.relative_date}</span>
           </div>
         </div>
 
-        {/* Diff stats + expand body */}
-        <div className="flex items-center gap-2.5 flex-shrink-0 text-[11px] font-mono font-semibold">
-          {additions > 0 && (
-            <span className="text-git-added">+{additions}</span>
-          )}
-          {deletions > 0 && (
-            <span className="text-git-removed">-{deletions}</span>
+        {/* Diff stats + Expand details button */}
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          {(additions > 0 || deletions > 0) && (
+            <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-0 border border-border shadow-2xs">
+              {additions > 0 && <span className="text-git-added">+{additions}</span>}
+              {deletions > 0 && <span className="text-git-removed">-{deletions}</span>}
+            </div>
           )}
 
           {commitBody && (
             <button
+              type="button"
               onClick={() => setShowCommitBody(!showCommitBody)}
-              className="flex items-center gap-0.5 text-[11px] text-text-muted hover:text-text-primary font-sans font-medium transition cursor-pointer ml-1"
+              className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
             >
-              <span>{showCommitBody ? 'Hide' : 'Details'}</span>
+              <span>{showCommitBody ? 'Hide Details' : 'Details'}</span>
               <ChevronDown
-                className={`w-3 h-3 transition-transform ${showCommitBody ? 'rotate-180' : ''}`}
+                className={`w-3 h-3 transition-transform duration-150 ${
+                  showCommitBody ? 'rotate-180 text-commito-coral' : ''
+                }`}
               />
             </button>
           )}
         </div>
       </div>
 
-      {/* Expandable commit body */}
+      {/* Expandable Commit Description / Body */}
       {commitBody && showCommitBody && (
-        <div className="mx-4 mb-2.5 p-2.5 bg-base-1 border border-border rounded-sm text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+        <div className="mx-4 mb-3 p-3 bg-base-0 border-l-2 border-l-commito-coral border-y border-r border-border rounded-r-sm text-[11px] text-text-muted max-h-48 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed shadow-2xs animate-in fade-in duration-150">
           {commitBody}
         </div>
       )}
