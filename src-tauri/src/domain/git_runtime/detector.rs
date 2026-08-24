@@ -37,7 +37,10 @@ pub fn get_app_data_dir() -> PathBuf {
         if let Ok(config_home) = std::env::var("XDG_DATA_HOME") {
             return PathBuf::from(config_home).join("gitlab-desktop");
         } else if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home).join(".local").join("share").join("gitlab-desktop");
+            return PathBuf::from(home)
+                .join(".local")
+                .join("share")
+                .join("gitlab-desktop");
         }
     }
 
@@ -132,7 +135,9 @@ pub fn find_system_git() -> Option<(String, PathBuf)> {
                     // Check version
                     if let Ok(ver_output) = Command::new(&path).arg("--version").output() {
                         if ver_output.status.success() {
-                            let ver_str = String::from_utf8_lossy(&ver_output.stdout).trim().to_string();
+                            let ver_str = String::from_utf8_lossy(&ver_output.stdout)
+                                .trim()
+                                .to_string();
                             return Some((ver_str, path));
                         }
                     }
@@ -183,7 +188,11 @@ pub fn detect_git_runtime() -> GitRuntimeInfo {
             executable_path: Some(system_path.to_string_lossy().to_string()),
             is_portable_mingit: false,
             mingit_installed: mingit_present,
-            mingit_dir: if mingit_present { Some(mingit_dir_str) } else { None },
+            mingit_dir: if mingit_present {
+                Some(mingit_dir_str)
+            } else {
+                None
+            },
         };
     }
 

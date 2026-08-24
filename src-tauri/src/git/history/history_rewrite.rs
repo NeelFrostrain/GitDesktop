@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use std::process::Command;
-use std::fs;
-use git2::Repository;
 use crate::error::AppError;
 use crate::git::status::get_repo_status;
+use git2::Repository;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReorderCommitsPayload {
@@ -56,26 +56,34 @@ pub fn execute_history_operation(
     }
 
     match operation {
-        HistoryOperationPayload::Reorder { source_sha, target_sha, position } => {
-            reorder_commits(repo_path, &source_sha, &target_sha, &position)
-        }
-        HistoryOperationPayload::Merge { source_sha, target_sha, new_message } => {
-            merge_commits(repo_path, &source_sha, &target_sha, &new_message)
-        }
-        HistoryOperationPayload::Remove { .. } => {
-            Err(AppError::Git("Commit removal is not enabled yet.".to_string()))
-        }
+        HistoryOperationPayload::Reorder {
+            source_sha,
+            target_sha,
+            position,
+        } => reorder_commits(repo_path, &source_sha, &target_sha, &position),
+        HistoryOperationPayload::Merge {
+            source_sha,
+            target_sha,
+            new_message,
+        } => merge_commits(repo_path, &source_sha, &target_sha, &new_message),
+        HistoryOperationPayload::Remove { .. } => Err(AppError::Git(
+            "Commit removal is not enabled yet.".to_string(),
+        )),
     }
 }
 
-fn get_commits_up_to_base(repo_path: &str, oldest_sha: &str) -> Result<(String, Vec<(String, String)>), AppError> {
+fn get_commits_up_to_base(
+    repo_path: &str,
+    oldest_sha: &str,
+) -> Result<(String, Vec<(String, String)>), AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
     let oid = git2::Oid::from_str(oldest_sha)
         .map_err(|_| AppError::Validation(format!("Invalid commit SHA: {}", oldest_sha)))?;
 
-    let commit = repo.find_commit(oid)
+    let commit = repo
+        .find_commit(oid)
         .map_err(|e| AppError::Git(format!("Commit not found: {}", e)))?;
 
     let base_arg = if let Ok(parent) = commit.parent(0) {
@@ -102,7 +110,10 @@ fn get_commits_up_to_base(repo_path: &str, oldest_sha: &str) -> Result<(String, 
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to read history range: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to read history range: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -132,17 +143,34 @@ fn reorder_commits(
     // Find oldest involved commit
     let (base_arg, mut commits) = get_commits_up_to_base(repo_path, source_sha)?;
 
-    let source_idx = commits.iter().position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
-        .ok_or_else(|| AppError::Git(format!("Source commit {} not found in active branch history", source_sha)))?;
+    let source_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
+        .ok_or_else(|| {
+            AppError::Git(format!(
+                "Source commit {} not found in active branch history",
+                source_sha
+            ))
+        })?;
 
-    if !commits.iter().any(|(sha, _)| sha == target_sha || sha.starts_with(target_sha)) {
-        return Err(AppError::Git(format!("Target commit {} not found in active branch history", target_sha)));
+    if !commits
+        .iter()
+        .any(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
+    {
+        return Err(AppError::Git(format!(
+            "Target commit {} not found in active branch history",
+            target_sha
+        )));
     }
 
     let item = commits.remove(source_idx);
 
-    let mut new_target_idx = commits.iter().position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
-        .ok_or_else(|| AppError::Git("Target commit missing after reorder calculation".to_string()))?;
+    let mut new_target_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
+        .ok_or_else(|| {
+            AppError::Git("Target commit missing after reorder calculation".to_string())
+        })?;
 
     if position == "after" {
         new_target_idx += 1;
@@ -173,21 +201,42 @@ fn merge_commits(
     // Determine oldest commit between source and target
     let (_, commits) = get_commits_up_to_base(repo_path, source_sha)?;
 
+    let source_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
+        .ok_or_else(|| {
+            AppError::Git(format!(
+                "Source commit {} not found in active branch history",
+                source_sha
+            ))
+        })?;
 
-    let source_idx = commits.iter().position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
-        .ok_or_else(|| AppError::Git(format!("Source commit {} not found in active branch history", source_sha)))?;
+    let target_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
+        .ok_or_else(|| {
+            AppError::Git(format!(
+                "Target commit {} not found in active branch history",
+                target_sha
+            ))
+        })?;
 
-    let target_idx = commits.iter().position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
-        .ok_or_else(|| AppError::Git(format!("Target commit {} not found in active branch history", target_sha)))?;
-
-    let oldest_sha = if source_idx < target_idx { source_sha } else { target_sha };
+    let oldest_sha = if source_idx < target_idx {
+        source_sha
+    } else {
+        target_sha
+    };
     let (base_arg, mut commits) = get_commits_up_to_base(repo_path, oldest_sha)?;
 
-    let s_idx = commits.iter().position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
+    let s_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == source_sha || sha.starts_with(source_sha))
         .ok_or_else(|| AppError::Git("Source commit not found".to_string()))?;
     let source_item = commits.remove(s_idx);
 
-    let t_idx = commits.iter().position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
+    let t_idx = commits
+        .iter()
+        .position(|(sha, _)| sha == target_sha || sha.starts_with(target_sha))
         .ok_or_else(|| AppError::Git("Target commit not found".to_string()))?;
 
     // Insert source right after target to squash into target
@@ -283,8 +332,15 @@ fn run_interactive_rebase(
             .current_dir(repo_path)
             .output();
 
-        let err_detail = if !stderr.trim().is_empty() { stderr.trim() } else { stdout.trim() };
-        return Err(AppError::Git(format!("History rewrite failed: {}. Rebase aborted and repository restored.", err_detail)));
+        let err_detail = if !stderr.trim().is_empty() {
+            stderr.trim()
+        } else {
+            stdout.trim()
+        };
+        return Err(AppError::Git(format!(
+            "History rewrite failed: {}. Rebase aborted and repository restored.",
+            err_detail
+        )));
     }
 
     Ok(())

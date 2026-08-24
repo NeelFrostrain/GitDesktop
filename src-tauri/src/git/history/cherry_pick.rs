@@ -1,5 +1,5 @@
-use std::process::Command;
 use crate::error::AppError;
+use std::process::Command;
 
 pub fn cherry_pick_commits(
     repo_path: &str,
@@ -7,7 +7,9 @@ pub fn cherry_pick_commits(
     no_commit: bool,
 ) -> Result<(), AppError> {
     if shas.is_empty() {
-        return Err(AppError::Validation("No commits specified for cherry-pick".to_string()));
+        return Err(AppError::Validation(
+            "No commits specified for cherry-pick".to_string(),
+        ));
     }
 
     let mut cmd = Command::new("git");
@@ -26,7 +28,10 @@ pub fn cherry_pick_commits(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Cherry-pick failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Cherry-pick failed: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -42,7 +47,10 @@ pub fn cherry_pick_continue(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Cherry-pick continue failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Cherry-pick continue failed: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -56,7 +64,10 @@ pub fn cherry_pick_abort(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Cherry-pick abort failed: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Cherry-pick abort failed: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

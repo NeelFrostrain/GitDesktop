@@ -1,7 +1,7 @@
-use std::collections::HashMap;
-use serde_json::Value;
 use crate::domain::settings::store;
 use crate::error::AppError;
+use serde_json::Value;
+use std::collections::HashMap;
 
 #[tauri::command]
 pub async fn settings_get_all() -> Result<HashMap<String, Value>, AppError> {
@@ -38,9 +38,6 @@ pub async fn settings_save_repo_value(
 }
 
 #[tauri::command]
-pub async fn settings_reset_repo_value(
-    repo_path: String,
-    key: String,
-) -> Result<(), AppError> {
+pub async fn settings_reset_repo_value(repo_path: String, key: String) -> Result<(), AppError> {
     store::reset_repo_setting(&repo_path, &key)
 }

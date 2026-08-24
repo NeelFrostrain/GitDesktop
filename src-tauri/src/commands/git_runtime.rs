@@ -1,6 +1,4 @@
-use crate::domain::git_runtime::{
-    detect_git_runtime, download_and_install_mingit, GitRuntimeInfo,
-};
+use crate::domain::git_runtime::{detect_git_runtime, download_and_install_mingit, GitRuntimeInfo};
 use crate::error::AppError;
 use tauri::AppHandle;
 

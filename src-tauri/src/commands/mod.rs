@@ -1,10 +1,10 @@
+pub mod accounts;
 pub mod auth_commands;
 pub mod git_commands;
-pub mod repo_commands;
-pub mod window_commands;
-pub mod accounts;
-pub mod remotes;
-pub mod terminal;
-pub mod logs;
-pub mod settings;
 pub mod git_runtime;
+pub mod logs;
+pub mod remotes;
+pub mod repo_commands;
+pub mod settings;
+pub mod terminal;
+pub mod window_commands;

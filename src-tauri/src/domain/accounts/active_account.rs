@@ -1,15 +1,20 @@
+use super::token_store;
+use crate::error::AppError;
 use git2::Repository;
 use std::path::Path;
-use crate::error::AppError;
-use super::token_store;
 
-pub fn set_active_and_sync_git(account_id: &str, active_repo_path: Option<&str>) -> Result<(), AppError> {
+pub fn set_active_and_sync_git(
+    account_id: &str,
+    active_repo_path: Option<&str>,
+) -> Result<(), AppError> {
     // 1. Update active account in store
     token_store::set_active_account(account_id)?;
 
     // 2. Find the newly activated account
     let accounts = token_store::list_accounts();
-    let account = accounts.into_iter().find(|a| a.id == account_id)
+    let account = accounts
+        .into_iter()
+        .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
     // 3. Update Git identity

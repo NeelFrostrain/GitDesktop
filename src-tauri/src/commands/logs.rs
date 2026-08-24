@@ -1,7 +1,7 @@
-use tauri::{command, AppHandle};
 use crate::core::logging::model::{LogCategory, LogEntry, LogFilter, LogLevel};
 use crate::core::logging::{bus, store};
 use crate::error::AppError;
+use tauri::{command, AppHandle};
 
 #[command]
 pub async fn logs_query(
@@ -13,18 +13,13 @@ pub async fn logs_query(
     let l = limit.unwrap_or(100) as usize;
     let o = offset.unwrap_or(0) as usize;
 
-    tokio::task::spawn_blocking(move || {
-        Ok(store::query_logs(&f, l, o))
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+    tokio::task::spawn_blocking(move || Ok(store::query_logs(&f, l, o)))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 #[command]
-pub async fn logs_export(
-    filter: Option<LogFilter>,
-    dest_path: String,
-) -> Result<(), AppError> {
+pub async fn logs_export(filter: Option<LogFilter>, dest_path: String) -> Result<(), AppError> {
     let f = filter.unwrap_or_default();
 
     tokio::task::spawn_blocking(move || {

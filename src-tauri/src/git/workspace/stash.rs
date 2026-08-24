@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StashEntry {
@@ -21,7 +21,10 @@ pub fn list_stashes(repo_path: &str) -> Result<Vec<StashEntry>, AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to list stashes: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to list stashes: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -37,9 +40,17 @@ pub fn list_stashes(repo_path: &str) -> Result<Vec<StashEntry>, AppError> {
             let date = parts[3].to_string();
 
             let branch = if let Some(idx) = msg.find("WIP on ") {
-                msg[idx + 7..].split(':').next().unwrap_or("active").to_string()
+                msg[idx + 7..]
+                    .split(':')
+                    .next()
+                    .unwrap_or("active")
+                    .to_string()
             } else if let Some(idx) = msg.find("On ") {
-                msg[idx + 3..].split(':').next().unwrap_or("active").to_string()
+                msg[idx + 3..]
+                    .split(':')
+                    .next()
+                    .unwrap_or("active")
+                    .to_string()
             } else {
                 "active".to_string()
             };
@@ -80,7 +91,10 @@ pub fn create_stash(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to create stash: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to create stash: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -96,7 +110,10 @@ pub fn apply_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to apply stash: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to apply stash: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -111,7 +128,10 @@ pub fn pop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to pop stash: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to pop stash: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -126,7 +146,10 @@ pub fn drop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to drop stash: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to drop stash: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -142,7 +165,10 @@ pub fn get_stash_diff(repo_path: &str, index: usize) -> Result<String, AppError>
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to show stash diff: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to show stash diff: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(String::from_utf8_lossy(&output.stdout).to_string())

@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorktreeInfo {
@@ -23,7 +23,10 @@ pub fn list_worktrees(repo_path: &str) -> Result<Vec<WorktreeInfo>, AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to list worktrees: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to list worktrees: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -66,7 +69,10 @@ pub fn list_worktrees(repo_path: &str) -> Result<Vec<WorktreeInfo>, AppError> {
             current_head = val.trim().to_string();
         } else if let Some(val) = line.strip_prefix("branch ") {
             let full_ref = val.trim();
-            current_branch = full_ref.strip_prefix("refs/heads/").unwrap_or(full_ref).to_string();
+            current_branch = full_ref
+                .strip_prefix("refs/heads/")
+                .unwrap_or(full_ref)
+                .to_string();
         } else if line == "bare" {
             is_bare = true;
         } else if line == "detached" {
@@ -94,7 +100,11 @@ pub fn list_worktrees(repo_path: &str) -> Result<Vec<WorktreeInfo>, AppError> {
     Ok(worktrees)
 }
 
-pub fn add_worktree(repo_path: &str, worktree_path: &str, branch_name: Option<&str>) -> Result<(), AppError> {
+pub fn add_worktree(
+    repo_path: &str,
+    worktree_path: &str,
+    branch_name: Option<&str>,
+) -> Result<(), AppError> {
     let mut cmd = Command::new("git");
     cmd.arg("worktree").arg("add").arg(worktree_path);
     if let Some(b) = branch_name {
@@ -106,7 +116,10 @@ pub fn add_worktree(repo_path: &str, worktree_path: &str, branch_name: Option<&s
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to add worktree: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to add worktree: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -121,7 +134,10 @@ pub fn remove_worktree(repo_path: &str, worktree_path: &str, force: bool) -> Res
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to remove worktree: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to remove worktree: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReflogEntry {
@@ -23,7 +23,10 @@ pub fn list_reflog(repo_path: &str, limit: Option<usize>) -> Result<Vec<ReflogEn
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to list reflog: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to list reflog: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -62,7 +65,10 @@ pub fn restore_reflog_target(repo_path: &str, sha: &str, force: bool) -> Result<
     let output = cmd.output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to restore reflog target: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to restore reflog target: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -95,7 +101,11 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
 
     // If commit is a merge commit, retry with -m 1
     if !output.status.success() {
-        let err_text = format!("{} {}", String::from_utf8_lossy(&output.stderr), String::from_utf8_lossy(&output.stdout));
+        let err_text = format!(
+            "{} {}",
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        );
         if err_text.contains("is a merge but no -m option was given") {
             let _ = Command::new("git")
                 .arg("revert")
@@ -119,15 +129,16 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
         let stdout = String::from_utf8_lossy(&output.stdout);
         let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
 
-        let err_detail = if combined.contains("nothing to commit") || combined.contains("working tree clean") {
-            "The changes in this commit have already been reverted or are empty.".to_string()
-        } else if !stderr.trim().is_empty() {
-            stderr.trim().to_string()
-        } else if !stdout.trim().is_empty() {
-            stdout.trim().to_string()
-        } else {
-            "Revert failed (check for merge conflicts)".to_string()
-        };
+        let err_detail =
+            if combined.contains("nothing to commit") || combined.contains("working tree clean") {
+                "The changes in this commit have already been reverted or are empty.".to_string()
+            } else if !stderr.trim().is_empty() {
+                stderr.trim().to_string()
+            } else if !stdout.trim().is_empty() {
+                stdout.trim().to_string()
+            } else {
+                "Revert failed (check for merge conflicts)".to_string()
+            };
 
         // Abort failed revert to keep working directory clean
         let _ = Command::new("git")
@@ -136,7 +147,10 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
             .current_dir(repo_path)
             .output();
 
-        return Err(AppError::Git(format!("Failed to revert commit: {}", err_detail)));
+        return Err(AppError::Git(format!(
+            "Failed to revert commit: {}",
+            err_detail
+        )));
     }
 
     Ok(())
@@ -156,7 +170,10 @@ pub fn undo_commit(repo_path: &str) -> Result<String, AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to undo commit: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to undo commit: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(msg)

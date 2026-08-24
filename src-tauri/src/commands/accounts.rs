@@ -1,11 +1,13 @@
+use crate::domain::accounts::active_account;
+use crate::domain::accounts::provider::{
+    AccountPatch, AuthProvider, ProviderAccount, ProviderKind,
+};
+use crate::domain::accounts::token_store;
+use crate::error::AppError;
+use crate::integrations::github::auth::GitHubAuthProvider;
+use crate::integrations::gitlab::auth::GitLabAuthProvider;
 use tauri::command;
 use tauri_plugin_opener::OpenerExt;
-use crate::error::AppError;
-use crate::domain::accounts::provider::{ProviderAccount, ProviderKind, AccountPatch, AuthProvider};
-use crate::domain::accounts::token_store;
-use crate::domain::accounts::active_account;
-use crate::integrations::gitlab::auth::GitLabAuthProvider;
-use crate::integrations::github::auth::GitHubAuthProvider;
 
 #[command]
 pub async fn accounts_list() -> Result<Vec<ProviderAccount>, AppError> {
@@ -97,15 +99,24 @@ pub async fn accounts_start_oauth(
     let url = match provider.to_lowercase().as_str() {
         "gitlab" => {
             let p = GitLabAuthProvider;
-            let target = instance_url.clone().unwrap_or_else(|| p.default_instance_url().to_string());
+            let target = instance_url
+                .clone()
+                .unwrap_or_else(|| p.default_instance_url().to_string());
             p.start_oauth(&target)?
         }
         "github" => {
             let p = GitHubAuthProvider;
-            let target = instance_url.clone().unwrap_or_else(|| p.default_instance_url().to_string());
+            let target = instance_url
+                .clone()
+                .unwrap_or_else(|| p.default_instance_url().to_string());
             p.start_oauth(&target)?
         }
-        _ => return Err(AppError::Validation(format!("Unsupported provider '{}'", provider))),
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Unsupported provider '{}'",
+                provider
+            )))
+        }
     };
 
     crate::log_info!(

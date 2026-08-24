@@ -1,8 +1,8 @@
+use crate::error::AppError;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde_json::Value;
-use crate::error::AppError;
 
 fn get_app_settings_file() -> PathBuf {
     let mut path = if let Ok(appdata) = std::env::var("APPDATA") {

@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LfsFile {
@@ -35,7 +35,10 @@ pub fn list_lfs_files(repo_path: &str) -> Result<Vec<LfsFile>, AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to list LFS files: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to list LFS files: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -75,7 +78,10 @@ pub fn track_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppError>
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to track pattern: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to track pattern: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -90,7 +96,10 @@ pub fn untrack_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppErro
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to untrack pattern: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to untrack pattern: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -147,7 +156,10 @@ pub fn list_lfs_locks(repo_path: &str) -> Result<Vec<LfsLock>, AppError> {
         .map(|l| LfsLock {
             id: l.id,
             path: l.path,
-            owner: l.owner.and_then(|o| o.name).unwrap_or_else(|| "Unknown".to_string()),
+            owner: l
+                .owner
+                .and_then(|o| o.name)
+                .unwrap_or_else(|| "Unknown".to_string()),
             locked_at: l.locked_at.unwrap_or_else(|| "Active".to_string()),
         })
         .collect();
@@ -165,7 +177,10 @@ pub fn lock_lfs_file(repo_path: &str, path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to lock file: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to lock file: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -180,7 +195,10 @@ pub fn unlock_lfs_file(repo_path: &str, path: &str, force: bool) -> Result<(), A
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to unlock file: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to unlock file: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

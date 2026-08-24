@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TagInfo {
@@ -21,7 +21,10 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to list tags: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to list tags: {}",
+            stderr.trim()
+        )));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -32,8 +35,14 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
         if !parts.is_empty() && !parts[0].trim().is_empty() {
             let name = parts[0].to_string();
             let sha = parts.get(1).unwrap_or(&"").to_string();
-            let msg = parts.get(2).filter(|s| !s.trim().is_empty()).map(|s| s.to_string());
-            let tagger = parts.get(3).filter(|s| !s.trim().is_empty()).map(|s| s.to_string());
+            let msg = parts
+                .get(2)
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| s.to_string());
+            let tagger = parts
+                .get(3)
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| s.to_string());
             let is_annotated = msg.is_some() || tagger.is_some();
 
             tags.push(TagInfo {
@@ -77,7 +86,10 @@ pub fn create_tag(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to create tag: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to create tag: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())
@@ -93,13 +105,16 @@ pub fn delete_tag(repo_path: &str, name: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to delete tag: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to delete tag: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
 
 pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
-    use crate::git::remote::{get_git_auth_info, apply_git_auth_args_pub};
+    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
 
     let auth_info = get_git_auth_info(repo_path);
     let mut cmd = Command::new("git");
@@ -111,7 +126,10 @@ pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
     let output = cmd.output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to push tags: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to push tags: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

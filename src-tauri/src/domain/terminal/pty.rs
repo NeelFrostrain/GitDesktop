@@ -24,7 +24,9 @@ pub struct ActivePtySession {
 static SESSIONS: OnceLock<Arc<Mutex<HashMap<String, ActivePtySession>>>> = OnceLock::new();
 
 fn get_sessions_map() -> Arc<Mutex<HashMap<String, ActivePtySession>>> {
-    SESSIONS.get_or_init(|| Arc::new(Mutex::new(HashMap::new()))).clone()
+    SESSIONS
+        .get_or_init(|| Arc::new(Mutex::new(HashMap::new())))
+        .clone()
 }
 
 #[cfg(target_os = "windows")]
@@ -160,7 +162,10 @@ pub fn write_to_session(repo_id: &str, data: &str) -> Result<(), AppError> {
         }
     }
 
-    Err(AppError::NotFound(format!("No active terminal session for repo '{}'", repo_id)))
+    Err(AppError::NotFound(format!(
+        "No active terminal session for repo '{}'",
+        repo_id
+    )))
 }
 
 pub fn resize_session(repo_id: &str, cols: u16, rows: u16) -> Result<(), AppError> {

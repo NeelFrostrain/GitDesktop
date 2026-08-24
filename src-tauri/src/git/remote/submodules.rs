@@ -1,6 +1,6 @@
+use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::process::Command;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SubmoduleInfo {
@@ -60,7 +60,10 @@ pub fn init_submodules(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to init submodules: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to init submodules: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -76,7 +79,10 @@ pub fn update_submodules(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to update submodules: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to update submodules: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }
@@ -90,7 +96,10 @@ pub fn sync_submodules(repo_path: &str) -> Result<(), AppError> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to sync submodules: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to sync submodules: {}",
+            stderr.trim()
+        )));
     }
     Ok(())
 }

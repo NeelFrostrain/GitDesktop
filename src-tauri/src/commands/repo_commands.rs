@@ -1,15 +1,14 @@
+use crate::auth::github::{GitHubClient, UnifiedRepo};
+use crate::auth::gitlab::{GitLabClient, GitLabProject, MergeRequest, PagedResult};
+use crate::auth::keyring;
+use crate::error::AppError;
+use crate::git::remote;
 use tauri::command;
 use tauri_plugin_dialog::DialogExt;
-use crate::error::AppError;
-use crate::auth::gitlab::{GitLabClient, GitLabProject, PagedResult, MergeRequest};
-use crate::auth::github::{GitHubClient, UnifiedRepo};
-use crate::auth::keyring;
-use crate::git::remote;
 
 fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
-    let token = keyring::get_token()?.ok_or_else(|| {
-        AppError::Auth("Not authenticated. Please log in first.".to_string())
-    })?;
+    let token = keyring::get_token()?
+        .ok_or_else(|| AppError::Auth("Not authenticated. Please log in first.".to_string()))?;
 
     let server_url = match server_override {
         Some(url) if !url.trim().is_empty() => url,
@@ -54,7 +53,9 @@ pub async fn select_folder_cmd(app: tauri::AppHandle) -> Result<Option<String>, 
         });
 
     let res = rx.await.map_err(|e| AppError::Unknown(e.to_string()))?;
-    Ok(res.and_then(|f| f.into_path().ok()).map(|p| p.to_string_lossy().to_string()))
+    Ok(res
+        .and_then(|f| f.into_path().ok())
+        .map(|p| p.to_string_lossy().to_string()))
 }
 
 /// Fetch repositories — routes to GitHub or GitLab based on the active account provider.
@@ -89,7 +90,11 @@ pub async fn fetch_user_repositories(
     let client = get_gitlab_client(server_url)?;
     let paged = client.fetch_projects(p).await?;
     Ok(PagedResult {
-        items: paged.items.into_iter().map(gitlab_project_to_unified).collect(),
+        items: paged
+            .items
+            .into_iter()
+            .map(gitlab_project_to_unified)
+            .collect(),
         page: paged.page,
         total_pages: paged.total_pages,
     })
@@ -97,11 +102,9 @@ pub async fn fetch_user_repositories(
 
 #[command]
 pub async fn clone_repository(remote_url: String, local_path: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || {
-        remote::clone_repository(&remote_url, &local_path)
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+    tokio::task::spawn_blocking(move || remote::clone_repository(&remote_url, &local_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 #[command]
@@ -122,7 +125,9 @@ pub async fn create_merge_request(
     server_url: Option<String>,
 ) -> Result<MergeRequest, AppError> {
     let client = get_gitlab_client(server_url)?;
-    client.create_merge_request(&project_id, &source_branch, &target_branch, &title).await
+    client
+        .create_merge_request(&project_id, &source_branch, &target_branch, &title)
+        .await
 }
 
 /// Publish a local repo to GitLab or GitHub depending on active account provider.
@@ -144,11 +149,15 @@ pub async fn publish_repository(
     let (unified_repo, token) = if resolved_provider == "github" {
         let tok = keyring::get_token()?.unwrap_or_default();
         let client = GitHubClient::new(&tok)?;
-        let repo = client.create_repo(&name, is_private, description.as_deref()).await?;
+        let repo = client
+            .create_repo(&name, is_private, description.as_deref())
+            .await?;
         (repo, tok)
     } else {
         let client = get_gitlab_client(server_url.clone())?;
-        let project = client.create_project(&name, is_private, description.as_deref()).await?;
+        let project = client
+            .create_project(&name, is_private, description.as_deref())
+            .await?;
         let tok = keyring::get_token()?.unwrap_or_default();
         (gitlab_project_to_unified(project), tok)
     };
@@ -160,9 +169,11 @@ pub async fn publish_repository(
     if !token.is_empty() && raw_remote_url.starts_with("https://") {
         if resolved_provider == "github" {
             // GitHub uses token-based auth in URL: https://<token>@github.com/...
-            authenticated_url = raw_remote_url.replacen("https://", &format!("https://{}@", token), 1);
+            authenticated_url =
+                raw_remote_url.replacen("https://", &format!("https://{}@", token), 1);
         } else {
-            authenticated_url = raw_remote_url.replacen("https://", &format!("https://oauth2:{}@", token), 1);
+            authenticated_url =
+                raw_remote_url.replacen("https://", &format!("https://oauth2:{}@", token), 1);
         }
     }
 
@@ -200,12 +211,7 @@ pub async fn publish_repository(
 }
 
 #[command]
-pub fn log_action_cmd(
-    level: String,
-    category: String,
-    message: String,
-    details: Option<String>,
-) {
+pub fn log_action_cmd(level: String, category: String, message: String, details: Option<String>) {
     let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
     let details_str = match details {
         Some(d) if !d.trim().is_empty() => format!(" | Details: {}", d.trim()),
@@ -261,9 +267,7 @@ pub async fn open_in_vscode_cmd(repo_path: String) -> Result<(), AppError> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        std::process::Command::new("code")
-            .arg(&repo_path)
-            .spawn()?;
+        std::process::Command::new("code").arg(&repo_path).spawn()?;
     }
     Ok(())
 }
@@ -278,9 +282,7 @@ pub async fn show_in_explorer_cmd(repo_path: String) -> Result<(), AppError> {
     }
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
-            .arg(&repo_path)
-            .spawn()?;
+        std::process::Command::new("open").arg(&repo_path).spawn()?;
     }
     #[cfg(target_os = "linux")]
     {
@@ -400,7 +402,9 @@ pub async fn list_known_repos_cmd() -> Result<Vec<crate::repos::registry::RepoEn
 }
 
 #[command]
-pub async fn add_repo_to_registry_cmd(path: String) -> Result<crate::repos::registry::RepoEntry, AppError> {
+pub async fn add_repo_to_registry_cmd(
+    path: String,
+) -> Result<crate::repos::registry::RepoEntry, AppError> {
     let p = path.clone();
     let res = tokio::task::spawn_blocking(move || crate::repos::registry::add_repo(&p))
         .await
@@ -485,7 +489,9 @@ pub async fn get_gitlab_activity_cmd(
     limit: Option<usize>,
 ) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
     let accounts = keyring::list_accounts();
-    let account = accounts.into_iter().find(|a| a.id == account_id)
+    let account = accounts
+        .into_iter()
+        .find(|a| a.id == account_id)
         .or_else(|| keyring::get_active_account());
 
     if let Some(acct) = account {
@@ -494,7 +500,8 @@ pub async fn get_gitlab_activity_cmd(
             acct.token,
             project_paths,
             limit.unwrap_or(20),
-        ).await?;
+        )
+        .await?;
 
         crate::log_info!(
             crate::core::logging::LogCategory::Activity,
@@ -507,6 +514,3 @@ pub async fn get_gitlab_activity_cmd(
         Ok(Vec::new())
     }
 }
-
-
-

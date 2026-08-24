@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
-use git2::{Repository, Sort};
-use std::path::Path;
 use crate::error::AppError;
+use git2::{Repository, Sort};
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(tag = "type")]
@@ -43,7 +43,10 @@ pub struct ActivityEvent {
     pub relative_date: String,
 }
 
-pub fn get_local_activity(repo_paths: Vec<String>, limit: usize) -> Result<Vec<ActivityEvent>, AppError> {
+pub fn get_local_activity(
+    repo_paths: Vec<String>,
+    limit: usize,
+) -> Result<Vec<ActivityEvent>, AppError> {
     let mut all_events = Vec::new();
     let max_per_repo = 20;
 
@@ -131,8 +134,8 @@ fn format_relative_date(timestamp: i64) -> String {
         let days = diff / 86400;
         format!("{} day{} ago", days, if days == 1 { "" } else { "s" })
     } else {
-        let dt = chrono::DateTime::from_timestamp(timestamp, 0)
-            .unwrap_or_else(|| chrono::Utc::now());
+        let dt =
+            chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| chrono::Utc::now());
         dt.format("%b %d, %Y").to_string()
     }
 }

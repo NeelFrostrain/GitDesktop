@@ -1,5 +1,5 @@
-use std::process::Command;
 use crate::error::AppError;
+use std::process::Command;
 
 pub fn export_patch(
     repo_path: &str,
@@ -19,7 +19,10 @@ pub fn export_patch(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to generate patch: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to generate patch: {}",
+            stderr.trim()
+        )));
     }
 
     std::fs::write(target_path, output.stdout)
@@ -37,7 +40,10 @@ pub fn apply_patch(repo_path: &str, patch_file_path: &str) -> Result<(), AppErro
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!("Failed to apply patch: {}", stderr.trim())));
+        return Err(AppError::Git(format!(
+            "Failed to apply patch: {}",
+            stderr.trim()
+        )));
     }
 
     Ok(())

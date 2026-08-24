@@ -1,11 +1,12 @@
-use serde::{Deserialize, Serialize};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
-use sha2::{Sha256, Digest};
+use crate::error::AppError;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
-use crate::error::AppError;
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
-pub const DEFAULT_CLIENT_ID: &str = "gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df";
+pub const DEFAULT_CLIENT_ID: &str =
+    "gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df";
 pub const LOOPBACK_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
 pub const DEFAULT_REDIRECT_URI: &str = "gitlab-desktop://oauth/callback";
 
@@ -24,7 +25,10 @@ pub fn generate_pkce() -> PkcePair {
     let mut hasher = Sha256::new();
     hasher.update(verifier.as_bytes());
     let challenge = URL_SAFE_NO_PAD.encode(hasher.finalize());
-    PkcePair { verifier, challenge }
+    PkcePair {
+        verifier,
+        challenge,
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -53,17 +57,16 @@ pub async fn listen_for_oauth_callback(
     redirect_uri: String,
     app_handle: tauri::AppHandle,
 ) -> Result<GitLabUser, AppError> {
-    use tokio::net::TcpListener;
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    use tokio::net::TcpListener;
 
     let listener = TcpListener::bind("127.0.0.1:8585")
         .await
         .map_err(|e| AppError::Network(format!("Failed to bind local OAuth port 8585: {}", e)))?;
 
-    let (mut stream, _) = listener
-        .accept()
-        .await
-        .map_err(|e| AppError::Network(format!("Failed to accept OAuth callback connection: {}", e)))?;
+    let (mut stream, _) = listener.accept().await.map_err(|e| {
+        AppError::Network(format!("Failed to accept OAuth callback connection: {}", e))
+    })?;
 
     let mut buffer = [0u8; 4096];
     let bytes_read = stream.read(&mut buffer).await?;
@@ -74,8 +77,14 @@ pub async fn listen_for_oauth_callback(
         .next()
         .and_then(|line| line.split_whitespace().nth(1))
         .and_then(|path| url::Url::parse(&format!("http://127.0.0.1:8585{}", path)).ok())
-        .and_then(|url| url.query_pairs().find(|(k, _)| k == "code").map(|(_, v)| v.to_string()))
-        .ok_or_else(|| AppError::Auth("Authorization code missing from callback request".to_string()))?;
+        .and_then(|url| {
+            url.query_pairs()
+                .find(|(k, _)| k == "code")
+                .map(|(_, v)| v.to_string())
+        })
+        .ok_or_else(|| {
+            AppError::Auth("Authorization code missing from callback request".to_string())
+        })?;
 
     let html_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0d0d14;color:#f0f0f3;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;'><div><h2 style='color:#fc6d26;margin-bottom:8px;'>Git Desktop Authorized!</h2><p style='color:#c8c8ce;'>Authentication was successful. You can close this tab and return to the app.</p></div></body></html>";
     let _ = stream.write_all(html_response.as_bytes()).await;
@@ -95,12 +104,14 @@ pub async fn listen_for_oauth_callback(
     let user = client.get_current_user().await?;
 
     let scopes_list = token_resp.scope.as_ref().map(|s| {
-        s.split_whitespace().map(|x| x.to_string()).collect::<Vec<String>>()
+        s.split_whitespace()
+            .map(|x| x.to_string())
+            .collect::<Vec<String>>()
     });
 
-    let expires_at = token_resp.expires_in.map(|exp| {
-        chrono::Utc::now().timestamp() + exp
-    });
+    let expires_at = token_resp
+        .expires_in
+        .map(|exp| chrono::Utc::now().timestamp() + exp);
 
     let account_id = crate::auth::keyring::make_account_id(&user.username, &server_url);
     let account = crate::auth::keyring::SavedAccount {
@@ -166,9 +177,10 @@ pub async fn exchange_code_for_token_response(
     let resp = client.post(&token_url).form(&params).send().await?;
 
     if resp.status().is_success() {
-        let token_resp: OAuthTokenResponse = resp.json().await.map_err(|e| {
-            AppError::Auth(format!("Failed to parse token response: {}", e))
-        })?;
+        let token_resp: OAuthTokenResponse = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Auth(format!("Failed to parse token response: {}", e)))?;
         return Ok(token_resp);
     }
 
@@ -184,9 +196,10 @@ pub async fn exchange_code_for_token_response(
         let resp2 = client.post(&token_url).form(&pure_params).send().await?;
 
         if resp2.status().is_success() {
-            let token_resp: OAuthTokenResponse = resp2.json().await.map_err(|e| {
-                AppError::Auth(format!("Failed to parse token response: {}", e))
-            })?;
+            let token_resp: OAuthTokenResponse = resp2
+                .json()
+                .await
+                .map_err(|e| AppError::Auth(format!("Failed to parse token response: {}", e)))?;
             return Ok(token_resp);
         }
         let err_text = resp2.text().await.unwrap_or_default();
@@ -211,7 +224,15 @@ pub async fn exchange_code_for_token(
     verifier: &str,
     redirect_uri: &str,
 ) -> Result<String, AppError> {
-    let resp = exchange_code_for_token_response(server_url, client_id, client_secret, code, verifier, redirect_uri).await?;
+    let resp = exchange_code_for_token_response(
+        server_url,
+        client_id,
+        client_secret,
+        code,
+        verifier,
+        redirect_uri,
+    )
+    .await?;
     Ok(resp.access_token)
 }
 
@@ -249,7 +270,10 @@ pub async fn refresh_oauth_token(
     }
 
     let err_text = resp.text().await.unwrap_or_default();
-    Err(AppError::Auth(format!("OAuth token refresh failed: {}", err_text)))
+    Err(AppError::Auth(format!(
+        "OAuth token refresh failed: {}",
+        err_text
+    )))
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -303,14 +327,19 @@ pub struct GitLabClient {
 }
 
 impl GitLabClient {
-    pub fn new(server_url: String, token: String, custom_ca_pem: Option<String>) -> Result<Self, AppError> {
+    pub fn new(
+        server_url: String,
+        token: String,
+        custom_ca_pem: Option<String>,
+    ) -> Result<Self, AppError> {
         let clean_url = server_url.trim_end_matches('/').to_string();
         let mut builder = reqwest::Client::builder();
 
         if let Some(ca_pem) = custom_ca_pem {
             if !ca_pem.trim().is_empty() {
-                let cert = reqwest::Certificate::from_pem(ca_pem.as_bytes())
-                    .map_err(|e| AppError::Validation(format!("Invalid custom CA certificate PEM: {}", e)))?;
+                let cert = reqwest::Certificate::from_pem(ca_pem.as_bytes()).map_err(|e| {
+                    AppError::Validation(format!("Invalid custom CA certificate PEM: {}", e))
+                })?;
                 builder = builder.add_root_certificate(cert);
             }
         }
@@ -319,8 +348,9 @@ impl GitLabClient {
         let auth_val = format!("Bearer {}", token);
         headers.insert(
             AUTHORIZATION,
-            HeaderValue::from_str(&auth_val)
-                .map_err(|_| AppError::Validation("Invalid authorization token format".to_string()))?,
+            HeaderValue::from_str(&auth_val).map_err(|_| {
+                AppError::Validation("Invalid authorization token format".to_string())
+            })?,
         );
 
         let client = builder
@@ -341,10 +371,15 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             if resp.status().as_u16() == 401 {
-                return Err(AppError::Auth("Invalid GitLab Personal Access Token or OAuth token.".to_string()));
+                return Err(AppError::Auth(
+                    "Invalid GitLab Personal Access Token or OAuth token.".to_string(),
+                ));
             }
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to fetch GitLab user: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to fetch GitLab user: {}",
+                err_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -357,7 +392,10 @@ impl GitLabClient {
             web_url: String,
         }
 
-        let raw: RawUser = resp.json().await.map_err(|e| AppError::Network(format!("Failed to parse user JSON: {}", e)))?;
+        let raw: RawUser = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse user JSON: {}", e)))?;
 
         Ok(GitLabUser {
             id: raw.id,
@@ -376,7 +414,10 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to fetch token info: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to fetch token info: {}",
+                err_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -389,7 +430,10 @@ impl GitLabClient {
             resource_owner_id: Option<u64>,
         }
 
-        let raw: RawTokenInfo = resp.json().await.map_err(|e| AppError::Network(format!("Failed to parse token info JSON: {}", e)))?;
+        let raw: RawTokenInfo = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse token info JSON: {}", e)))?;
 
         let scope = raw.scope.or(raw.scopes).unwrap_or_default();
         let expires_in_seconds = raw.expires_in_seconds.or(raw.expires_in);
@@ -419,7 +463,10 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to fetch projects: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to fetch projects: {}",
+                err_text
+            )));
         }
 
         let total_pages = resp
@@ -457,13 +504,22 @@ impl GitLabClient {
         })
     }
 
-    pub async fn get_open_merge_requests(&self, project_id: &str) -> Result<Vec<MergeRequest>, AppError> {
+    pub async fn get_open_merge_requests(
+        &self,
+        project_id: &str,
+    ) -> Result<Vec<MergeRequest>, AppError> {
         let encoded_id = urlencoding::encode(project_id);
-        let url = format!("{}/api/v4/projects/{}/merge_requests?state=opened", self.server_url, encoded_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests?state=opened",
+            self.server_url, encoded_id
+        );
         let resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
-            return Err(AppError::Network(format!("Failed to fetch merge requests (Status {})", resp.status())));
+            return Err(AppError::Network(format!(
+                "Failed to fetch merge requests (Status {})",
+                resp.status()
+            )));
         }
 
         let mrs: Vec<MergeRequest> = resp
@@ -482,7 +538,10 @@ impl GitLabClient {
         title: &str,
     ) -> Result<MergeRequest, AppError> {
         let encoded_id = urlencoding::encode(project_id);
-        let url = format!("{}/api/v4/projects/{}/merge_requests", self.server_url, encoded_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests",
+            self.server_url, encoded_id
+        );
 
         let payload = serde_json::json!({
             "source_branch": source_branch,
@@ -494,7 +553,10 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to create MR: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to create MR: {}",
+                err_text
+            )));
         }
 
         let mr: MergeRequest = resp
@@ -529,7 +591,10 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to create GitLab project: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to create GitLab project: {}",
+                err_text
+            )));
         }
 
         let project: GitLabProject = resp.json().await.map_err(|e| {

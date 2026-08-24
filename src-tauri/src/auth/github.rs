@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
 use crate::error::AppError;
+use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, USER_AGENT};
+use serde::{Deserialize, Serialize};
 
 pub const GITHUB_API_URL: &str = "https://api.github.com";
 
@@ -60,10 +60,7 @@ impl GitHubClient {
                 .map_err(|_| AppError::Validation("Invalid GitHub token format".to_string()))?,
         );
         // GitHub API requires a User-Agent header
-        headers.insert(
-            USER_AGENT,
-            HeaderValue::from_static("git-desktop/1.0"),
-        );
+        headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop/1.0"));
         // Request JSON responses
         headers.insert(
             reqwest::header::ACCEPT,
@@ -89,7 +86,10 @@ impl GitHubClient {
                 ));
             }
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to fetch GitHub user: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to fetch GitHub user: {}",
+                err_text
+            )));
         }
 
         #[derive(Deserialize)]
@@ -127,7 +127,10 @@ impl GitHubClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to fetch GitHub repos: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to fetch GitHub repos: {}",
+                err_text
+            )));
         }
 
         let repos: Vec<GitHubRepo> = resp
@@ -180,7 +183,10 @@ impl GitHubClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!("Failed to create GitHub repo: {}", err_text)));
+            return Err(AppError::Network(format!(
+                "Failed to create GitHub repo: {}",
+                err_text
+            )));
         }
 
         let repo: GitHubRepo = resp

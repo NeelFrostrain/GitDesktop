@@ -1,9 +1,9 @@
+use crate::core::logging::model::{LogEntry, LogFilter};
+use sha2::{Digest, Sha256};
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use sha2::{Digest, Sha256};
-use crate::core::logging::model::{LogEntry, LogFilter};
 
 const MAX_LOG_ENTRIES: usize = 10_000;
 const MAX_LOG_FILE_BYTES: u64 = 50 * 1024 * 1024; // 50MB
@@ -19,7 +19,13 @@ pub fn safe_repo_id(repo_id: &str) -> String {
 
     let sanitized: String = repo_id
         .chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect();
 
     let name = sanitized.trim_matches('_');
@@ -185,8 +191,8 @@ pub fn query_logs(filter: &LogFilter, limit: usize, offset: usize) -> Vec<LogEnt
 pub fn export_logs(filter: &LogFilter, dest_path: &str) -> Result<(), String> {
     let entries = query_logs(filter, 100_000, 0);
 
-    let mut file = fs::File::create(dest_path)
-        .map_err(|e| format!("Failed to create export file: {}", e))?;
+    let mut file =
+        fs::File::create(dest_path).map_err(|e| format!("Failed to create export file: {}", e))?;
 
     let is_json = dest_path.ends_with(".json") || dest_path.ends_with(".jsonl");
 
@@ -194,12 +200,12 @@ pub fn export_logs(filter: &LogFilter, dest_path: &str) -> Result<(), String> {
         for entry in entries {
             let line = serde_json::to_string(&entry)
                 .map_err(|e| format!("Failed to serialize entry: {}", e))?;
-            writeln!(file, "{}", line)
-                .map_err(|e| format!("Failed to write to file: {}", e))?;
+            writeln!(file, "{}", line).map_err(|e| format!("Failed to write to file: {}", e))?;
         }
     } else {
         writeln!(file, "=== GIT DESKTOP LOG EXPORT ===").map_err(|e| e.to_string())?;
-        writeln!(file, "Generated: {}", chrono::Utc::now().to_rfc3339()).map_err(|e| e.to_string())?;
+        writeln!(file, "Generated: {}", chrono::Utc::now().to_rfc3339())
+            .map_err(|e| e.to_string())?;
         writeln!(file, "Total Entries: {}", entries.len()).map_err(|e| e.to_string())?;
         writeln!(file, "==============================\n").map_err(|e| e.to_string())?;
 

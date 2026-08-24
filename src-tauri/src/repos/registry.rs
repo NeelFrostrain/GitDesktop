@@ -1,8 +1,8 @@
+use crate::error::AppError;
+use git2::Repository;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
-use git2::Repository;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RepoEntry {
@@ -57,7 +57,11 @@ pub fn list_known_repos() -> Vec<RepoEntry> {
         if let Ok(current_dir) = std::env::current_dir() {
             if Repository::open(&current_dir).is_ok() {
                 let p = current_dir.to_string_lossy().to_string();
-                let name = current_dir.file_name().and_then(|n| n.to_str()).unwrap_or("repo").to_string();
+                let name = current_dir
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("repo")
+                    .to_string();
                 reg.repos.push(RepoEntry {
                     id: p.clone(),
                     path: p,
@@ -72,7 +76,9 @@ pub fn list_known_repos() -> Vec<RepoEntry> {
 
     // Sort pinned first, then by last_opened_at descending
     reg.repos.sort_by(|a, b| {
-        b.pinned.cmp(&a.pinned).then_with(|| b.last_opened_at.cmp(&a.last_opened_at))
+        b.pinned
+            .cmp(&a.pinned)
+            .then_with(|| b.last_opened_at.cmp(&a.last_opened_at))
     });
 
     reg.repos
@@ -84,11 +90,18 @@ pub fn add_repo(path: &str) -> Result<RepoEntry, AppError> {
 
     // Validate that it is a valid git repository
     if !repo_path.exists() {
-        return Err(AppError::Validation(format!("Directory '{}' does not exist", clean_path)));
+        return Err(AppError::Validation(format!(
+            "Directory '{}' does not exist",
+            clean_path
+        )));
     }
 
-    let _repo = Repository::open(repo_path)
-        .map_err(|e| AppError::Validation(format!("'{}' is not a valid Git repository: {}", clean_path, e)))?;
+    let _repo = Repository::open(repo_path).map_err(|e| {
+        AppError::Validation(format!(
+            "'{}' is not a valid Git repository: {}",
+            clean_path, e
+        ))
+    })?;
 
     let name = repo_path
         .file_name()
@@ -100,7 +113,11 @@ pub fn add_repo(path: &str) -> Result<RepoEntry, AppError> {
     let normalized = clean_path.replace('\\', "/");
     let now = chrono::Utc::now().timestamp();
 
-    if let Some(existing) = reg.repos.iter_mut().find(|r| r.path.replace('\\', "/") == normalized) {
+    if let Some(existing) = reg
+        .repos
+        .iter_mut()
+        .find(|r| r.path.replace('\\', "/") == normalized)
+    {
         existing.last_opened_at = now;
         let res = existing.clone();
         write_registry(&reg);
@@ -124,7 +141,8 @@ pub fn add_repo(path: &str) -> Result<RepoEntry, AppError> {
 pub fn remove_repo(id: &str) -> Result<(), AppError> {
     let mut reg = read_registry();
     let normalized = id.replace('\\', "/");
-    reg.repos.retain(|r| r.id != id && r.path.replace('\\', "/") != normalized);
+    reg.repos
+        .retain(|r| r.id != id && r.path.replace('\\', "/") != normalized);
     write_registry(&reg);
     Ok(())
 }
@@ -132,7 +150,11 @@ pub fn remove_repo(id: &str) -> Result<(), AppError> {
 pub fn pin_repo(id: &str, pinned: bool) -> Result<(), AppError> {
     let mut reg = read_registry();
     let normalized = id.replace('\\', "/");
-    if let Some(entry) = reg.repos.iter_mut().find(|r| r.id == id || r.path.replace('\\', "/") == normalized) {
+    if let Some(entry) = reg
+        .repos
+        .iter_mut()
+        .find(|r| r.id == id || r.path.replace('\\', "/") == normalized)
+    {
         entry.pinned = pinned;
         write_registry(&reg);
     }

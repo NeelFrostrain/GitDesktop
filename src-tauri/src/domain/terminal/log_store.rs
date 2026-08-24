@@ -20,7 +20,11 @@ pub fn append_to_session_log(repo_id: &str, session_id: &str, chunk: &str) {
     let file_path = dir.join(format!("{}.log", session_id));
     let is_new = !file_path.exists();
 
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&file_path) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&file_path)
+    {
         if is_new {
             let header = format!(
                 "=== GIT DESKTOP TERMINAL SESSION ===\nRepo: {}\nSession ID: {}\nStarted: {}\n====================================\n\n",
@@ -45,7 +49,11 @@ pub fn list_log_sessions(repo_id: &str) -> Result<Vec<LogSessionSummary>, AppErr
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("log") {
-                let file_name = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_string();
+                let file_name = path
+                    .file_stem()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+                    .to_string();
                 if file_name.is_empty() {
                     continue;
                 }
@@ -62,10 +70,16 @@ pub fn list_log_sessions(repo_id: &str) -> Result<Vec<LogSessionSummary>, AppErr
 
                 // Read quick sample to estimate command count / duration
                 let content = fs::read_to_string(&path).unwrap_or_default();
-                let command_count = content.lines().filter(|l| {
-                    let trim = l.trim_start();
-                    trim.starts_with("$ ") || trim.starts_with("PS ") || trim.starts_with("> ") || trim.starts_with("[GD_CMD:")
-                }).count();
+                let command_count = content
+                    .lines()
+                    .filter(|l| {
+                        let trim = l.trim_start();
+                        trim.starts_with("$ ")
+                            || trim.starts_with("PS ")
+                            || trim.starts_with("> ")
+                            || trim.starts_with("[GD_CMD:")
+                    })
+                    .count();
 
                 sessions.push(LogSessionSummary {
                     session_id: file_name,
@@ -90,18 +104,29 @@ pub fn get_log_session(repo_id: &str, session_id: &str) -> Result<String, AppErr
     let file_path = dir.join(format!("{}.log", session_id));
 
     if !file_path.exists() {
-        return Err(AppError::NotFound(format!("Log session '{}' not found", session_id)));
+        return Err(AppError::NotFound(format!(
+            "Log session '{}' not found",
+            session_id
+        )));
     }
 
-    fs::read_to_string(file_path).map_err(|e| AppError::Filesystem(format!("Failed to read session log: {}", e)))
+    fs::read_to_string(file_path)
+        .map_err(|e| AppError::Filesystem(format!("Failed to read session log: {}", e)))
 }
 
-pub fn export_log_session(repo_id: &str, session_id: &str, dest_path: &str) -> Result<(), AppError> {
+pub fn export_log_session(
+    repo_id: &str,
+    session_id: &str,
+    dest_path: &str,
+) -> Result<(), AppError> {
     let dir = get_repo_logs_dir(repo_id);
     let src_path = dir.join(format!("{}.log", session_id));
 
     if !src_path.exists() {
-        return Err(AppError::NotFound(format!("Log session '{}' not found", session_id)));
+        return Err(AppError::NotFound(format!(
+            "Log session '{}' not found",
+            session_id
+        )));
     }
 
     let dest = Path::new(dest_path);

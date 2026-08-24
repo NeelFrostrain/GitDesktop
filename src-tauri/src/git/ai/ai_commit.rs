@@ -1,8 +1,8 @@
-use serde::{Deserialize, Serialize};
-use git2::{Repository, DiffOptions};
-use std::path::Path;
-use std::fs;
 use crate::error::AppError;
+use git2::{DiffOptions, Repository};
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::path::Path;
 
 const GROQ_API_URL: &str = "https://api.groq.com/openai/v1/chat/completions";
 pub const DEFAULT_MODEL: &str = "openai/gpt-oss-120b";
@@ -58,9 +58,11 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
     let mut patch_text = String::new();
 
     if staged_only {
-        let index = repo.index()
+        let index = repo
+            .index()
             .map_err(|e| AppError::Git(format!("Failed to get index: {}", e)))?;
-        let diff = repo.diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut diff_opts))
+        let diff = repo
+            .diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut diff_opts))
             .map_err(|e| AppError::Git(format!("Failed to compute staged diff: {}", e)))?;
 
         let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
@@ -77,7 +79,8 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
         });
     } else {
         // Combined unstaged + staged
-        let diff = repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))
+        let diff = repo
+            .diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))
             .map_err(|e| AppError::Git(format!("Failed to compute working tree diff: {}", e)))?;
 
         let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
@@ -95,7 +98,8 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
     }
 
     // Also include untracked new files if any
-    let statuses = repo.statuses(None)
+    let statuses = repo
+        .statuses(None)
         .map_err(|e| AppError::Git(format!("Failed to get statuses: {}", e)))?;
     for entry in statuses.iter() {
         let s = entry.status();
@@ -104,8 +108,14 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
                 let full_path = Path::new(repo_path).join(path);
                 if full_path.is_file() {
                     if let Ok(content) = fs::read_to_string(&full_path) {
-                        let sample: String = content.lines().take(40).collect::<Vec<_>>().join("\n");
-                        patch_text.push_str(&format!("\n--- /dev/null\n+++ b/{}\n@@ -0,0 +1,{} @@\n{}\n", path, content.lines().count(), sample));
+                        let sample: String =
+                            content.lines().take(40).collect::<Vec<_>>().join("\n");
+                        patch_text.push_str(&format!(
+                            "\n--- /dev/null\n+++ b/{}\n@@ -0,0 +1,{} @@\n{}\n",
+                            path,
+                            content.lines().count(),
+                            sample
+                        ));
                     }
                 }
             }
@@ -121,7 +131,11 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
             if let Ok(commit) = head.peel_to_commit() {
                 if let Ok(tree) = commit.tree() {
                     let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
-                    if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts)) {
+                    if let Ok(diff) = repo.diff_tree_to_tree(
+                        parent_tree.as_ref(),
+                        Some(&tree),
+                        Some(&mut diff_opts),
+                    ) {
                         let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
                             if patch_text.len() < MAX_DIFF_CHARS {
                                 let origin = line.origin();
@@ -284,8 +298,7 @@ fn extract_tag(input: &str, tag: &str) -> Option<String> {
 }
 
 pub fn parse_multi_response(input: &str) -> (Vec<String>, String) {
-    let report = extract_tag(input, "report")
-        .unwrap_or_else(|| "Changes analyzed.".to_string());
+    let report = extract_tag(input, "report").unwrap_or_else(|| "Changes analyzed.".to_string());
 
     let options = if let Some(raw) = extract_tag(input, "options") {
         raw.lines()
@@ -329,13 +342,16 @@ pub async fn generate_ai_commit_message(
     let api_keys = collect_all_groq_api_keys(repo_path, custom_api_key.as_deref());
     if api_keys.is_empty() {
         return Err(AppError::Git(
-            "GROQ_API_KEY not found. Please add a Groq API key in Settings -> AI & Commit-AI.".to_string()
+            "GROQ_API_KEY not found. Please add a Groq API key in Settings -> AI & Commit-AI."
+                .to_string(),
         ));
     }
 
     let diff_text = get_repo_diff_text(repo_path, staged_only)?;
     if diff_text.trim().is_empty() {
-        return Err(AppError::Git("No modified, staged, or recent changes found in repository.".to_string()));
+        return Err(AppError::Git(
+            "No modified, staged, or recent changes found in repository.".to_string(),
+        ));
     }
 
     let raw_model = model_override
@@ -388,20 +404,30 @@ pub async fn generate_ai_commit_message(
             let status = response.status();
             if !status.is_success() {
                 let err_body = response.text().await.unwrap_or_default();
-                last_error = format!("Groq API key #{} failed ({}): {}", index + 1, status, err_body);
+                last_error = format!(
+                    "Groq API key #{} failed ({}): {}",
+                    index + 1,
+                    status,
+                    err_body
+                );
 
                 // Handle 429 (Rate limit reached) or 404 (Model not found)
                 if retry_attempt < 2 {
                     if status.as_u16() == 429 {
                         // Rate limit exceeded on heavy model -> fallback to high-capacity model
-                        if model_to_try != "llama-3.3-70b-versatile" && model_to_try != "llama-3.1-8b-instant" {
+                        if model_to_try != "llama-3.3-70b-versatile"
+                            && model_to_try != "llama-3.1-8b-instant"
+                        {
                             model_to_try = "llama-3.3-70b-versatile".to_string();
                             continue;
                         } else if model_to_try != "llama-3.1-8b-instant" {
                             model_to_try = "llama-3.1-8b-instant".to_string();
                             continue;
                         }
-                    } else if status.as_u16() == 404 || err_body.contains("model_not_found") || err_body.contains("does not exist") {
+                    } else if status.as_u16() == 404
+                        || err_body.contains("model_not_found")
+                        || err_body.contains("does not exist")
+                    {
                         if model_to_try != "llama-3.1-8b-instant" {
                             model_to_try = "llama-3.1-8b-instant".to_string();
                             continue;
@@ -421,7 +447,10 @@ pub async fn generate_ai_commit_message(
 
             if let Some(first_choice) = chat_res.choices.into_iter().next() {
                 let (title_options, report) = parse_multi_response(&first_choice.message.content);
-                let summary = title_options.first().cloned().unwrap_or_else(|| "chore: update".to_string());
+                let summary = title_options
+                    .first()
+                    .cloned()
+                    .unwrap_or_else(|| "chore: update".to_string());
 
                 return Ok(AiCommitSuggestion {
                     title_options,
