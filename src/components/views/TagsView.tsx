@@ -108,21 +108,21 @@ export const TagsView: React.FC = () => {
               placeholder="Filter tags..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-base-2 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+              className="w-full pl-8 pr-3 py-1.5 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral"
             />
           </div>
 
           <button
             onClick={loadTags}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-text-muted hover:text-text-primary transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handlePushTags}
-            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
+            className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
             title="Push tags to remote origin"
           >
             <Upload className="w-3.5 h-3.5 text-text-muted" />
@@ -131,7 +131,7 @@ export const TagsView: React.FC = () => {
 
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create Tag</span>
@@ -141,7 +141,7 @@ export const TagsView: React.FC = () => {
 
       {/* Create Tag Form Drawer */}
       {showCreateModal && (
-        <form onSubmit={handleCreateTag} className="p-4 bg-base-2 border border-border rounded-md space-y-3 shadow-md">
+        <form onSubmit={handleCreateTag} className="p-4 bg-base-2 border border-border rounded-sm space-y-3 shadow-md">
           <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
             <Bookmark className="w-4 h-4 text-commito-coral" />
             <span>Create Tag on HEAD</span>
@@ -153,7 +153,7 @@ export const TagsView: React.FC = () => {
               placeholder="Tag Name (e.g. v1.0.0)"
               value={tagName}
               onChange={(e) => setTagName(e.target.value)}
-              className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+              className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
               autoFocus
               required
             />
@@ -163,7 +163,7 @@ export const TagsView: React.FC = () => {
               placeholder="Annotation message (optional for lightweight tag)"
               value={tagMessage}
               onChange={(e) => setTagMessage(e.target.value)}
-              className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+              className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral"
             />
           </div>
 
@@ -171,14 +171,14 @@ export const TagsView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowCreateModal(false)}
-              className="px-3 py-1 bg-base-3 text-text-secondary rounded-md text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
+              className="px-3 py-1 bg-base-3 text-text-secondary rounded-sm text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!tagName.trim()}
-              className="px-4 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
+              className="px-4 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer"
             >
               Create Tag
             </button>
@@ -189,14 +189,14 @@ export const TagsView: React.FC = () => {
       {/* Tag List */}
       <div className="space-y-2">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
+          <div className="p-8 text-center bg-base-2 border border-border rounded-sm text-xs text-text-muted italic">
             No release tags found in repository
           </div>
         ) : (
           filtered.map((tag) => (
             <div
               key={tag.name}
-              className="p-3.5 bg-base-2/60 border border-border rounded-md flex items-center justify-between hover:bg-base-2 transition"
+              className="p-3.5 bg-base-2/60 border border-border rounded-sm flex items-center justify-between hover:bg-base-2 transition"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                 <Tag className="w-4 h-4 text-commito-coral flex-shrink-0" />
@@ -227,7 +227,7 @@ export const TagsView: React.FC = () => {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => handleDeleteTag(tag.name)}
-                  className="p-1.5 text-text-muted hover:text-git-removed bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
+                  className="p-1.5 text-text-muted hover:text-git-removed bg-base-3 hover:bg-base-1 border border-border rounded-sm transition cursor-pointer"
                   title="Delete tag"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

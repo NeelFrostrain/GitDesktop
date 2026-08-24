@@ -57,7 +57,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
 
       {/* View mode toggle */}
       {!isImage && !isBinary && (
-        <div className="flex items-center bg-base-0 border border-border rounded-md p-0.5">
+        <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5">
           <button
             type="button"
             onClick={() => onChangeViewMode('unified')}

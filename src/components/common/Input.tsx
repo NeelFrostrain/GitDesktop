@@ -23,7 +23,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
-            className={`w-full bg-base-0 border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans transition ${
+            className={`w-full bg-base-0 border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans transition ${
               isSearch ? 'pl-8 pr-3 py-1.5' : 'px-2.5 py-1.5'
             } ${
               error

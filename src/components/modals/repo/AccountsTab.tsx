@@ -105,7 +105,7 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
 
   if (accounts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-xl bg-base-1">
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-sm bg-base-1">
         <User className="w-12 h-12 text-text-muted mb-3 opacity-40" />
         <h4 className="text-sm font-semibold text-text-primary mb-1">No Accounts Connected</h4>
         <p className="text-xs text-text-muted max-w-sm mb-4">
@@ -124,7 +124,7 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
         return (
           <div
             key={account.id}
-            className={`p-3.5 rounded-lg border transition-all ${
+            className={`p-3.5 rounded-sm border transition-all ${
               isActive
                 ? 'bg-base-2 border-commito-coral/40 shadow-sm ring-1 ring-commito-coral/20'
                 : 'bg-base-1 border-border hover:border-text-muted/30'

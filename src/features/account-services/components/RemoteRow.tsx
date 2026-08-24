@@ -64,7 +64,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
   };
 
   return (
-    <div className="p-3.5 rounded-md bg-base-2/50 border border-border hover:border-border-strong transition flex flex-col gap-2 select-none">
+    <div className="p-3.5 rounded-sm bg-base-2/50 border border-border hover:border-border-strong transition flex flex-col gap-2 select-none">
       <div className="flex items-center justify-between gap-3">
         {/* Remote Name & Default Badge */}
         <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
           {!remote.is_default && (
             <button
               onClick={handleSetDefault}
-              className="p-1 rounded-md text-text-muted hover:text-git-modified hover:bg-base-3 transition cursor-pointer text-xs flex items-center gap-1 font-semibold"
+              className="p-1 rounded-sm text-text-muted hover:text-git-modified hover:bg-base-3 transition cursor-pointer text-xs flex items-center gap-1 font-semibold"
               title="Set as default push/pull remote"
             >
               <Star className="w-3.5 h-3.5" />
@@ -94,7 +94,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
 
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
+            className="p-1.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
             title="Edit Remote URL"
           >
             <Edit2 className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1.5 rounded-md text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
+            className="p-1.5 rounded-sm text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
             title="Delete Remote"
           >
             {isDeleting ? (
@@ -122,12 +122,12 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
             type="text"
             value={editedUrl}
             onChange={(e) => setEditedUrl(e.target.value)}
-            className="flex-1 bg-base-1 border border-border rounded-md px-2.5 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+            className="flex-1 bg-base-1 border border-border rounded-sm px-2.5 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
           />
           <button
             onClick={handleSaveUrl}
             disabled={isSaving}
-            className="px-2.5 py-1 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold transition flex items-center gap-1 cursor-pointer"
           >
             {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
             <span>Save</span>

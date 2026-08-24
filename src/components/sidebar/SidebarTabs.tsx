@@ -7,7 +7,7 @@ export const SidebarTabs: React.FC = () => {
 
   return (
     <div className="px-2.5 py-1 border-b border-border bg-base-0">
-      <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md p-0.5 w-full">
+      <div className="flex items-center gap-1 bg-base-2 border border-border rounded-sm p-0.5 w-full">
         <button
           type="button"
           onClick={() => setActiveTab('changes')}

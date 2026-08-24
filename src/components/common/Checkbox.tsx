@@ -38,8 +38,8 @@ export const Checkbox: React.FC<CheckboxProps> = ({
 
   const sizeClasses = {
     sm: 'w-3.5 h-3.5 rounded',
-    md: 'w-4 h-4 rounded-md',
-    lg: 'w-5 h-5 rounded-md',
+    md: 'w-4 h-4 rounded-sm',
+    lg: 'w-5 h-5 rounded-sm',
   };
 
   const iconSizeClasses = {

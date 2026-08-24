@@ -49,7 +49,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {/* View mode toggle */}
-          <div className="flex items-center bg-base-1 border border-border rounded-md p-0.5">
+          <div className="flex items-center bg-base-1 border border-border rounded-sm p-0.5">
             <button
               type="button"
               onClick={() => onChangeViewMode('unified')}
@@ -82,7 +82,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           {verification?.status === 'Verified' && (
             <span
               title="Cryptographically verified"
-              className="flex items-center gap-1 text-git-added text-[11px] bg-git-added/8 border border-git-added/20 px-1.5 py-0.5 rounded-md font-medium"
+              className="flex items-center gap-1 text-git-added text-[11px] bg-git-added/8 border border-git-added/20 px-1.5 py-0.5 rounded-sm font-medium"
             >
               <ShieldCheck className="w-3 h-3" />
               Verified
@@ -91,7 +91,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           {verification?.status === 'Unverified' && (
             <span
               title="Unverified signature"
-              className="flex items-center gap-1 text-git-modified text-[11px] bg-git-modified/8 border border-git-modified/20 px-1.5 py-0.5 rounded-md font-medium"
+              className="flex items-center gap-1 text-git-modified text-[11px] bg-git-modified/8 border border-git-modified/20 px-1.5 py-0.5 rounded-sm font-medium"
             >
               <ShieldAlert className="w-3 h-3" />
               Unverified
@@ -164,7 +164,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
 
       {/* Expandable commit body */}
       {commitBody && showCommitBody && (
-        <div className="mx-4 mb-2.5 p-2.5 bg-base-1 border border-border rounded-md text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+        <div className="mx-4 mb-2.5 p-2.5 bg-base-1 border border-border rounded-sm text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
           {commitBody}
         </div>
       )}

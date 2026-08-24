@@ -41,12 +41,12 @@ export const CommitMessageForm: React.FC<CommitMessageFormProps> = ({
           placeholder="Summary (required)"
           value={summary}
           onChange={(e) => onSummaryChange(e.target.value)}
-          className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+          className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
         />
       </div>
 
       {/* Unified Description Card Input Container */}
-      <div className="bg-base-0 border border-border rounded-md focus-within:border-commito-coral/50 transition flex flex-col overflow-hidden">
+      <div className="bg-base-0 border border-border rounded-sm focus-within:border-commito-coral/50 transition flex flex-col overflow-hidden">
         <textarea
           placeholder="Description"
           rows={4}

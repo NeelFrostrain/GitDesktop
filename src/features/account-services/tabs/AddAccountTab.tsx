@@ -21,7 +21,7 @@ export const AddAccountTab: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('accounts')}
-          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
+          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary rounded-sm text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>Back to Accounts</span>

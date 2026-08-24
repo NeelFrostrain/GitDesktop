@@ -25,7 +25,7 @@ export const ChangesPanel: React.FC = () => {
             placeholder="Filter changed files..."
             value={fileFilter}
             onChange={(e) => setFileFilter(e.target.value)}
-            className="w-full pl-7 pr-2 py-1 bg-base-1 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+            className="w-full pl-7 pr-2 py-1 bg-base-1 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
           />
         </div>
 

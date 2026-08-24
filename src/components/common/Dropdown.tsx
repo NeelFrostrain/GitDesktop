@@ -106,7 +106,7 @@ export function Dropdown<T extends string = string>({
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded-md text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral ${
+        className={`w-full flex items-center justify-between gap-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral ${
           isOpen ? 'border-commito-coral ring-1 ring-commito-coral/30' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
@@ -128,7 +128,7 @@ export function Dropdown<T extends string = string>({
               top: `${menuCoords.top}px`,
               minWidth: `${menuCoords.width}px`,
             }}
-            className="fixed z-[9999] bg-base-2 border border-border-strong rounded-md shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto"
+            className="fixed z-[9999] bg-base-2 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
@@ -142,7 +142,7 @@ export function Dropdown<T extends string = string>({
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
-                    className={`w-full px-2.5 py-1.5 rounded-md flex items-center justify-between gap-2.5 transition text-left cursor-pointer ${
+                    className={`w-full px-2.5 py-1.5 rounded-sm flex items-center justify-between gap-2.5 transition text-left cursor-pointer ${
                       isSelected
                         ? 'bg-base-3 text-text-primary font-bold'
                         : 'hover:bg-base-3/60 text-text-secondary hover:text-text-primary'

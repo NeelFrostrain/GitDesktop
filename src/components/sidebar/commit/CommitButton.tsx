@@ -23,7 +23,7 @@ export const CommitButton: React.FC<CommitButtonProps> = ({
     <button
       onClick={onCommit}
       disabled={!canCommit || isCommitting}
-      className={`w-full py-2 rounded-md text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm ${
+      className={`w-full py-2 rounded-sm text-xs font-bold flex items-center justify-center gap-1.5 transition shadow-sm ${
         canCommit
           ? 'bg-commito-coral hover:bg-commito-coralHover text-white cursor-pointer'
           : 'bg-base-2 text-text-muted cursor-not-allowed border border-border'

@@ -108,7 +108,7 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
   const formattedTime = new Date(entry.at).toLocaleTimeString();
 
   return (
-    <div className="border border-border/80 rounded-md overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
+    <div className="border border-border/80 rounded-sm overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
       {/* Header Bar */}
       <button
         type="button"

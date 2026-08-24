@@ -89,7 +89,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 setSelectedFile(file.path);
                 setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
               }}
-              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md text-xs cursor-pointer transition ${
+              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm text-xs cursor-pointer transition ${
                 isSelected
                   ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
                   : 'hover:bg-base-2 text-text-secondary'

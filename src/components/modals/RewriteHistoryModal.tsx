@@ -118,11 +118,11 @@ export const RewriteHistoryModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
               {pendingHistoryOp.type === 'reorder' ? (
                 <ArrowUpDown className="w-4 h-4" />
               ) : (
@@ -142,7 +142,7 @@ export const RewriteHistoryModal: React.FC = () => {
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -152,7 +152,7 @@ export const RewriteHistoryModal: React.FC = () => {
         <form onSubmit={handleConfirm} className="p-5 space-y-4 overflow-y-auto">
           {/* Uncommitted changes blocking alert */}
           {hasUncommittedChanges && (
-            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2.5 text-xs text-git-removed">
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
               <AlertTriangle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold text-git-removed block mb-0.5">Uncommitted changes detected</strong>
@@ -163,7 +163,7 @@ export const RewriteHistoryModal: React.FC = () => {
 
           {/* Remote branch warning */}
           {!hasUncommittedChanges && isPushedToRemote && (
-            <div className="p-3 bg-git-modified-bg border border-git-modified/40 rounded-md flex items-start gap-2.5 text-xs text-git-modified">
+            <div className="p-3 bg-git-modified-bg border border-git-modified/40 rounded-sm flex items-start gap-2.5 text-xs text-git-modified">
               <Info className="w-4 h-4 text-git-modified flex-shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold text-git-modified block mb-0.5">Remote Branch Sync Notice</strong>
@@ -179,7 +179,7 @@ export const RewriteHistoryModal: React.FC = () => {
                 You are moving the commit:
               </p>
 
-              <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
                 <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.sourceCommit.message}</h4>
                 <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
                   <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
@@ -192,7 +192,7 @@ export const RewriteHistoryModal: React.FC = () => {
                 To position <strong className="text-text-primary uppercase">{pendingHistoryOp.position}</strong> commit:
               </p>
 
-              <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
                 <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.targetCommit.message}</h4>
                 <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
                   <span>{pendingHistoryOp.targetCommit.short_sha}</span>
@@ -212,7 +212,7 @@ export const RewriteHistoryModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 {/* Target (Base) Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
+                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-git-added block">First Commit (Target)</span>
                   <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.targetCommit.message}</h4>
                   <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
@@ -221,7 +221,7 @@ export const RewriteHistoryModal: React.FC = () => {
                 </div>
 
                 {/* Source Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
+                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-commito-coral block">Second Commit (Source)</span>
                   <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.sourceCommit.message}</h4>
                   <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
@@ -240,7 +240,7 @@ export const RewriteHistoryModal: React.FC = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Enter combined commit message..."
-                  className="w-full px-3 py-2 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 resize-y font-sans leading-relaxed"
+                  className="w-full px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 resize-y font-sans leading-relaxed"
                   required
                 />
               </div>
@@ -252,14 +252,14 @@ export const RewriteHistoryModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
-              className={`px-5 py-2 rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs ${
+              className={`px-5 py-2 rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs ${
                 hasUncommittedChanges
                   ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed'
                   : 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer'

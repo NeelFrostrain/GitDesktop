@@ -154,7 +154,7 @@ export const DiffViewer: React.FC = () => {
           <Binary className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Binary File Detected</h3>
           <p className="text-xs text-text-muted max-w-md mb-2">Binary files cannot be rendered as text diffs.</p>
-          <span className="text-xs font-mono text-git-added px-2.5 py-1 bg-base-1 border border-border rounded-md">
+          <span className="text-xs font-mono text-git-added px-2.5 py-1 bg-base-1 border border-border rounded-sm">
             File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
           </span>
         </div>
@@ -226,7 +226,7 @@ export const DiffViewer: React.FC = () => {
               const fileStat = commitDetails.file_stats?.find((s) => s.path === file);
 
               return (
-                <div key={file} className="border border-border rounded-md overflow-hidden bg-base-1 shadow-xs">
+                <div key={file} className="border border-border rounded-sm overflow-hidden bg-base-1 shadow-xs">
                   {/* File Accordion Header */}
                   <button
                     onClick={() => toggleFileExpansion(file)}

@@ -23,7 +23,7 @@ export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
         Profile
       </label>
 
-      <div className="p-2.5 bg-base-0 border border-border rounded-md flex items-center gap-3">
+      <div className="p-2.5 bg-base-0 border border-border rounded-sm flex items-center gap-3">
         <UserAvatar
           url={avatarUrl}
           name={name || 'User'}

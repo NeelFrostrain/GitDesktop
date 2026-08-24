@@ -91,14 +91,14 @@ export const ChangesHeaderContextMenu: React.FC<ChangesHeaderContextMenuProps> =
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-52 bg-base-1 border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       <div className="p-1 space-y-0.5">
         {/* Discard all */}
         <button
           onClick={handleDiscardAll}
           disabled={!hasChanges}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-git-removed-bg text-git-removed hover:text-danger flex items-center gap-2.5 transition text-left font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-git-removed-bg text-git-removed hover:text-danger flex items-center gap-2.5 transition text-left font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Discard all changes...</span>
@@ -108,7 +108,7 @@ export const ChangesHeaderContextMenu: React.FC<ChangesHeaderContextMenuProps> =
         <button
           onClick={handleStashAll}
           disabled={!hasChanges}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-commito-coral flex items-center gap-2.5 transition text-left cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-commito-coral flex items-center gap-2.5 transition text-left cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Archive className="w-3.5 h-3.5 flex-shrink-0" />
           <span>Stash all changes</span>

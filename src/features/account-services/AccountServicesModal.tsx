@@ -24,11 +24,11 @@ export const AccountServicesModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none animate-fadeIn">
       {/* Modal Container matching reference screenshot */}
-      <div className="bg-base-1 border border-commito-coral/40 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-base-1 border border-commito-coral/40 rounded-sm shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Top Header */}
         <div className="p-4 border-b border-border flex items-center justify-between bg-base-1/40">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 shadow-inner">
+            <div className="w-9 h-9 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 shadow-inner">
               <FolderLock className="w-5 h-5" />
             </div>
             <h2 className="text-base font-bold text-text-primary tracking-tight">
@@ -38,7 +38,7 @@ export const AccountServicesModal: React.FC = () => {
 
           <button
             onClick={() => setIsModalOpen(false)}
-            className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
             title="Close modal"
           >
             <X className="w-4 h-4" />

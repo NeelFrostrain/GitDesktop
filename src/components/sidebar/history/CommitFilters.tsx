@@ -16,7 +16,7 @@ export const CommitFilters: React.FC<CommitFiltersProps> = ({ filter, onFilterCh
           placeholder="Filter commits by message or SHA..."
           value={filter}
           onChange={(e) => onFilterChange(e.target.value)}
-          className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+          className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
         />
       </div>
     </div>

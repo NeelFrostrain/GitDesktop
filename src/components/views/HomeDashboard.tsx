@@ -20,7 +20,7 @@ export const HomeDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none">
+    <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none animate-in fade-in duration-200">
       {/* Welcome strip */}
       <div className="px-6 py-4 border-b border-border flex items-center gap-3 flex-shrink-0">
         <UserAvatar
@@ -42,13 +42,12 @@ export const HomeDashboard: React.FC = () => {
 
       {/* Main content */}
       <div className="p-6 space-y-6">
-        {/* 2-column layout */}
         <div className="space-y-3">
-            <p className="text-[10px] font-semibold text-text-faint uppercase tracking-widest">
-              Your Repositories
-            </p>
-            <RepoList />
-          </div>
+          <p className="text-[10px] font-semibold text-text-faint uppercase tracking-widest">
+            Your Repositories
+          </p>
+          <RepoList />
+        </div>
       </div>
     </div>
   );

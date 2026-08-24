@@ -117,11 +117,11 @@ export const ConflictResolverModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-git-conflict-bg border-b border-git-conflict/40 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-git-conflict/20 border border-git-conflict/40 text-git-conflict flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-git-conflict/20 border border-git-conflict/40 text-git-conflict flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
@@ -136,7 +136,7 @@ export const ConflictResolverModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsConflictResolverModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-3 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-3 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -158,7 +158,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <div
                     key={file.path}
                     onClick={() => setSelectedFilePath(file.path)}
-                    className={`p-2.5 rounded-md text-xs cursor-pointer flex items-center justify-between transition border ${
+                    className={`p-2.5 rounded-sm text-xs cursor-pointer flex items-center justify-between transition border ${
                       isSelected
                         ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText font-bold'
                         : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
@@ -192,7 +192,7 @@ export const ConflictResolverModal: React.FC = () => {
                     type="button"
                     onClick={() => handleResolveFile(selectedFilePath)}
                     disabled={isSubmitting}
-                    className="px-4 py-1.5 bg-git-added hover:bg-git-added/90 text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                    className="px-4 py-1.5 bg-git-added hover:bg-git-added/90 text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
                   >
                     <Check className="w-3.5 h-3.5" />
                     <span>Mark Resolved</span>
@@ -204,7 +204,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-commito-coral rounded-md text-left space-y-1 transition group cursor-pointer"
+                    className="p-3 bg-base-2 border border-border hover:border-commito-coral rounded-sm text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-commito-coral group-hover:underline">
                       Accept Current (Ours)
@@ -217,7 +217,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-git-added rounded-md text-left space-y-1 transition group cursor-pointer"
+                    className="p-3 bg-base-2 border border-border hover:border-git-added rounded-sm text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-git-added group-hover:underline">
                       Accept Incoming (Theirs)
@@ -230,7 +230,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-accent rounded-md text-left space-y-1 transition group cursor-pointer"
+                    className="p-3 bg-base-2 border border-border hover:border-accent rounded-sm text-left space-y-1 transition group cursor-pointer"
                   >
                     <div className="text-xs font-bold text-accent group-hover:underline">
                       Accept Both Changes
@@ -241,7 +241,7 @@ export const ConflictResolverModal: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="flex-1 bg-base-2 border border-border rounded-md p-4 font-mono text-xs text-text-secondary space-y-2">
+                <div className="flex-1 bg-base-2 border border-border rounded-sm p-4 font-mono text-xs text-text-secondary space-y-2">
                   <div className="p-2 bg-commito-coral/10 border border-commito-coral/30 rounded text-commito-coral font-bold text-[11px]">
                     &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (Current Change)
                   </div>
@@ -273,7 +273,7 @@ export const ConflictResolverModal: React.FC = () => {
             <button
               type="button"
               onClick={() => handleAbortOperation('rebase')}
-              className="px-3 py-1.5 bg-git-removed-bg hover:bg-git-removed-bg/80 text-git-removed border border-git-removed/40 rounded-md text-xs font-semibold transition cursor-pointer"
+              className="px-3 py-1.5 bg-git-removed-bg hover:bg-git-removed-bg/80 text-git-removed border border-git-removed/40 rounded-sm text-xs font-semibold transition cursor-pointer"
             >
               Abort Operation
             </button>
@@ -283,14 +283,14 @@ export const ConflictResolverModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsConflictResolverModalOpen(false)}
-              className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
+              className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Close
             </button>
             <button
               type="button"
               onClick={() => handleContinueOperation('rebase')}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <span>Continue Operation</span>
               <ArrowRight className="w-3.5 h-3.5" />

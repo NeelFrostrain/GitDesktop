@@ -207,7 +207,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         title="Add Co-Author (Co-authored-by)"
-        className="p-1 rounded-md bg-base-2/80 border border-border hover:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer text-xs flex items-center justify-center"
+        className="p-1 rounded-sm bg-base-2/80 border border-border hover:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer text-xs flex items-center justify-center"
       >
         <UserPlus className="w-3.5 h-3.5" />
       </button>
@@ -217,7 +217,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
           <div
             ref={menuRef}
             style={menuStyle}
-            className="bg-base-1 border border-border rounded-md shadow-2xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100 font-sans space-y-1.5"
+            className="bg-base-1 border border-border rounded-sm shadow-2xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100 font-sans space-y-1.5"
           >
             <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1.5 pt-0.5 pb-1 border-b border-border flex items-center justify-between">
               <span>Co-Authors</span>
@@ -232,7 +232,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
                 onChange={(e) => setUsername(e.target.value)}
                 onKeyDown={handleKeyDown}
                 autoFocus
-                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
               />
             </form>
 
@@ -245,7 +245,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
                       key={item.id}
                       onClick={() => selectSuggestion(item)}
                       onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`px-2 py-1.5 rounded-md cursor-pointer flex items-center gap-2 transition ${
+                      className={`px-2 py-1.5 rounded-sm cursor-pointer flex items-center gap-2 transition ${
                         isSelected
                           ? 'bg-commito-coral/20 text-commito-coral font-bold'
                           : 'hover:bg-base-2 text-text-primary'

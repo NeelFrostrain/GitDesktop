@@ -83,7 +83,7 @@ export const SigningSettings: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
-      <div className="w-full max-w-lg bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-lg bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="h-12 bg-base-0 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ export const SigningSettings: React.FC = () => {
           </div>
           <button
             onClick={() => setIsSigningSettingsOpen(false)}
-            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -103,21 +103,21 @@ export const SigningSettings: React.FC = () => {
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-5">
           {localError && (
-            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2.5 text-xs text-git-removed">
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
               <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="flex-1">{localError}</div>
             </div>
           )}
 
           {savedSuccess && (
-            <div className="p-3 bg-git-added-bg border border-git-added/40 rounded-md flex items-center gap-2 text-xs text-git-added">
+            <div className="p-3 bg-git-added-bg border border-git-added/40 rounded-sm flex items-center gap-2 text-xs text-git-added">
               <Check className="w-4 h-4 text-git-added flex-shrink-0" />
               <span>Signing configuration saved successfully.</span>
             </div>
           )}
 
           {/* Toggle Enable Commit Signing */}
-          <div className="p-3.5 bg-base-2 border border-border rounded-md flex items-center justify-between">
+          <div className="p-3.5 bg-base-2 border border-border rounded-sm flex items-center justify-between">
             <div className="space-y-0.5">
               <span className="text-xs font-bold text-text-primary block">
                 Sign Commits Automatically
@@ -150,7 +150,7 @@ export const SigningSettings: React.FC = () => {
                       setMethod('gpg');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-md border cursor-pointer transition ${
+                    className={`p-3 rounded-sm border cursor-pointer transition ${
                       method === 'gpg'
                         ? 'bg-base-2 border-commito-coral/50 shadow-xs'
                         : 'bg-base-2/50 border-border hover:border-border-strong'
@@ -168,7 +168,7 @@ export const SigningSettings: React.FC = () => {
                       setMethod('ssh');
                       setKeyId('');
                     }}
-                    className={`p-3 rounded-md border cursor-pointer transition ${
+                    className={`p-3 rounded-sm border cursor-pointer transition ${
                       method === 'ssh'
                         ? 'bg-base-2 border-commito-coral/50 shadow-xs'
                         : 'bg-base-2/50 border-border hover:border-border-strong'
@@ -197,7 +197,7 @@ export const SigningSettings: React.FC = () => {
                     <select
                       value={keyId}
                       onChange={(e) => setKeyId(e.target.value)}
-                      className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                      className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
                     >
                       <option value="">Select a GPG key...</option>
                       {gpgKeys.map((k) => (
@@ -207,7 +207,7 @@ export const SigningSettings: React.FC = () => {
                       ))}
                     </select>
                   ) : (
-                    <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
+                    <div className="p-3 bg-base-2 border border-border rounded-sm text-xs text-text-muted space-y-1">
                       <div className="flex items-center gap-1 text-git-modified font-semibold">
                         <AlertCircle className="w-3.5 h-3.5" />
                         <span>No GPG secret keys found</span>
@@ -221,7 +221,7 @@ export const SigningSettings: React.FC = () => {
                   <select
                     value={keyId}
                     onChange={(e) => setKeyId(e.target.value)}
-                    className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                    className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
                   >
                     <option value="">Select an SSH key...</option>
                     {sshKeys.map((k) => (
@@ -231,7 +231,7 @@ export const SigningSettings: React.FC = () => {
                     ))}
                   </select>
                 ) : (
-                  <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
+                  <div className="p-3 bg-base-2 border border-border rounded-sm text-xs text-text-muted space-y-1">
                     <div className="flex items-center gap-1 text-git-modified font-semibold">
                       <AlertCircle className="w-3.5 h-3.5" />
                       <span>No SSH keys found</span>
@@ -279,14 +279,14 @@ export const SigningSettings: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsSigningSettingsOpen(false)}
-              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-xs text-text-secondary font-medium transition cursor-pointer"
+              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-sm text-xs text-text-secondary font-medium transition cursor-pointer"
             >
               Close
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
               <span>Save Configuration</span>

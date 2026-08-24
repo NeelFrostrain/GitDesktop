@@ -21,7 +21,7 @@ export const LogViewer: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-6 select-none animate-in fade-in duration-150 font-sans">
-      <div className="bg-base-0 border border-border rounded-md shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
+      <div className="bg-base-0 border border-border rounded-sm shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="h-12 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2.5">
@@ -43,7 +43,7 @@ export const LogViewer: React.FC = () => {
               type="button"
               onClick={refresh}
               disabled={isLoading}
-              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Refresh logs from disk"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -52,7 +52,7 @@ export const LogViewer: React.FC = () => {
             <button
               type="button"
               onClick={closeLogViewer}
-              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Close log viewer"
             >
               <X className="w-4 h-4" />

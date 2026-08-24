@@ -81,11 +81,11 @@ function ActiveRepoCard({
   return (
     <div
       onClick={onClick}
-      className="mx-2 my-1 p-2.5 rounded-md bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-xs"
+      className="mx-2 my-1 p-2.5 rounded-sm bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-xs"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-md bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center flex-shrink-0">
+          <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center flex-shrink-0">
             <FolderGit2 className="w-4 h-4 text-commito-coral" />
           </div>
           <div className="min-w-0">
@@ -135,7 +135,7 @@ function RepoRow({
   return (
     <div
       onClick={onSelect}
-      className={`group relative flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-md cursor-pointer transition ${
+      className={`group relative flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm cursor-pointer transition ${
         isActive
           ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
           : 'hover:bg-base-2 text-text-primary'
@@ -183,7 +183,7 @@ function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => voi
   return (
     <div
       onClick={onClone}
-      className="group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-md hover:bg-base-2 text-text-primary cursor-pointer transition"
+      className="group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm hover:bg-base-2 text-text-primary cursor-pointer transition"
     >
       <div className="flex items-center gap-2.5 min-w-0">
         {isPrivate ? (
@@ -354,7 +354,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
         top: `${topPos}px`,
         width: `${menuWidth}px`,
       }}
-      className="fixed z-[9999] bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[500px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+      className="fixed z-[9999] bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[500px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
     >
       {/* 1. Header Toolbar: Title & Add Action */}
       <div className="px-3 pt-2.5 pb-2 border-b border-border bg-base-0/90 flex items-center justify-between flex-shrink-0">

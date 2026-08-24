@@ -128,7 +128,7 @@ export const LfsView: React.FC = () => {
         <button
           onClick={loadLfsData}
           disabled={isLoading}
-          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
+          className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-text-muted ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
@@ -136,7 +136,7 @@ export const LfsView: React.FC = () => {
       </div>
 
       {!isLfsInstalled && (
-        <div className="p-4 bg-git-modified-bg border border-git-modified/40 rounded-md text-git-modified text-xs flex items-center gap-3">
+        <div className="p-4 bg-git-modified-bg border border-git-modified/40 rounded-sm text-git-modified text-xs flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>
             Git LFS CLI was not detected on your system environment PATH. Install Git LFS to utilize binary file locking.
@@ -147,7 +147,7 @@ export const LfsView: React.FC = () => {
       {/* Grid layout for Track Patterns & Lock Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Card 1: LFS Tracking Patterns */}
-        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-xs">
+        <div className="bg-base-2 border border-border rounded-sm p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-2">
               <Layers className="w-4 h-4 text-gitlab-teal" />
@@ -162,12 +162,12 @@ export const LfsView: React.FC = () => {
               placeholder="e.g. *.psd, *.fbx, *.bin"
               value={trackPattern}
               onChange={(e) => setTrackPattern(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
             />
             <button
               type="submit"
               disabled={!trackPattern.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Track</span>
@@ -184,7 +184,7 @@ export const LfsView: React.FC = () => {
               lfsFiles.map((file) => (
                 <div
                   key={file.oid + file.path}
-                  className="p-2.5 bg-base-1 border border-border rounded-md flex items-center justify-between text-xs font-mono"
+                  className="p-2.5 bg-base-1 border border-border rounded-sm flex items-center justify-between text-xs font-mono"
                 >
                   <div className="flex items-center gap-2 truncate min-w-0">
                     <FileText className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
@@ -205,7 +205,7 @@ export const LfsView: React.FC = () => {
         </div>
 
         {/* Card 2: Exclusive LFS File Locks */}
-        <div className="bg-base-2 border border-border rounded-md p-5 space-y-4 shadow-xs">
+        <div className="bg-base-2 border border-border rounded-sm p-5 space-y-4 shadow-xs">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-2">
               <Lock className="w-4 h-4 text-commito-coral" />
@@ -220,12 +220,12 @@ export const LfsView: React.FC = () => {
               placeholder="e.g. assets/textures/character.png"
               value={lockFilePath}
               onChange={(e) => setLockFilePath(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
             />
             <button
               type="submit"
               disabled={!lockFilePath.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Lock</span>
@@ -242,7 +242,7 @@ export const LfsView: React.FC = () => {
               lfsLocks.map((lock) => (
                 <div
                   key={lock.id}
-                  className="p-2.5 bg-base-1 border border-border rounded-md flex items-center justify-between text-xs"
+                  className="p-2.5 bg-base-1 border border-border rounded-sm flex items-center justify-between text-xs"
                 >
                   <div className="min-w-0 truncate">
                     <div className="font-mono font-bold text-text-primary truncate">

@@ -39,12 +39,12 @@ export const GitUserConfigModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[90vh]">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[90vh]">
         <ConfigHeader onClose={handleClose} />
 
         <form onSubmit={handleSave} className="p-4 space-y-4 overflow-y-auto">
           {modalError && (
-            <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2 text-xs text-git-removed">
+            <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2 text-xs text-git-removed">
               <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="leading-snug">{modalError}</div>
             </div>
@@ -92,7 +92,7 @@ export const GitUserConfigModal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="p-3 bg-base-0 border border-border rounded-md flex items-center justify-between text-xs">
+              <div className="p-3 bg-base-0 border border-border rounded-sm flex items-center justify-between text-xs">
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="font-bold text-text-primary truncate">{name}</div>
                   <div className="text-[11px] text-text-muted font-mono truncate">{email}</div>

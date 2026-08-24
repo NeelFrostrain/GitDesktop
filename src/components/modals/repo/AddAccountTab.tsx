@@ -168,14 +168,14 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
   return (
     <div className="space-y-4">
       {/* Provider Selector Tabs */}
-      <div className="flex bg-base-1 p-1 rounded-lg border border-border">
+      <div className="flex bg-base-1 p-1 rounded-sm border border-border">
         <button
           type="button"
           onClick={() => {
             setProvider('gitlab');
             setLoginError(null);
           }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition cursor-pointer ${
             provider === 'gitlab'
               ? 'bg-commito-coral text-white shadow-sm'
               : 'text-text-secondary hover:text-text-primary'
@@ -189,7 +189,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
             setProvider('github');
             setLoginError(null);
           }}
-          className={`flex-1 py-1.5 text-xs font-semibold rounded-md transition cursor-pointer ${
+          className={`flex-1 py-1.5 text-xs font-semibold rounded-sm transition cursor-pointer ${
             provider === 'github'
               ? 'bg-purple-600 text-white shadow-sm'
               : 'text-text-secondary hover:text-text-primary'
@@ -200,7 +200,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       </div>
 
       {loginError && (
-        <div className="flex items-start gap-2 p-3 bg-git-removed-bg border border-git-removed/40 rounded-lg text-xs text-git-removed">
+        <div className="flex items-start gap-2 p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm text-xs text-git-removed">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="flex-1">{loginError}</span>
         </div>
@@ -211,7 +211,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">GitLab Instance URL</label>
-            <div className="flex items-center gap-2 bg-base-1 border border-border rounded-md px-2.5 py-1.5 focus-within:border-commito-coral">
+            <div className="flex items-center gap-2 bg-base-1 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
               <Globe className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <input
                 type="text"
@@ -224,7 +224,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
           </div>
 
           {/* Browser OAuth PKCE */}
-          <div className="p-4 rounded-lg bg-base-1 border border-border">
+          <div className="p-4 rounded-sm bg-base-1 border border-border">
             <h4 className="text-xs font-semibold text-text-primary mb-1">OAuth Authorization (Recommended)</h4>
             <p className="text-[11px] text-text-muted mb-3">
               Authorize securely via your browser without sharing API passwords or keys.
@@ -233,7 +233,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
             <button
               onClick={handleStartOAuth}
               disabled={isOauthLoading}
-              className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-md bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 cursor-pointer"
+              className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-sm bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 cursor-pointer"
             >
               {isOauthLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
               {isOauthLoading ? 'Waiting for authorization...' : 'Sign in with GitLab'}
@@ -264,14 +264,14 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
           </div>
 
           {/* Personal Access Token (PAT) Fallback */}
-          <form onSubmit={handleGitLabPatSubmit} className="p-4 rounded-lg bg-base-1 border border-border space-y-3">
+          <form onSubmit={handleGitLabPatSubmit} className="p-4 rounded-sm bg-base-1 border border-border space-y-3">
             <h4 className="text-xs font-semibold text-text-primary">Personal Access Token (PAT)</h4>
             <p className="text-[11px] text-text-muted">
               Use a Personal Access Token with <code className="text-commito-coral font-mono">api</code> and{' '}
               <code className="text-commito-coral font-mono">read_user</code> scopes.
             </p>
 
-            <div className="flex items-center gap-2 bg-base-0 border border-border rounded-md px-2.5 py-1.5 focus-within:border-commito-coral">
+            <div className="flex items-center gap-2 bg-base-0 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
               <Key className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <input
                 type="password"
@@ -307,7 +307,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
             <button
               type="submit"
               disabled={isAuthenticating || !patToken.trim()}
-              className="w-full py-2 px-3 rounded-md bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+              className="w-full py-2 px-3 rounded-sm bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
             >
               {isAuthenticating ? 'Validating Token...' : 'Authenticate with Token'}
             </button>
@@ -317,7 +317,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
       {/* GitHub Login Options */}
       {provider === 'github' && (
-        <form onSubmit={handleGitHubPatSubmit} className="p-4 rounded-lg bg-base-1 border border-border space-y-3">
+        <form onSubmit={handleGitHubPatSubmit} className="p-4 rounded-sm bg-base-1 border border-border space-y-3">
           <h4 className="text-xs font-semibold text-text-primary">GitHub Personal Access Token</h4>
           <p className="text-[11px] text-text-muted">
             Create a Personal Access Token (classic or fine-grained) on GitHub with{' '}
@@ -325,7 +325,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
             <code className="text-purple-300 font-mono">read:user</code> scopes.
           </p>
 
-          <div className="flex items-center gap-2 bg-base-0 border border-border rounded-md px-2.5 py-1.5 focus-within:border-purple-500">
+          <div className="flex items-center gap-2 bg-base-0 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-purple-500">
             <Key className="w-3.5 h-3.5 text-text-muted shrink-0" />
             <input
               type="password"
@@ -339,7 +339,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
           <button
             type="submit"
             disabled={isGithubAuthenticating || !githubToken.trim()}
-            className="w-full py-2 px-3 rounded-md bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
+            className="w-full py-2 px-3 rounded-sm bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition disabled:opacity-50 cursor-pointer"
           >
             {isGithubAuthenticating ? 'Validating GitHub Token...' : 'Connect GitHub Account'}
           </button>

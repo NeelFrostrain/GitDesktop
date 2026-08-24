@@ -39,7 +39,7 @@ export const RepoModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs select-none">
-      <div className="bg-base-0 border border-border rounded-xl shadow-2xl w-[620px] max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-0 border border-border rounded-sm shadow-2xl w-[620px] max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 border-b border-border flex items-center justify-between bg-base-1">
           <div className="flex items-center gap-2">
@@ -48,7 +48,7 @@ export const RepoModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsRepoModalOpen(false)}
-            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>

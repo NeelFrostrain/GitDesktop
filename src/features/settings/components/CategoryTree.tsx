@@ -76,7 +76,7 @@ export const CategoryTree: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`w-full px-2.5 py-1.5 rounded-md text-left flex items-center justify-between text-xs transition cursor-pointer ${isSelected
+              className={`w-full px-2.5 py-1.5 rounded-sm text-left flex items-center justify-between text-xs transition cursor-pointer ${isSelected
                   ? 'bg-commito-coral/15 text-text-primary font-semibold border-l-2 border-commito-coral'
                   : 'text-text-secondary hover:bg-base-2 hover:text-text-primary border-l-2 border-transparent'
                 }`}

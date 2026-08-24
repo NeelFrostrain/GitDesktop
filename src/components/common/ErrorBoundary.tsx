@@ -35,7 +35,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, 
               this.setState({ hasError: false, error: null });
               window.location.reload();
             }}
-            className="px-6 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md cursor-pointer text-xs font-semibold shadow-xs transition"
+            className="px-6 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm cursor-pointer text-xs font-semibold shadow-xs transition"
           >
             Reload App
           </button>

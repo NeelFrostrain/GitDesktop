@@ -104,11 +104,11 @@ export const GitLabSignInModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
-      <div className="w-full max-w-md bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="w-full max-w-md bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="h-12 bg-base-0 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center font-bold text-xs">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center font-bold text-xs">
               GL
             </div>
             <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider">
@@ -117,7 +117,7 @@ export const GitLabSignInModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsSignInModalOpen(false)}
-            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -125,11 +125,11 @@ export const GitLabSignInModal: React.FC = () => {
 
         {/* Tab Switcher: OAuth PKCE vs Personal Access Token */}
         <div className="p-3 bg-base-0/50 border-b border-border">
-          <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md p-0.5">
+          <div className="flex items-center gap-1 bg-base-2 border border-border rounded-sm p-0.5">
             <button
               type="button"
               onClick={() => setAuthMode('oauth')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition cursor-pointer ${
                 authMode === 'oauth'
                   ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
@@ -141,7 +141,7 @@ export const GitLabSignInModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setAuthMode('pat')}
-              className={`flex-1 py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-1.5 transition cursor-pointer ${
+              className={`flex-1 py-1.5 text-xs font-bold rounded-sm flex items-center justify-center gap-1.5 transition cursor-pointer ${
                 authMode === 'pat'
                   ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
@@ -156,7 +156,7 @@ export const GitLabSignInModal: React.FC = () => {
         {/* Body Form */}
         <div className="p-5 space-y-4">
           {localError && (
-            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2.5 text-xs text-git-removed">
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
               <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="flex-1">{localError}</div>
             </div>
@@ -176,7 +176,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={serverUrl}
                     onChange={(e) => setServerUrl(e.target.value)}
                     placeholder="https://gitlab.com"
-                    className="w-full bg-base-2 border border-border rounded-md pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
                     required
                   />
                 </div>
@@ -193,12 +193,12 @@ export const GitLabSignInModal: React.FC = () => {
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
                     placeholder="Leave empty for default"
-                    className="w-full bg-base-2 border border-border rounded-md px-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
                   />
                 </div>
               )}
 
-              <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1.5">
+              <div className="p-3 bg-base-2 border border-border rounded-sm text-xs text-text-muted space-y-1.5">
                 <div className="flex items-center gap-1.5 font-semibold text-text-secondary">
                   <CheckCircle2 className="w-3.5 h-3.5 text-git-added" />
                   <span>Secure Browser Sign-In</span>
@@ -211,7 +211,7 @@ export const GitLabSignInModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -237,7 +237,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={serverUrl}
                     onChange={(e) => setServerUrl(e.target.value)}
                     placeholder="https://gitlab.com"
-                    className="w-full bg-base-2 border border-border rounded-md pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
                     required
                   />
                 </div>
@@ -252,7 +252,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={patToken}
                     onChange={(e) => setPatToken(e.target.value)}
                     placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-                    className="w-full bg-base-2 border border-border rounded-md pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
                     required
                   />
                 </div>
@@ -264,7 +264,7 @@ export const GitLabSignInModal: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-md text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
+                className="w-full py-2.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-bold flex items-center justify-center gap-2 transition shadow-md cursor-pointer"
               >
                 {isLoading ? (
                   <>

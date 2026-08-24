@@ -69,6 +69,11 @@ export function useAppLogs(repoId?: string | null) {
     );
   }, [recentLogs, persistedLogs, repoId, filter.this_repo_only]);
 
+  const handleClearAllLogs = useCallback(async () => {
+    setPersistedLogs([]);
+    await clearLogs(repoId || undefined);
+  }, [clearLogs, repoId]);
+
   return {
     logs: combinedLogs,
     filter,
@@ -77,8 +82,8 @@ export function useAppLogs(repoId?: string | null) {
     isLoading,
     refresh: fetchLogs,
     exportLogs: () => exportLogsDialog({ ...filter, repo_id: repoId || undefined }),
-    clearAllLogs: () => clearLogs(filter.this_repo_only && repoId ? repoId : undefined),
+    clearAllLogs: handleClearAllLogs,
     page,
     setPage,
   };
-}
+};

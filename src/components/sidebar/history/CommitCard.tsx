@@ -74,7 +74,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       onMouseDown={(e) => onMouseDown(e, commit)}
       onClick={onClick}
       onContextMenu={(e) => onContextMenu(e, commit)}
-      className={`p-2.5 rounded-md cursor-pointer transition-all border relative select-none ${
+      className={`p-2.5 rounded-sm cursor-pointer transition-all border relative select-none ${
         isDragging
           ? 'opacity-40 border-dashed border-commito-coral scale-[0.98]'
           : isTarget && dropZone === 'merge'
@@ -107,7 +107,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         <h4 className="text-xs font-bold truncate leading-snug flex-1">{commit.message}</h4>
         <div className="flex items-center gap-1 flex-shrink-0">
           {renderSigningBadge()}
-          <div className="flex items-center gap-1 px-1.5 py-0.2 bg-base-3 border border-border rounded-md text-[10px] font-mono text-text-muted">
+          <div className="flex items-center gap-1 px-1.5 py-0.2 bg-base-3 border border-border rounded-sm text-[10px] font-mono text-text-muted">
             <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
             <span>{commit.short_sha}</span>
           </div>
@@ -137,7 +137,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
 
       {/* Drop to Merge Overlay */}
       {isTarget && dropZone === 'merge' && (
-        <div className="absolute inset-0 bg-commito-coral/90 border-2 border-commito-coral rounded-md flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-white uppercase tracking-wider z-20 pointer-events-none shadow-lg">
+        <div className="absolute inset-0 bg-commito-coral/90 border-2 border-commito-coral rounded-sm flex items-center justify-center gap-1.5 text-[10px] font-extrabold text-white uppercase tracking-wider z-20 pointer-events-none shadow-lg">
           <GitMerge className="w-3.5 h-3.5" />
           <span>DROP TO MERGE COMMITS</span>
         </div>

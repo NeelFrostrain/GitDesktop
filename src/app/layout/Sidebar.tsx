@@ -33,7 +33,7 @@ export const Sidebar: React.FC = () => {
       setIsResizing(false);
       try {
         localStorage.setItem('sidebar_width', sidebarWidth.toString());
-      } catch {}
+      } catch { }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -52,18 +52,17 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       style={{ width: `${sidebarWidth}px` }}
-      className="relative h-full bg-base-0 border-r border-border flex flex-col flex-shrink-0 select-none group/sidebar"
+      className="relative h-full bg-base-0 border-r-2 border-border flex flex-col flex-shrink-0 select-none group/sidebar"
     >
       {/* Resizable handle bar on the right border */}
       <div
         onMouseDown={startResizing}
         onDoubleClick={() => setSidebarWidth(320)}
         title="Drag to resize sidebar • Double-click to reset"
-        className={`absolute top-0 right-0 w-0.5 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${
-          isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
-        }`}
+        className={`absolute top-0 -right-1 w-1 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
+          }`}
       >
-        <div className="w-0.5 h-8 rounded-full transition-colors bg-border group-hover/sidebar:bg-commito-coral/80" />
+        {/* <div className="w-0.5 h-8 rounded-full transition-colors bg-border group-hover/sidebar:bg-commito-coral/80" /> */}
       </div>
 
       {/* Dynamic Route-Aware Sidebar */}

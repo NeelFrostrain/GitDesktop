@@ -123,7 +123,7 @@ export const Titlebar: React.FC = () => {
       {/* Left: App Icon + Home nav */}
       <div data-tauri-drag-region className="flex items-center gap-2">
         <div className="flex items-center gap-2 pointer-events-none">
-          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-xs" />
+          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-sm object-contain shadow-xs" />
         </div>
 
       </div>
@@ -167,7 +167,7 @@ export const Titlebar: React.FC = () => {
 
           {/* Profile Dropdown Panel */}
           {isProfileOpen && (
-            <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-md shadow-2xl z-50 py-1 text-xs select-none">
+            <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 text-xs select-none">
               <div className="px-3 py-2.5 border-b border-border">
                 <div className="font-semibold text-text-primary truncate">
                   {user?.name || user?.username || 'Guest'}
@@ -228,7 +228,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleMinimize}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
+          className="w-8 h-6 flex items-center justify-center rounded-sm text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title="Minimize"
         >
           <Minus className="w-3.5 h-3.5 pointer-events-none" />
@@ -237,7 +237,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleToggleMaximize}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
+          className="w-8 h-6 flex items-center justify-center rounded-sm text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
           title={isMaximized ? 'Restore' : 'Maximize'}
         >
           {isMaximized ? (
@@ -250,7 +250,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={handleClose}
-          className="w-8 h-6 flex items-center justify-center rounded-md text-text-muted hover:bg-red-600 hover:text-white transition cursor-pointer"
+          className="w-8 h-6 flex items-center justify-center rounded-sm text-text-muted hover:bg-red-600 hover:text-white transition cursor-pointer"
           title="Close"
         >
           <X className="w-3.5 h-3.5 pointer-events-none" />

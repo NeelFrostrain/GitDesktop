@@ -76,11 +76,11 @@ export const PatchModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
               <FileCode className="w-4 h-4" />
             </div>
             <div>
@@ -94,7 +94,7 @@ export const PatchModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsPatchModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -104,7 +104,7 @@ export const PatchModal: React.FC = () => {
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
             onClick={() => setActiveTab('export')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'export'
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
@@ -116,7 +116,7 @@ export const PatchModal: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('apply')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'apply'
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
@@ -140,7 +140,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. C:/patches/my-feature.patch"
                   value={exportPath}
                   onChange={(e) => setExportPath(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
                   required
                 />
               </div>
@@ -154,7 +154,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. main..feature-branch or HEAD~3..HEAD"
                   value={commitRange}
                   onChange={(e) => setCommitRange(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
                 />
               </div>
 
@@ -162,14 +162,14 @@ export const PatchModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsPatchModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary cursor-pointer"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!exportPath.trim() || isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   Export Patch File
                 </button>
@@ -186,7 +186,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. C:/patches/incoming-fix.patch"
                   value={patchFilePath}
                   onChange={(e) => setPatchFilePath(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
                   required
                 />
               </div>
@@ -195,14 +195,14 @@ export const PatchModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsPatchModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary cursor-pointer"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!patchFilePath.trim() || isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
                 >
                   Apply Patch File
                 </button>
