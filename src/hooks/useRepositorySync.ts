@@ -251,6 +251,8 @@ export function useRepositorySync() {
     refreshSync,
     refreshLocal,
     executeAction,
+    executePush,
+    executePull,
     hasRepo: !!activeRepoPath,
   };
 }

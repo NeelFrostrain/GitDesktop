@@ -67,13 +67,12 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   if (filteredFiles.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150">
-        <div className="w-8 h-8 rounded-sm bg-git-added/10 border border-git-added/25 text-git-added flex items-center justify-center mb-2">
-          <Check className="w-4 h-4 stroke-[2.5]" />
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150 text-text-faint">
+        <div className="w-7 h-7 rounded-sm bg-base-1 border border-border flex items-center justify-center mb-2">
+          <Check className="w-3.5 h-3.5 text-git-added/70 stroke-[2.5]" />
         </div>
-        <p className="text-xs font-semibold text-text-primary">Working Tree Clean</p>
-        <p className="text-[11px] text-text-muted mt-0.5 max-w-[190px]">
-          {filter ? `No files matching "${filter}"` : 'No uncommitted changes.'}
+        <p className="text-[11px] font-medium text-text-muted">
+          {filter ? `No files matching "${filter}"` : 'No uncommitted changes'}
         </p>
       </div>
     );
