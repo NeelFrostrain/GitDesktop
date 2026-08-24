@@ -370,6 +370,13 @@ pub fn push_specific_remote(
         let err_msg = combined.trim().to_string();
         let lower = err_msg.to_lowercase();
 
+        if lower.contains("refusing to update checked out branch") {
+            return Err(AppError::Git(format!(
+                "Push rejected: Remote branch '{}' is checked out on the remote repository.",
+                clean_branch
+            )));
+        }
+
         if lower.contains("fetch first") || lower.contains("non-fast-forward") || lower.contains("remote contains work") {
             return Err(AppError::Git(format!(
                 "Push rejected: Remote '{}' has newer changes. Please Pull/Fetch first before pushing.",
@@ -379,7 +386,7 @@ pub fn push_specific_remote(
 
         if lower.contains("protected branch") || lower.contains("hook declined") {
             return Err(AppError::Git(format!(
-                "Push rejected: Protected branch rule or server-side hook declined the push on '{}'.",
+                "Push rejected: Protected branch rule or server hook declined the push on '{}'.",
                 clean_remote
             )));
         }
@@ -391,7 +398,7 @@ pub fn push_specific_remote(
             || lower.contains("invalid username or password")
         {
             return Err(AppError::Auth(format!(
-                "Access Denied: Please verify your credentials or permissions for remote '{}'.",
+                "Access Denied: Please verify your credentials for remote '{}'.",
                 clean_remote
             )));
         }
@@ -400,6 +407,11 @@ pub fn push_specific_remote(
             return Err(AppError::Git(
                 "Push blocked by Secret Protection. Check your commits for sensitive credentials or keys.".to_string(),
             ));
+        }
+
+        if let Some(idx) = err_msg.find("! [remote rejected]") {
+            let rejection_line = err_msg[idx..].lines().next().unwrap_or("! [remote rejected]");
+            return Err(AppError::Git(format!("Push rejected: {}", rejection_line)));
         }
 
         // Clean out boilerplate "To https://..." lines to present the actionable failure line
