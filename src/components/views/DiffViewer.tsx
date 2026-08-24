@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileCode,
+  Check,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { DiffResult, CommitDetails } from '../../types/git';
@@ -166,7 +167,21 @@ export const DiffViewer: React.FC = () => {
 
   // ── Render Changes Diff Content ──────────────────────────────────────────
   const renderChangesDiff = () => {
-    if (!selectedFile) {
+    if (!selectedFile || (status && status.files.length === 0)) {
+      if (status && status.files.length === 0) {
+        return (
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 select-none animate-in fade-in duration-150">
+            <div className="w-10 h-10 rounded-sm bg-git-added/10 border border-git-added/25 text-git-added flex items-center justify-center mb-2">
+              <Check className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <h3 className="text-sm font-semibold text-text-primary">Working Tree Clean</h3>
+            <p className="text-xs text-text-muted mt-0.5 max-w-sm">
+              All changes in this repository have been committed.
+            </p>
+          </div>
+        );
+      }
+
       return (
         <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm space-y-2">
           <FileText className="w-10 h-10 opacity-30 text-commito-coral" />

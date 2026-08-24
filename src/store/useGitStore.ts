@@ -380,9 +380,20 @@ export const useGitStore = create<GitState>((set, get) => ({
       ];
     }
 
+    const currentSelected = get().selectedFile;
+    let nextSelected = currentSelected;
+    if (currentSelected && !allFilePaths.includes(currentSelected)) {
+      nextSelected = allFilePaths.length > 0 ? allFilePaths[0] : null;
+    } else if (!currentSelected && allFilePaths.length > 0) {
+      nextSelected = allFilePaths[0];
+    } else if (allFilePaths.length === 0) {
+      nextSelected = null;
+    }
+
     set((state) => ({
       status,
       stagedFiles: nextStaged,
+      selectedFile: nextSelected,
       hasInitializedStaging: true,
       statusVersion: state.statusVersion + 1,
     }));

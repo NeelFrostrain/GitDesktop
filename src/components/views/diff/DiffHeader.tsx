@@ -61,7 +61,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           <button
             type="button"
             onClick={() => onChangeViewMode('unified')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'unified'
+            className={`p-1 rounded-sm text-xs transition cursor-pointer ${diffViewMode === 'unified'
               ? 'bg-base-2 text-text-primary shadow-xs'
               : 'text-text-muted hover:text-text-primary'
               }`}
@@ -72,7 +72,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           <button
             type="button"
             onClick={() => onChangeViewMode('split')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${diffViewMode === 'split'
+            className={`p-1 rounded-sm text-xs transition cursor-pointer ${diffViewMode === 'split'
               ? 'bg-base-2 text-text-primary shadow-xs'
               : 'text-text-muted hover:text-text-primary'
               }`}
