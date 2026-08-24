@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RebaseCommitPlanItem {
@@ -14,7 +14,7 @@ pub fn get_rebase_commits(
     repo_path: &str,
     target_branch: &str,
 ) -> Result<Vec<RebaseCommitPlanItem>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("log")
         .arg("--oneline")
         .arg(format!("{}..HEAD", target_branch))
@@ -55,7 +55,7 @@ pub fn execute_rebase(
     plan: Vec<RebaseCommitPlanItem>,
 ) -> Result<(), AppError> {
     if plan.is_empty() {
-        let output = Command::new("git")
+        let output = silent_git_command()
             .arg("rebase")
             .arg(target)
             .current_dir(repo_path)
@@ -91,7 +91,7 @@ pub fn execute_rebase(
         format!("cp \"{}\" \"$1\"", todo_str)
     };
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("rebase").arg("-i").arg(target);
     cmd.env("GIT_SEQUENCE_EDITOR", &seq_editor);
     cmd.current_dir(repo_path);
@@ -111,7 +111,7 @@ pub fn execute_rebase(
 }
 
 pub fn rebase_continue(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("rebase")
         .arg("--continue")
         .env("GIT_EDITOR", "true")
@@ -129,7 +129,7 @@ pub fn rebase_continue(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn rebase_abort(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("rebase")
         .arg("--abort")
         .current_dir(repo_path)
@@ -146,7 +146,7 @@ pub fn rebase_abort(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn rebase_skip(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("rebase")
         .arg("--skip")
         .current_dir(repo_path)

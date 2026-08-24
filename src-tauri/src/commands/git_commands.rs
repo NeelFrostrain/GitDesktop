@@ -703,7 +703,7 @@ pub async fn ignore_file_pattern_cmd(repo_path: String, pattern: String) -> Resu
 pub async fn open_file_default_cmd(file_path: String) -> Result<(), AppError> {
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
+        crate::git::command::silent_command("cmd")
             .arg("/c")
             .arg("start")
             .arg("")

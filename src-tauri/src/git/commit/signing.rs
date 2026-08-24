@@ -1,8 +1,8 @@
 use crate::error::AppError;
+use crate::git::command::{silent_command, silent_git_command};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GpgKeyInfo {
@@ -46,7 +46,7 @@ pub enum VerifyResult {
 
 /// List all GPG secret keys installed on the machine
 pub fn list_gpg_keys() -> Result<Vec<GpgKeyInfo>, AppError> {
-    let output = Command::new("gpg")
+    let output = silent_command("gpg")
         .args([
             "--list-secret-keys",
             "--with-colons",
@@ -175,7 +175,7 @@ pub fn list_ssh_keys() -> Result<Vec<SshKeyInfo>, AppError> {
     }
 
     // 2. Query ssh-add -L for loaded keys in agent
-    if let Ok(output) = Command::new("ssh-add").arg("-L").output() {
+    if let Ok(output) = silent_command("ssh-add").arg("-L").output() {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             for line in stdout.lines() {
@@ -210,7 +210,7 @@ pub fn list_ssh_keys() -> Result<Vec<SshKeyInfo>, AppError> {
 /// Read commit signing configuration for a repository (local or global)
 pub fn get_signing_config(repo_path: &str) -> Result<SigningConfig, AppError> {
     // Check local repo config first
-    let local_gpgsign = Command::new("git")
+    let local_gpgsign = silent_git_command()
         .args(["config", "--local", "--get", "commit.gpgsign"])
         .current_dir(repo_path)
         .output()
@@ -226,7 +226,7 @@ pub fn get_signing_config(repo_path: &str) -> Result<SigningConfig, AppError> {
         ("repo".to_string(), local_gpgsign.unwrap_or_default())
     } else {
         // Fall back to global config
-        let global_val = Command::new("git")
+        let global_val = silent_git_command()
             .args(["config", "--global", "--get", "commit.gpgsign"])
             .output()
             .ok()
@@ -237,7 +237,7 @@ pub fn get_signing_config(repo_path: &str) -> Result<SigningConfig, AppError> {
 
     let enabled = gpgsign_val == "true" || gpgsign_val == "1" || gpgsign_val == "yes";
 
-    let method_val = Command::new("git")
+    let method_val = silent_git_command()
         .args(["config", "--get", "gpg.format"])
         .current_dir(repo_path)
         .output()
@@ -252,7 +252,7 @@ pub fn get_signing_config(repo_path: &str) -> Result<SigningConfig, AppError> {
         "gpg".to_string()
     };
 
-    let key_id = Command::new("git")
+    let key_id = silent_git_command()
         .args(["config", "--get", "user.signingkey"])
         .current_dir(repo_path)
         .output()
@@ -275,7 +275,7 @@ pub fn set_signing_config(repo_path: &str, config: SigningConfig) -> Result<(), 
 
     // 1. Set commit.gpgsign
     let sign_val = if config.enabled { "true" } else { "false" };
-    let _ = Command::new("git")
+    let _ = silent_git_command()
         .args(["config", scope_arg, "commit.gpgsign", sign_val])
         .current_dir(repo_path)
         .output()?;
@@ -286,14 +286,14 @@ pub fn set_signing_config(repo_path: &str, config: SigningConfig) -> Result<(), 
     } else {
         "openpgp"
     };
-    let _ = Command::new("git")
+    let _ = silent_git_command()
         .args(["config", scope_arg, "gpg.format", format_val])
         .current_dir(repo_path)
         .output()?;
 
     // 3. Set user.signingkey if specified
     if !config.key_id.trim().is_empty() {
-        let _ = Command::new("git")
+        let _ = silent_git_command()
             .args(["config", scope_arg, "user.signingkey", config.key_id.trim()])
             .current_dir(repo_path)
             .output()?;
@@ -314,7 +314,7 @@ pub fn verify_commit(repo_path: &str, sha: &str) -> Result<VerifyResult, AppErro
     // %GS = Signer name
     // %GF = Primary key fingerprint
     let format_str = "%G?%x00%GK%x00%GS%x00%GF";
-    let output = Command::new("git")
+    let output = silent_git_command()
         .args(["log", "-1", &format!("--format={}", format_str), clean_sha])
         .current_dir(repo_path)
         .output()?;

@@ -186,7 +186,7 @@ pub async fn publish_repository(
             let _ = repo.remote("origin", &authenticated_url);
         }
 
-        let output = std::process::Command::new("git")
+        let output = crate::git::command::silent_git_command()
             .arg("push")
             .arg("-u")
             .arg("origin")
@@ -259,7 +259,7 @@ pub async fn open_in_terminal_cmd(repo_path: String) -> Result<(), AppError> {
 pub async fn open_in_vscode_cmd(repo_path: String) -> Result<(), AppError> {
     #[cfg(target_os = "windows")]
     {
-        std::process::Command::new("cmd")
+        crate::git::command::silent_command("cmd")
             .arg("/c")
             .arg("code")
             .arg(&repo_path)

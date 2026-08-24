@@ -1,7 +1,7 @@
+use crate::git::command::silent_command;
 use portable_pty::CommandBuilder;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::process::Command;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GitRuntimeInfo {
@@ -113,7 +113,7 @@ pub fn is_mingit_installed() -> bool {
     }
 
     // Try executing git.exe --version
-    match Command::new(&exe).arg("--version").output() {
+    match silent_command(&exe).arg("--version").output() {
         Ok(output) => output.status.success(),
         Err(_) => false,
     }
@@ -126,14 +126,14 @@ pub fn find_system_git() -> Option<(String, PathBuf)> {
     #[cfg(not(target_os = "windows"))]
     let check_cmd = "which";
 
-    if let Ok(output) = Command::new(check_cmd).arg("git").output() {
+    if let Ok(output) = silent_command(check_cmd).arg("git").output() {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             if let Some(first_line) = stdout.lines().next() {
                 let path = PathBuf::from(first_line.trim());
                 if path.exists() {
                     // Check version
-                    if let Ok(ver_output) = Command::new(&path).arg("--version").output() {
+                    if let Ok(ver_output) = silent_command(&path).arg("--version").output() {
                         if ver_output.status.success() {
                             let ver_str = String::from_utf8_lossy(&ver_output.stdout)
                                 .trim()
@@ -147,7 +147,7 @@ pub fn find_system_git() -> Option<(String, PathBuf)> {
     }
 
     // Fallback direct check
-    if let Ok(output) = Command::new("git").arg("--version").output() {
+    if let Ok(output) = silent_command("git").arg("--version").output() {
         if output.status.success() {
             let ver_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
             return Some((ver_str, PathBuf::from("git")));
@@ -165,7 +165,7 @@ pub fn detect_git_runtime() -> GitRuntimeInfo {
     // 1. If MinGit is present, retrieve its version
     if mingit_present {
         let exe = get_mingit_executable();
-        if let Ok(output) = Command::new(&exe).arg("--version").output() {
+        if let Ok(output) = silent_command(&exe).arg("--version").output() {
             if output.status.success() {
                 let ver = String::from_utf8_lossy(&output.stdout).trim().to_string();
                 return GitRuntimeInfo {

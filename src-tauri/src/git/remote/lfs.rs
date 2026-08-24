@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct LfsFile {
@@ -18,7 +18,7 @@ pub struct LfsLock {
 }
 
 pub fn check_lfs_installed() -> bool {
-    Command::new("git")
+    silent_git_command()
         .arg("lfs")
         .arg("version")
         .output()
@@ -27,7 +27,7 @@ pub fn check_lfs_installed() -> bool {
 }
 
 pub fn list_lfs_files(repo_path: &str) -> Result<Vec<LfsFile>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("lfs")
         .arg("ls-files")
         .current_dir(repo_path)
@@ -69,7 +69,7 @@ pub fn list_lfs_files(repo_path: &str) -> Result<Vec<LfsFile>, AppError> {
 }
 
 pub fn track_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("lfs")
         .arg("track")
         .arg(pattern)
@@ -87,7 +87,7 @@ pub fn track_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppError>
 }
 
 pub fn untrack_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("lfs")
         .arg("untrack")
         .arg(pattern)
@@ -105,7 +105,7 @@ pub fn untrack_lfs_pattern(repo_path: &str, pattern: &str) -> Result<(), AppErro
 }
 
 pub fn list_lfs_locks(repo_path: &str) -> Result<Vec<LfsLock>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("lfs")
         .arg("locks")
         .arg("--json")
@@ -114,7 +114,7 @@ pub fn list_lfs_locks(repo_path: &str) -> Result<Vec<LfsLock>, AppError> {
 
     if !output.status.success() {
         // Fallback to text parsing if --json is unsupported
-        let text_output = Command::new("git")
+        let text_output = silent_git_command()
             .arg("lfs")
             .arg("locks")
             .current_dir(repo_path)
@@ -168,7 +168,7 @@ pub fn list_lfs_locks(repo_path: &str) -> Result<Vec<LfsLock>, AppError> {
 }
 
 pub fn lock_lfs_file(repo_path: &str, path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("lfs")
         .arg("lock")
         .arg(path)
@@ -186,7 +186,7 @@ pub fn lock_lfs_file(repo_path: &str, path: &str) -> Result<(), AppError> {
 }
 
 pub fn unlock_lfs_file(repo_path: &str, path: &str, force: bool) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("lfs").arg("unlock").arg(path);
     if force {
         cmd.arg("--force");

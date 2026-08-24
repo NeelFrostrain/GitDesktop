@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct BlameLine {
@@ -13,7 +13,7 @@ pub struct BlameLine {
 }
 
 pub fn get_file_blame(repo_path: &str, file_path: &str) -> Result<Vec<BlameLine>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("blame")
         .arg("--line-porcelain")
         .arg(file_path)

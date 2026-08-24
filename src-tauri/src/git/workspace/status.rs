@@ -1,8 +1,8 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use git2::{Repository, Status, StatusOptions};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
 pub enum FileStatusKind {
@@ -98,39 +98,26 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
         let is_staged = s.contains(Status::INDEX_NEW)
             || s.contains(Status::INDEX_MODIFIED)
             || s.contains(Status::INDEX_DELETED)
-            || s.contains(Status::INDEX_RENAMED);
+            || s.contains(Status::INDEX_RENAMED)
+            || s.contains(Status::INDEX_TYPECHANGE);
 
-        // If unstaged working tree changes match .gitignore, omit them
-        if !is_staged && repo.is_path_ignored(Path::new(&path_str)).unwrap_or(false) {
-            continue;
-        }
+        let kind = if s.contains(Status::WT_NEW) || s.contains(Status::INDEX_NEW) {
+            FileStatusKind::Untracked
+        } else if s.contains(Status::WT_DELETED) || s.contains(Status::INDEX_DELETED) {
+            FileStatusKind::Deleted
+        } else if s.contains(Status::WT_RENAMED) || s.contains(Status::INDEX_RENAMED) {
+            FileStatusKind::Renamed
+        } else if is_staged {
+            FileStatusKind::Staged
+        } else {
+            FileStatusKind::Modified
+        };
 
-        let is_wt = s.contains(Status::WT_NEW)
-            || s.contains(Status::WT_MODIFIED)
-            || s.contains(Status::WT_DELETED)
-            || s.contains(Status::WT_RENAMED);
-
-        if is_staged || is_wt {
-            let kind = if s.contains(Status::INDEX_NEW) || s.contains(Status::WT_NEW) {
-                if s.contains(Status::WT_NEW) && !is_staged {
-                    FileStatusKind::Untracked
-                } else {
-                    FileStatusKind::Staged
-                }
-            } else if s.contains(Status::INDEX_DELETED) || s.contains(Status::WT_DELETED) {
-                FileStatusKind::Deleted
-            } else if s.contains(Status::INDEX_RENAMED) || s.contains(Status::WT_RENAMED) {
-                FileStatusKind::Renamed
-            } else {
-                FileStatusKind::Modified
-            };
-
-            files.push(FileStatus {
-                path: path_str,
-                status: kind,
-                staged: is_staged,
-            });
-        }
+        files.push(FileStatus {
+            path: path_str,
+            status: kind,
+            staged: is_staged,
+        });
     }
 
     let is_clean = files.is_empty();
@@ -153,7 +140,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
 
     // First check if a remote named "origin" is configured at all.
     // For local-only repos with no remote, reporting commits as "ahead" is misleading.
-    let has_remote = Command::new("git")
+    let has_remote = silent_git_command()
         .args(["remote", "get-url", "origin"])
         .current_dir(repo_path)
         .output()
@@ -170,7 +157,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
     let remote_ref = format!("origin/{}", branch_name);
 
     // Check if the remote tracking ref exists (i.e. branch has been pushed at least once)
-    let ref_exists = Command::new("git")
+    let ref_exists = silent_git_command()
         .args([
             "show-ref",
             "--quiet",
@@ -184,7 +171,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
 
     if !ref_exists {
         // Remote is configured but this branch has never been pushed — count all local commits as "ahead"
-        let output = Command::new("git")
+        let output = silent_git_command()
             .args(["rev-list", "--count", "HEAD"])
             .current_dir(repo_path)
             .output()
@@ -201,7 +188,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
     }
 
     // Count commits in local branch not in remote
-    let ahead_out = Command::new("git")
+    let ahead_out = silent_git_command()
         .args(["rev-list", "--count", &format!("{}..HEAD", remote_ref)])
         .current_dir(repo_path)
         .output()?;
@@ -211,7 +198,7 @@ fn get_ahead_behind(repo: &Repository, branch_name: &str) -> Result<(usize, usiz
         .unwrap_or(0);
 
     // Count commits in remote not in local branch
-    let behind_out = Command::new("git")
+    let behind_out = silent_git_command()
         .args(["rev-list", "--count", &format!("HEAD..{}", remote_ref)])
         .current_dir(repo_path)
         .output()?;

@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use std::process::Command;
+use crate::git::command::silent_git_command;
 
 pub fn cherry_pick_commits(
     repo_path: &str,
@@ -12,7 +12,7 @@ pub fn cherry_pick_commits(
         ));
     }
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("cherry-pick");
 
     if no_commit {
@@ -38,7 +38,7 @@ pub fn cherry_pick_commits(
 }
 
 pub fn cherry_pick_continue(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("cherry-pick")
         .arg("--continue")
         .env("GIT_EDITOR", "true")
@@ -56,7 +56,7 @@ pub fn cherry_pick_continue(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn cherry_pick_abort(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("cherry-pick")
         .arg("--abort")
         .current_dir(repo_path)

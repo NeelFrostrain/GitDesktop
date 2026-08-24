@@ -1,8 +1,8 @@
 use crate::auth::keyring;
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use git2::{IndexAddOption, Repository, Signature};
 use std::path::Path;
-use std::process::Command;
 
 pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
     let repo = Repository::open(repo_path)
@@ -42,7 +42,7 @@ pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError
         // Use `git rm --cached` to remove files from the index.
         let file_args: Vec<&str> = files.iter().map(|s| s.as_str()).collect();
         if !file_args.is_empty() {
-            let mut cmd = Command::new("git");
+            let mut cmd = silent_git_command();
             cmd.arg("rm").arg("--cached").arg("--");
             for f in &file_args {
                 cmd.arg(f);
@@ -121,7 +121,7 @@ pub fn commit_changes(
     }
 
     if is_no_verify || is_allow_empty {
-        let mut cmd = Command::new("git");
+        let mut cmd = silent_git_command();
         cmd.arg("commit");
         if is_no_verify {
             cmd.arg("--no-verify");
@@ -263,7 +263,7 @@ pub fn rename_branch(repo_path: &str, old_name: &str, new_name: &str) -> Result<
 pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<(), AppError> {
     if force {
         // Force delete: use `git branch -D` which deletes even if unmerged
-        let output = Command::new("git")
+        let output = silent_git_command()
             .args(["branch", "-D", branch_name])
             .current_dir(repo_path)
             .output()?;
@@ -277,7 +277,7 @@ pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<
         }
     } else {
         // Safe delete: use `git branch -d` which refuses to delete unmerged branches
-        let output = Command::new("git")
+        let output = silent_git_command()
             .args(["branch", "-d", branch_name])
             .current_dir(repo_path)
             .output()?;
@@ -302,10 +302,9 @@ pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<
 
 pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Result<(), AppError> {
     use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
-    use std::process::Command;
 
     let auth_info = get_git_auth_info(repo_path);
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     apply_git_auth_args_pub(&mut cmd, &auth_info);
 
@@ -327,16 +326,15 @@ pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Re
 }
 
 pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppError> {
-    use std::process::Command;
     let full_path = Path::new(repo_path).join(file_path);
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     cmd.args(["checkout", "HEAD", "--", file_path]);
     let output = cmd.output()?;
 
     if !output.status.success() {
-        let mut cmd2 = Command::new("git");
+        let mut cmd2 = silent_git_command();
         cmd2.current_dir(repo_path);
         cmd2.args(["clean", "-f", "--", file_path]);
         let output2 = cmd2.output()?;
