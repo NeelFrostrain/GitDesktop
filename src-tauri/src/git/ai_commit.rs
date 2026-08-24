@@ -6,7 +6,7 @@ use crate::error::AppError;
 
 const GROQ_API_URL: &str = "https://api.groq.com/openai/v1/chat/completions";
 pub const DEFAULT_MODEL: &str = "openai/gpt-oss-120b";
-const MAX_DIFF_CHARS: usize = 35000;
+const MAX_DIFF_CHARS: usize = 16000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiCommitSuggestion {
@@ -44,96 +44,97 @@ struct ResponseMessage {
     content: String,
 }
 
-/// Retrieve git diff text for AI analysis
+/// Helper to get diff text for AI analysis
 pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
-    let mut opts = DiffOptions::new();
-    opts.include_untracked(true);
-    opts.show_untracked_content(true);
-    opts.recurse_untracked_dirs(true);
+    let mut diff_opts = DiffOptions::new();
+    diff_opts.context_lines(2);
+    diff_opts.ignore_whitespace_change(true);
 
-    let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
-    let index = repo.index().ok();
+    let head_tree = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
 
     let mut patch_text = String::new();
 
-    let append_diff_patch = |diff: &git2::Diff, out: &mut String| {
-        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
-            if out.len() < MAX_DIFF_CHARS {
-                let content = String::from_utf8_lossy(line.content());
-                let origin = line.origin();
-                match origin {
-                    '+' | '-' | ' ' => {
-                        out.push(origin);
-                        out.push_str(&content);
-                    }
-                    'F' | 'H' => {
-                        out.push_str(&content);
-                    }
-                    _ => {
-                        out.push_str(&content);
-                    }
-                }
-            }
-            out.len() < MAX_DIFF_CHARS
-        });
-    };
-
     if staged_only {
-        if let Ok(diff) = repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts)) {
-            append_diff_patch(&diff, &mut patch_text);
-        }
-    } else {
-        // Prioritize staged changes first
-        if let Ok(diff) = repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts)) {
-            append_diff_patch(&diff, &mut patch_text);
-        }
-        // Append unstaged working directory changes
-        if let Ok(diff) = repo.diff_index_to_workdir(index.as_ref(), Some(&mut opts)) {
-            append_diff_patch(&diff, &mut patch_text);
-        }
-        if patch_text.is_empty() {
-            if let Ok(diff) = repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut opts)) {
-                append_diff_patch(&diff, &mut patch_text);
+        let index = repo.index()
+            .map_err(|e| AppError::Git(format!("Failed to get index: {}", e)))?;
+        let diff = repo.diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut diff_opts))
+            .map_err(|e| AppError::Git(format!("Failed to compute staged diff: {}", e)))?;
+
+        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+            if patch_text.len() < MAX_DIFF_CHARS {
+                let origin = line.origin();
+                if origin == '+' || origin == '-' || origin == ' ' {
+                    patch_text.push(origin);
+                }
+                if let Ok(content) = std::str::from_utf8(line.content()) {
+                    patch_text.push_str(content);
+                }
             }
-        }
+            true
+        });
+    } else {
+        // Combined unstaged + staged
+        let diff = repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))
+            .map_err(|e| AppError::Git(format!("Failed to compute working tree diff: {}", e)))?;
+
+        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+            if patch_text.len() < MAX_DIFF_CHARS {
+                let origin = line.origin();
+                if origin == '+' || origin == '-' || origin == ' ' {
+                    patch_text.push(origin);
+                }
+                if let Ok(content) = std::str::from_utf8(line.content()) {
+                    patch_text.push_str(content);
+                }
+            }
+            true
+        });
     }
 
-    // Include untracked files by reading their contents if patch is small
-    if let Ok(statuses) = repo.statuses(None) {
-        for entry in statuses.iter() {
-            let status = entry.status();
-            if status.contains(git2::Status::WT_NEW) {
-                if let Some(path_str) = entry.path() {
-                    let file_path = Path::new(repo_path).join(path_str);
-                    if file_path.is_file() && patch_text.len() < MAX_DIFF_CHARS {
-                        if let Ok(content) = fs::read_to_string(&file_path) {
-                            patch_text.push_str(&format!("\n--- /dev/null\n+++ b/{}\n", path_str));
-                            for line in content.lines().take(300) {
-                                if patch_text.len() >= MAX_DIFF_CHARS {
-                                    break;
-                                }
-                                patch_text.push('+');
-                                patch_text.push_str(line);
-                                patch_text.push('\n');
-                            }
-                        }
+    // Also include untracked new files if any
+    let statuses = repo.statuses(None)
+        .map_err(|e| AppError::Git(format!("Failed to get statuses: {}", e)))?;
+    for entry in statuses.iter() {
+        let s = entry.status();
+        if s.contains(git2::Status::WT_NEW) {
+            if let Some(path) = entry.path() {
+                let full_path = Path::new(repo_path).join(path);
+                if full_path.is_file() {
+                    if let Ok(content) = fs::read_to_string(&full_path) {
+                        let sample: String = content.lines().take(40).collect::<Vec<_>>().join("\n");
+                        patch_text.push_str(&format!("\n--- /dev/null\n+++ b/{}\n@@ -0,0 +1,{} @@\n{}\n", path, content.lines().count(), sample));
                     }
                 }
             }
         }
+        if patch_text.len() >= MAX_DIFF_CHARS {
+            break;
+        }
     }
 
-    // Fallback: If working tree has no uncommitted changes, analyze the latest commit (HEAD)
+    // Fallback: If working tree has no uncommitted changes, analyze latest commit diff
     if patch_text.trim().is_empty() {
         if let Ok(head) = repo.head() {
             if let Ok(commit) = head.peel_to_commit() {
-                let parent_tree = commit.parent(0).and_then(|p| p.tree()).ok();
-                let commit_tree = commit.tree().ok();
-                if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), commit_tree.as_ref(), Some(&mut opts)) {
-                    append_diff_patch(&diff, &mut patch_text);
+                if let Ok(tree) = commit.tree() {
+                    let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
+                    if let Ok(diff) = repo.diff_tree_to_tree(parent_tree.as_ref(), Some(&tree), Some(&mut diff_opts)) {
+                        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+                            if patch_text.len() < MAX_DIFF_CHARS {
+                                let origin = line.origin();
+                                if origin == '+' || origin == '-' || origin == ' ' {
+                                    patch_text.push(origin);
+                                }
+                                if let Ok(content) = std::str::from_utf8(line.content()) {
+                                    patch_text.push_str(content);
+                                }
+                            }
+                            true
+                        });
+                    }
                 }
             }
         }
@@ -143,7 +144,7 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
 }
 
 /// Collect all configured Groq API keys in priority order
-fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> Vec<String> {
+pub fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> Vec<String> {
     let mut keys: Vec<String> = Vec::new();
 
     // 1. Explicit custom key passed
@@ -318,7 +319,7 @@ pub fn parse_multi_response(input: &str) -> (Vec<String>, String) {
     (options, report)
 }
 
-/// Execute AI Commit Generation via Groq API with automatic fallback across all configured keys
+/// Execute AI Commit Generation via Groq API with multi-key rotation and automatic model fallback
 pub async fn generate_ai_commit_message(
     repo_path: &str,
     staged_only: bool,
@@ -337,10 +338,16 @@ pub async fn generate_ai_commit_message(
         return Err(AppError::Git("No modified, staged, or recent changes found in repository.".to_string()));
     }
 
-    let model = model_override
+    let raw_model = model_override
         .filter(|m| !m.trim().is_empty())
         .or_else(|| std::env::var("COMMIT_AI_MODEL").ok())
         .unwrap_or_else(|| DEFAULT_MODEL.to_string());
+
+    let initial_model = if raw_model == "openai/gpt-oss-120" || raw_model.trim().is_empty() {
+        "openai/gpt-oss-120b".to_string()
+    } else {
+        raw_model
+    };
 
     let prompt = build_prompt(&diff_text);
 
@@ -349,57 +356,80 @@ pub async fn generate_ai_commit_message(
         .build()
         .map_err(|e| AppError::Git(format!("Failed to build HTTP client: {}", e)))?;
 
-    let request_body = ChatCompletionRequest {
-        model: model.clone(),
-        messages: vec![ChatMessage {
-            role: "user".to_string(),
-            content: prompt,
-        }],
-        temperature: 0.7,
-    };
-
     let mut last_error = String::new();
 
     for (index, key) in api_keys.iter().enumerate() {
-        let response = match client
-            .post(GROQ_API_URL)
-            .bearer_auth(key)
-            .json(&request_body)
-            .send()
-            .await
-        {
-            Ok(resp) => resp,
-            Err(e) => {
-                last_error = format!("Network error with key #{}: {}", index + 1, e);
-                continue;
+        let mut model_to_try = initial_model.clone();
+
+        for retry_attempt in 0..2 {
+            let request_body = ChatCompletionRequest {
+                model: model_to_try.clone(),
+                messages: vec![ChatMessage {
+                    role: "user".to_string(),
+                    content: prompt.clone(),
+                }],
+                temperature: 0.7,
+            };
+
+            let response = match client
+                .post(GROQ_API_URL)
+                .bearer_auth(key)
+                .json(&request_body)
+                .send()
+                .await
+            {
+                Ok(resp) => resp,
+                Err(e) => {
+                    last_error = format!("Network error with key #{}: {}", index + 1, e);
+                    break;
+                }
+            };
+
+            let status = response.status();
+            if !status.is_success() {
+                let err_body = response.text().await.unwrap_or_default();
+                last_error = format!("Groq API key #{} failed ({}): {}", index + 1, status, err_body);
+
+                // Handle 429 (Rate limit reached) or 404 (Model not found)
+                if retry_attempt < 2 {
+                    if status.as_u16() == 429 {
+                        // Rate limit exceeded on heavy model -> fallback to high-capacity model
+                        if model_to_try != "llama-3.3-70b-versatile" && model_to_try != "llama-3.1-8b-instant" {
+                            model_to_try = "llama-3.3-70b-versatile".to_string();
+                            continue;
+                        } else if model_to_try != "llama-3.1-8b-instant" {
+                            model_to_try = "llama-3.1-8b-instant".to_string();
+                            continue;
+                        }
+                    } else if status.as_u16() == 404 || err_body.contains("model_not_found") || err_body.contains("does not exist") {
+                        if model_to_try != "llama-3.1-8b-instant" {
+                            model_to_try = "llama-3.1-8b-instant".to_string();
+                            continue;
+                        }
+                    }
+                }
+                break;
             }
-        };
 
-        let status = response.status();
-        if !status.is_success() {
-            let err_body = response.text().await.unwrap_or_default();
-            last_error = format!("Groq API key #{} failed ({}): {}", index + 1, status, err_body);
-            continue;
-        }
+            let chat_res: ChatResponse = match response.json().await {
+                Ok(res) => res,
+                Err(e) => {
+                    last_error = format!("Parse error with key #{}: {}", index + 1, e);
+                    break;
+                }
+            };
 
-        let chat_res: ChatResponse = match response.json().await {
-            Ok(res) => res,
-            Err(e) => {
-                last_error = format!("Parse error with key #{}: {}", index + 1, e);
-                continue;
+            if let Some(first_choice) = chat_res.choices.into_iter().next() {
+                let (title_options, report) = parse_multi_response(&first_choice.message.content);
+                let summary = title_options.first().cloned().unwrap_or_else(|| "chore: update".to_string());
+
+                return Ok(AiCommitSuggestion {
+                    title_options,
+                    summary,
+                    report,
+                    model_used: model_to_try,
+                });
             }
-        };
-
-        if let Some(first_choice) = chat_res.choices.into_iter().next() {
-            let (title_options, report) = parse_multi_response(&first_choice.message.content);
-            let summary = title_options.first().cloned().unwrap_or_else(|| "chore: update".to_string());
-
-            return Ok(AiCommitSuggestion {
-                title_options,
-                summary,
-                report,
-                model_used: model,
-            });
         }
     }
 
@@ -409,4 +439,3 @@ pub async fn generate_ai_commit_message(
         last_error
     )))
 }
-

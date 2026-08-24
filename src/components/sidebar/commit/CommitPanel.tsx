@@ -9,9 +9,17 @@ import {
   FileText,
   ListFilter,
   Ban,
+  Key,
+  HelpCircle,
+  ExternalLink,
+  Loader2,
 } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { useCommitForm } from '../../../hooks/useCommitForm';
 import { useGitStore } from '../../../store/useGitStore';
+import { useLogStore } from '../../../store/useLogStore';
+import { useSettingsStore } from '../../../features/settings/store/useSettingsStore';
+import { GitService } from '../../../services/git/gitService';
 import { UserAvatar } from '../../common/UserAvatar';
 import { AiGenerateButton } from './AiGenerateButton';
 import { CoAuthorButton } from './CoAuthorButton';
@@ -53,6 +61,11 @@ function extractConciseBullets(report: string): string {
 export const CommitPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSelectingAi, setIsSelectingAi] = useState(false);
+  const [isApiKeyPrompt, setIsApiKeyPrompt] = useState(false);
+  const [newApiKeyInput, setNewApiKeyInput] = useState('');
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  const [isInlineGenerating, setIsInlineGenerating] = useState(false);
+
   const [aiTitleOptions, setAiTitleOptions] = useState<string[]>([]);
   const [selectedTitleIndex, setSelectedTitleIndex] = useState(0);
   const [fullAiReport, setFullAiReport] = useState('');
@@ -60,6 +73,7 @@ export const CommitPanel: React.FC = () => {
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const keyInputRef = useRef<HTMLInputElement>(null);
 
   const {
     commitSummary,
@@ -72,13 +86,26 @@ export const CommitPanel: React.FC = () => {
     clearForm,
   } = useCommitForm();
 
-  const { status, stagedFiles, user, setIsUserConfigModalOpen } = useGitStore();
+  const { status, stagedFiles, user, activeRepoPath, setIsUserConfigModalOpen } = useGitStore();
+  const { getEffectiveValue, setSettingValue, openSettings } = useSettingsStore();
+
   const currentBranch = status?.current_branch || 'main';
   const count = stagedFiles.length;
 
   const conciseBullets = useMemo(() => {
     return extractConciseBullets(fullAiReport);
   }, [fullAiReport]);
+
+  useEffect(() => {
+    if (isApiKeyPrompt) {
+      const existing = String(getEffectiveValue('ai.active_api_key') || '').trim();
+      if (existing && !newApiKeyInput) {
+        setNewApiKeyInput(existing);
+      }
+      setInlineError(null);
+      setTimeout(() => keyInputRef.current?.focus(), 50);
+    }
+  }, [isApiKeyPrompt]);
 
   // Close dropdown on click outside or escape
   useEffect(() => {
@@ -93,13 +120,17 @@ export const CommitPanel: React.FC = () => {
       ) {
         setIsOpen(false);
         setIsSelectingAi(false);
+        setIsApiKeyPrompt(false);
+        setInlineError(null);
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (isSelectingAi) {
+        if (isSelectingAi || isApiKeyPrompt) {
           setIsSelectingAi(false);
+          setIsApiKeyPrompt(false);
+          setInlineError(null);
         } else {
           setIsOpen(false);
         }
@@ -112,13 +143,15 @@ export const CommitPanel: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpen, isSelectingAi]);
+  }, [isOpen, isSelectingAi, isApiKeyPrompt]);
 
   const handleAiGenerated = (titleOptions: string[], report: string) => {
     setAiTitleOptions(titleOptions);
     setFullAiReport(report);
     setSelectedTitleIndex(0);
     setDescriptionMode('report');
+    setIsApiKeyPrompt(false);
+    setInlineError(null);
     setIsSelectingAi(true);
   };
 
@@ -141,6 +174,60 @@ export const CommitPanel: React.FC = () => {
     setIsSelectingAi(false);
   };
 
+  const handleSaveKeyAndGenerateInline = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const key = newApiKeyInput.trim();
+    if (!key || !activeRepoPath) return;
+
+    setIsInlineGenerating(true);
+    setInlineError(null);
+    try {
+      await setSettingValue('ai.active_api_key', key);
+      const existing = getEffectiveValue('ai.groq_api_keys');
+      let list: string[] = [];
+      if (Array.isArray(existing)) {
+        list = [...existing];
+      } else if (typeof existing === 'string' && existing.trim()) {
+        try {
+          const p = JSON.parse(existing);
+          if (Array.isArray(p)) list = p;
+        } catch {
+          list = [existing.trim()];
+        }
+      }
+      if (!list.includes(key)) {
+        list.push(key);
+        await setSettingValue('ai.groq_api_keys', list);
+      }
+
+      const model = getEffectiveValue('ai.model') || undefined;
+      const res = await GitService.generateAiCommitMessage(
+        activeRepoPath,
+        stagedFiles.length > 0,
+        key,
+        model
+      );
+
+      const options =
+        res.title_options && res.title_options.length > 0
+          ? res.title_options
+          : [res.summary];
+
+      setNewApiKeyInput('');
+      setIsApiKeyPrompt(false);
+      setInlineError(null);
+      handleAiGenerated(options, res.report);
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      setInlineError(errMsg);
+      useLogStore
+        .getState()
+        .addLog('error', 'Git', `[Commit-AI] Key verification failed: ${errMsg}`);
+    } finally {
+      setIsInlineGenerating(false);
+    }
+  };
+
   const handleAddCoAuthor = (trailer: string) => {
     if (commitDescription.trim()) {
       setCommitDescription(`${commitDescription.trim()}\n\n${trailer}`);
@@ -153,6 +240,8 @@ export const CommitPanel: React.FC = () => {
     await handleCommit();
     setIsOpen(false);
     setIsSelectingAi(false);
+    setIsApiKeyPrompt(false);
+    setInlineError(null);
   };
 
   const handleFormKeyDown = (e: React.KeyboardEvent) => {
@@ -164,28 +253,33 @@ export const CommitPanel: React.FC = () => {
 
   return (
     <div className="relative p-2.5 border-t border-border bg-base-1 flex-shrink-0 select-none">
-      {/* Dropdown Menu (Floats upwards above the button) */}
+      {/* Dropdown Menu (Floats upwards above the button, precisely fits sidebar width) */}
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="absolute bottom-full left-2 right-2 mb-2 bg-base-1 border border-border-strong rounded-sm shadow-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-2.5"
+          className="absolute bottom-full left-2 right-2 mb-2 bg-base-1 border border-border-strong rounded-sm shadow-xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 flex flex-col gap-2.5 max-w-full"
         >
           {/* Unified Dialog Header */}
           <div className="flex items-center justify-between pb-1.5 border-b border-border/60 text-xs select-none">
-            <div className="flex items-center gap-1.5 font-semibold text-text-primary">
-              {isSelectingAi ? (
+            <div className="flex items-center gap-1.5 font-semibold text-text-primary min-w-0">
+              {isApiKeyPrompt ? (
+                <>
+                  <Key className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
+                  <span className="truncate">Groq API Key Required</span>
+                </>
+              ) : isSelectingAi ? (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-                  <span>Choose commit title</span>
-                  <span className="inline-flex items-center justify-center h-4 px-1.5 bg-base-2 border border-border rounded-sm text-[10px] font-mono font-medium leading-none text-text-muted">
-                    {aiTitleOptions.length} suggestions
+                  <span className="truncate">Choose commit title</span>
+                  <span className="inline-flex items-center justify-center h-4 px-1.5 bg-base-2 border border-border rounded-sm text-[10px] font-mono font-medium leading-none text-text-muted flex-shrink-0">
+                    {aiTitleOptions.length}
                   </span>
                 </>
               ) : (
                 <>
                   <GitCommit className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-                  <span>Commit Changes</span>
-                  <span className="inline-flex items-center justify-center h-4 px-1.5 bg-base-2 border border-border rounded-sm text-[10px] font-mono font-medium leading-none text-text-muted">
+                  <span className="truncate">Commit Changes</span>
+                  <span className="inline-flex items-center justify-center h-4 px-1.5 bg-base-2 border border-border rounded-sm text-[10px] font-mono font-medium leading-none text-text-muted flex-shrink-0">
                     {count} {count === 1 ? 'file' : 'files'}
                   </span>
                 </>
@@ -196,8 +290,10 @@ export const CommitPanel: React.FC = () => {
               onClick={() => {
                 setIsOpen(false);
                 setIsSelectingAi(false);
+                setIsApiKeyPrompt(false);
+                setInlineError(null);
               }}
-              className="p-1 rounded-sm text-text-faint hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+              className="p-1 rounded-sm text-text-faint hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex-shrink-0"
               title="Close (Esc)"
             >
               <X className="w-3.5 h-3.5" />
@@ -205,9 +301,108 @@ export const CommitPanel: React.FC = () => {
           </div>
 
           {/* ========================================================================= */}
-          {/* AI SELECTION VIEW (Titles + Description mode + Apply button) */}
+          {/* INLINE API KEY SETUP (Fits sidebar 100%) */}
           {/* ========================================================================= */}
-          {isSelectingAi ? (
+          {isApiKeyPrompt ? (
+            <div className="flex flex-col gap-2.5 animate-in fade-in duration-100 font-sans text-xs">
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                Enter your free Groq API key to generate commit titles and technical reports with Commit-AI.
+              </p>
+
+              {/* Guide Box */}
+              <div className="p-2.5 bg-base-0 border border-border rounded-sm space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between gap-1 flex-wrap font-semibold text-text-primary">
+                  <span className="flex items-center gap-1">
+                    <HelpCircle className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
+                    <span>How to get a key:</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => openUrl('https://console.groq.com/keys')}
+                    className="text-commito-coral hover:underline flex items-center gap-1 cursor-pointer font-medium"
+                  >
+                    <span>console.groq.com/keys</span>
+                    <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
+                  </button>
+                </div>
+                <ol className="list-decimal list-inside text-text-muted text-[10.5px] space-y-0.5 pl-0.5">
+                  <li>Sign in to Groq Console (free &amp; instant)</li>
+                  <li>Click &quot;Create API Key&quot; &amp; copy your <code className="font-mono text-commito-coral">gsk_...</code></li>
+                  <li>Paste below and click Save &amp; Generate</li>
+                </ol>
+              </div>
+
+              {/* Inline Error Banner */}
+              {inlineError && (
+                <div className="p-2 bg-git-deleted/15 border border-git-deleted/30 rounded text-[11px] text-git-deleted break-words leading-relaxed">
+                  {inlineError}
+                </div>
+              )}
+
+              {/* Key Input Form */}
+              <form onSubmit={handleSaveKeyAndGenerateInline} className="space-y-2">
+                <input
+                  ref={keyInputRef}
+                  type="text"
+                  placeholder="gsk_..."
+                  value={newApiKeyInput}
+                  onChange={(e) => {
+                    setNewApiKeyInput(e.target.value);
+                    if (inlineError) setInlineError(null);
+                  }}
+                  className="w-full px-2.5 py-1.5 bg-base-0 border border-border focus:border-border-strong rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none"
+                />
+
+                <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/60">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsApiKeyPrompt(false);
+                        setInlineError(null);
+                      }}
+                      className="px-2 py-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm cursor-pointer transition text-[11px]"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsApiKeyPrompt(false);
+                        setInlineError(null);
+                        openSettings('ai', 'API Keys & Providers');
+                      }}
+                      className="text-[11px] text-text-muted hover:text-commito-coral flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Settings</span>
+                      <ExternalLink className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!newApiKeyInput.trim() || isInlineGenerating}
+                    className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                  >
+                    {isInlineGenerating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Generating...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Save &amp; Generate</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : isSelectingAi ? (
+            /* ========================================================================= */
+            /* AI SELECTION VIEW (Titles + Description mode + Apply button) */
+            /* ========================================================================= */
             <div className="flex flex-col gap-2.5 animate-in fade-in duration-100 font-sans">
               {/* Title Options List */}
               <div className="space-y-1.5 max-h-56 overflow-y-auto">
@@ -307,6 +502,9 @@ export const CommitPanel: React.FC = () => {
               </div>
             </div>
           ) : (
+            /* ========================================================================= */
+            /* STANDARD COMMIT FORM */
+            /* ========================================================================= */
             <>
               {/* Row 1: Author Avatar + Summary Input */}
               <div className="flex items-center gap-2">
@@ -348,7 +546,10 @@ export const CommitPanel: React.FC = () => {
               {/* Row 3: Action Tools Toolbar */}
               <div className="flex items-center justify-between px-0.5 select-none -mt-1">
                 <div className="flex items-center gap-1">
-                  <AiGenerateButton onAiGenerated={handleAiGenerated} />
+                  <AiGenerateButton
+                    onAiGenerated={handleAiGenerated}
+                    onRequireApiKey={() => setIsApiKeyPrompt(true)}
+                  />
                   <CoAuthorButton onAddCoAuthor={handleAddCoAuthor} />
                   <CommitActions
                     isVisible={Boolean(commitSummary.trim() || commitDescription.trim())}
@@ -366,9 +567,9 @@ export const CommitPanel: React.FC = () => {
           {/* Primary Commit Action Button */}
           <button
             onClick={onExecuteCommit}
-            disabled={!canCommit || isCommitting || isSelectingAi}
+            disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt}
             className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${
-              canCommit && !isSelectingAi
+              canCommit && !isSelectingAi && !isApiKeyPrompt
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
                 : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
             }`}

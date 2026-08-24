@@ -1,4 +1,4 @@
-export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean' | 'key_list';
+export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
 export type SettingCategory =
   | 'commonly_used'
   | 'ai'
@@ -97,12 +97,12 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
   // AI & COMMIT-AI
   // ==========================================
   {
-    id: 'ai.groq_api_keys',
-    label: 'Groq API Keys Pool',
-    description: 'Manage multiple Groq API keys. The engine will automatically rotate and fallback to backup keys if any key hits rate limits or errors.',
+    id: 'ai.active_api_key',
+    label: 'Groq API Key',
+    description: 'Active Groq API Key (gsk_...) used for AI commit message generation and diff analysis.',
     category: 'ai',
     subcategory: 'API Keys & Providers',
-    type: 'key_list',
+    type: 'text',
     default: '',
     scope: 'app',
     commonlyUsed: true,
