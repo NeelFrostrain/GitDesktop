@@ -368,14 +368,50 @@ pub fn push_specific_remote(
         let stdout = String::from_utf8_lossy(&output.stdout).to_string();
         let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
         let err_msg = combined.trim().to_string();
+        let lower = err_msg.to_lowercase();
 
-        if err_msg.contains("HTTP Basic: Access denied") || err_msg.contains("Authentication failed") || err_msg.contains("Permission denied") {
-            return Err(AppError::Auth(
-                format!("Access Denied: Please verify your credentials for remote '{}'.", clean_remote)
+        if lower.contains("fetch first") || lower.contains("non-fast-forward") || lower.contains("remote contains work") {
+            return Err(AppError::Git(format!(
+                "Push rejected: Remote '{}' has newer changes. Please Pull/Fetch first before pushing.",
+                clean_remote
+            )));
+        }
+
+        if lower.contains("protected branch") || lower.contains("hook declined") {
+            return Err(AppError::Git(format!(
+                "Push rejected: Protected branch rule or server-side hook declined the push on '{}'.",
+                clean_remote
+            )));
+        }
+
+        if lower.contains("http basic: access denied")
+            || lower.contains("authentication failed")
+            || lower.contains("permission denied")
+            || lower.contains("could not read username")
+            || lower.contains("invalid username or password")
+        {
+            return Err(AppError::Auth(format!(
+                "Access Denied: Please verify your credentials or permissions for remote '{}'.",
+                clean_remote
+            )));
+        }
+
+        if lower.contains("secret scanning") || lower.contains("push protection") {
+            return Err(AppError::Git(
+                "Push blocked by Secret Protection. Check your commits for sensitive credentials or keys.".to_string(),
             ));
         }
 
-        return Err(AppError::Git(format!("Failed to push to remote '{}': {}", clean_remote, err_msg)));
+        // Clean out boilerplate "To https://..." lines to present the actionable failure line
+        let clean_summary: String = err_msg
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with("To http") && !l.starts_with("To git@") && !l.starts_with("To ssh://"))
+            .collect::<Vec<_>>()
+            .join(" | ");
+
+        let final_err = if !clean_summary.is_empty() { clean_summary } else { err_msg };
+        return Err(AppError::Git(format!("Failed to push to remote '{}': {}", clean_remote, final_err)));
     }
 
     Ok(())
