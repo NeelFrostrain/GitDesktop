@@ -2,6 +2,7 @@ import React from 'react';
 import { SettingDefinition } from '../lib/settingsSchema';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { RotateCcw } from 'lucide-react';
+import { AiApiKeyManager } from './AiApiKeyManager';
 
 interface SettingRowProps {
   setting: SettingDefinition;
@@ -12,6 +13,31 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
   const value = getEffectiveValue(setting.id);
   const modified = isModified(setting.id);
+
+  if (setting.type === 'key_list') {
+    return (
+      <div className="p-3.5 rounded-sm border bg-base-1/60 border-border hover:border-border-strong space-y-3 font-sans">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-xs text-text-primary">
+                {setting.label}
+              </span>
+              {modified && (
+                <span className="px-1.5 py-0.2 bg-commito-coral/20 text-commito-coral text-[9px] font-semibold rounded uppercase tracking-wider">
+                  Configured
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-text-muted mt-0.5 leading-relaxed">
+              {setting.description}
+            </p>
+          </div>
+        </div>
+        <AiApiKeyManager />
+      </div>
+    );
+  }
 
   const renderControl = () => {
     switch (setting.type) {

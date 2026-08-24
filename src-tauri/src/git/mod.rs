@@ -16,3 +16,4 @@ pub mod config;
 pub mod submodules;
 pub mod history_rewrite;
 pub mod signing;
+pub mod ai_commit;

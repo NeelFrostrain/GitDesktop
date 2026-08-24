@@ -774,6 +774,31 @@ pub async fn signing_verify_commit_cmd(
     Ok(res)
 }
 
+#[command]
+pub async fn generate_ai_commit_message_cmd(
+    repo_path: String,
+    staged_only: bool,
+    custom_api_key: Option<String>,
+    model: Option<String>,
+) -> Result<crate::git::ai_commit::AiCommitSuggestion, AppError> {
+    let res = crate::git::ai_commit::generate_ai_commit_message(
+        &repo_path,
+        staged_only,
+        custom_api_key,
+        model,
+    )
+    .await?;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Git,
+        format!("[Commit-AI] Generated commit message using {}", res.model_used);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "summary": res.summary, "model": res.model_used, "options": res.title_options })
+    );
+
+    Ok(res)
+}
+
 
 
 

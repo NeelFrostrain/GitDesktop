@@ -15,6 +15,7 @@ import {
   ReflogEntry,
   SubmoduleInfo,
   GitConfigItem,
+  AiCommitSuggestion,
 } from '../../types/git';
 
 /**
@@ -382,5 +383,24 @@ export class GitService {
    */
   static async listWorktrees(repoPath: string): Promise<WorktreeInfo[]> {
     return invoke<WorktreeInfo[]>('list_worktrees', { repoPath });
+  }
+
+  // ── AI Commit ────────────────────────────────────────────────────────────────
+
+  /**
+   * Analyzes git diff changes and generates commit message titles and report using Commit-AI / Groq API.
+   */
+  static async generateAiCommitMessage(
+    repoPath: string,
+    stagedOnly = false,
+    customApiKey?: string,
+    model?: string
+  ): Promise<AiCommitSuggestion> {
+    return invoke<AiCommitSuggestion>('generate_ai_commit_message_cmd', {
+      repoPath,
+      stagedOnly,
+      customApiKey: customApiKey || null,
+      model: model || null,
+    });
   }
 }

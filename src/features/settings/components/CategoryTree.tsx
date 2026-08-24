@@ -8,6 +8,7 @@ import {
   Shield,
   Bell,
   Sliders,
+  Sparkles,
 } from 'lucide-react';
 import {
   CATEGORY_METADATA,
@@ -20,6 +21,8 @@ const getCategoryIcon = (cat: SettingCategory) => {
   switch (cat) {
     case 'commonly_used':
       return <Star className="w-4 h-4 text-amber-400" />;
+    case 'ai':
+      return <Sparkles className="w-4 h-4 text-commito-coral" />;
     case 'appearance':
       return <Palette className="w-4 h-4 text-commito-coral" />;
     case 'colors':
