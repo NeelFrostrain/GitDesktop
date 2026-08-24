@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct TagInfo {
@@ -12,7 +12,7 @@ pub struct TagInfo {
 }
 
 pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("tag")
         .arg("-l")
         .arg("--format=%(refname:short)|%(objectname:short)|%(contents:subject)|%(taggername)")
@@ -64,7 +64,7 @@ pub fn create_tag(
     message: Option<&str>,
     target_sha: Option<&str>,
 ) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("tag");
 
     if let Some(msg) = message {
@@ -96,7 +96,7 @@ pub fn create_tag(
 }
 
 pub fn delete_tag(repo_path: &str, name: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("tag")
         .arg("-d")
         .arg(name)
@@ -117,7 +117,7 @@ pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
     use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
 
     let auth_info = get_git_auth_info(repo_path);
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     apply_git_auth_args_pub(&mut cmd, &auth_info);
 

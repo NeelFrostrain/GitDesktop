@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SubmoduleInfo {
@@ -13,7 +13,7 @@ pub struct SubmoduleInfo {
 }
 
 pub fn list_submodules(repo_path: &str) -> Result<Vec<SubmoduleInfo>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("submodule")
         .arg("status")
         .current_dir(repo_path)
@@ -52,7 +52,7 @@ pub fn list_submodules(repo_path: &str) -> Result<Vec<SubmoduleInfo>, AppError> 
 }
 
 pub fn init_submodules(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("submodule")
         .arg("init")
         .current_dir(repo_path)
@@ -69,7 +69,7 @@ pub fn init_submodules(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn update_submodules(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("submodule")
         .arg("update")
         .arg("--init")
@@ -88,7 +88,7 @@ pub fn update_submodules(repo_path: &str) -> Result<(), AppError> {
 }
 
 pub fn sync_submodules(repo_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("submodule")
         .arg("sync")
         .current_dir(repo_path)

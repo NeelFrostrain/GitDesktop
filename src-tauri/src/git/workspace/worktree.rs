@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorktreeInfo {
@@ -14,7 +14,7 @@ pub struct WorktreeInfo {
 }
 
 pub fn list_worktrees(repo_path: &str) -> Result<Vec<WorktreeInfo>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("worktree")
         .arg("list")
         .arg("--porcelain")
@@ -105,7 +105,7 @@ pub fn add_worktree(
     worktree_path: &str,
     branch_name: Option<&str>,
 ) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("worktree").arg("add").arg(worktree_path);
     if let Some(b) = branch_name {
         if !b.trim().is_empty() {
@@ -125,7 +125,7 @@ pub fn add_worktree(
 }
 
 pub fn remove_worktree(repo_path: &str, worktree_path: &str, force: bool) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("worktree").arg("remove").arg(worktree_path);
     if force {
         cmd.arg("--force");

@@ -1,7 +1,7 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GitConfigItem {
@@ -17,13 +17,13 @@ pub struct GitUserIdentity {
 }
 
 pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppError> {
-    let name_output = Command::new("git")
+    let name_output = silent_git_command()
         .arg("config")
         .arg("user.name")
         .current_dir(repo_path)
         .output();
 
-    let email_output = Command::new("git")
+    let email_output = silent_git_command()
         .arg("config")
         .arg("user.email")
         .current_dir(repo_path)
@@ -63,7 +63,7 @@ pub fn get_git_user_identity(repo_path: &str) -> Result<GitUserIdentity, AppErro
 }
 
 pub fn get_repo_git_config(repo_path: &str) -> Result<Vec<GitConfigItem>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("config")
         .arg("--local")
         .arg("-l")
@@ -90,7 +90,7 @@ pub fn get_repo_git_config(repo_path: &str) -> Result<Vec<GitConfigItem>, AppErr
 }
 
 pub fn set_repo_git_config(repo_path: &str, key: &str, value: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("config")
         .arg("--local")
         .arg(key)

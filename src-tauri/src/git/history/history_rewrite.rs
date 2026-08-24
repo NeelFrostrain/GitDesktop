@@ -1,9 +1,9 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use crate::git::status::get_repo_status;
 use git2::Repository;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReorderCommitsPayload {
@@ -100,7 +100,7 @@ fn get_commits_up_to_base(
         format!("{}..HEAD", base_arg)
     };
 
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("log")
         .arg("--reverse")
         .arg("--format=%H %s")
@@ -299,7 +299,7 @@ fn run_interactive_rebase(
         editor_env = Some(editor_cmd);
     }
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("rebase").arg("-i");
     if base_arg != "--root" {
         cmd.arg(base_arg);
@@ -326,7 +326,7 @@ fn run_interactive_rebase(
         let stderr = String::from_utf8_lossy(&output.stderr);
         let stdout = String::from_utf8_lossy(&output.stdout);
         // Automatically abort failed rebase to restore repo state
-        let _ = Command::new("git")
+        let _ = silent_git_command()
             .arg("rebase")
             .arg("--abort")
             .current_dir(repo_path)

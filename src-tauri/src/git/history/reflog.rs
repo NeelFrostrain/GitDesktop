@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReflogEntry {
@@ -13,7 +13,7 @@ pub struct ReflogEntry {
 
 pub fn list_reflog(repo_path: &str, limit: Option<usize>) -> Result<Vec<ReflogEntry>, AppError> {
     let lim = limit.unwrap_or(50);
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("reflog")
         .arg("show")
         .arg(format!("-n{}", lim))
@@ -50,7 +50,7 @@ pub fn list_reflog(repo_path: &str, limit: Option<usize>) -> Result<Vec<ReflogEn
 }
 
 pub fn restore_reflog_target(repo_path: &str, sha: &str, force: bool) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("reset");
 
     if force {
@@ -76,7 +76,7 @@ pub fn restore_reflog_target(repo_path: &str, sha: &str, force: bool) -> Result<
 
 pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
     // Check for uncommitted changes first
-    let status_output = Command::new("git")
+    let status_output = silent_git_command()
         .arg("status")
         .arg("--porcelain")
         .current_dir(repo_path)
@@ -92,7 +92,7 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
     }
 
     // Attempt standard revert
-    let mut output = Command::new("git")
+    let mut output = silent_git_command()
         .arg("revert")
         .arg("--no-edit")
         .arg(sha)
@@ -107,13 +107,13 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
             String::from_utf8_lossy(&output.stdout)
         );
         if err_text.contains("is a merge but no -m option was given") {
-            let _ = Command::new("git")
+            let _ = silent_git_command()
                 .arg("revert")
                 .arg("--abort")
                 .current_dir(repo_path)
                 .output();
 
-            output = Command::new("git")
+            output = silent_git_command()
                 .arg("revert")
                 .arg("-m")
                 .arg("1")
@@ -141,7 +141,7 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
             };
 
         // Abort failed revert to keep working directory clean
-        let _ = Command::new("git")
+        let _ = silent_git_command()
             .arg("revert")
             .arg("--abort")
             .current_dir(repo_path)
@@ -157,13 +157,13 @@ pub fn revert_commit(repo_path: &str, sha: &str) -> Result<(), AppError> {
 }
 
 pub fn undo_commit(repo_path: &str) -> Result<String, AppError> {
-    let msg_out = Command::new("git")
+    let msg_out = silent_git_command()
         .args(["log", "-1", "--format=%B"])
         .current_dir(repo_path)
         .output()?;
     let msg = String::from_utf8_lossy(&msg_out.stdout).trim().to_string();
 
-    let output = Command::new("git")
+    let output = silent_git_command()
         .args(["reset", "--soft", "HEAD~1"])
         .current_dir(repo_path)
         .output()?;

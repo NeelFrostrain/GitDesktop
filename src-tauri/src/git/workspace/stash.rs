@@ -1,6 +1,6 @@
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use serde::{Deserialize, Serialize};
-use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StashEntry {
@@ -12,7 +12,7 @@ pub struct StashEntry {
 }
 
 pub fn list_stashes(repo_path: &str) -> Result<Vec<StashEntry>, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("stash")
         .arg("list")
         .arg("--format=%gd|%h|%s|%cr")
@@ -73,7 +73,7 @@ pub fn create_stash(
     message: Option<&str>,
     include_untracked: bool,
 ) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("stash").arg("push");
 
     if include_untracked {
@@ -101,7 +101,7 @@ pub fn create_stash(
 }
 
 pub fn apply_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("stash")
         .arg("apply")
         .arg(format!("stash@{{{}}}", index))
@@ -119,7 +119,7 @@ pub fn apply_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 }
 
 pub fn pop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("stash")
         .arg("pop")
         .arg(format!("stash@{{{}}}", index))
@@ -137,7 +137,7 @@ pub fn pop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 }
 
 pub fn drop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("stash")
         .arg("drop")
         .arg(format!("stash@{{{}}}", index))
@@ -155,7 +155,7 @@ pub fn drop_stash(repo_path: &str, index: usize) -> Result<(), AppError> {
 }
 
 pub fn get_stash_diff(repo_path: &str, index: usize) -> Result<String, AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("stash")
         .arg("show")
         .arg("-p")

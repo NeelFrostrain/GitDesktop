@@ -1,12 +1,12 @@
 use crate::error::AppError;
-use std::process::Command;
+use crate::git::command::silent_git_command;
 
 pub fn export_patch(
     repo_path: &str,
     target_path: &str,
     range: Option<&str>,
 ) -> Result<(), AppError> {
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
 
     if let Some(r) = range {
         cmd.arg("format-patch").arg("--stdout").arg(r);
@@ -32,7 +32,7 @@ pub fn export_patch(
 }
 
 pub fn apply_patch(repo_path: &str, patch_file_path: &str) -> Result<(), AppError> {
-    let output = Command::new("git")
+    let output = silent_git_command()
         .arg("apply")
         .arg(patch_file_path)
         .current_dir(repo_path)

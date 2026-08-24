@@ -1,5 +1,6 @@
 use crate::auth::keyring;
 use crate::error::AppError;
+use crate::git::command::silent_git_command;
 use base64::{engine::general_purpose::STANDARD, Engine};
 use git2::Repository;
 use serde::{Deserialize, Serialize};
@@ -83,7 +84,7 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
                     let url_without_scheme = &url["https://".len()..];
                     if let Some(idx) = url_without_scheme.find('@') {
                         let clean_url = format!("https://{}", &url_without_scheme[idx + 1..]);
-                        let _ = Command::new("git")
+                        let _ = silent_git_command()
                             .arg("remote")
                             .arg("set-url")
                             .arg(remote_name)
@@ -185,7 +186,7 @@ pub fn list_remotes(repo_path: &str) -> Result<Vec<RemoteInfo>, AppError> {
 }
 
 fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) {
-    let ref_exists = Command::new("git")
+    let ref_exists = silent_git_command()
         .args([
             "show-ref",
             "--quiet",
@@ -198,7 +199,7 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
         .unwrap_or(false);
 
     if !ref_exists {
-        let count = Command::new("git")
+        let count = silent_git_command()
             .args(["rev-list", "--count", "HEAD"])
             .current_dir(repo_path)
             .output()
@@ -213,7 +214,7 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
         return (count, 0);
     }
 
-    let ahead = Command::new("git")
+    let ahead = silent_git_command()
         .args(["rev-list", "--count", &format!("{}..HEAD", remote_ref)])
         .current_dir(repo_path)
         .output()
@@ -226,7 +227,7 @@ fn get_remote_ahead_behind(repo_path: &str, remote_ref: &str) -> (usize, usize) 
         })
         .unwrap_or(0);
 
-    let behind = Command::new("git")
+    let behind = silent_git_command()
         .args(["rev-list", "--count", &format!("HEAD..{}", remote_ref)])
         .current_dir(repo_path)
         .output()
@@ -253,7 +254,7 @@ pub fn add_remote(repo_path: &str, name: &str, url: &str) -> Result<(), AppError
         ));
     }
 
-    let output = Command::new("git")
+    let output = silent_git_command()
         .args(["remote", "add", clean_name, clean_url])
         .current_dir(repo_path)
         .output()?;
@@ -278,7 +279,7 @@ pub fn remove_remote(repo_path: &str, name: &str) -> Result<(), AppError> {
         ));
     }
 
-    let output = Command::new("git")
+    let output = silent_git_command()
         .args(["remote", "remove", clean_name])
         .current_dir(repo_path)
         .output()?;
@@ -305,7 +306,7 @@ pub fn rename_remote(repo_path: &str, old_name: &str, new_name: &str) -> Result<
         ));
     }
 
-    let output = Command::new("git")
+    let output = silent_git_command()
         .args(["remote", "rename", clean_old, clean_new])
         .current_dir(repo_path)
         .output()?;
@@ -337,7 +338,7 @@ pub fn set_remote_url(
         ));
     }
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.arg("remote").arg("set-url");
     if is_push {
         cmd.arg("--push");
@@ -367,7 +368,7 @@ pub fn fetch_specific_remote(repo_path: &str, remote_name: &str) -> Result<(), A
     let clean_remote = remote_name.trim();
     let auth_info = get_git_auth_info(repo_path);
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     apply_git_auth_args(&mut cmd, &auth_info);
 
@@ -413,7 +414,7 @@ pub fn push_specific_remote(
     let clean_branch = branch_name.trim();
     let auth_info = get_git_auth_info(repo_path);
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     apply_git_auth_args(&mut cmd, &auth_info);
 
@@ -533,7 +534,7 @@ pub fn pull_specific_remote(
     let clean_branch = branch_name.trim();
     let auth_info = get_git_auth_info(repo_path);
 
-    let head_before = Command::new("git")
+    let head_before = silent_git_command()
         .args(["rev-parse", "HEAD"])
         .current_dir(repo_path)
         .output()
@@ -546,7 +547,7 @@ pub fn pull_specific_remote(
             }
         });
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     apply_git_auth_args(&mut cmd, &auth_info);
 
@@ -595,7 +596,7 @@ pub fn pull_specific_remote(
     }
 
     let commits_pulled = if let Some(ref old_head) = head_before {
-        Command::new("git")
+        silent_git_command()
             .args(["rev-list", "--count", &format!("{}..HEAD", old_head)])
             .current_dir(repo_path)
             .output()
@@ -633,7 +634,7 @@ pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppErr
 
     let auth_info = get_git_auth_info_for_url(".", Some(remote_url));
 
-    let mut cmd = Command::new("git");
+    let mut cmd = silent_git_command();
     apply_git_auth_args(&mut cmd, &auth_info);
     cmd.arg("clone").arg(remote_url).arg(local_path);
 
