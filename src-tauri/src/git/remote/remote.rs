@@ -403,6 +403,12 @@ pub fn push_specific_remote(
             )));
         }
 
+        if lower.contains("without `workflow` scope") || lower.contains("workflow scope") {
+            return Err(AppError::Auth(
+                "GitHub Rejected: Your Personal Access Token is missing the 'workflow' scope required to modify files in .github/workflows/.".to_string(),
+            ));
+        }
+
         if lower.contains("secret scanning") || lower.contains("push protection") {
             return Err(AppError::Git(
                 "Push blocked by Secret Protection. Check your commits for sensitive credentials or keys.".to_string(),

@@ -65,7 +65,7 @@ export function useAppLogs(repoId?: string | null) {
       }
     }
     return Array.from(map.values()).sort(
-      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
+      (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()
     );
   }, [recentLogs, persistedLogs, repoId, filter.this_repo_only]);
 
