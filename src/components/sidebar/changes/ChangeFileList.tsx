@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';
@@ -66,15 +67,21 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   if (filteredFiles.length === 0) {
     return (
-      <div className="p-6 text-center text-xs text-text-muted italic">
-        No changed files found
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150">
+        <div className="w-8 h-8 rounded-sm bg-git-added/10 border border-git-added/25 text-git-added flex items-center justify-center mb-2">
+          <Check className="w-4 h-4 stroke-[2.5]" />
+        </div>
+        <p className="text-xs font-semibold text-text-primary">Working Tree Clean</p>
+        <p className="text-[11px] text-text-muted mt-0.5 max-w-[190px]">
+          {filter ? `No files matching "${filter}"` : 'No uncommitted changes.'}
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredFiles.map((file) => {
           const isStaged = stagedFiles.includes(file.path);
           const isSelected = selectedFile === file.path;
@@ -89,15 +96,15 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 setSelectedFile(file.path);
                 setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
               }}
-              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm text-xs cursor-pointer transition ${
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 ${
                 isSelected
-                  ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
-                  : 'hover:bg-base-2 text-text-secondary'
+                  ? 'bg-base-2 text-text-primary font-medium border border-border-strong shadow-xs'
+                  : 'hover:bg-base-2/60 text-text-secondary border border-transparent'
               }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
               {getStatusBadge(file.status)}
-              <span className="truncate flex-1 font-mono text-[11px]">{file.path}</span>
+              <span className="truncate flex-1 font-mono text-[11px] text-text-primary">{file.path}</span>
             </div>
           );
         })}

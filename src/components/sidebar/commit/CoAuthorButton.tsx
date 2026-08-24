@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
 import { UserPlus, Bot } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { UserAvatar } from '../../common/UserAvatar';
@@ -42,10 +41,8 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
   const [isOpen, setIsOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
 
-  const triggerRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Build deduplicated suggestions list across bots, active user, and saved accounts
   const allSuggestions: CoAuthorSuggestion[] = [];
@@ -110,50 +107,16 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
   }, [username]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node) &&
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (!isOpen || !triggerRef.current) return;
-    const updatePos = () => {
-      if (!triggerRef.current) return;
-      const rect = triggerRef.current.getBoundingClientRect();
-      const menuWidth = 260;
-
-      let left = rect.left;
-      if (left + menuWidth > window.innerWidth - 12) {
-        left = Math.max(12, window.innerWidth - menuWidth - 12);
-      }
-      if (left < 12) {
-        left = 12;
-      }
-
-      // Anchor bottom edge 6px directly above top edge of button
-      const bottom = Math.max(12, window.innerHeight - rect.top + 6);
-
-      setMenuStyle({
-        position: 'fixed',
-        bottom: `${bottom}px`,
-        left: `${left}px`,
-        width: `${menuWidth}px`,
-        zIndex: 9999,
-      });
-    };
-
-    updatePos();
-    window.addEventListener('resize', updatePos);
-    return () => window.removeEventListener('resize', updatePos);
   }, [isOpen]);
 
   const selectSuggestion = (sugg: CoAuthorSuggestion) => {
@@ -202,92 +165,101 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
   };
 
   return (
-    <div className="relative inline-block" ref={triggerRef}>
+    <div className="relative inline-block" ref={containerRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
         title="Add Co-Author (Co-authored-by)"
-        className="p-1 rounded-sm bg-base-2/80 border border-border hover:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer text-xs flex items-center justify-center"
+        className={`p-1 rounded-sm border transition cursor-pointer text-xs flex items-center justify-center ${
+          isOpen
+            ? 'bg-commito-coral/20 text-commito-coral border-commito-coral/40'
+            : 'bg-base-2/80 border-border hover:bg-base-3 text-text-muted hover:text-text-primary'
+        }`}
       >
         <UserPlus className="w-3.5 h-3.5" />
       </button>
 
-      {isOpen &&
-        createPortal(
-          <div
-            ref={menuRef}
-            style={menuStyle}
-            className="bg-base-1 border border-border rounded-sm shadow-2xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100 font-sans space-y-1.5"
+      {isOpen && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="absolute bottom-full left-0 mb-1.5 w-64 bg-base-1 border border-border-strong rounded-sm shadow-2xl p-2 text-xs select-none animate-in fade-in zoom-in-95 duration-100 font-sans space-y-1.5 z-40"
+        >
+          <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted px-1.5 pt-0.5 pb-1 border-b border-border flex items-center justify-between">
+            <span>Co-Authors</span>
+            <span className="font-mono text-[9px] text-text-faint">@username</span>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleAddCustom();
+            }}
           >
-            <div className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted px-1.5 pt-0.5 pb-1 border-b border-border flex items-center justify-between">
-              <span>Co-Authors</span>
-              <span className="font-mono text-[9px] text-text-faint">@username</span>
-            </div>
+            <input
+              type="text"
+              placeholder="Co-Authors @username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+            />
+          </form>
 
-            <form onSubmit={(e) => { e.preventDefault(); handleAddCustom(); }}>
-              <input
-                type="text"
-                placeholder="Co-Authors @username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                onKeyDown={handleKeyDown}
-                autoFocus
-                className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
-              />
-            </form>
+          <div className="max-h-40 overflow-y-auto space-y-0.5">
+            {filteredSuggestions.length > 0 ? (
+              filteredSuggestions.map((item, idx) => {
+                const isSelected = idx === selectedIndex;
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => selectSuggestion(item)}
+                    onMouseEnter={() => setSelectedIndex(idx)}
+                    className={`px-2 py-1.5 rounded-sm cursor-pointer flex items-center gap-2 transition ${
+                      isSelected
+                        ? 'bg-base-2 text-text-primary font-semibold border border-border-strong'
+                        : 'hover:bg-base-2 text-text-primary border border-transparent'
+                    }`}
+                  >
+                    {item.isBot ? (
+                      <div className="w-5 h-5 rounded-full bg-commito-coral/20 text-commito-coral border border-commito-coral/40 flex items-center justify-center flex-shrink-0">
+                        <Bot className="w-3 h-3 text-commito-coral" />
+                      </div>
+                    ) : (
+                      <UserAvatar
+                        url={item.avatar_url}
+                        name={item.name || item.username}
+                        provider={item.provider}
+                        className="w-5 h-5"
+                        iconClassName="w-3 h-3"
+                      />
+                    )}
 
-            <div className="max-h-40 overflow-y-auto space-y-0.5">
-              {filteredSuggestions.length > 0 ? (
-                filteredSuggestions.map((item, idx) => {
-                  const isSelected = idx === selectedIndex;
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => selectSuggestion(item)}
-                      onMouseEnter={() => setSelectedIndex(idx)}
-                      className={`px-2 py-1.5 rounded-sm cursor-pointer flex items-center gap-2 transition ${
-                        isSelected
-                          ? 'bg-commito-coral/20 text-commito-coral font-bold'
-                          : 'hover:bg-base-2 text-text-primary'
-                      }`}
-                    >
-                      {item.isBot ? (
-                        <div className="w-5 h-5 rounded-full bg-commito-coral/20 text-commito-coral border border-commito-coral/40 flex items-center justify-center flex-shrink-0">
-                          <Bot className="w-3 h-3 text-commito-coral" />
-                        </div>
-                      ) : (
-                        <UserAvatar
-                          url={item.avatar_url}
-                          name={item.name || item.username}
-                          provider={item.provider}
-                          className="w-5 h-5"
-                          iconClassName="w-3 h-3"
-                        />
-                      )}
-
-                      <div className="truncate flex-1 min-w-0">
-                        <div className="truncate flex items-center gap-1.5">
-                          <span className="font-bold text-xs">{item.name || item.username}</span>
-                          <span className="text-[10px] text-text-muted font-mono truncate">
-                            {item.email}
-                          </span>
-                        </div>
+                    <div className="truncate flex-1 min-w-0">
+                      <div className="truncate flex items-center gap-1.5">
+                        <span className="font-semibold text-xs text-text-primary">{item.name || item.username}</span>
+                        <span className="text-[10px] text-text-muted font-mono truncate">
+                          {item.email}
+                        </span>
                       </div>
                     </div>
-                  );
-                })
-              ) : (
-                <div
-                  onClick={handleAddCustom}
-                  className="px-2.5 py-1.5 text-xs text-text-muted italic hover:bg-base-2 rounded cursor-pointer truncate"
-                >
-                  Add "{username}" as custom co-author
-                </div>
-              )}
-            </div>
-          </div>,
-          document.body
-        )}
+                  </div>
+                );
+              })
+            ) : (
+              <div
+                onClick={handleAddCustom}
+                className="px-2.5 py-1.5 text-xs text-text-muted italic hover:bg-base-2 rounded-sm cursor-pointer truncate"
+              >
+                Add &ldquo;{username}&rdquo; as custom co-author
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

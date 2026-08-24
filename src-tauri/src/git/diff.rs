@@ -95,7 +95,9 @@ pub fn get_file_diff(repo_path: &str, file_path: &str, staged: bool) -> Result<D
         let index = repo.index().ok();
         repo.diff_tree_to_index(head_tree.as_ref(), index.as_ref(), Some(&mut opts)).ok()
     } else {
-        repo.diff_index_to_workdir(None, Some(&mut opts)).ok()
+        repo.diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut opts)).ok()
+            .or_else(|| repo.diff_tree_to_workdir(head_tree.as_ref(), Some(&mut opts)).ok())
+            .or_else(|| repo.diff_index_to_workdir(None, Some(&mut opts)).ok())
     };
 
     let (mut is_binary, mut lines) = if let Some(ref d) = diff {

@@ -44,7 +44,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       return (
         <span
           title={`Verified commit (Signed by ${signer || 'GPG/SSH key'})`}
-          className="flex items-center gap-0.5 text-git-added font-mono text-[9px] bg-git-added-bg border border-git-added/40 px-1 py-0.2 rounded"
+          className="flex items-center gap-0.5 text-git-added font-mono text-[9px] bg-git-added-bg border border-git-added/40 px-1 py-0.2 rounded-sm"
         >
           <ShieldCheck className="w-2.5 h-2.5" />
           <span>Verified</span>
@@ -57,7 +57,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       return (
         <span
           title={`Unverified signature: ${reason || 'Untrusted or expired key'}`}
-          className="flex items-center gap-0.5 text-git-modified font-mono text-[9px] bg-git-modified-bg border border-git-modified/40 px-1 py-0.2 rounded"
+          className="flex items-center gap-0.5 text-git-modified font-mono text-[9px] bg-git-modified-bg border border-git-modified/40 px-1 py-0.2 rounded-sm"
         >
           <ShieldAlert className="w-2.5 h-2.5" />
           <span>Unverified</span>
@@ -74,14 +74,14 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       onMouseDown={(e) => onMouseDown(e, commit)}
       onClick={onClick}
       onContextMenu={(e) => onContextMenu(e, commit)}
-      className={`p-2.5 rounded-sm cursor-pointer transition-all border relative select-none ${
+      className={`p-2.5 rounded-sm cursor-pointer transition-all duration-150 border relative select-none group ${
         isDragging
           ? 'opacity-40 border-dashed border-commito-coral scale-[0.98]'
           : isTarget && dropZone === 'merge'
           ? 'bg-commito-coral/20 border-commito-coral text-commito-coral shadow-lg ring-1 ring-commito-coral/50'
           : isSelected
-          ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText shadow-sm'
-          : 'bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border text-text-primary'
+          ? 'bg-base-2 border-border-strong text-text-primary shadow-xs before:absolute before:left-0 before:top-2 before:bottom-2 before:w-0.75 before:bg-commito-coral before:rounded-r-xs'
+          : 'bg-base-1/50 border-border/60 hover:bg-base-2/80 hover:border-border text-text-primary'
       }`}
     >
       {/* Top Border Line Indicator for Drop Before */}
@@ -104,10 +104,12 @@ export const CommitCard: React.FC<CommitCardProps> = ({
 
       {/* Card Header & Content */}
       <div className="flex items-start justify-between gap-2 mb-1 pointer-events-none">
-        <h4 className="text-xs font-bold truncate leading-snug flex-1">{commit.message}</h4>
+        <h4 className="text-xs font-semibold truncate leading-tight flex-1 text-text-primary group-hover:text-commito-coral transition-colors">
+          {commit.message}
+        </h4>
         <div className="flex items-center gap-1 flex-shrink-0">
           {renderSigningBadge()}
-          <div className="flex items-center gap-1 px-1.5 py-0.2 bg-base-3 border border-border rounded-sm text-[10px] font-mono text-text-muted">
+          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-base-0 border border-border/80 rounded-sm text-[10px] font-mono text-text-muted">
             <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
             <span>{commit.short_sha}</span>
           </div>
@@ -115,14 +117,14 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       </div>
 
       <div className="flex items-center justify-between text-[11px] text-text-muted mt-1.5 pointer-events-none">
-        <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate pr-2">
           <UserAvatar
             name={commit.author_name}
             email={commit.author_email}
-            className="w-4 h-4 rounded-full ring-1 ring-border/50"
-            iconClassName="w-2.5 h-2.5"
+            className="w-3.5 h-3.5 rounded-full ring-1 ring-border/50 flex-shrink-0"
+            iconClassName="w-2 h-2"
           />
-          <span className="truncate font-medium text-text-secondary">{commit.author_name}</span>
+          <span className="truncate font-normal text-text-muted text-[11px]">{commit.author_name}</span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           {commit.additions !== undefined && commit.deletions !== undefined && (commit.additions > 0 || commit.deletions > 0) && (

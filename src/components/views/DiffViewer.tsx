@@ -51,19 +51,73 @@ export const DiffViewer: React.FC = () => {
     return fileInStatus ? fileInStatus.staged : false;
   }, [selectedFile, status]);
 
-  // Fetch diff when selected file or its staged state changes in Changes tab
+  // Fetch and live-sync diff when selected file changes, or when external edits occur on disk
   useEffect(() => {
     if (!activeRepoPath || !selectedFile || activeTab !== 'changes') {
       setDiff(null);
       return;
     }
 
-    setIsLoading(true);
-    GitService.getFileDiff(activeRepoPath, selectedFile, isStaged)
-      .then(setDiff)
-      .catch((err: unknown) => setError(toAppError(err, 'GIT_ERROR')))
-      .finally(() => setIsLoading(false));
-  }, [activeRepoPath, selectedFile, activeTab, isStaged, setError]);
+    let isDisposed = false;
+    let isFetching = false;
+
+    const fetchLiveDiff = async (isInitial = false) => {
+      if (isDisposed || isFetching || !activeRepoPath || !selectedFile) return;
+      isFetching = true;
+      if (isInitial) {
+        setIsLoading(true);
+      }
+
+      try {
+        const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
+        if (!isDisposed) {
+          setDiff((prev) => {
+            // If the diff content and lines are identical, keep previous reference to avoid re-renders
+            if (
+              prev &&
+              prev.file_path === newDiff.file_path &&
+              prev.lines.length === newDiff.lines.length &&
+              prev.lines.every(
+                (l, idx) =>
+                  l.content === newDiff.lines[idx]?.content &&
+                  l.line_type === newDiff.lines[idx]?.line_type
+              )
+            ) {
+              return prev;
+            }
+            return newDiff;
+          });
+        }
+      } catch (err: unknown) {
+        if (!isDisposed && isInitial) {
+          setError(toAppError(err, 'GIT_ERROR'));
+        }
+      } finally {
+        if (!isDisposed) {
+          if (isInitial) setIsLoading(false);
+          isFetching = false;
+        }
+      }
+    };
+
+    // 1. Initial immediate fetch
+    fetchLiveDiff(true);
+
+    // 2. Continuous lightweight background sync (every 1.5s) to detect live external file edits
+    const intervalId = setInterval(() => fetchLiveDiff(false), 1500);
+
+    // 3. Instant sync on window focus and document visibility
+    const handleFocusSync = () => fetchLiveDiff(false);
+    window.addEventListener('focus', handleFocusSync);
+    document.addEventListener('visibilitychange', handleFocusSync);
+
+    return () => {
+      isDisposed = true;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleFocusSync);
+    };
+  }, [activeRepoPath, selectedFile, activeTab, setError]);
 
   // Fetch commit details when selected commit changes in History tab
   useEffect(() => {
@@ -110,8 +164,6 @@ export const DiffViewer: React.FC = () => {
     }
   };
 
-
-
   // ── Render Changes Diff Content ──────────────────────────────────────────
   const renderChangesDiff = () => {
     if (!selectedFile) {
@@ -123,7 +175,7 @@ export const DiffViewer: React.FC = () => {
       );
     }
 
-    if (isLoading) {
+    if (isLoading && (!diff || diff.file_path !== selectedFile)) {
       return (
         <div className="h-full flex items-center justify-center text-text-muted text-sm">Loading file diff...</div>
       );

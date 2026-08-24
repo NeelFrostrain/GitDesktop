@@ -571,7 +571,32 @@ pub async fn ignore_file_pattern_cmd(repo_path: String, pattern: String) -> Resu
         } else {
             format!("{}\n{}\n", content, pattern)
         };
-        crate::git::config::write_gitignore(&repo_path, &new_content)
+        crate::git::config::write_gitignore(&repo_path, &new_content)?;
+
+        // Remove the ignored path from the Git index so Git stops tracking it as a modified file
+        if let Ok(repo) = git2::Repository::open(&repo_path) {
+            if let Ok(mut index) = repo.index() {
+                let normalized = pattern.trim_start_matches('/').trim_end_matches('/');
+                let _ = index.remove_path(std::path::Path::new(normalized));
+
+                let mut to_remove = Vec::new();
+                for entry in index.iter() {
+                    let entry_path = String::from_utf8_lossy(&entry.path).to_string();
+                    if entry_path == normalized
+                        || entry_path.ends_with(&format!("/{}", normalized))
+                        || entry_path.starts_with(&format!("{}/", normalized))
+                    {
+                        to_remove.push(entry_path);
+                    }
+                }
+                for p in to_remove {
+                    let _ = index.remove_path(std::path::Path::new(&p));
+                }
+                let _ = index.write();
+            }
+        }
+
+        Ok(())
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?

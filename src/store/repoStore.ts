@@ -4,6 +4,7 @@ import { RepoEntry, RepoDashboardStatus } from '../types/home';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
+import { GitService } from '../services/git/gitService';
 
 /**
  * State and actions for managing the local repository registry and dashboard summaries.
@@ -98,9 +99,21 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
   },
 
   openRepo: async (path: string) => {
+    if (!path) return;
     const gitStore = useGitStore.getState();
     gitStore.setActiveRepoPath(path);
     gitStore.setCurrentNavView('changes');
+
+    try {
+      const res = await GitService.getRepoStatus(path);
+      gitStore.setStatus(res);
+      if (res.files.length > 0) {
+        gitStore.setSelectedFile(res.files[0].path);
+      }
+    } catch (error: unknown) {
+      useLogStore.getState().addLog('warning', 'Git', `Could not inspect repo on open: ${getErrorMessage(error)}`);
+    }
+
     // Touch last_opened_at timestamp in backend registry
     invoke('add_repo_to_registry_cmd', { path }).catch(() => {});
   },

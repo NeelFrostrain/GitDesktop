@@ -99,6 +99,7 @@ export interface GitState {
   selectedFile: string | null;
   stagedFiles: string[];
   hasInitializedStaging: boolean;
+  statusVersion: number;
   selectedCommitSha: string | null;
   commitSummary: string;
   commitDescription: string;
@@ -210,6 +211,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   selectedFile: null,
   stagedFiles: [],
   hasInitializedStaging: false,
+  statusVersion: 0,
   selectedCommitSha: null,
   commitSummary: '',
   commitDescription: '',
@@ -339,8 +341,27 @@ export const useGitStore = create<GitState>((set, get) => ({
   setAccounts: (accounts) => set({ accounts }),
 
   setStatus: (status) => {
-    const allFilePaths = status ? status.files.map((f) => f.path) : [];
+    const prevStatus = get().status;
     const { stagedFiles: currentStaged, hasInitializedStaging } = get();
+
+    // Fast check: if status hasn't changed at all and staging is already initialized, skip redundant store update
+    if (hasInitializedStaging && prevStatus && status) {
+      const isSame =
+        prevStatus.current_branch === status.current_branch &&
+        prevStatus.ahead === status.ahead &&
+        prevStatus.behind === status.behind &&
+        prevStatus.is_clean === status.is_clean &&
+        prevStatus.has_conflicts === status.has_conflicts &&
+        prevStatus.files.length === status.files.length &&
+        prevStatus.files.every((f, i) => {
+          const f2 = status.files[i];
+          return f2 && f.path === f2.path && f.status === f2.status && f.staged === f2.staged;
+        });
+
+      if (isSame) return;
+    }
+
+    const allFilePaths = status ? status.files.map((f) => f.path) : [];
 
     let nextStaged: string[];
     if (!hasInitializedStaging) {
@@ -359,7 +380,12 @@ export const useGitStore = create<GitState>((set, get) => ({
       ];
     }
 
-    set({ status, stagedFiles: nextStaged, hasInitializedStaging: true });
+    set((state) => ({
+      status,
+      stagedFiles: nextStaged,
+      hasInitializedStaging: true,
+      statusVersion: state.statusVersion + 1,
+    }));
   },
 
   setBranches: (branches) => set({ branches }),

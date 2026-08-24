@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, lazy, Suspense } from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
@@ -54,7 +54,6 @@ const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => (
  */
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
-  const wasBlurredRef = useRef(false);
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
@@ -137,39 +136,60 @@ export const App: React.FC = () => {
     };
   }, [setUser, setAccounts, setError]);
 
+  // Live repository synchronizer: keeps workspace status, working tree diffs, and repo registry in sync
   useEffect(() => {
     if (!activeRepoPath) return;
-    GitService.getRepoStatus(activeRepoPath)
-      .then(setStatus)
-      .catch((err: unknown) => setError(toAppError(err, 'GIT_ERROR')));
-  }, [activeRepoPath, setStatus, setError]);
 
-  // App focus refresh — fires on window blur→focus transition to keep state synchronized
-  useEffect(() => {
-    if (!activeRepoPath) return;
+    let isDisposed = false;
+    let isSyncing = false;
+
+    const syncStatus = async () => {
+      if (isDisposed || isSyncing) return;
+      isSyncing = true;
+      try {
+        const res = await GitService.getRepoStatus(activeRepoPath);
+        if (!isDisposed) {
+          setStatus(res);
+        }
+      } catch {
+        // Silently ignore background polling sync errors
+      } finally {
+        isSyncing = false;
+      }
+    };
+
+    // Initial sync
+    syncStatus();
+
+    // 1. Periodic background polling (every 2 seconds) for external file modifications
+    const intervalId = setInterval(syncStatus, 2000);
+
+    // 2. Window focus & document visibility sync
+    const handleFocus = () => syncStatus();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') syncStatus();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // 3. Tauri window focus event
     const appWindow = getCurrentWindow();
-    let unlisten: (() => void) | undefined;
-
+    let unlistenTauriFocus: (() => void) | undefined;
     appWindow
       .onFocusChanged(({ payload: focused }) => {
-        if (focused && wasBlurredRef.current) {
-          wasBlurredRef.current = false;
-          GitService.getRepoStatus(activeRepoPath)
-            .then(setStatus)
-            .catch(() => {
-              // Silently ignore background focus refresh errors
-            });
-        }
-        if (!focused) {
-          wasBlurredRef.current = true;
-        }
+        if (focused) syncStatus();
       })
       .then((fn) => {
-        unlisten = fn;
+        unlistenTauriFocus = fn;
       });
 
     return () => {
-      if (unlisten) unlisten();
+      isDisposed = true;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (unlistenTauriFocus) unlistenTauriFocus();
     };
   }, [activeRepoPath, setStatus]);
 

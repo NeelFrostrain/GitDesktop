@@ -3,7 +3,6 @@ import { GitCommit, ChevronUp, X } from 'lucide-react';
 import { useCommitForm } from '../../../hooks/useCommitForm';
 import { useGitStore } from '../../../store/useGitStore';
 import { UserAvatar } from '../../common/UserAvatar';
-import { CommitOptions } from './CommitOptions';
 import { AiGenerateButton } from './AiGenerateButton';
 import { CoAuthorButton } from './CoAuthorButton';
 import { CommitActions } from './CommitActions';
@@ -18,13 +17,7 @@ export const CommitPanel: React.FC = () => {
     setCommitSummary,
     commitDescription,
     setCommitDescription,
-    commitOptions,
-    setCommitOptions,
     isCommitting,
-    isOptionsMenuOpen,
-    setIsOptionsMenuOpen,
-    optionsMenuRef,
-    hasActiveOptions,
     canCommit,
     handleCommit,
     clearForm,
@@ -96,7 +89,7 @@ export const CommitPanel: React.FC = () => {
             <div className="flex items-center gap-1.5 font-semibold text-text-primary">
               <GitCommit className="w-3.5 h-3.5 text-commito-coral" />
               <span>Initialize Commit</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded-sm text-text-muted">
+              <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1.5 bg-base-2 border border-border rounded-sm text-[10px] font-mono leading-none text-text-muted">
                 {count} {count === 1 ? 'file' : 'files'}
               </span>
             </div>
@@ -151,14 +144,6 @@ export const CommitPanel: React.FC = () => {
                 isVisible={Boolean(commitSummary || commitDescription)}
                 onClear={clearForm}
               />
-              <CommitOptions
-                options={commitOptions}
-                onOptionsChange={setCommitOptions}
-                isOpen={isOptionsMenuOpen}
-                onToggle={() => setIsOptionsMenuOpen(!isOptionsMenuOpen)}
-                optionsRef={optionsMenuRef}
-                hasActiveOptions={hasActiveOptions}
-              />
             </div>
           </div>
 
@@ -178,12 +163,6 @@ export const CommitPanel: React.FC = () => {
                 ? 'Committing...'
                 : `Commit ${count > 0 ? `${count} file${count > 1 ? 's' : ''}` : ''} to ${currentBranch}`}
             </span>
-            {hasActiveOptions && (
-              <span
-                className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"
-                title="Custom commit options active"
-              />
-            )}
           </button>
         </div>
       )}
@@ -193,20 +172,18 @@ export const CommitPanel: React.FC = () => {
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border ${
+        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${
           isOpen
-            ? 'bg-commito-coral text-white border-commito-coral shadow-sm'
-            : hasDraft
-            ? 'bg-base-2 hover:bg-base-3 text-text-primary border-commito-coral/50'
-            : 'bg-base-2 hover:bg-base-3 text-text-primary border-border hover:border-border-strong'
+            ? 'bg-base-2 text-text-primary border-border-strong'
+            : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
         }`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <GitCommit className={`w-3.5 h-3.5 flex-shrink-0 ${isOpen ? 'text-white' : 'text-commito-coral'}`} />
+          <GitCommit className="w-3.5 h-3.5 flex-shrink-0 text-commito-coral" />
           <span className="truncate">Initialize commit</span>
           {count > 0 && (
             <span
-              className={`text-[10px] font-mono px-1.5 py-0.2 rounded-sm border ${
+              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono leading-none border ${
                 isOpen
                   ? 'bg-white/20 border-white/30 text-white'
                   : 'bg-base-0 border-border text-text-muted'
