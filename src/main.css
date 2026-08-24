@@ -1,0 +1,577 @@
+/* ==========================================================================
+   Git Desktop App — Unified CSS Theme Architecture
+   Single Source of Truth for Visual Design System, Design Tokens,
+   Tailwind CSS v4 @theme Bridge, Global Styles, Controls & Scrollbars.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Imports
+   ========================================================================== */
+@import "@xterm/xterm/css/xterm.css";
+@import "tailwindcss";
+
+/* ==========================================================================
+   2. Runtime Theme Variables (:root / Default: Commito Dark)
+   ========================================================================== */
+:root {
+  /* --- Unified Surfaces & Backgrounds --- */
+  --surface: #171619;                 /* Main workspace background */
+  --surface-subtle: #121113;          /* Deep frame / Sidebar background */
+  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
+  --surface-hover: #2b292f;           /* Hover state on rows and cards */
+  --surface-active: #382221;          /* Pressed/selected active background */
+
+  /* Legacy surface aliases */
+  --app-bg-primary: var(--surface);
+  --app-bg-secondary: var(--surface-subtle);
+  --app-bg-tertiary: var(--surface-elevated);
+  --app-bg-elevated: var(--surface-elevated);
+  --app-surface-hover: var(--surface-hover);
+  --app-surface-active: var(--surface-active);
+
+  /* --- Unified Borders --- */
+  --border: #29272b;                  /* Default border color */
+  --border-subtle: #201e22;           /* Subtle inner border / divider */
+  --border-strong: #3d3a42;           /* Emphasized border / active focus */
+
+  /* Legacy border aliases */
+  --app-border: var(--border);
+  --app-border-subtle: var(--border-subtle);
+  --app-border-strong: var(--border-strong);
+
+  /* --- Unified Typography & Text Colors --- */
+  --text: #e6e4e8;                    /* Main heading and body text */
+  --text-subtle: #b3b0b8;             /* Secondary labels, breadcrumbs */
+  --text-muted: #85818c;              /* Muted, timestamp & placeholder text */
+  --text-faint: #5c5863;              /* Faint hints and icons */
+  --text-disabled: #5c5863;           /* Disabled control text */
+  --text-on-accent: #ffffff;          /* Text rendered on top of accent buttons */
+
+  /* Legacy text aliases */
+  --app-text-primary: var(--text);
+  --app-text-secondary: var(--text-subtle);
+  --app-text-muted: var(--text-muted);
+  --app-text-faint: var(--text-faint);
+  --app-text-disabled: var(--text-disabled);
+  --app-text-on-accent: var(--text-on-accent);
+
+  /* --- Unified Semantic Accent & Status --- */
+  --accent: #e05638;                  /* Primary brand accent */
+  --accent-hover: #f06344;            /* Primary accent hover */
+  --accent-active: #c74327;           /* Primary accent active */
+  --accent-muted: rgba(224, 86, 56, 0.15); /* Low-opacity accent highlight */
+  --focus-ring: var(--accent);        /* Focus ring indicator */
+
+  /* Legacy accent aliases */
+  --app-accent: var(--accent);
+  --app-accent-hover: var(--accent-hover);
+  --app-accent-active: var(--accent-active);
+  --app-accent-muted: var(--accent-muted);
+  --app-focus-ring: var(--focus-ring);
+
+  --success: #22c55e;                 /* Success status */
+  --warning: #eab308;                 /* Warning status */
+  --danger: #ef4444;                  /* Danger / error status */
+  --info: #3b82f6;                    /* Informational status */
+
+  /* Legacy status aliases */
+  --app-success: var(--success);
+  --app-warning: var(--warning);
+  --app-danger: var(--danger);
+  --app-error: var(--danger);
+  --app-info: var(--info);
+
+  /* --- Git Semantic Status Colors --- */
+  --git-branch: var(--accent);
+  --git-tag: #c084fc;
+  --git-remote: #38bdf8;
+  --git-local: var(--text);
+  --git-added: #22c55e;
+  --git-modified: #eab308;
+  --git-deleted: #ef4444;
+  --git-removed: #ef4444;
+  --git-renamed: #3b82f6;
+  --git-conflict: #f97316;
+  --git-ahead: #22c55e;
+  --git-behind: #ef4444;
+  --git-clean: #22c55e;
+  --git-dirty: #eab308;
+
+  --git-added-bg: rgba(34, 197, 94, 0.15);
+  --git-removed-bg: rgba(239, 68, 68, 0.15);
+  --git-modified-bg: rgba(234, 179, 8, 0.15);
+  --git-conflict-bg: rgba(249, 115, 22, 0.15);
+
+  /* --- Diff Specific Colors --- */
+  --diff-add-bg: rgba(34, 197, 94, 0.15);
+  --diff-add-text: #4ade80;
+  --diff-remove-bg: rgba(239, 68, 68, 0.15);
+  --diff-remove-text: #f87171;
+  --diff-modified-bg: rgba(234, 179, 8, 0.15);
+  --diff-highlight: #38bdf8;
+
+  /* --- Brand Tokens: Commito --- */
+  --brand-commito-coral: #e05638;
+  --brand-commito-coral-hover: #f06344;
+  --brand-commito-active-bg: #382221;
+  --brand-commito-active-text: #f5a494;
+  --brand-commito-green: #22c55e;
+  --brand-commito-card: #1e1c21;
+
+  /* --- Brand Tokens: GitLab --- */
+  --brand-gitlab-orange: #e05638;
+  --brand-gitlab-purple: #7b58cf;
+  --brand-gitlab-purple-light: #3a2d6b;
+  --brand-gitlab-teal: #22c55e;
+  --brand-gitlab-blue: #1f75cb;
+  --provider-gitlab: #e24329;
+
+  /* --- Brand Tokens: GitHub --- */
+  --brand-github-dark-bg: #171719;
+  --brand-github-dark-sidebar: #1f1e24;
+  --brand-github-dark-header: #28272d;
+  --brand-github-dark-border: #36353d;
+  --brand-github-dark-hover: #33323a;
+  --brand-github-dark-accent: #1f75cb;
+  --brand-github-dark-success: #108548;
+  --brand-github-dark-danger: #dd2b0e;
+  --brand-github-dark-warning: #c17d10;
+  --brand-github-dark-text: #e1e0e5;
+  --brand-github-dark-heading: #ffffff;
+  --provider-github: #2da44e;
+
+  /* --- Terminal Canvas & Text --- */
+  --terminal-bg: #121113;
+  --terminal-fg: #e6e4e8;
+  --terminal-cursor: #e05638;
+  --terminal-selection: #382221;
+
+  /* Terminal 8 Standard ANSI Colors */
+  --terminal-ansi-black: #171619;
+  --terminal-ansi-red: #f87171;
+  --terminal-ansi-green: #4ade80;
+  --terminal-ansi-yellow: #facc15;
+  --terminal-ansi-blue: #60a5fa;
+  --terminal-ansi-magenta: #c084fc;
+  --terminal-ansi-cyan: #38bdf8;
+  --terminal-ansi-white: #e6e4e8;
+
+  /* Terminal 8 Bright ANSI Colors */
+  --terminal-ansi-bright-black: #85818c;
+  --terminal-ansi-bright-red: #fca5a5;
+  --terminal-ansi-bright-green: #86efac;
+  --terminal-ansi-bright-yellow: #fde047;
+  --terminal-ansi-bright-blue: #93c5fd;
+  --terminal-ansi-bright-magenta: #d8b4fe;
+  --terminal-ansi-bright-cyan: #7dd3fc;
+  --terminal-ansi-bright-white: #ffffff;
+
+  /* App Log Level Colors (Terminal streaming logger) */
+  --log-debug: #85818c;
+  --log-info: #38bdf8;
+  --log-success: #4ade80;
+  --log-warn: #facc15;
+  --log-error: #f87171;
+
+  /* --- Typography Tokens --- */
+  --app-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-size: 13px;
+  --app-font-size-sm: 11px;
+  --app-font-size-lg: 15px;
+  --app-font-weight-normal: 400;
+  --app-font-weight-medium: 500;
+  --app-font-weight-bold: 600;
+  --app-line-height: 1.5;
+  --terminal-font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+  --terminal-font-size: 13px;
+
+  /* --- Spacing, Radii & Dimensions --- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+  --app-radius-sm: var(--radius-sm);
+  --app-radius-md: var(--radius-md);
+  --app-radius-lg: var(--radius-lg);
+  --app-radius-xl: var(--radius-xl);
+  --app-spacing-unit: 4px;
+  --app-sidebar-width: 260px;
+  --app-row-height: 38px;
+
+  /* --- Shadows & Overlays --- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 20px 40px 0 rgba(0, 0, 0, 0.7);
+  --shadow-popover: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 10px 30px 0 rgba(0, 0, 0, 0.7);
+  --shadow-command-palette: 0 16px 40px 0 rgba(0, 0, 0, 0.75);
+
+  --app-shadow-sm: var(--shadow-sm);
+  --app-shadow-md: var(--shadow-md);
+  --app-shadow-lg: var(--shadow-lg);
+
+  /* --- Motion & Transitions --- */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  --app-transition-fast: var(--duration-fast);
+  --app-transition-normal: var(--duration-normal);
+
+  /* --- Density Mode --- */
+  --app-density: comfortable;
+
+  /* --- Scrollbar Tokens --- */
+  --scrollbar-thumb: #36353d;
+  --scrollbar-thumb-hover: #46454e;
+  --scrollbar-track: transparent;
+}
+
+/* ==========================================================================
+   Pure CSS Theme Presets ([data-theme="..."])
+   ========================================================================== */
+[data-theme="commito-dark"],
+[data-theme="dark"] {
+  --surface: #171619;
+  --surface-subtle: #121113;
+  --surface-elevated: #201e22;
+  --surface-hover: #2b292f;
+  --surface-active: #382221;
+  --border: #29272b;
+  --border-subtle: #201e22;
+  --border-strong: #3d3a42;
+  --text: #e6e4e8;
+  --text-subtle: #b3b0b8;
+  --text-muted: #85818c;
+  --text-faint: #5c5863;
+  --accent: #e05638;
+  --accent-hover: #f06344;
+  --scrollbar-thumb: #36353d;
+  --scrollbar-thumb-hover: #46454e;
+  --terminal-bg: #121113;
+  --terminal-fg: #e6e4e8;
+}
+
+[data-theme="oled-dark"],
+[data-theme="oled"] {
+  --surface: #0a0a0a;
+  --surface-subtle: #000000;
+  --surface-elevated: #141414;
+  --surface-hover: #1f1f1f;
+  --surface-active: #2d1a19;
+  --border: #202020;
+  --border-subtle: #141414;
+  --border-strong: #333333;
+  --text: #f0f0f0;
+  --text-subtle: #b0b0b0;
+  --text-muted: #787878;
+  --text-faint: #505050;
+  --accent: #e05638;
+  --accent-hover: #f06344;
+  --scrollbar-thumb: #282828;
+  --scrollbar-thumb-hover: #383838;
+  --terminal-bg: #000000;
+  --terminal-fg: #f0f0f0;
+}
+
+[data-theme="commito-light"],
+[data-theme="light"] {
+  --surface: #ffffff;
+  --surface-subtle: #f6f8fa;
+  --surface-elevated: #ffffff;
+  --surface-hover: #f1f3f5;
+  --surface-active: #faebe7;
+  --border: #d0d7de;
+  --border-subtle: #e1e4e8;
+  --border-strong: #afb8c1;
+  --text: #1f2328;
+  --text-subtle: #4b5563;
+  --text-muted: #6e7781;
+  --text-faint: #8c959f;
+  --accent: #e05638;
+  --accent-hover: #cf4325;
+  --scrollbar-thumb: #c1c9d2;
+  --scrollbar-thumb-hover: #a0abb6;
+  --scrollbar-track: #f6f8fa;
+  --terminal-bg: #1e1e24;
+  --terminal-fg: #e6e4e8;
+}
+
+[data-theme="github-dark"] {
+  --surface: #0d1117;
+  --surface-subtle: #010409;
+  --surface-elevated: #161b22;
+  --surface-hover: #21262d;
+  --surface-active: #1f2c3f;
+  --border: #30363d;
+  --border-subtle: #21262d;
+  --border-strong: #484f58;
+  --text: #e6edf3;
+  --text-subtle: #8d96a0;
+  --text-muted: #7d8590;
+  --text-faint: #656c76;
+  --accent: #1f75cb;
+  --accent-hover: #388bfd;
+  --scrollbar-thumb: #30363d;
+  --scrollbar-thumb-hover: #484f58;
+  --terminal-bg: #0d1117;
+  --terminal-fg: #e6edf3;
+}
+
+[data-theme="gitlab-dark"] {
+  --surface: #18171d;
+  --surface-subtle: #111015;
+  --surface-elevated: #222129;
+  --surface-hover: #2d2b37;
+  --surface-active: #3e2825;
+  --border: #2e2b3b;
+  --border-subtle: #222129;
+  --border-strong: #444055;
+  --text: #ececef;
+  --text-subtle: #a2a0ab;
+  --text-muted: #797687;
+  --text-faint: #585565;
+  --accent: #e24329;
+  --accent-hover: #fc6d26;
+  --scrollbar-thumb: #363345;
+  --scrollbar-thumb-hover: #4c4860;
+  --terminal-bg: #111015;
+  --terminal-fg: #ececef;
+}
+
+/* ==========================================================================
+   3. Tailwind v4 Token Bridge
+   Binds runtime CSS custom properties into Tailwind utility classes.
+   ========================================================================== */
+@theme {
+  /* Unified Semantic Surfaces & Backgrounds */
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+
+  /* Legacy base-* classes */
+  --color-base-0: var(--app-bg-secondary);
+  --color-base-1: var(--app-bg-primary);
+  --color-base-2: var(--app-bg-elevated);
+  --color-base-3: var(--app-surface-hover);
+
+  /* Unified Semantic Borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  /* Unified Semantic Text */
+  --color-text: var(--text);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-text-onAccent: var(--text-on-accent);
+
+  /* Legacy text-* classes */
+  --color-text-primary: var(--app-text-primary);
+  --color-text-secondary: var(--app-text-secondary);
+
+  /* Unified Semantic Accent & Status */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-muted: var(--accent-muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-error: var(--danger);
+  --color-info: var(--info);
+
+  /* Diff Specific */
+  --color-diff-add-bg: var(--diff-add-bg);
+  --color-diff-add-text: var(--diff-add-text);
+  --color-diff-remove-bg: var(--diff-remove-bg);
+  --color-diff-remove-text: var(--diff-remove-text);
+  --color-diff-modified-bg: var(--diff-modified-bg);
+  --color-diff-highlight: var(--diff-highlight);
+
+  /* Git Diff & Status */
+  --color-git-branch: var(--git-branch);
+  --color-git-tag: var(--git-tag);
+  --color-git-remote: var(--git-remote);
+  --color-git-local: var(--git-local);
+  --color-git-added: var(--git-added);
+  --color-git-modified: var(--git-modified);
+  --color-git-deleted: var(--git-deleted);
+  --color-git-removed: var(--git-removed);
+  --color-git-renamed: var(--git-renamed);
+  --color-git-conflict: var(--git-conflict);
+  --color-git-ahead: var(--git-ahead);
+  --color-git-behind: var(--git-behind);
+  --color-git-clean: var(--git-clean);
+  --color-git-dirty: var(--git-dirty);
+  --color-git-added-bg: var(--git-added-bg);
+  --color-git-removed-bg: var(--git-removed-bg);
+  --color-git-modified-bg: var(--git-modified-bg);
+  --color-git-conflict-bg: var(--git-conflict-bg);
+
+  /* Commito Brand */
+  --color-commito-coral: var(--brand-commito-coral);
+  --color-commito-coral-hover: var(--brand-commito-coral-hover);
+  --color-commito-coralHover: var(--brand-commito-coral-hover);
+  --color-commito-coral-light: var(--brand-commito-coral-hover);
+  --color-commito-coralLight: var(--brand-commito-coral-hover);
+  --color-commito-active-bg: var(--brand-commito-active-bg);
+  --color-commito-activeBg: var(--brand-commito-active-bg);
+  --color-commito-active-text: var(--brand-commito-active-text);
+  --color-commito-activeText: var(--brand-commito-active-text);
+  --color-commito-green: var(--brand-commito-green);
+  --color-commito-card: var(--brand-commito-card);
+
+  /* GitLab Brand */
+  --color-gitlab-orange: var(--brand-gitlab-orange);
+  --color-gitlab-purple: var(--brand-gitlab-purple);
+  --color-gitlab-purple-light: var(--brand-gitlab-purple-light);
+  --color-gitlab-purpleLight: var(--brand-gitlab-purple-light);
+  --color-gitlab-teal: var(--brand-gitlab-teal);
+  --color-gitlab-blue: var(--brand-gitlab-blue);
+
+  /* GitHub Brand */
+  --color-github-dark-bg: var(--brand-github-dark-bg);
+  --color-github-dark-sidebar: var(--brand-github-dark-sidebar);
+  --color-github-dark-header: var(--brand-github-dark-header);
+  --color-github-dark-border: var(--brand-github-dark-border);
+  --color-github-dark-hover: var(--brand-github-dark-hover);
+  --color-github-dark-accent: var(--brand-github-dark-accent);
+  --color-github-dark-success: var(--brand-github-dark-success);
+  --color-github-dark-danger: var(--brand-github-dark-danger);
+  --color-github-dark-warning: var(--brand-github-dark-warning);
+  --color-github-dark-text: var(--brand-github-dark-text);
+  --color-github-dark-heading: var(--brand-github-dark-heading);
+
+  /* Typography */
+  --font-sans: var(--app-font-family);
+  --font-mono: var(--terminal-font-family);
+
+  /* Radii */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-dialog: var(--shadow-dialog);
+  --shadow-command-palette: var(--shadow-command-palette);
+}
+
+/* ==========================================================================
+   4. Base / Global Styles
+   ========================================================================== */
+@layer base {
+  body {
+    @apply bg-base-0 text-text-primary antialiased font-sans select-none overflow-hidden text-[13px];
+  }
+
+  /* Fix: Tauri WebView applies dark system :active style to buttons without bg. */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: transparent;
+  }
+
+  button:active {
+    background-color: inherit;
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+  }
+
+  ::selection {
+    background-color: var(--accent-muted);
+    color: var(--text);
+  }
+}
+
+/* ==========================================================================
+   5. Desktop / Tauri Window Behavior
+   ========================================================================== */
+.titlebar-drag {
+  -webkit-app-region: drag;
+}
+
+.titlebar-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ==========================================================================
+   6. Scrollbars
+   ========================================================================== */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  width: 6px;
+  height: 6px;
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-resizer {
+  background: transparent;
+}
+
+/* ==========================================================================
+   7. Global Animations
+   ========================================================================== */
+@keyframes progress-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60% {
+    transform: translateX(250%);
+  }
+
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+/* ==========================================================================
+   8. Application-Specific Global Utilities
+   ========================================================================== */
+.terminal-panel-container {
+  background-color: var(--app-bg-primary);
+}

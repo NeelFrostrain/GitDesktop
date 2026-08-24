@@ -98,6 +98,8 @@ export interface GitState {
   blameLines: BlameLine[];
   selectedFile: string | null;
   stagedFiles: string[];
+  hasInitializedStaging: boolean;
+  statusVersion: number;
   selectedCommitSha: string | null;
   commitSummary: string;
   commitDescription: string;
@@ -208,6 +210,8 @@ export const useGitStore = create<GitState>((set, get) => ({
   blameLines: [],
   selectedFile: null,
   stagedFiles: [],
+  hasInitializedStaging: false,
+  statusVersion: 0,
   selectedCommitSha: null,
   commitSummary: '',
   commitDescription: '',
@@ -266,6 +270,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       selectedFile: null,
       selectedCommitSha: null,
       stagedFiles: [],
+      hasInitializedStaging: false,
       currentNavView: path ? 'workspace' : 'home',
     });
   },
@@ -336,8 +341,62 @@ export const useGitStore = create<GitState>((set, get) => ({
   setAccounts: (accounts) => set({ accounts }),
 
   setStatus: (status) => {
-    const currentStaged = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
-    set({ status, stagedFiles: currentStaged });
+    const prevStatus = get().status;
+    const { stagedFiles: currentStaged, hasInitializedStaging } = get();
+
+    // Fast check: if status hasn't changed at all and staging is already initialized, skip redundant store update
+    if (hasInitializedStaging && prevStatus && status) {
+      const isSame =
+        prevStatus.current_branch === status.current_branch &&
+        prevStatus.ahead === status.ahead &&
+        prevStatus.behind === status.behind &&
+        prevStatus.is_clean === status.is_clean &&
+        prevStatus.has_conflicts === status.has_conflicts &&
+        prevStatus.files.length === status.files.length &&
+        prevStatus.files.every((f, i) => {
+          const f2 = status.files[i];
+          return f2 && f.path === f2.path && f.status === f2.status && f.staged === f2.staged;
+        });
+
+      if (isSame) return;
+    }
+
+    const allFilePaths = status ? status.files.map((f) => f.path) : [];
+
+    let nextStaged: string[];
+    if (!hasInitializedStaging) {
+      // First status load for newly opened repo: default-select all files
+      nextStaged = allFilePaths;
+    } else {
+      // Preserve whatever the user has selected, drop files that no longer exist,
+      // and add any files that became git-staged externally (e.g. git add in terminal)
+      const gitStagedPaths = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
+      const stillExist = new Set(allFilePaths);
+      nextStaged = [
+        ...new Set([
+          ...currentStaged.filter((p) => stillExist.has(p)),
+          ...gitStagedPaths,
+        ]),
+      ];
+    }
+
+    const currentSelected = get().selectedFile;
+    let nextSelected = currentSelected;
+    if (currentSelected && !allFilePaths.includes(currentSelected)) {
+      nextSelected = allFilePaths.length > 0 ? allFilePaths[0] : null;
+    } else if (!currentSelected && allFilePaths.length > 0) {
+      nextSelected = allFilePaths[0];
+    } else if (allFilePaths.length === 0) {
+      nextSelected = null;
+    }
+
+    set((state) => ({
+      status,
+      stagedFiles: nextStaged,
+      selectedFile: nextSelected,
+      hasInitializedStaging: true,
+      statusVersion: state.statusVersion + 1,
+    }));
   },
 
   setBranches: (branches) => set({ branches }),
@@ -363,7 +422,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     const isStaged = stagedFiles.includes(file);
     if (isStaged) {
       useLogStore.getState().addLog('info', 'Git', `Unstaged file '${file}'`);
-      set({ stagedFiles: stagedFiles.filter((f) => f !== file) });
+      set({ stagedFiles: stagedFiles.filter((f) => f !== file), hasInitializedStaging: true });
       if (activeRepoPath) {
         try {
           await GitService.unstageFiles(activeRepoPath, [file]);
@@ -375,7 +434,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       }
     } else {
       useLogStore.getState().addLog('info', 'Git', `Staged file '${file}'`);
-      set({ stagedFiles: [...stagedFiles, file] });
+      set({ stagedFiles: [...stagedFiles, file], hasInitializedStaging: true });
       if (activeRepoPath) {
         try {
           await GitService.stageFiles(activeRepoPath, [file]);
@@ -394,7 +453,7 @@ export const useGitStore = create<GitState>((set, get) => ({
 
     if (staged) {
       useLogStore.getState().addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
-      set({ stagedFiles: status.files.map((f) => f.path) });
+      set({ stagedFiles: status.files.map((f) => f.path), hasInitializedStaging: true });
       if (activeRepoPath) {
         try {
           await GitService.stageFiles(activeRepoPath, []);
@@ -407,7 +466,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     } else {
       useLogStore.getState().addLog('info', 'Git', 'Unstaged all files');
       const allPaths = status.files.map((f) => f.path);
-      set({ stagedFiles: [] });
+      set({ stagedFiles: [], hasInitializedStaging: true });
       if (activeRepoPath) {
         try {
           await GitService.unstageFiles(activeRepoPath, allPaths);

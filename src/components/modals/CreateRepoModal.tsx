@@ -100,11 +100,11 @@ export const CreateRepoModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none">
-      <div className="bg-base-0 border border-border rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-0 border border-border rounded-sm shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="h-12 bg-base-2 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-commito-coral/15 border border-commito-coral/30 rounded-md text-commito-coral">
+            <div className="p-1.5 bg-commito-coral/15 border border-commito-coral/30 rounded-sm text-commito-coral">
               <FolderGit2 className="w-4 h-4" />
             </div>
             <h2 className="text-sm font-bold text-text-primary">
@@ -114,7 +114,7 @@ export const CreateRepoModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsCreateRepoModalOpen(false)}
-            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -134,7 +134,7 @@ export const CreateRepoModal: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="repository name"
-                className="w-full px-3 py-2 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral font-medium"
+                className="w-full px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral font-medium"
                 autoFocus
               />
             </div>
@@ -150,12 +150,12 @@ export const CreateRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 px-3 py-2 bg-base-0 border border-border rounded-md text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                  className="flex-1 px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
                 />
                 <button
                   type="button"
                   onClick={handleSelectParentFolder}
-                  className="px-3.5 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition flex items-center gap-1.5 cursor-pointer flex-shrink-0"
+                  className="px-3.5 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary transition flex items-center gap-1.5 cursor-pointer flex-shrink-0"
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
                   <span>Choose...</span>
@@ -176,7 +176,7 @@ export const CreateRepoModal: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief description of your project"
-                className="w-full px-3 py-2 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
+                className="w-full px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
               />
             </div>
 
@@ -221,14 +221,14 @@ export const CreateRepoModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateRepoModalOpen(false)}
-              className="px-4 py-2 bg-base-3 hover:bg-base-2 border border-border rounded-md text-xs font-semibold text-text-muted hover:text-text-primary transition cursor-pointer"
+              className="px-4 py-2 bg-base-3 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-muted hover:text-text-primary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isCreating || !name.trim()}
-              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-4 py-2 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>{isCreating ? 'Creating Repository...' : 'Create Repository'}</span>

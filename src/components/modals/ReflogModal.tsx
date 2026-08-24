@@ -73,11 +73,11 @@ export const ReflogModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-git-added-bg border border-git-added/40 text-git-added flex items-center justify-center">
               <History className="w-4 h-4" />
             </div>
             <div>
@@ -91,7 +91,7 @@ export const ReflogModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsReflogModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -112,7 +112,7 @@ export const ReflogModal: React.FC = () => {
             reflogEntries.map((entry) => (
               <div
                 key={entry.index + entry.sha}
-                className="p-3.5 bg-base-2 border border-border rounded-md flex items-center justify-between hover:border-text-muted transition"
+                className="p-3.5 bg-base-2 border border-border rounded-sm flex items-center justify-between hover:border-text-muted transition"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                   <span className="px-2 py-0.5 bg-base-3 border border-border rounded font-mono text-[10px] text-commito-coral font-bold flex-shrink-0">
@@ -137,7 +137,7 @@ export const ReflogModal: React.FC = () => {
                 <button
                   onClick={() => handleRestoreTarget(entry.sha)}
                   disabled={isSubmitting}
-                  className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs flex-shrink-0 cursor-pointer disabled:opacity-50"
+                  className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs flex-shrink-0 cursor-pointer disabled:opacity-50"
                   title={`Restore HEAD to ${entry.sha.slice(0, 7)}`}
                 >
                   <RotateCcw className="w-3.5 h-3.5" />

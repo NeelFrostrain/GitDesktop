@@ -17,7 +17,7 @@ export const SettingsSearchBar: React.FC<SettingsSearchBarProps> = ({ matchCount
         placeholder="Search all settings by name, description, category or CSS variable (e.g. font, accent, diff)..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full pl-9 pr-16 py-1.5 bg-base-2 border border-border rounded-md text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-commito-coral transition"
+        className="w-full pl-9 pr-16 py-1.5 bg-base-2 border border-border rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-commito-coral transition"
       />
 
       {searchQuery && (

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Check } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';
@@ -66,15 +67,20 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   if (filteredFiles.length === 0) {
     return (
-      <div className="p-6 text-center text-xs text-text-muted italic">
-        No changed files found
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150 text-text-faint">
+        <div className="w-7 h-7 rounded-sm bg-base-1 border border-border flex items-center justify-center mb-2">
+          <Check className="w-3.5 h-3.5 text-git-added/70 stroke-[2.5]" />
+        </div>
+        <p className="text-[11px] font-medium text-text-muted">
+          {filter ? `No files matching "${filter}"` : 'No uncommitted changes'}
+        </p>
       </div>
     );
   }
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
         {filteredFiles.map((file) => {
           const isStaged = stagedFiles.includes(file.path);
           const isSelected = selectedFile === file.path;
@@ -89,15 +95,15 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
                 setSelectedFile(file.path);
                 setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
               }}
-              className={`flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md text-xs cursor-pointer transition ${
+              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 ${
                 isSelected
-                  ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-activeText/20'
-                  : 'hover:bg-base-2 text-text-secondary'
+                  ? 'bg-base-2 text-text-primary font-medium border border-border-strong shadow-xs'
+                  : 'hover:bg-base-2/60 text-text-secondary border border-transparent'
               }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
               {getStatusBadge(file.status)}
-              <span className="truncate flex-1 font-mono text-[11px]">{file.path}</span>
+              <span className="truncate flex-1 font-mono text-[11px] text-text-primary">{file.path}</span>
             </div>
           );
         })}

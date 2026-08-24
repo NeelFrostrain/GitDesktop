@@ -111,7 +111,7 @@ export const FileBrowser: React.FC = () => {
               <div
                 key={node.path}
                 onClick={() => handleSelectFile(node)}
-                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md cursor-pointer transition ${
+                className={`flex items-center justify-between px-2.5 py-1.5 rounded-sm cursor-pointer transition ${
                   isSelected
                     ? 'bg-commito-activeBg text-commito-activeText font-semibold'
                     : 'text-text-primary hover:bg-base-2'

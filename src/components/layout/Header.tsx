@@ -68,7 +68,7 @@ export const Header: React.FC = () => {
         <button
           onClick={refreshSync}
           disabled={isFetching || !activeRepoPath}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
           title="Refresh Repository Status"
         >
           <RefreshCw className={`w-3.5 h-3.5 text-commito-coral ${isFetching ? 'animate-spin' : ''}`} />
@@ -79,7 +79,7 @@ export const Header: React.FC = () => {
             {/* Remote Manager */}
             <button
               onClick={() => useAccountServicesStore.getState().openModalWithTab('remotes')}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Manage Git Remotes"
             >
               <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
@@ -88,9 +88,9 @@ export const Header: React.FC = () => {
             {/* Commit Signing Settings */}
             <button
               onClick={() => setIsSigningSettingsOpen(true)}
-              className={`p-1 rounded-md border border-border transition cursor-pointer ${
+              className={`p-1 rounded-sm border border-border transition cursor-pointer ${
                 config?.enabled
-                  ? 'text-emerald-400 bg-emerald-950/30 border-emerald-800/40 hover:bg-emerald-900/40'
+                  ? 'text-git-added bg-git-added-bg border-git-added/40 hover:bg-git-added-bg/80'
                   : 'text-text-muted hover:text-text-primary hover:bg-base-2'
               }`}
               title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
@@ -101,7 +101,7 @@ export const Header: React.FC = () => {
             {/* Rebase Tool */}
             <button
               onClick={() => setIsRebaseModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Interactive Rebase"
             >
               <RotateCcw className="w-3.5 h-3.5 text-text-muted hover:text-commito-coral" />
@@ -110,16 +110,16 @@ export const Header: React.FC = () => {
             {/* Cherry Pick Tool */}
             <button
               onClick={() => setIsCherryPickModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Cherry-Pick Commits"
             >
-              <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
+              <GitCommit className="w-3.5 h-3.5 text-git-added" />
             </button>
 
             {/* Reflog Tool */}
             <button
               onClick={() => setIsReflogModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Reflog Safety Net"
             >
               <History className="w-3.5 h-3.5 text-gitlab-teal" />
@@ -128,16 +128,16 @@ export const Header: React.FC = () => {
             {/* Patch Studio */}
             <button
               onClick={() => setIsPatchModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Export / Apply Patch"
             >
-              <FileCode className="w-3.5 h-3.5 text-amber-400" />
+              <FileCode className="w-3.5 h-3.5 text-git-modified" />
             </button>
 
             {/* Repository Terminal */}
             <button
               onClick={() => useTerminalStore.getState().toggleIsOpen()}
-              className={`p-1 rounded-md border transition cursor-pointer ${
+              className={`p-1 rounded-sm border transition cursor-pointer ${
                 isTerminalOpen
                   ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
                   : 'text-text-muted hover:text-text-primary hover:bg-base-2 border-border'
@@ -152,7 +152,7 @@ export const Header: React.FC = () => {
         {/* Settings & Design Tokens */}
         <button
           onClick={() => useSettingsStore.getState().openSettings()}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
           title="Open Settings & CSS Design Tokens (Ctrl+,)"
         >
           <Settings className="w-3.5 h-3.5 text-text-secondary" />
@@ -163,12 +163,12 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-2">
         {error && !error.message?.includes('No remote configured') && !error.message?.includes('Not authenticated') && (
           <div
-            className="flex items-center gap-1 text-[11px] text-red-300 bg-red-950/60 border border-red-800/60 px-2 py-0.5 rounded-md max-w-xs truncate"
+            className="flex items-center gap-1 text-[11px] text-git-removed bg-git-removed-bg border border-git-removed/40 px-2 py-0.5 rounded-sm max-w-xs truncate"
             title={error.message}
           >
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
-            <button onClick={() => setError(null)} className="ml-1 text-red-400 hover:text-white cursor-pointer">
+            <button onClick={() => setError(null)} className="ml-1 text-git-removed hover:text-danger cursor-pointer">
               <X className="w-3 h-3" />
             </button>
           </div>
@@ -178,7 +178,7 @@ export const Header: React.FC = () => {
           <>
             {/* Remote Selector Dropdown (when 2+ remotes exist) */}
             {remotes.length > 1 && (
-              <div className="flex items-center gap-1 bg-base-2 border border-border rounded-md px-2 py-1 text-xs text-text-secondary">
+              <div className="flex items-center gap-1 bg-base-2 border border-border rounded-sm px-2 py-1 text-xs text-text-secondary">
                 <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
                 <select
                   value={activeRemote}
@@ -203,7 +203,7 @@ export const Header: React.FC = () => {
             {/* PR / Merge Button */}
             <button
               onClick={() => setIsMergeRequestModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
               title="Create Merge / Pull Request"
             >
               <GitPullRequest className="w-4 h-4 text-commito-coral" />

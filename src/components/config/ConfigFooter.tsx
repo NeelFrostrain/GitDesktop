@@ -17,14 +17,14 @@ export const ConfigFooter: React.FC<ConfigFooterProps> = ({
       <button
         type="button"
         onClick={onClose}
-        className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
+        className="px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
       >
         Cancel
       </button>
       <button
         type="submit"
         disabled={!isValid || isSubmitting}
-        className={`px-4 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
+        className={`px-4 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-sm ${
           isValid && !isSubmitting
             ? 'bg-commito-coral hover:bg-commito-coralHover text-white cursor-pointer'
             : 'bg-base-2 text-text-muted border border-border cursor-not-allowed'

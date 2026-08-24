@@ -140,6 +140,18 @@ pub fn commit_changes(
         Err(_) => None,
     };
 
+    if !is_allow_empty {
+        if let Some(ref parent) = parent_commit {
+            if let Ok(parent_tree) = parent.tree() {
+                if parent_tree.id() == tree.id() {
+                    return Err(AppError::Validation(
+                        "No staged changes to commit. Please stage changes first.".to_string(),
+                    ));
+                }
+            }
+        }
+    }
+
     let mut parents = Vec::new();
     if let Some(ref parent) = parent_commit {
         parents.push(parent);

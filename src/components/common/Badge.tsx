@@ -14,12 +14,12 @@ export const Badge: React.FC<BadgeProps> = ({
   className = '',
 }) => {
   const variantStyles = {
-    success: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-    error: 'bg-red-500/15 text-red-400 border-red-500/30',
-    warning: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-    info: 'bg-blue-500/15 text-blue-400 border-blue-500/30',
+    success: 'bg-git-added-bg text-git-added border-git-added/30',
+    error: 'bg-git-removed-bg text-git-removed border-git-removed/30',
+    warning: 'bg-git-modified-bg text-git-modified border-git-modified/30',
+    info: 'bg-info/15 text-info border-info/30',
     neutral: 'bg-base-3 text-text-muted border-border',
-    accent: 'bg-commito-coral/20 text-commito-coral border-commito-coral/40',
+    accent: 'bg-accent/20 text-accent border-accent/40',
   };
 
   return (

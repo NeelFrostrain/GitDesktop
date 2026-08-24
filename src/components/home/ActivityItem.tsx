@@ -57,20 +57,20 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
       case 'Pipeline':
         if (event.kind.status === 'success') {
           return (
-            <div className="w-6 h-6 rounded-full bg-emerald-950/40 text-emerald-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 rounded-full bg-git-added-bg text-git-added flex items-center justify-center flex-shrink-0">
               <CheckCircle className="w-3.5 h-3.5" />
             </div>
           );
         }
         if (event.kind.status === 'failed') {
           return (
-            <div className="w-6 h-6 rounded-full bg-red-950/40 text-red-400 flex items-center justify-center flex-shrink-0">
+            <div className="w-6 h-6 rounded-full bg-git-removed-bg text-git-removed flex items-center justify-center flex-shrink-0">
               <XCircle className="w-3.5 h-3.5" />
             </div>
           );
         }
         return (
-          <div className="w-6 h-6 rounded-full bg-amber-950/40 text-amber-400 flex items-center justify-center flex-shrink-0">
+          <div className="w-6 h-6 rounded-full bg-git-modified-bg text-git-modified flex items-center justify-center flex-shrink-0">
             <PlayCircle className="w-3.5 h-3.5" />
           </div>
         );
@@ -119,12 +119,13 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
                 {event.kind.title}
               </span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${event.kind.state === 'merged'
-                    ? 'bg-purple-950/60 text-purple-300 border border-purple-800/60'
+                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${
+                  event.kind.state === 'merged'
+                    ? 'bg-git-tag/20 text-git-tag border border-git-tag/40'
                     : event.kind.state === 'closed'
-                      ? 'bg-red-950/60 text-red-300 border border-red-800/60'
-                      : 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
-                  }`}
+                      ? 'bg-git-removed-bg text-git-removed border border-git-removed/40'
+                      : 'bg-git-added-bg text-git-added border border-git-added/40'
+                }`}
               >
                 {event.kind.state}
               </span>
@@ -145,12 +146,13 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
               <span>Pipeline on</span>
               <span className="font-mono text-commito-coral font-bold">{event.kind.branch}</span>
               <span
-                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${event.kind.status === 'success'
-                    ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-800/60'
+                className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase flex-shrink-0 ${
+                  event.kind.status === 'success'
+                    ? 'bg-git-added-bg text-git-added border border-git-added/40'
                     : event.kind.status === 'failed'
-                      ? 'bg-red-950/60 text-red-300 border border-red-800/60'
-                      : 'bg-amber-950/60 text-amber-300 border border-amber-800/60'
-                  }`}
+                      ? 'bg-git-removed-bg text-git-removed border border-git-removed/40'
+                      : 'bg-git-modified-bg text-git-modified border border-git-modified/40'
+                }`}
               >
                 {event.kind.status}
               </span>
@@ -167,7 +169,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
   return (
     <div
       onClick={handleItemClick}
-      className="p-2.5 rounded-md bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
+      className="p-2.5 rounded-sm bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
     >
       {renderIconAndBadge()}
       {renderContent()}

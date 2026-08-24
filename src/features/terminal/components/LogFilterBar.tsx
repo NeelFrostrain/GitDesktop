@@ -75,7 +75,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
             placeholder="Search logs by message or metadata..."
             value={filter.search || ''}
             onChange={(e) => onChange({ search: e.target.value })}
-            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
           />
           {filter.search && (
             <button
@@ -91,7 +91,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
         {activeRepoId && (
           <button
             onClick={() => onChange({ this_repo_only: !filter.this_repo_only })}
-            className={`px-2.5 py-1 rounded-md border text-xs flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-sm border text-xs flex items-center gap-1.5 transition cursor-pointer ${
               filter.this_repo_only
                 ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-medium'
                 : 'bg-base-2 border-border text-text-muted hover:text-text-primary'
@@ -109,7 +109,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
 
         <button
           onClick={onExport}
-          className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-primary flex items-center gap-1.5 transition cursor-pointer"
+          className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-text-primary flex items-center gap-1.5 transition cursor-pointer"
           title="Export logs to file"
         >
           <Download className="w-3.5 h-3.5 text-text-muted" />
@@ -118,7 +118,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
 
         <button
           onClick={onClear}
-          className="px-2.5 py-1 bg-base-2 hover:bg-red-500/15 hover:border-red-500/30 border border-border rounded-md text-text-muted hover:text-red-400 flex items-center gap-1.5 transition cursor-pointer"
+          className="px-2.5 py-1 bg-base-2 hover:bg-git-removed-bg hover:border-git-removed/40 border border-border rounded-sm text-text-muted hover:text-git-removed flex items-center gap-1.5 transition cursor-pointer"
           title="Clear log store"
         >
           <Trash2 className="w-3.5 h-3.5" />

@@ -2,60 +2,117 @@ import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { useSettingsStore } from '../../../features/settings/store/useSettingsStore';
+import { GitService } from '../../../services/git/gitService';
+import { toAppError } from '../../../shared/utils/errorUtils';
 
 interface AiGenerateButtonProps {
-  onGenerate: (summary: string, description: string) => void;
+  onAiGenerated: (titleOptions: string[], report: string, model: string) => void;
+  onRequireApiKey: () => void;
 }
 
-export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({ onGenerate }) => {
+export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
+  onAiGenerated,
+  onRequireApiKey,
+}) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { status, stagedFiles } = useGitStore();
+  const { activeRepoPath, stagedFiles } = useGitStore();
+  const { getEffectiveValue } = useSettingsStore();
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    useLogStore.getState().addLog('info', 'Git', 'Generating commit message with AI...');
+  const getAnyAvailableKey = (): string | undefined => {
+    const activeKey = getEffectiveValue('ai.active_api_key');
+    if (activeKey && String(activeKey).trim()) {
+      return String(activeKey).trim();
+    }
 
+    const rawKeys = getEffectiveValue('ai.groq_api_keys');
+    if (Array.isArray(rawKeys) && rawKeys.length > 0) {
+      const first = String(rawKeys[0]).trim();
+      if (first) return first;
+    } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
+      try {
+        const parsed = JSON.parse(rawKeys);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const first = String(parsed[0]).trim();
+          if (first) return first;
+        }
+      } catch {
+        return rawKeys.trim();
+      }
+    }
 
-    await new Promise((res) => setTimeout(res, 350));
+    return undefined;
+  };
 
-    const filesToAnalyze = stagedFiles.length > 0
-      ? stagedFiles
-      : (status?.files.map((f) => f.path) || []);
+  const handleButtonClick = async () => {
+    if (!activeRepoPath) return;
 
-    if (filesToAnalyze.length === 0) {
-      onGenerate('chore: update project configuration', 'No file changes detected.');
-      setIsGenerating(false);
+    const availableKey = getAnyAvailableKey();
+    if (!availableKey) {
+      onRequireApiKey();
       return;
     }
 
-    const firstFew = filesToAnalyze.slice(0, 2).map((p) => p.split(/[/\\]/).pop()).join(', ');
-    const countExtra = filesToAnalyze.length > 2 ? `, +${filesToAnalyze.length - 2} more` : '';
+    setIsGenerating(true);
+    useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Analyzing code changes with AI...');
 
-    let prefix = 'feat';
-    if (filesToAnalyze.some((f) => f.includes('test') || f.includes('spec'))) prefix = 'test';
-    else if (filesToAnalyze.some((f) => f.endsWith('.md') || f.endsWith('.txt'))) prefix = 'docs';
-    else if (filesToAnalyze.some((f) => f.includes('config') || f.includes('Cargo') || f.includes('package'))) prefix = 'chore';
-    else if (filesToAnalyze.some((f) => f.includes('fix') || f.includes('bug'))) prefix = 'fix';
+    try {
+      const model = getEffectiveValue('ai.model') || undefined;
 
-    const generatedSummary = `${prefix}: update ${firstFew}${countExtra}`;
-    const generatedDesc = `Updated ${filesToAnalyze.length} file(s):\n${filesToAnalyze.map((f) => `- ${f}`).join('\n')}`;
+      const res = await GitService.generateAiCommitMessage(
+        activeRepoPath,
+        stagedFiles.length > 0,
+        availableKey,
+        model
+      );
 
-    onGenerate(generatedSummary, generatedDesc);
-    useLogStore.getState().addLog('success', 'Git', `Generated commit message: "${generatedSummary}"`);
+      const options =
+        res.title_options && res.title_options.length > 0
+          ? res.title_options
+          : [res.summary];
 
-    setIsGenerating(false);
+      onAiGenerated(options, res.report, res.model_used);
+
+      useLogStore
+        .getState()
+        .addLog(
+          'success',
+          'Git',
+          `[Commit-AI] Generated ${options.length} commit message options with ${res.model_used}`
+        );
+    } catch (err) {
+      const appErr = toAppError(err);
+      const msg = appErr.message || '';
+
+      if (
+        msg.toLowerCase().includes('groq_api_key') ||
+        msg.toLowerCase().includes('api key') ||
+        msg.toLowerCase().includes('all configured groq api keys')
+      ) {
+        onRequireApiKey();
+        useLogStore
+          .getState()
+          .addLog('info', 'Git', '[Commit-AI] Please enter a valid Groq API Key to proceed.');
+      } else {
+        useLogStore
+          .getState()
+          .addLog('error', 'Git', `[Commit-AI] Failed to generate message: ${msg}`);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
     <button
       type="button"
-      onClick={handleGenerate}
+      onClick={handleButtonClick}
       disabled={isGenerating}
-      title="Generate Commit Message with AI"
-      className="p-1 rounded-md bg-commito-coral/15 border border-commito-coral/40 hover:bg-commito-coral/25 text-commito-coral transition cursor-pointer text-xs flex items-center justify-center shadow-xs"
+      title="Analyze changes with Commit-AI"
+      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-50"
     >
       {isGenerating ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
       ) : (
         <Sparkles className="w-3.5 h-3.5" />
       )}

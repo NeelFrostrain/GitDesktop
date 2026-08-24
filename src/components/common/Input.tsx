@@ -23,18 +23,18 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
-            className={`w-full bg-base-0 border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans transition ${
+            className={`w-full bg-base-0 border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans transition ${
               isSearch ? 'pl-8 pr-3 py-1.5' : 'px-2.5 py-1.5'
             } ${
               error
-                ? 'border-red-500/60 focus:border-red-500'
+                ? 'border-git-removed focus:border-danger'
                 : 'border-border focus:border-commito-coral/50'
             } ${className}`}
             {...props}
           />
         </div>
         {error && (
-          <span className="text-[10px] text-red-400 block pt-0.5 font-medium">
+          <span className="text-[10px] text-git-removed block pt-0.5 font-medium">
             {error}
           </span>
         )}

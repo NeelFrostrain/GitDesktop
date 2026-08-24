@@ -13,6 +13,16 @@ export interface FileStatus {
 }
 
 /**
+ * AI Generated commit message and technical report from Commit-AI.
+ */
+export interface AiCommitSuggestion {
+  title_options: string[];
+  summary: string;
+  report: string;
+  model_used: string;
+}
+
+/**
  * Branch metadata returned by branch listing operations.
  */
 export interface BranchInfo {

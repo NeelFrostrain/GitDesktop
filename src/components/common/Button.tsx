@@ -24,16 +24,16 @@ export const Button: React.FC<ButtonProps> = ({
 
   const sizeStyles = {
     xs: 'px-2 py-0.5 text-[11px] rounded',
-    sm: 'px-2.5 py-1 text-xs rounded-md',
-    md: 'px-3.5 py-1.5 text-xs rounded-md',
+    sm: 'px-2.5 py-1 text-xs rounded-sm',
+    md: 'px-3.5 py-1.5 text-xs rounded-sm',
   };
 
   const variantStyles = {
-    primary: 'bg-commito-coral hover:bg-commito-coralHover text-white shadow-xs border border-transparent',
+    primary: 'bg-commito-coral hover:bg-commito-coralHover text-text-on-accent shadow-xs border border-transparent',
     secondary: 'bg-base-2 hover:bg-base-3 text-text-primary border border-border shadow-xs',
-    danger: 'bg-base-2 hover:bg-red-950/40 text-red-400 hover:text-red-300 border border-border hover:border-red-800/40 shadow-xs',
+    danger: 'bg-base-2 hover:bg-git-removed-bg text-git-removed hover:text-danger border border-border hover:border-git-removed/40 shadow-xs',
     ghost: 'bg-transparent hover:bg-base-2 text-text-muted hover:text-text-primary border border-transparent',
-    icon: 'p-1 bg-transparent hover:bg-base-2 text-text-muted hover:text-text-primary rounded-md border border-transparent',
+    icon: 'p-1 bg-transparent hover:bg-base-2 text-text-muted hover:text-text-primary rounded-sm border border-transparent',
   };
 
   const finalClass = `${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`;

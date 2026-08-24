@@ -29,11 +29,11 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="relative w-full max-w-md bg-base-1 border border-border rounded-xl shadow-2xl overflow-hidden flex flex-col font-sans">
+      <div className="relative w-full max-w-md bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-base-2/50">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-commito-coral/10 text-commito-coral border border-commito-coral/20">
+            <div className="p-2 rounded-sm bg-commito-coral/10 text-commito-coral border border-commito-coral/20">
               <Terminal className="w-4 h-4" />
             </div>
             <div>
@@ -45,7 +45,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
             type="button"
             onClick={onClose}
             disabled={isInstalling}
-            className="p-1 rounded-md text-text-muted hover:text-text-primary hover:bg-base-3 transition disabled:opacity-50 cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition disabled:opacity-50 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -54,7 +54,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
         {/* Content */}
         <div className="p-5 space-y-4 text-xs">
           {/* Current Git Status Box */}
-          <div className="p-3.5 rounded-lg bg-base-2 border border-border space-y-2">
+          <div className="p-3.5 rounded-sm bg-base-2 border border-border space-y-2">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text-secondary">Detected Git Binary</span>
               {isLoading ? (
@@ -62,11 +62,11 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
                   <RefreshCw className="w-3 h-3 animate-spin" /> Detecting...
                 </span>
               ) : runtimeInfo?.is_available ? (
-                <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                <span className="inline-flex items-center gap-1 text-git-added font-medium">
                   <CheckCircle className="w-3.5 h-3.5" /> Available
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-amber-400 font-medium">
+                <span className="inline-flex items-center gap-1 text-git-modified font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" /> Not Found
                 </span>
               )}
@@ -98,7 +98,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
           </div>
 
           {/* MinGit Info Card */}
-          <div className="p-3.5 rounded-lg bg-base-0/60 border border-border space-y-2">
+          <div className="p-3.5 rounded-sm bg-base-0/60 border border-border space-y-2">
             <div className="flex items-center gap-2 font-semibold text-text-primary">
               <HardDrive className="w-4 h-4 text-gitlab-teal" />
               <span>Portable MinGit (Git for Windows)</span>
@@ -110,7 +110,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
 
           {/* Progress Bar (when downloading/extracting) */}
           {isInstalling && progress && (
-            <div className="space-y-2 p-3.5 rounded-lg bg-base-2 border border-border animate-in fade-in duration-100">
+            <div className="space-y-2 p-3.5 rounded-sm bg-base-2 border border-border animate-in fade-in duration-100">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-text-primary">{progress.message}</span>
                 <span className="text-commito-coral font-mono">{progress.percentage.toFixed(0)}%</span>
@@ -131,7 +131,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
             type="button"
             onClick={checkStatus}
             disabled={isInstalling}
-            className="px-3 py-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-base-3 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+            className="px-3 py-1.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
@@ -142,7 +142,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
               type="button"
               onClick={onClose}
               disabled={isInstalling}
-              className="px-3 py-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer disabled:opacity-50"
+              className="px-3 py-1.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer disabled:opacity-50"
             >
               Close
             </button>
@@ -150,7 +150,7 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
               type="button"
               onClick={handleInstall}
               disabled={isInstalling}
-              className="px-4 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coralHover text-white font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-4 py-1.5 rounded-sm bg-commito-coral hover:bg-commito-coralHover text-white font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Download className={`w-3.5 h-3.5 ${isInstalling ? 'animate-bounce' : ''}`} />
               <span>{runtimeInfo?.mingit_installed ? 'Reinstall MinGit' : 'Download MinGit (~25MB)'}</span>

@@ -8,6 +8,7 @@ import {
   Shield,
   Bell,
   Sliders,
+  Sparkles,
 } from 'lucide-react';
 import {
   CATEGORY_METADATA,
@@ -20,6 +21,8 @@ const getCategoryIcon = (cat: SettingCategory) => {
   switch (cat) {
     case 'commonly_used':
       return <Star className="w-4 h-4 text-amber-400" />;
+    case 'ai':
+      return <Sparkles className="w-4 h-4 text-commito-coral" />;
     case 'appearance':
       return <Palette className="w-4 h-4 text-commito-coral" />;
     case 'colors':
@@ -76,7 +79,7 @@ export const CategoryTree: React.FC = () => {
             <button
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`w-full px-2.5 py-1.5 rounded-md text-left flex items-center justify-between text-xs transition cursor-pointer ${isSelected
+              className={`w-full px-2.5 py-1.5 rounded-sm text-left flex items-center justify-between text-xs transition cursor-pointer ${isSelected
                   ? 'bg-commito-coral/15 text-text-primary font-semibold border-l-2 border-commito-coral'
                   : 'text-text-secondary hover:bg-base-2 hover:text-text-primary border-l-2 border-transparent'
                 }`}

@@ -5,24 +5,39 @@ import { SearchAddon } from '@xterm/addon-search';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { ptyBridge } from '../lib/ptyBridge';
 import { useGitAutocomplete } from './useGitAutocomplete';
-import '@xterm/xterm/css/xterm.css';
 
-// Global cache of Terminal instances per repository path to preserve buffer state
-const terminalCache = new Map<
-  string,
-  {
-    terminal: Terminal;
-    fitAddon: FitAddon;
-    searchAddon: SearchAddon;
-    isInitialized: boolean;
-  }
->();
+interface CachedTerminalEntry {
+  terminal: Terminal;
+  fitAddon: FitAddon;
+  searchAddon: SearchAddon;
+  isSessionActive: boolean;
+}
 
-export function useRepoTerminal(repoId: string | null, repoPath: string | null) {
+// Global cache of Terminal instances per repository path
+const terminalCache = new Map<string, CachedTerminalEntry>();
+
+export function useRepoTerminal(
+  repoId: string | null,
+  repoPath: string | null,
+  isEnabled: boolean = true
+) {
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [isSessionAlive, setIsSessionAlive] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [cursorPixelPos, setCursorPixelPos] = useState<{ x: number; y: number } | null>(null);
+
+  const inputBufferRef = useRef<string>('');
+  const cursorPosRef = useRef<number>(0);
+  const localHistoryRef = useRef<string[]>([]);
+
+  const autocomplete = useGitAutocomplete(isEnabled ? repoPath : null);
+  const autocompleteRef = useRef(autocomplete);
+  autocompleteRef.current = autocomplete;
+
+  const unlistenDataRef = useRef<UnlistenFn | null>(null);
+  const unlistenExitRef = useRef<UnlistenFn | null>(null);
+  const onDataDisposableRef = useRef<{ dispose: () => void } | null>(null);
+  const isMountedRef = useRef<boolean>(true);
 
   const calculateCursorPosition = useCallback(() => {
     if (!repoId || !terminalContainerRef.current) return;
@@ -52,21 +67,8 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   const calculateCursorPositionRef = useRef(calculateCursorPosition);
   calculateCursorPositionRef.current = calculateCursorPosition;
 
-  const inputBufferRef = useRef<string>('');
-  const cursorPosRef = useRef<number>(0);
-  const historyIndexRef = useRef<number>(-1);
-  const localHistoryRef = useRef<string[]>([]);
-
-  const autocomplete = useGitAutocomplete(repoPath);
-  const autocompleteRef = useRef(autocomplete);
-  autocompleteRef.current = autocomplete;
-
-  const unlistenDataRef = useRef<UnlistenFn | null>(null);
-  const unlistenExitRef = useRef<UnlistenFn | null>(null);
-  const isMountedRef = useRef<boolean>(true);
-
   // Initialize or retrieve cached terminal instance
-  const getOrCreateTerminal = useCallback((id: string) => {
+  const getOrCreateTerminal = useCallback((id: string): CachedTerminalEntry => {
     if (terminalCache.has(id)) {
       return terminalCache.get(id)!;
     }
@@ -109,11 +111,11 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     term.loadAddon(fit);
     term.loadAddon(search);
 
-    const entry = {
+    const entry: CachedTerminalEntry = {
       terminal: term,
       fitAddon: fit,
       searchAddon: search,
-      isInitialized: false,
+      isSessionActive: false,
     };
 
     terminalCache.set(id, entry);
@@ -155,65 +157,72 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   // Setup terminal mount, PTY connection, event listeners
   useEffect(() => {
     isMountedRef.current = true;
-    if (!repoId || !repoPath || !terminalContainerRef.current) {
+    if (!isEnabled || !repoId || !repoPath || !terminalContainerRef.current) {
+      setIsSessionAlive(false);
       return;
     }
 
-    const { terminal, fitAddon, isInitialized } = getOrCreateTerminal(repoId);
+    const currentRepoId = repoId;
+    const currentRepoPath = repoPath;
+    const entry = getOrCreateTerminal(currentRepoId);
+    const { terminal, fitAddon } = entry;
 
-    // Attach to DOM if not attached to current container
-    if (terminal.element?.parentElement !== terminalContainerRef.current) {
-      terminalContainerRef.current.innerHTML = '';
-      terminal.open(terminalContainerRef.current);
+    // Attach to DOM safely
+    if (terminalContainerRef.current) {
+      if (!terminal.element) {
+        terminalContainerRef.current.innerHTML = '';
+        terminal.open(terminalContainerRef.current);
+      } else if (terminal.element.parentElement !== terminalContainerRef.current) {
+        terminalContainerRef.current.innerHTML = '';
+        terminalContainerRef.current.appendChild(terminal.element);
+      }
     }
 
     const fitAndRefresh = () => {
       try {
         fitAddon.fit();
         terminal.refresh(0, terminal.rows - 1);
+        terminal.focus();
       } catch {}
     };
 
     fitAndRefresh();
-    requestAnimationFrame(fitAndRefresh);
-    const fitTimer = setTimeout(fitAndRefresh, 60);
+    const fitTimer1 = setTimeout(fitAndRefresh, 40);
+    const fitTimer2 = setTimeout(fitAndRefresh, 120);
 
-    let isActive = true;
+    let isEffectActive = true;
 
     const setupSession = async () => {
       try {
-        // Replay history on first open
-        if (!isInitialized) {
+        if (!entry.isSessionActive) {
+          // Populate command history silently without spamming ASCII art in terminal buffer
           try {
-            const history = await ptyBridge.getHistory(repoId, 6, 0);
-            if (history && history.length > 0 && isActive) {
-              terminal.writeln('\x1b[90m┌── Previous Session Commands ──────────────────────────┐\x1b[0m');
-              for (const entry of history) {
-                localHistoryRef.current.push(entry.cmd);
-                terminal.writeln(`\x1b[90m│ $ ${entry.cmd}\x1b[0m`);
+            const history = await ptyBridge.getHistory(currentRepoId, 50, 0);
+            if (history && history.length > 0) {
+              for (const h of history) {
+                localHistoryRef.current.push(h.cmd);
               }
-              terminal.writeln('\x1b[90m└── live interactive session started ────────────────────┘\x1b[0m\r\n');
             }
           } catch {}
 
-          const cached = terminalCache.get(repoId);
-          if (cached) cached.isInitialized = true;
+          entry.isSessionActive = true;
         }
 
-        if (!isActive) return;
+        if (!isEffectActive) return;
 
-        // Open backend PTY session
-        const sessionInfo = await ptyBridge.open(repoId, repoPath);
-        if (!isActive) return;
+        // Open or connect backend PTY session
+        const sessionInfo = await ptyBridge.open(currentRepoId, currentRepoPath);
+        if (!isEffectActive) return;
 
         setIsSessionAlive(sessionInfo.is_alive);
         setSessionId(sessionInfo.session_id);
 
-        // Sync size
-        await ptyBridge.resize(repoId, terminal.cols, terminal.rows);
-        if (!isActive) return;
+        if (terminal.cols > 0 && terminal.rows > 0) {
+          await ptyBridge.resize(currentRepoId, terminal.cols, terminal.rows).catch(() => {});
+        }
+        if (!isEffectActive) return;
 
-        // Clean up previous listeners if any exist
+        // Clean up previous listeners if any
         if (unlistenDataRef.current) {
           unlistenDataRef.current();
           unlistenDataRef.current = null;
@@ -224,7 +233,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         }
 
         // Subscribe to PTY stream events
-        const safeRepoId = repoId.replace(/\\/g, '/').replace(/:/g, '_');
+        const safeRepoId = currentRepoId.replace(/\\/g, '/').replace(/:/g, '_');
         const unData = await listen<string>(`terminal:${safeRepoId}:data`, (event) => {
           if (event.payload && isMountedRef.current) {
             terminal.write(event.payload);
@@ -238,7 +247,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           }
         });
 
-        if (!isActive) {
+        if (!isEffectActive) {
           unData();
           unExit();
         } else {
@@ -246,7 +255,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
           unlistenExitRef.current = unExit;
         }
       } catch (err) {
-        if (isActive) {
+        if (isEffectActive) {
           console.error('Failed to open terminal session:', err);
           terminal.writeln(`\r\n\x1b[31m[Failed to launch terminal process: ${err}]\x1b[0m\r\n`);
         }
@@ -255,9 +264,15 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
 
     setupSession();
 
+    // Clean previous onData disposable if any
+    if (onDataDisposableRef.current) {
+      onDataDisposableRef.current.dispose();
+      onDataDisposableRef.current = null;
+    }
+
     // Keystroke handler attached to terminal
     const onDataDisposable = terminal.onData((data) => {
-      if (!repoId) return;
+      if (!currentRepoId) return;
 
       const auto = autocompleteRef.current;
 
@@ -266,13 +281,12 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         const fullCmd = inputBufferRef.current.trim();
         if (fullCmd.length > 0) {
           localHistoryRef.current.push(fullCmd);
-          ptyBridge.recordHistory(repoId, fullCmd).catch(() => {});
+          ptyBridge.recordHistory(currentRepoId, fullCmd).catch(() => {});
         }
         inputBufferRef.current = '';
         cursorPosRef.current = 0;
-        historyIndexRef.current = -1;
         auto.clearSuggestions();
-        ptyBridge.write(repoId, data);
+        ptyBridge.write(currentRepoId, data);
         return;
       }
 
@@ -285,13 +299,12 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
             return;
           }
         }
-        // If single candidate or trigger autocomplete
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
         setTimeout(() => calculateCursorPositionRef.current(), 0);
         return;
       }
 
-      // Handle Space (Autocomplete on space if single unambiguous suggestion & safe position)
+      // Handle Space
       if (data === ' ') {
         if (
           auto.isVisible &&
@@ -304,7 +317,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         }
       }
 
-      // Handle Escape (Dismiss popup)
+      // Handle Escape
       if (data === '\x1b') {
         if (auto.isVisible) {
           auto.clearSuggestions();
@@ -344,8 +357,10 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       }
 
       // Forward keystroke to backend PTY
-      ptyBridge.write(repoId, data);
+      ptyBridge.write(currentRepoId, data);
     });
+
+    onDataDisposableRef.current = onDataDisposable;
 
     const onCursorMoveDisposable = terminal.onCursorMove(() => {
       calculateCursorPositionRef.current();
@@ -356,8 +371,8 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       try {
         fitAddon.fit();
         calculateCursorPositionRef.current();
-        if (repoId && terminal.cols > 0 && terminal.rows > 0) {
-          ptyBridge.resize(repoId, terminal.cols, terminal.rows).catch(() => {});
+        if (currentRepoId && terminal.cols > 0 && terminal.rows > 0) {
+          ptyBridge.resize(currentRepoId, terminal.cols, terminal.rows).catch(() => {});
         }
       } catch {}
     });
@@ -367,8 +382,9 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     }
 
     return () => {
-      isActive = false;
-      clearTimeout(fitTimer);
+      isEffectActive = false;
+      clearTimeout(fitTimer1);
+      clearTimeout(fitTimer2);
       onDataDisposable.dispose();
       onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();
@@ -381,7 +397,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         unlistenExitRef.current = null;
       }
     };
-  }, [repoId, repoPath, getOrCreateTerminal]);
+  }, [isEnabled, repoId, repoPath, getOrCreateTerminal]);
 
   // Actions
   const clearTerminal = useCallback(() => {
@@ -389,14 +405,17 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     const cached = terminalCache.get(repoId);
     if (cached) {
       cached.terminal.clear();
+      cached.terminal.write('\x1b[2J\x1b[3J\x1b[H');
+      // Send Ctrl+L (Form Feed / clear screen) to underlying PTY process
+      ptyBridge.write(repoId, '\x0c').catch(() => {});
     }
   }, [repoId]);
 
   const restartTerminal = useCallback(async () => {
-    if (!repoId || !repoPath) return;
+    if (!isEnabled || !repoId || !repoPath) return;
     const cached = terminalCache.get(repoId);
     if (cached) {
-      cached.terminal.clear();
+      cached.terminal.reset();
       cached.terminal.writeln('\x1b[33m[Restarting terminal session...]\x1b[0m\r\n');
     }
     await ptyBridge.kill(repoId).catch(() => {});
@@ -404,9 +423,9 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     setIsSessionAlive(sessionInfo.is_alive);
     setSessionId(sessionInfo.session_id);
     if (cached) {
-      await ptyBridge.resize(repoId, cached.terminal.cols, cached.terminal.rows);
+      await ptyBridge.resize(repoId, cached.terminal.cols, cached.terminal.rows).catch(() => {});
     }
-  }, [repoId, repoPath]);
+  }, [isEnabled, repoId, repoPath]);
 
   const searchInTerminal = useCallback(
     (query: string, findNext = true) => {

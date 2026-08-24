@@ -36,15 +36,15 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const busyCls =
-    'px-2.5 py-1 rounded-md bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none';
+    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none';
   const primaryCls =
-    'px-2.5 py-1 rounded-md bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
   const secondaryCls =
-    'px-2.5 py-1 rounded-md bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
   const mutedCls =
-    'px-2.5 py-1 rounded-md border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none';
   const warnCls =
-    'px-2.5 py-1 rounded-md border border-amber-700/60 bg-amber-950/40 text-amber-400 text-xs font-bold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none';
 
   if (!hasRepo) {
     return {
@@ -142,7 +142,7 @@ function getButtonConfig(
 function DirtyWarningBanner() {
   return (
     <span
-      className="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-700/40 px-1.5 py-0.5 rounded font-mono"
+      className="text-[10px] text-git-modified bg-git-modified-bg border border-git-modified/40 px-1.5 py-0.5 rounded font-mono"
       title="Commit or stash local changes before pulling to avoid conflicts"
     >
       uncommitted changes

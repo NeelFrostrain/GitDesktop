@@ -1,18 +1,13 @@
-pub mod status;
-pub mod diff;
-pub mod history;
+pub mod ai;
 pub mod commit;
-pub mod remote;
-pub mod lfs;
-pub mod worktree;
-pub mod rebase;
-pub mod cherry_pick;
-pub mod stash;
-pub mod tags;
-pub mod blame;
-pub mod reflog;
-pub mod patch;
 pub mod config;
-pub mod submodules;
-pub mod history_rewrite;
-pub mod signing;
+pub mod history;
+pub mod remote;
+pub mod workspace;
+
+// Backward-compatible module exports for seamless compilation
+pub use ai::ai_commit;
+pub use commit::signing;
+pub use history::{blame, cherry_pick, history_rewrite, rebase, reflog};
+pub use remote::{lfs, submodules, tags};
+pub use workspace::{diff, patch, stash, status, worktree};

@@ -126,11 +126,11 @@ export const MergeRequestModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
               <GitPullRequest className="w-4 h-4" />
             </div>
             <div>
@@ -144,7 +144,7 @@ export const MergeRequestModal: React.FC = () => {
           </div>
           <button
             onClick={() => setIsMergeRequestModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -154,7 +154,7 @@ export const MergeRequestModal: React.FC = () => {
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
             onClick={() => setActiveTab('create')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'create'
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
@@ -165,7 +165,7 @@ export const MergeRequestModal: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('list')}
-            className={`px-3.5 py-1.5 rounded-md text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
               activeTab === 'list'
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
                 : 'bg-base-2 text-text-secondary hover:text-text-primary'
@@ -181,7 +181,7 @@ export const MergeRequestModal: React.FC = () => {
           {activeTab === 'create' ? (
             <form onSubmit={handleCreateMergeRequest} className="space-y-4">
               {/* Source vs Target Branch Selectors */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-base-2 border border-border rounded-md">
+              <div className="grid grid-cols-2 gap-4 p-4 bg-base-2 border border-border rounded-sm">
                 <div>
                   <label className="text-[11px] font-bold text-text-secondary mb-1.5 flex items-center gap-1.5">
                     <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
@@ -222,7 +222,7 @@ export const MergeRequestModal: React.FC = () => {
                   placeholder="e.g. feat(auth): add OAuth2 loopback authentication flow"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
+                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
                   required
                 />
               </div>
@@ -237,7 +237,7 @@ export const MergeRequestModal: React.FC = () => {
                   placeholder="Provide detailed description of changes, issue references, and testing steps..."
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral resize-none"
+                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral resize-none"
                 />
               </div>
 
@@ -246,14 +246,14 @@ export const MergeRequestModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMergeRequestModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
+                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={!title.trim() || isSubmitting}
-                  className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50`}
+                  className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50`}
                 >
                   <GitPullRequest className="w-3.5 h-3.5" />
                   <span>{isSubmitting ? 'Submitting...' : 'Submit Request'}</span>
@@ -270,15 +270,15 @@ export const MergeRequestModal: React.FC = () => {
                 <button
                   onClick={loadMergeRequests}
                   disabled={isLoading}
-                  className="p-1.5 text-text-muted hover:text-text-primary bg-base-2 rounded-md border border-border cursor-pointer"
+                  className="p-1.5 text-text-muted hover:text-text-primary bg-base-2 rounded-sm border border-border cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                 </button>
               </div>
 
               {mergeRequests.length === 0 ? (
-                <div className="p-8 text-center bg-base-2 border border-border rounded-md space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                <div className="p-8 text-center bg-base-2 border border-border rounded-sm space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-git-added mx-auto" />
                   <p className="text-xs text-text-muted font-medium">
                     No open requests found for this project
                   </p>
@@ -288,11 +288,11 @@ export const MergeRequestModal: React.FC = () => {
                   {mergeRequests.map((mr) => (
                     <div
                       key={mr.id}
-                      className="p-3.5 bg-base-2 border border-border rounded-md flex items-center justify-between hover:border-text-muted transition"
+                      className="p-3.5 bg-base-2 border border-border rounded-sm flex items-center justify-between hover:border-text-muted transition"
                     >
                       <div className="space-y-1 min-w-0 flex-1 pr-3">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[10px] font-mono font-bold rounded uppercase">
+                          <span className="px-2 py-0.5 bg-git-added-bg border border-git-added/40 text-git-added text-[10px] font-mono font-bold rounded uppercase">
                             {mr.state}
                           </span>
                           <h4 className="text-xs font-bold text-text-primary truncate">
@@ -310,7 +310,7 @@ export const MergeRequestModal: React.FC = () => {
 
                       <button
                         onClick={() => mr.web_url && openUrl(mr.web_url)}
-                        className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-md text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-sm text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <span>View</span>
                         <ExternalLink className="w-3.5 h-3.5 text-text-muted" />

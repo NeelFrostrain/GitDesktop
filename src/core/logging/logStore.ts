@@ -61,19 +61,29 @@ export const useAppLogStore = create<LogStoreState>((set, get) => ({
   },
 
   addLog: async (level, category, message, repoId, metadata) => {
+    const entry: LogEntry = {
+      id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      at: new Date().toISOString(),
+      level,
+      category,
+      message,
+      repo_id: repoId || undefined,
+      metadata: metadata || undefined,
+    };
+    get().addEntryToBuffer(entry);
+
     try {
-      const entry = await invoke<LogEntry>('logs_add', {
+      await invoke<LogEntry>('logs_add', {
         level,
         category,
         message,
         repoId: repoId || null,
         metadata: metadata || null,
       });
-      return entry;
     } catch (err) {
-      console.error('[Logging] Failed to log entry to backend:', err);
-      return null;
+      console.warn('[Logging] Backend log invoke error (buffered locally):', err);
     }
+    return entry;
   },
 
   queryLogs: async (filter, limit = 100, offset = 0) => {

@@ -65,9 +65,14 @@ export function useAppLogs(repoId?: string | null) {
       }
     }
     return Array.from(map.values()).sort(
-      (a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()
+      (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime()
     );
   }, [recentLogs, persistedLogs, repoId, filter.this_repo_only]);
+
+  const handleClearAllLogs = useCallback(async () => {
+    setPersistedLogs([]);
+    await clearLogs(repoId || undefined);
+  }, [clearLogs, repoId]);
 
   return {
     logs: combinedLogs,
@@ -77,8 +82,8 @@ export function useAppLogs(repoId?: string | null) {
     isLoading,
     refresh: fetchLogs,
     exportLogs: () => exportLogsDialog({ ...filter, repo_id: repoId || undefined }),
-    clearAllLogs: () => clearLogs(filter.this_repo_only && repoId ? repoId : undefined),
+    clearAllLogs: handleClearAllLogs,
     page,
     setPage,
   };
-}
+};

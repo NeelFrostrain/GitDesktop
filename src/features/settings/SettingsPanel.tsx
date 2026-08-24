@@ -90,11 +90,11 @@ export const SettingsPanel: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 select-none">
-      <div className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans">
+      <div className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans">
         {/* Header bar: Title, Search, Scope Switcher, Close */}
         <header className="h-14 bg-base-1 border-b border-border px-5 flex items-center justify-between gap-4 flex-shrink-0">
           <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="p-2 bg-commito-coral/15 rounded-md border border-commito-coral/30 text-commito-coral">
+            <div className="p-2 bg-commito-coral/15 rounded-sm border border-commito-coral/30 text-commito-coral">
               <Sliders className="w-4 h-4" />
             </div>
             <div>
@@ -113,11 +113,11 @@ export const SettingsPanel: React.FC = () => {
           {/* Scope Selector & Actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
             {/* Scope tabs */}
-            <div className="flex items-center bg-base-2 rounded-md p-0.5 border border-border">
+            <div className="flex items-center bg-base-2 rounded-sm p-0.5 border border-border">
               <button
                 type="button"
                 onClick={() => setActiveScope('app')}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${activeScope === 'app'
+                className={`px-2.5 py-1 rounded-sm text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${activeScope === 'app'
                     ? 'bg-base-0 text-text-primary shadow-xs font-semibold'
                     : 'text-text-muted hover:text-text-primary'
                   }`}
@@ -131,7 +131,7 @@ export const SettingsPanel: React.FC = () => {
                 type="button"
                 onClick={() => setActiveScope('repo')}
                 disabled={!activeRepoPath}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition flex items-center gap-1.5 ${!activeRepoPath
+                className={`px-2.5 py-1 rounded-sm text-xs font-medium transition flex items-center gap-1.5 ${!activeRepoPath
                     ? 'opacity-40 cursor-not-allowed text-text-muted'
                     : activeScope === 'repo'
                       ? 'bg-base-0 text-text-primary shadow-xs font-semibold cursor-pointer'
@@ -156,7 +156,7 @@ export const SettingsPanel: React.FC = () => {
                   resetAllSettings();
                 }
               }}
-              className="p-2 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-md border border-transparent hover:border-border transition cursor-pointer"
+              className="p-2 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
               title="Reset all settings to default values"
             >
               <RotateCcw className="w-4 h-4" />
@@ -168,7 +168,7 @@ export const SettingsPanel: React.FC = () => {
             <button
               type="button"
               onClick={closeSettings}
-              className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-md border border-transparent hover:border-border transition cursor-pointer"
+              className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
               title="Close Settings (Esc)"
             >
               <X className="w-4 h-4" />

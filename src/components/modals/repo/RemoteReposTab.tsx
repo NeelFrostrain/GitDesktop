@@ -75,7 +75,7 @@ export const RemoteReposTab: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-xl bg-base-1">
+      <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border rounded-sm bg-base-1">
         <FolderGit2 className="w-12 h-12 text-text-muted mb-3 opacity-40" />
         <h4 className="text-sm font-semibold text-text-primary mb-1">No Active Account</h4>
         <p className="text-xs text-text-muted max-w-sm mb-4">
@@ -91,7 +91,7 @@ export const RemoteReposTab: React.FC = () => {
   return (
     <div className="space-y-3">
       {/* Search Bar */}
-      <div className="flex items-center gap-2 bg-base-1 border border-border rounded-md px-2.5 py-1.5 focus-within:border-commito-coral">
+      <div className="flex items-center gap-2 bg-base-1 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
         <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
         <input
           type="text"
@@ -114,7 +114,7 @@ export const RemoteReposTab: React.FC = () => {
             return (
               <div
                 key={repo.id}
-                className="p-3 rounded-lg border border-border bg-base-1 hover:border-text-muted/30 transition flex items-center justify-between gap-3"
+                className="p-3 rounded-sm border border-border bg-base-1 hover:border-text-muted/30 transition flex items-center justify-between gap-3"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export const RemoteReposTab: React.FC = () => {
                 <button
                   onClick={() => handleClone(repo)}
                   disabled={isCloning}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 shrink-0 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 shrink-0 cursor-pointer"
                 >
                   {isCloning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   {isCloning ? 'Cloning...' : 'Clone'}

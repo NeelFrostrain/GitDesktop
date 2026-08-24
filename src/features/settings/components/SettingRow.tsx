@@ -28,7 +28,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               />
               <div
                 style={{ backgroundColor: hex }}
-                className="w-7 h-7 rounded-md border border-border shadow-xs cursor-pointer transition transform hover:scale-105"
+                className="w-7 h-7 rounded-sm border border-border shadow-xs cursor-pointer transition transform hover:scale-105"
                 title={`Click to pick color: ${hex}`}
               />
             </div>
@@ -36,7 +36,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               type="text"
               value={hex}
               onChange={(e) => setSettingValue(setting.id, e.target.value)}
-              className="w-28 px-2.5 py-1 bg-base-2 border border-border rounded-md text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+              className="w-28 px-2.5 py-1 bg-base-2 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
               placeholder="#000000"
             />
           </div>
@@ -54,7 +54,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               step={setting.step ?? 1}
               value={num}
               onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
-              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-3 rounded-md"
+              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-3 rounded-sm"
             />
             <div className="flex items-center gap-1 min-w-[50px] justify-end">
               <input
@@ -64,7 +64,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
                 step={setting.step}
                 value={num}
                 onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
-                className="w-14 px-1.5 py-1 bg-base-2 border border-border rounded-md text-xs font-mono text-text-primary text-right focus:outline-none focus:border-commito-coral"
+                className="w-14 px-1.5 py-1 bg-base-2 border border-border rounded-sm text-xs font-mono text-text-primary text-right focus:outline-none focus:border-commito-coral"
               />
               {setting.unit && (
                 <span className="text-[11px] font-mono text-text-muted select-none">
@@ -81,7 +81,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
           <select
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="px-3 py-1.5 bg-base-2 border border-border rounded-md text-xs text-text-primary focus:outline-none focus:border-commito-coral cursor-pointer max-w-[220px]"
+            className="px-3 py-1.5 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral cursor-pointer max-w-[220px]"
           >
             {setting.options?.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-base-2 text-text-primary">
@@ -118,7 +118,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
             type="text"
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="w-64 px-2.5 py-1 bg-base-2 border border-border rounded-md text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+            className="w-64 px-2.5 py-1 bg-base-2 border border-border rounded-sm text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
           />
         );
       }
@@ -127,7 +127,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
   return (
     <div
-      className={`p-3.5 rounded-md border transition flex flex-col md:flex-row md:items-center justify-between gap-4 group ${modified
+      className={`p-3.5 rounded-sm border transition flex flex-col md:flex-row md:items-center justify-between gap-4 group ${modified
         ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
         : 'bg-base-1/60 border-border hover:border-border-strong hover:bg-base-1/90'
         }`}
@@ -171,7 +171,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
           <button
             type="button"
             onClick={() => resetSettingValue(setting.id)}
-            className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-md border border-transparent hover:border-border transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
             title={`Reset "${setting.label}" to default (${setting.default})`}
           >
             <RotateCcw className="w-3.5 h-3.5" />

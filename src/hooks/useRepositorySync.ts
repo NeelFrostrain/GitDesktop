@@ -147,13 +147,13 @@ export function useRepositorySync() {
     try {
       await GitService.pushToRemote(activeRepoPath, status.current_branch);
       log().addLog('success', 'Git', `Pushed to origin/${status.current_branch}`);
-      await refreshSync();
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       setError({ code: 'GIT_PUSH_ERROR', message });
       log().addLog('error', 'Git', `Push failed: ${message}`);
     } finally {
       setIsPushing(false);
+      refreshSync().catch(() => {});
     }
   }, [activeRepoPath, status, setIsPushing, setError, refreshSync, log]);
 
@@ -173,13 +173,13 @@ export function useRepositorySync() {
       } else {
         log().addLog('success', 'Git', `Pulled from origin/${status.current_branch}`);
       }
-      await refreshSync();
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       setError({ code: 'GIT_PULL_ERROR', message });
       log().addLog('error', 'Git', `Pull failed: ${message}`);
     } finally {
       setIsPulling(false);
+      refreshSync().catch(() => {});
     }
   }, [activeRepoPath, status, setIsPulling, setError, refreshSync, log]);
 
@@ -198,14 +198,12 @@ export function useRepositorySync() {
           message: `Sync stopped — merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before pushing.`,
         });
         log().addLog('error', 'Git', `Sync aborted — conflicts in ${result.conflicts.length} file(s)`);
-        await refreshSync();
         return;
       }
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       setError({ code: 'GIT_SYNC_PULL_ERROR', message });
       log().addLog('error', 'Git', `Sync pull step failed: ${message}`);
-      await refreshSync();
       return;
     } finally {
       setIsPulling(false);
@@ -222,7 +220,7 @@ export function useRepositorySync() {
       log().addLog('error', 'Git', `Sync push step failed: ${message}`);
     } finally {
       setIsPushing(false);
-      await refreshSync();
+      refreshSync().catch(() => {});
     }
   }, [activeRepoPath, status, setIsPulling, setIsPushing, setError, refreshSync, log]);
 
@@ -253,6 +251,8 @@ export function useRepositorySync() {
     refreshSync,
     refreshLocal,
     executeAction,
+    executePush,
+    executePull,
     hasRepo: !!activeRepoPath,
   };
 }

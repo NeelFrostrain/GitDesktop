@@ -38,8 +38,8 @@ export const Checkbox: React.FC<CheckboxProps> = ({
 
   const sizeClasses = {
     sm: 'w-3.5 h-3.5 rounded',
-    md: 'w-4 h-4 rounded-md',
-    lg: 'w-5 h-5 rounded-md',
+    md: 'w-4 h-4 rounded-sm',
+    lg: 'w-5 h-5 rounded-sm',
   };
 
   const iconSizeClasses = {
@@ -63,7 +63,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       <div
         className={`flex items-center justify-center border transition-all duration-150 flex-shrink-0 ${sizeClasses[size]} ${
           isSelected
-            ? 'bg-commito-coral border-commito-coral text-white shadow-sm shadow-commito-coral/20'
+            ? 'bg-commito-coral border-commito-coral text-text-on-accent shadow-xs shadow-commito-coral/20'
             : 'bg-base-2/80 border-border group-hover:border-commito-coral/60 group-hover:bg-base-3 text-transparent'
         }`}
       >
@@ -75,7 +75,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       </div>
 
       {label && (
-        <span className="text-xs text-text-primary group-hover:text-white transition-colors">
+        <span className="text-xs text-text-primary group-hover:text-text-primary transition-colors">
           {label}
         </span>
       )}

@@ -88,28 +88,28 @@ export const SubmodulesView: React.FC = () => {
           <button
             onClick={loadSubmodules}
             disabled={isLoading}
-            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-text-muted hover:text-text-primary transition cursor-pointer"
+            className="p-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-text-muted hover:text-text-primary transition cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
             onClick={handleInitSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition cursor-pointer"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary transition cursor-pointer"
           >
             Init Submodules
           </button>
 
           <button
             onClick={handleSyncSubmodules}
-            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-primary transition cursor-pointer"
+            className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary transition cursor-pointer"
           >
             Sync Remotes
           </button>
 
           <button
             onClick={handleUpdateSubmodules}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold transition shadow-xs cursor-pointer"
+            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer"
           >
             Update Recursive
           </button>
@@ -119,14 +119,14 @@ export const SubmodulesView: React.FC = () => {
       {/* Submodule List */}
       <div className="space-y-2">
         {submodules.length === 0 ? (
-          <div className="p-8 text-center bg-base-2 border border-border rounded-md text-xs text-text-muted italic">
+          <div className="p-8 text-center bg-base-2 border border-border rounded-sm text-xs text-text-muted italic">
             No Git submodules registered in this repository (.gitmodules)
           </div>
         ) : (
           submodules.map((sub) => (
             <div
               key={sub.path}
-              className="p-3.5 bg-base-2/60 border border-border rounded-md flex items-center justify-between hover:bg-base-2 transition"
+              className="p-3.5 bg-base-2/60 border border-border rounded-sm flex items-center justify-between hover:bg-base-2 transition"
             >
               <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                 <FolderGit2 className="w-4 h-4 text-gitlab-teal flex-shrink-0" />
@@ -147,12 +147,12 @@ export const SubmodulesView: React.FC = () => {
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 {sub.is_dirty && (
-                  <span className="px-2 py-0.5 bg-amber-950/60 border border-amber-800/40 text-amber-300 text-[10px] font-mono font-bold rounded">
+                  <span className="px-2 py-0.5 bg-git-modified-bg border border-git-modified/40 text-git-modified text-[10px] font-mono font-bold rounded">
                     Modified
                   </span>
                 )}
                 {sub.is_initialized ? (
-                  <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[10px] font-mono font-bold rounded">
+                  <span className="px-2 py-0.5 bg-git-added-bg border border-git-added/40 text-git-added text-[10px] font-mono font-bold rounded">
                     Active
                   </span>
                 ) : (

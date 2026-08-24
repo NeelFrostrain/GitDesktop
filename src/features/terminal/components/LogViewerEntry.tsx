@@ -30,19 +30,19 @@ function getCategoryIcon(cat: LogCategory) {
     case 'Git':
       return <GitBranch className="w-3.5 h-3.5 text-commito-coral" />;
     case 'Account':
-      return <User className="w-3.5 h-3.5 text-blue-400" />;
+      return <User className="w-3.5 h-3.5 text-gitlab-blue" />;
     case 'Remote':
-      return <Globe className="w-3.5 h-3.5 text-emerald-400" />;
+      return <Globe className="w-3.5 h-3.5 text-git-added" />;
     case 'Signing':
-      return <Shield className="w-3.5 h-3.5 text-purple-400" />;
+      return <Shield className="w-3.5 h-3.5 text-gitlab-teal" />;
     case 'Activity':
-      return <Activity className="w-3.5 h-3.5 text-amber-400" />;
+      return <Activity className="w-3.5 h-3.5 text-git-modified" />;
     case 'Repo':
-      return <FolderGit2 className="w-3.5 h-3.5 text-cyan-400" />;
+      return <FolderGit2 className="w-3.5 h-3.5 text-accent" />;
     case 'Terminal':
-      return <Terminal className="w-3.5 h-3.5 text-rose-400" />;
+      return <Terminal className="w-3.5 h-3.5 text-commito-coral" />;
     case 'App':
-      return <Layers className="w-3.5 h-3.5 text-gray-400" />;
+      return <Layers className="w-3.5 h-3.5 text-text-muted" />;
   }
 }
 
@@ -51,21 +51,21 @@ function getLevelBadge(level: LogLevel) {
     case 'Error':
       return (
         <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono border border-border bg-base-3 text-text-primary">
-          <AlertCircle className="w-2.5 h-2.5 text-red-400" />
+          <AlertCircle className="w-2.5 h-2.5 text-git-removed" />
           <span>ERROR</span>
         </span>
       );
     case 'Warn':
       return (
         <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono border border-border bg-base-3 text-text-primary">
-          <AlertTriangle className="w-2.5 h-2.5 text-amber-400" />
+          <AlertTriangle className="w-2.5 h-2.5 text-git-modified" />
           <span>WARN</span>
         </span>
       );
     case 'Success':
       return (
         <span className="flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono border border-border bg-base-3 text-text-primary">
-          <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400" />
+          <CheckCircle2 className="w-2.5 h-2.5 text-git-added" />
           <span>SUCCESS</span>
         </span>
       );
@@ -108,7 +108,7 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
   const formattedTime = new Date(entry.at).toLocaleTimeString();
 
   return (
-    <div className="border border-border/80 rounded-md overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
+    <div className="border border-border/80 rounded-sm overflow-hidden bg-base-1 transition hover:border-border-strong text-xs">
       {/* Header Bar */}
       <button
         type="button"
@@ -153,7 +153,7 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
             className="p-1 text-text-muted hover:text-text-primary hover:bg-base-3 rounded border border-border/60 transition cursor-pointer"
           >
             {copied ? (
-              <Check className="w-3 h-3 text-emerald-400" />
+              <Check className="w-3 h-3 text-git-added" />
             ) : (
               <Copy className="w-3 h-3" />
             )}
@@ -163,8 +163,8 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
 
       {/* Expanded Metadata Body */}
       {isExpanded && entry.metadata && (
-        <div className="p-3 bg-[#0a0d12] border-t border-border/60 font-mono text-xs overflow-x-auto max-h-72 select-text">
-          <pre className="text-gray-300 leading-relaxed whitespace-pre-wrap break-words">
+        <div className="p-3 bg-base-0 border-t border-border/60 font-mono text-xs overflow-x-auto max-h-72 select-text">
+          <pre className="text-text-primary leading-relaxed whitespace-pre-wrap break-words">
             {JSON.stringify(entry.metadata, null, 2)}
           </pre>
         </div>

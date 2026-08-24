@@ -24,11 +24,11 @@ export const AccountServicesModal: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none animate-fadeIn">
       {/* Modal Container matching reference screenshot */}
-      <div className="bg-[#18181c] border border-[#fc6d26]/40 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div className="bg-base-1 border border-commito-coral/40 rounded-sm shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Top Header */}
         <div className="p-4 border-b border-border flex items-center justify-between bg-base-1/40">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-md bg-[#fc6d26]/15 border border-[#fc6d26]/30 text-[#fc6d26] flex items-center justify-center flex-shrink-0 shadow-inner">
+            <div className="w-9 h-9 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 shadow-inner">
               <FolderLock className="w-5 h-5" />
             </div>
             <h2 className="text-base font-bold text-text-primary tracking-tight">
@@ -38,7 +38,7 @@ export const AccountServicesModal: React.FC = () => {
 
           <button
             onClick={() => setIsModalOpen(false)}
-            className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
             title="Close modal"
           >
             <X className="w-4 h-4" />
@@ -50,45 +50,48 @@ export const AccountServicesModal: React.FC = () => {
           {/* Tab 1: Accounts (N) */}
           <button
             onClick={() => setActiveTab('accounts')}
-            className={`py-3 text-xs font-bold flex items-center gap-2 transition cursor-pointer relative ${activeTab === 'accounts'
-              ? 'text-text-primary'
-              : 'text-text-muted hover:text-text-primary'
-              }`}
+            className={`py-3 text-xs font-bold flex items-center gap-2 transition cursor-pointer relative ${
+              activeTab === 'accounts'
+                ? 'text-text-primary'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
           >
             <Users className="w-4 h-4" />
             <span>Accounts ({accounts.length})</span>
             {activeTab === 'accounts' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#fc6d26] rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-commito-coral rounded-full" />
             )}
           </button>
 
           {/* Tab 2: + Add Account (with green plus accent) */}
           <button
             onClick={() => setActiveTab('add')}
-            className={`py-3 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer relative ${activeTab === 'add'
-              ? 'text-text-primary'
-              : 'text-text-muted hover:text-text-primary'
-              }`}
+            className={`py-3 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer relative ${
+              activeTab === 'add'
+                ? 'text-text-primary'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
           >
-            <span className="text-emerald-400 font-bold text-sm leading-none">+</span>
+            <span className="text-git-added font-bold text-sm leading-none">+</span>
             <span>Add Account</span>
             {activeTab === 'add' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#fc6d26] rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-commito-coral rounded-full" />
             )}
           </button>
 
           {/* Tab 3: Remote Repositories */}
           <button
             onClick={() => setActiveTab('remotes')}
-            className={`py-3 text-xs font-bold flex items-center gap-2 transition cursor-pointer relative ${activeTab === 'remotes'
-              ? 'text-text-primary'
-              : 'text-text-muted hover:text-text-primary'
-              }`}
+            className={`py-3 text-xs font-bold flex items-center gap-2 transition cursor-pointer relative ${
+              activeTab === 'remotes'
+                ? 'text-text-primary'
+                : 'text-text-muted hover:text-text-primary'
+            }`}
           >
             <Globe className="w-4 h-4" />
             <span>Remote Repositories</span>
             {activeTab === 'remotes' && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#fc6d26] rounded-full" />
+              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-commito-coral rounded-full" />
             )}
           </button>
         </div>

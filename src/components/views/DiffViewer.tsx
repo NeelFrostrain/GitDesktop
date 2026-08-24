@@ -1,14 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   FileText,
   Binary,
   HardDrive,
-  GitPullRequest,
-  ExternalLink,
-  CheckCircle,
   Clock,
-  ChevronDown,
   ChevronRight,
   FileCode,
 } from 'lucide-react';
@@ -22,6 +17,7 @@ import { CommitDetailsHeader } from './diff/CommitDetailsHeader';
 import { UnifiedDiffView } from './diff/UnifiedDiffView';
 import { SplitDiffView } from './diff/SplitDiffView';
 import { ImageDiffView } from './diff/ImageDiffView';
+import { CleanWorkingTreeView } from './diff/CleanWorkingTreeView';
 
 /**
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
@@ -36,7 +32,6 @@ export const DiffViewer: React.FC = () => {
     diffViewMode,
     setDiffViewMode,
     status,
-    user,
     setError,
   } = useGitStore();
 
@@ -56,19 +51,73 @@ export const DiffViewer: React.FC = () => {
     return fileInStatus ? fileInStatus.staged : false;
   }, [selectedFile, status]);
 
-  // Fetch diff when selected file or its staged state changes in Changes tab
+  // Fetch and live-sync diff when selected file changes, or when external edits occur on disk
   useEffect(() => {
     if (!activeRepoPath || !selectedFile || activeTab !== 'changes') {
       setDiff(null);
       return;
     }
 
-    setIsLoading(true);
-    GitService.getFileDiff(activeRepoPath, selectedFile, isStaged)
-      .then(setDiff)
-      .catch((err: unknown) => setError(toAppError(err, 'GIT_ERROR')))
-      .finally(() => setIsLoading(false));
-  }, [activeRepoPath, selectedFile, activeTab, isStaged, setError]);
+    let isDisposed = false;
+    let isFetching = false;
+
+    const fetchLiveDiff = async (isInitial = false) => {
+      if (isDisposed || isFetching || !activeRepoPath || !selectedFile) return;
+      isFetching = true;
+      if (isInitial) {
+        setIsLoading(true);
+      }
+
+      try {
+        const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
+        if (!isDisposed) {
+          setDiff((prev) => {
+            // If the diff content and lines are identical, keep previous reference to avoid re-renders
+            if (
+              prev &&
+              prev.file_path === newDiff.file_path &&
+              prev.lines.length === newDiff.lines.length &&
+              prev.lines.every(
+                (l, idx) =>
+                  l.content === newDiff.lines[idx]?.content &&
+                  l.line_type === newDiff.lines[idx]?.line_type
+              )
+            ) {
+              return prev;
+            }
+            return newDiff;
+          });
+        }
+      } catch (err: unknown) {
+        if (!isDisposed && isInitial) {
+          setError(toAppError(err, 'GIT_ERROR'));
+        }
+      } finally {
+        if (!isDisposed) {
+          if (isInitial) setIsLoading(false);
+          isFetching = false;
+        }
+      }
+    };
+
+    // 1. Initial immediate fetch
+    fetchLiveDiff(true);
+
+    // 2. Continuous lightweight background sync (every 1.5s) to detect live external file edits
+    const intervalId = setInterval(() => fetchLiveDiff(false), 1500);
+
+    // 3. Instant sync on window focus and document visibility
+    const handleFocusSync = () => fetchLiveDiff(false);
+    window.addEventListener('focus', handleFocusSync);
+    document.addEventListener('visibilitychange', handleFocusSync);
+
+    return () => {
+      isDisposed = true;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocusSync);
+      document.removeEventListener('visibilitychange', handleFocusSync);
+    };
+  }, [activeRepoPath, selectedFile, activeTab, setError]);
 
   // Fetch commit details when selected commit changes in History tab
   useEffect(() => {
@@ -115,35 +164,13 @@ export const DiffViewer: React.FC = () => {
     }
   };
 
-  const repoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || activeRepoPath
-    : '';
-
-  const handleOpenMergeRequest = async () => {
-    if (!user || !status?.current_branch) return;
-    const url = `${user.server_url}/${repoName}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${status.current_branch}`;
-    try {
-      await openUrl(url);
-    } catch {
-      window.open(url, '_blank');
-    }
-  };
-
-  const handleViewPipelines = async () => {
-    if (!user) return;
-    const url = `${user.server_url}/${repoName}/-/pipelines`;
-    try {
-      await openUrl(url);
-    } catch {
-      window.open(url, '_blank');
-    }
-  };
-
-  const isCurrentBranchPushed = (status?.ahead || 0) === 0;
-
   // ── Render Changes Diff Content ──────────────────────────────────────────
   const renderChangesDiff = () => {
-    if (!selectedFile) {
+    if (!selectedFile || (status && status.files.length === 0)) {
+      if (status && status.files.length === 0) {
+        return <CleanWorkingTreeView />;
+      }
+
       return (
         <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm space-y-2">
           <FileText className="w-10 h-10 opacity-30 text-commito-coral" />
@@ -152,7 +179,7 @@ export const DiffViewer: React.FC = () => {
       );
     }
 
-    if (isLoading) {
+    if (isLoading && (!diff || diff.file_path !== selectedFile)) {
       return (
         <div className="h-full flex items-center justify-center text-text-muted text-sm">Loading file diff...</div>
       );
@@ -163,7 +190,7 @@ export const DiffViewer: React.FC = () => {
     if (diff.is_large_file) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-center p-6">
-          <HardDrive className="w-12 h-12 text-amber-400 mb-3" />
+          <HardDrive className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Large File Warning</h3>
           <p className="text-xs text-text-muted max-w-md">
             File <span className="font-mono text-text-primary">{selectedFile}</span> exceeds the maximum diff preview
@@ -179,11 +206,11 @@ export const DiffViewer: React.FC = () => {
 
     if (diff.is_binary) {
       return (
-        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#141316]">
-          <Binary className="w-12 h-12 text-commito-coral mb-3" />
+        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-base-0">
+          <Binary className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Binary File Detected</h3>
           <p className="text-xs text-text-muted max-w-md mb-2">Binary files cannot be rendered as text diffs.</p>
-          <span className="text-xs font-mono text-emerald-400 px-2.5 py-1 bg-base-1 border border-border rounded-md">
+          <span className="text-xs font-mono text-git-added px-2.5 py-1 bg-base-1 border border-border rounded-sm">
             File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
           </span>
         </div>
@@ -200,7 +227,7 @@ export const DiffViewer: React.FC = () => {
           staged={isStaged}
         />
 
-        <div className="flex-1 overflow-auto bg-[#141316]">
+        <div className="flex-1 overflow-auto bg-base-0">
           {diffViewMode === 'split' ? (
             <SplitDiffView lines={diff.lines} />
           ) : (
@@ -216,7 +243,7 @@ export const DiffViewer: React.FC = () => {
     if (!selectedCommitSha) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm">
-          <Clock className="w-12 h-12 mb-3 opacity-30 text-gitlab-orange" />
+          <Clock className="w-12 h-12 mb-3 opacity-30 text-git-modified" />
           Select a commit from history to view metadata and changed files.
         </div>
       );
@@ -239,12 +266,34 @@ export const DiffViewer: React.FC = () => {
         />
 
         {/* Changed Files with Accordion Diffs */}
-        <div className="flex-1 p-2 overflow-y-auto space-y-3 bg-base-0">
-          <div className="text-xs font-semibold text-text-muted uppercase tracking-wider flex items-center justify-between">
-            <span className="text-xs">Changed Files ({commitDetails.changed_files.length})</span>
-            <span className="font-mono text-[11px] font-medium text-text-faint">
-              {commitDetails.changed_files.length} file{commitDetails.changed_files.length !== 1 ? 's' : ''} modified
-            </span>
+        <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-base-0">
+          <div className="px-1 flex items-center justify-between text-xs select-none">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold text-text-primary">Changed Files</span>
+              <span className="text-[10px] font-mono font-bold bg-base-2 text-text-muted px-1.5 py-0.5 rounded-sm border border-border">
+                {commitDetails.changed_files.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  const allOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+                  const nextState: Record<string, boolean> = {};
+                  commitDetails.changed_files.forEach((f) => {
+                    nextState[f] = !allOpen;
+                    if (!allOpen && selectedCommitSha && !expandedHistoryFiles[f]) {
+                      fetchCommitFileDiff(selectedCommitSha, f);
+                    }
+                  });
+                  setOpenFiles(nextState);
+                }}
+                className="text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-1 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
+              >
+                {commitDetails.changed_files.every((f) => openFiles[f]) ? 'Collapse All' : 'Expand All'}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -254,41 +303,53 @@ export const DiffViewer: React.FC = () => {
               const isFileLoading = Boolean(loadingHistoryFiles[file]);
               const fileStat = commitDetails.file_stats?.find((s) => s.path === file);
 
+              // Split directory and filename for clean visual hierarchy
+              const lastSlashIndex = file.lastIndexOf('/');
+              const dirPath = lastSlashIndex !== -1 ? file.substring(0, lastSlashIndex + 1) : '';
+              const fileName = lastSlashIndex !== -1 ? file.substring(lastSlashIndex + 1) : file;
+
               return (
-                <div key={file} className="border border-border rounded-md overflow-hidden bg-base-1 shadow-xs">
+                <div
+                  key={file}
+                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
+                    isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
+                  }`}
+                >
                   {/* File Accordion Header */}
                   <button
                     onClick={() => toggleFileExpansion(file)}
-                    className="w-full px-3.5 py-2 text-xs font-mono text-text-primary hover:bg-base-2 flex items-center justify-between text-left transition cursor-pointer"
+                    className="w-full px-3 py-2 text-xs font-mono text-text-primary hover:bg-base-2/80 flex items-center justify-between text-left transition cursor-pointer select-none"
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0">
-                      {isOpen ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-                      ) : (
-                        <ChevronRight className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
-                      )}
-                      <span className="text-text-muted select-none">-</span>
-                      <FileCode className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
-                      <span className="truncate font-mono font-medium">{file}</span>
+                    <div className="flex items-center gap-2 truncate min-w-0 flex-1">
+                      <ChevronRight
+                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+                          isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
+                        }`}
+                      />
+                      <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
+                      <div className="truncate min-w-0 flex items-baseline gap-0.5">
+                        {dirPath && <span className="text-text-faint text-[11px] truncate">{dirPath}</span>}
+                        <span className="font-semibold text-text-primary text-xs truncate">{fileName}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
                       {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono font-semibold">
-                          {fileStat.additions > 0 && <span className="text-emerald-400">+{fileStat.additions}</span>}
-                          {fileStat.deletions > 0 && <span className="text-red-400">-{fileStat.deletions}</span>}
+                        <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-base-0 border border-border">
+                          {fileStat.additions > 0 && <span className="text-git-added">+{fileStat.additions}</span>}
+                          {fileStat.deletions > 0 && <span className="text-git-removed">-{fileStat.deletions}</span>}
                         </div>
                       )}
-                      <CopyButton text={file} />
+                      <CopyButton text={file} className="!h-5 !px-1.5 !text-[10px]" />
                       {isFileLoading && (
-                        <span className="text-[11px] text-text-muted animate-pulse font-sans">Loading diff...</span>
+                        <span className="text-[10px] text-text-muted animate-pulse font-sans">Loading...</span>
                       )}
                     </div>
                   </button>
 
                   {/* Expanded File Diff Body */}
                   {isOpen && (
-                    <div className="border-t border-border bg-base-0">
+                    <div className="border-t border-border bg-base-0 animate-in fade-in duration-150">
                       {isFileLoading ? (
                         <div className="p-4 text-xs text-text-muted font-mono text-center">Fetching file changes...</div>
                       ) : fileDiff ? (
@@ -312,47 +373,7 @@ export const DiffViewer: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-github-dark-bg overflow-hidden">
-      {/* Action Banner */}
-      <div className="h-10 bg-github-dark-sidebar border-b border-github-dark-border px-4 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-github-dark-success" />
-          <span className="text-github-dark-heading font-medium">Branch status:</span>
-          <span className="text-gray-400">
-            {isCurrentBranchPushed ? 'Up to date with origin' : `${status?.ahead || 0} commits ahead`}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleOpenMergeRequest}
-            disabled={!user || !isCurrentBranchPushed}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${
-              user && isCurrentBranchPushed
-                ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
-            title={!isCurrentBranchPushed ? 'Push branch to origin before creating Merge Request' : ''}
-          >
-            <GitPullRequest className="w-3.5 h-3.5" />
-            Create Merge Request
-          </button>
-
-          <button
-            onClick={handleViewPipelines}
-            disabled={!user}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${
-              user
-                ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
-                : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
-            }`}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            View Pipelines
-          </button>
-        </div>
-      </div>
-
+    <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-base-0 overflow-hidden">
       {/* Main Diff / Details Display */}
       <div className="flex-1 min-h-0">
         {activeTab === 'changes' ? renderChangesDiff() : renderHistoryDetails()}

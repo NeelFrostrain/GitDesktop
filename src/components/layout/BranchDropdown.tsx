@@ -164,7 +164,7 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className="px-2.5 py-1 rounded-md bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer select-none"
+        className="px-2.5 py-1 rounded-sm bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer select-none"
         title={`Current branch: ${currentBranch}`}
       >
         <GitBranch className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
@@ -183,7 +183,7 @@ export const BranchDropdown: React.FC = () => {
               top: `${topPos}px`,
               width: `${menuWidth}px`,
             }}
-            className="fixed z-[9999] bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+            className="fixed z-[9999] bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
           >
             {/* Header Bar */}
             <div className="px-3 py-2 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
@@ -253,7 +253,7 @@ export const BranchDropdown: React.FC = () => {
                         <div
                           key={branchItem.name}
                           onClick={() => handleSelectBranch(branchItem.name)}
-                          className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-md cursor-pointer transition ${
+                          className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm cursor-pointer transition ${
                             isCurrent
                               ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
                               : 'hover:bg-base-2 text-text-primary'
@@ -300,7 +300,7 @@ export const BranchDropdown: React.FC = () => {
                       <div
                         key={remoteBranchItem.name}
                         onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                        className="group flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-md hover:bg-base-2 text-text-primary cursor-pointer transition"
+                        className="group flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm hover:bg-base-2 text-text-primary cursor-pointer transition"
                       >
                         <Globe className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
                         <span className="truncate text-xs font-mono">{remoteBranchItem.name}</span>
@@ -319,7 +319,7 @@ export const BranchDropdown: React.FC = () => {
         <div className="fixed inset-0 z-[10000] bg-black/75 flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
-            className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+            className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
           >
             <div className="px-4 py-3 bg-base-0 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">

@@ -195,3 +195,14 @@ pub fn kill_session(repo_id: &str) -> Result<(), AppError> {
 
     Ok(())
 }
+
+pub fn kill_all_sessions() {
+    let map = get_sessions_map();
+    let mut sessions = map.lock().unwrap();
+    for (_, session) in sessions.drain() {
+        session.is_alive.store(false, Ordering::SeqCst);
+        if let Ok(mut child) = session.child.lock() {
+            let _ = child.kill();
+        }
+    }
+}

@@ -42,7 +42,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
         <span className="font-mono text-xs font-semibold text-text-primary truncate">{filePath}</span>
 
         {staged && (
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 font-medium">
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-git-added-bg text-git-added border border-git-added/40 font-medium">
             Staged
           </span>
         )}
@@ -57,15 +57,14 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
 
       {/* View mode toggle */}
       {!isImage && !isBinary && (
-        <div className="flex items-center bg-base-0 border border-border rounded-md p-0.5">
+        <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5">
           <button
             type="button"
             onClick={() => onChangeViewMode('unified')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${
-              diffViewMode === 'unified'
-                ? 'bg-base-2 text-text-primary shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
+            className={`p-1 rounded-sm text-xs transition cursor-pointer ${diffViewMode === 'unified'
+              ? 'bg-base-2 text-text-primary shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+              }`}
             title="Unified View"
           >
             <AlignJustify className="w-3.5 h-3.5" />
@@ -73,11 +72,10 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           <button
             type="button"
             onClick={() => onChangeViewMode('split')}
-            className={`p-1 rounded text-xs transition cursor-pointer ${
-              diffViewMode === 'split'
-                ? 'bg-base-2 text-text-primary shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
+            className={`p-1 rounded-sm text-xs transition cursor-pointer ${diffViewMode === 'split'
+              ? 'bg-base-2 text-text-primary shadow-xs'
+              : 'text-text-muted hover:text-text-primary'
+              }`}
             title="Split (Side-by-Side) View"
           >
             <Columns className="w-3.5 h-3.5" />

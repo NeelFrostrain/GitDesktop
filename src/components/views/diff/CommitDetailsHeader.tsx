@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
-import { AlignJustify, Columns, ShieldCheck, ShieldAlert, GitCommit, Clock } from 'lucide-react';
+import {
+  AlignJustify,
+  Columns,
+  ShieldCheck,
+  ShieldAlert,
+  GitCommit,
+  Clock,
+  ChevronDown,
+  Copy,
+  Check,
+} from 'lucide-react';
 import { CommitDetails } from '../../../types/git';
 import { useSigningStore } from '../../../store/signingStore';
 import { UserAvatar } from '../../common/UserAvatar';
-import { CopyButton } from './diffUtils';
 
 interface CommitDetailsHeaderProps {
   commitDetails: CommitDetails;
@@ -12,7 +21,7 @@ interface CommitDetailsHeaderProps {
 }
 
 /**
- * Header card for Commit details in History view, displaying author, verification status, and stats.
+ * Modern, clean, high-density commit header with metadata, diff stats, and view controls.
  */
 export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   commitDetails,
@@ -20,6 +29,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   onChangeViewMode,
 }) => {
   const [showCommitBody, setShowCommitBody] = useState(false);
+  const [copiedSha, setCopiedSha] = useState(false);
 
   const fullMessage = commitDetails.commit.message || '';
   const firstNewlineIndex = fullMessage.indexOf('\n');
@@ -28,120 +38,150 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
 
   const verification = useSigningStore.getState().verifiedCommits[commitDetails.commit.sha];
 
+  const additions = commitDetails.total_additions ?? commitDetails.commit.additions ?? 0;
+  const deletions = commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0;
+
+  const handleCopySha = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(commitDetails.commit.sha);
+    setCopiedSha(true);
+    setTimeout(() => setCopiedSha(false), 1500);
+  };
+
   return (
-    <div className="p-3 bg-base-2 border-b border-border space-y-2.5 flex-shrink-0">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-xs font-semibold text-text-primary truncate" title={commitTitle}>
+    <div className="bg-base-1/60 border-b border-border flex-shrink-0 select-none">
+      {/* Top Row: Title + View Switcher & Actions */}
+      <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
+        <h2
+          className="text-xs font-semibold text-text-primary leading-snug truncate min-w-0 flex-1"
+          title={commitTitle}
+        >
           {commitTitle}
         </h2>
+
         <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="flex items-center gap-1 bg-base-1 border border-border rounded-md p-0.5">
+          {/* View mode toggle */}
+          <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5">
             <button
+              type="button"
               onClick={() => onChangeViewMode('unified')}
-              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${
                 diffViewMode === 'unified'
-                  ? 'bg-commito-coral text-white font-medium shadow-xs'
+                  ? 'bg-base-2 text-text-primary shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
               title="Unified View"
             >
-              <AlignJustify className="w-3 h-3" />
-              Unified
+              <AlignJustify className="w-3.5 h-3.5" />
             </button>
             <button
+              type="button"
               onClick={() => onChangeViewMode('split')}
-              className={`px-2 py-0.5 rounded-md text-[11px] flex items-center gap-1 cursor-pointer ${
+              className={`p-1 rounded-sm text-xs transition cursor-pointer ${
                 diffViewMode === 'split'
-                  ? 'bg-commito-coral text-white font-medium shadow-xs'
+                  ? 'bg-base-2 text-text-primary shadow-xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
-              title="Split View"
+              title="Split (Side-by-Side) View"
             >
-              <Columns className="w-3 h-3" />
-              Split
+              <Columns className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {verification && verification.status === 'Verified' && (
-              <span
-                title={`Cryptographically verified commit (Signed by ${
-                  typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
-                })`}
-                className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md font-medium"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Verified</span>
-              </span>
-            )}
-            {verification && verification.status === 'Unverified' && (
-              <span
-                title="Unverified commit signature"
-                className="flex items-center gap-1 text-amber-400 font-mono text-[11px] bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md font-medium"
-              >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Unverified</span>
-              </span>
-            )}
-
-            <CopyButton text={commitDetails.commit.sha} label="SHA" />
-            <CopyButton text={commitDetails.commit.message} label="Msg" />
-          </div>
+          {/* Verification badge */}
+          {verification?.status === 'Verified' && (
+            <span
+              title="Cryptographically verified"
+              className="flex items-center gap-1 text-git-added text-[10px] bg-git-added/10 border border-git-added/25 px-1.5 py-0.5 rounded-sm font-semibold"
+            >
+              <ShieldCheck className="w-3 h-3" />
+              Verified
+            </span>
+          )}
+          {verification?.status === 'Unverified' && (
+            <span
+              title="Unverified signature"
+              className="flex items-center gap-1 text-git-modified text-[10px] bg-git-modified/10 border border-git-modified/25 px-1.5 py-0.5 rounded-sm font-semibold"
+            >
+              <ShieldAlert className="w-3 h-3" />
+              Unverified
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Author & Commit Info Bar */}
-      <div className="flex items-center justify-between text-[11px] bg-base-1 px-2.5 py-1.5 rounded-md border border-border/80 shadow-xs">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <UserAvatar
-            name={commitDetails.commit.author_name}
-            email={commitDetails.commit.author_email}
-            className="w-4 h-4 rounded-full ring-1 ring-border/60 flex-shrink-0"
-            iconClassName="w-2.5 h-2.5"
-          />
-          <span className="font-semibold text-text-primary truncate">{commitDetails.commit.author_name}</span>
-
-          {/* Commit node badge */}
-          <div className="flex items-center gap-1 text-text-muted font-mono text-[10px] px-1.5 py-0.2 rounded bg-base-2 border border-border/60">
-            <GitCommit className="w-3 h-3 text-commito-coral flex-shrink-0" />
-            <span className="font-semibold text-text-secondary">{commitDetails.commit.short_sha}</span>
-            <CopyButton
-              text={commitDetails.commit.sha}
-              className="p-0.5 border-0 bg-transparent hover:bg-base-3 text-[9px]"
+      {/* Bottom Row: Author meta bar, SHA pill, Time, Diff Stats */}
+      <div className="px-4 pb-2.5 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2.5 min-w-0 text-[11px] text-text-muted">
+          {/* Author */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <UserAvatar
+              name={commitDetails.commit.author_name}
+              email={commitDetails.commit.author_email}
+              className="w-4 h-4 rounded-full ring-1 ring-border/60 flex-shrink-0"
+              iconClassName="w-2.5 h-2.5"
             />
+            <span className="font-medium text-text-primary truncate">
+              {commitDetails.commit.author_name}
+            </span>
           </div>
 
-          <div className="flex items-center gap-1 text-text-faint">
+          <span className="text-text-faint select-none">/</span>
+
+          {/* Click-to-copy SHA badge */}
+          <button
+            type="button"
+            onClick={handleCopySha}
+            title="Click to copy full commit SHA"
+            className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-1.5 py-0.5 transition cursor-pointer active:scale-95"
+          >
+            <GitCommit className="w-3 h-3 text-commito-coral flex-shrink-0" />
+            <span>{commitDetails.commit.short_sha}</span>
+            {copiedSha ? (
+              <Check className="w-2.5 h-2.5 text-git-added ml-0.5" />
+            ) : (
+              <Copy className="w-2.5 h-2.5 text-text-faint ml-0.5 opacity-70" />
+            )}
+          </button>
+
+          <span className="text-text-faint select-none">/</span>
+
+          {/* Time */}
+          <div className="flex items-center gap-1 flex-shrink-0 text-text-faint">
             <Clock className="w-3 h-3" />
             <span>{commitDetails.commit.relative_date}</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 font-mono font-bold text-xs flex-shrink-0">
-          {(commitDetails.total_additions !== undefined || commitDetails.commit.additions !== undefined) && (
-            <span className="text-emerald-400">
-              +{commitDetails.total_additions ?? commitDetails.commit.additions ?? 0}
-            </span>
-          )}
-          {(commitDetails.total_deletions !== undefined || commitDetails.commit.deletions !== undefined) && (
-            <span className="text-red-400">
-              -{commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0}
-            </span>
+        {/* Diff stats + Expand details button */}
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          {(additions > 0 || deletions > 0) && (
+            <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-0 border border-border shadow-2xs">
+              {additions > 0 && <span className="text-git-added">+{additions}</span>}
+              {deletions > 0 && <span className="text-git-removed">-{deletions}</span>}
+            </div>
           )}
 
           {commitBody && (
             <button
+              type="button"
               onClick={() => setShowCommitBody(!showCommitBody)}
-              className="text-[11px] text-commito-coral hover:underline font-medium font-sans ml-1 cursor-pointer"
+              className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
             >
-              {showCommitBody ? 'Hide Details' : 'Show Details'}
+              <span>{showCommitBody ? 'Hide Details' : 'Details'}</span>
+              <ChevronDown
+                className={`w-3 h-3 transition-transform duration-150 ${
+                  showCommitBody ? 'rotate-180 text-commito-coral' : ''
+                }`}
+              />
             </button>
           )}
         </div>
       </div>
 
+      {/* Expandable Commit Description / Body */}
       {commitBody && showCommitBody && (
-        <div className="p-2 bg-base-0 border border-border rounded-md text-[11px] text-text-muted max-h-28 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed">
+        <div className="mx-4 mb-3 p-3 bg-base-0 border-l-2 border-l-commito-coral border-y border-r border-border rounded-r-sm text-[11px] text-text-muted max-h-48 overflow-y-auto whitespace-pre-wrap font-mono leading-relaxed shadow-2xs animate-in fade-in duration-150">
           {commitBody}
         </div>
       )}

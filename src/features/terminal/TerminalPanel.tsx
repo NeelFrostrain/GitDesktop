@@ -27,6 +27,8 @@ export const TerminalPanel: React.FC = () => {
     }
   }, [activeRepoPath]);
 
+  const isShellActive = isOpen && activeTab === 'shell' && Boolean(activeRepoPath);
+
   const {
     terminalContainerRef,
     isSessionAlive,
@@ -37,7 +39,11 @@ export const TerminalPanel: React.FC = () => {
     fitTerminal,
     searchInTerminal,
     applySuggestion,
-  } = useRepoTerminal(activeRepoPath, activeRepoPath);
+  } = useRepoTerminal(
+    isShellActive ? activeRepoPath : null,
+    isShellActive ? activeRepoPath : null,
+    isShellActive
+  );
 
   // Re-fit xterm whenever tab switches or panel opens
   useEffect(() => {
@@ -164,7 +170,7 @@ export const TerminalPanel: React.FC = () => {
           branchName={status?.current_branch}
           isAlive={isSessionAlive}
           activeTab={activeTab}
-          onTabChange={(tab) => {
+          onTabChange={(tab: 'shell' | 'app_log') => {
             setActiveTab(tab);
             if (tab === 'shell') {
               setTimeout(fitTerminal, 20);
@@ -172,7 +178,7 @@ export const TerminalPanel: React.FC = () => {
           }}
           onClear={activeTab === 'shell' ? clearTerminal : clearAllLogs}
           onRestart={restartTerminal}
-          onSearch={(q) => {
+          onSearch={(q: string) => {
             if (activeTab === 'shell') {
               searchInTerminal(q, true);
             }
@@ -188,12 +194,12 @@ export const TerminalPanel: React.FC = () => {
           >
             <div
               ref={terminalContainerRef}
-              className="w-full h-full [&_.xterm]:p-0.5 [&_.xterm-viewport]:bg-base-0 [&_.xterm-viewport]:scrollbar-thin [&_.xterm-viewport]:scrollbar-thumb-base-3"
+              className="w-full h-full [&_.xterm-viewport]:bg-base-0 [&_.xterm-viewport]:scrollbar-thin [&_.xterm-viewport]:scrollbar-thumb-base-3"
             />
 
             {/* Ghost Text Overlay if available */}
             {autocomplete.ghostText && autocomplete.isVisible && (
-              <div className="absolute right-4 bottom-2 pointer-events-none text-xs font-mono text-text-muted bg-base-2/90 px-2.5 py-1 rounded-md border border-border shadow-md">
+              <div className="absolute right-4 bottom-2 pointer-events-none text-xs font-mono text-text-muted bg-base-2/90 px-2.5 py-1 rounded-sm border border-border shadow-md">
                 Suggestion remainder: <span className="text-text-primary font-semibold">{autocomplete.ghostText}</span>
               </div>
             )}
@@ -216,17 +222,20 @@ export const TerminalPanel: React.FC = () => {
               }`}
           >
             {/* Stream Toolbar */}
-            <div className="h-7 bg-base-1 border-b border-border px-3 flex items-center justify-between text-[11px] text-text-muted select-none flex-shrink-0">
+            <div className="h-7.5 bg-base-1/70 border-b border-border px-3 flex items-center justify-between text-[11px] text-text-muted select-none flex-shrink-0">
               <span className="flex items-center gap-2">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-semibold text-text-secondary">Live Application Log ({displayedLogs.length} events)</span>
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-git-added animate-pulse" />
+                <span className="font-semibold text-text-secondary">Live Application Log</span>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded-sm text-text-muted">
+                  {displayedLogs.length} events
+                </span>
               </span>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => setAutoScroll(!autoScroll)}
-                  className="flex items-center gap-1.5 text-text-muted hover:text-text-primary transition cursor-pointer"
+                  className="h-6 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5"
                   title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
                 >
                   {autoScroll ? <Pause className="w-3 h-3 text-gitlab-teal" /> : <Play className="w-3 h-3" />}
@@ -236,7 +245,7 @@ export const TerminalPanel: React.FC = () => {
                 <button
                   type="button"
                   onClick={clearAllLogs}
-                  className="flex items-center gap-1.5 text-text-muted hover:text-red-400 transition cursor-pointer"
+                  className="h-6 px-2 text-text-muted hover:text-git-removed bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5"
                   title="Clear current logs"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -315,7 +324,7 @@ export const TerminalPanel: React.FC = () => {
                           title="Copy line"
                         >
                           {copiedId === entry.id ? (
-                            <Check className="w-3 h-3 text-emerald-400" />
+                            <Check className="w-3 h-3 text-git-added" />
                           ) : (
                             <Copy className="w-3 h-3" />
                           )}

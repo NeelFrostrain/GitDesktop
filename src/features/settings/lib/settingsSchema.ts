@@ -1,6 +1,7 @@
 export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
 export type SettingCategory =
   | 'commonly_used'
+  | 'ai'
   | 'appearance'
   | 'colors'
   | 'terminal'
@@ -42,6 +43,11 @@ export const CATEGORY_METADATA: Record<
     label: 'Commonly Used',
     icon: 'Star',
     subcategories: ['Featured Settings'],
+  },
+  ai: {
+    label: 'AI & Commit-AI',
+    icon: 'Sparkles',
+    subcategories: ['API Keys & Providers', 'Model Configuration'],
   },
   appearance: {
     label: 'Appearance',
@@ -87,6 +93,51 @@ export const CATEGORY_METADATA: Record<
 };
 
 export const SETTINGS_SCHEMA: SettingDefinition[] = [
+  // ==========================================
+  // AI & COMMIT-AI
+  // ==========================================
+  {
+    id: 'ai.active_api_key',
+    label: 'Groq API Key',
+    description: 'Active Groq API Key (gsk_...) used for AI commit message generation and diff analysis.',
+    category: 'ai',
+    subcategory: 'API Keys & Providers',
+    type: 'text',
+    default: '',
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'ai.model',
+    label: 'Commit-AI Model',
+    description: 'The LLM model used for analyzing diffs and generating commit messages.',
+    category: 'ai',
+    subcategory: 'Model Configuration',
+    type: 'select',
+    options: [
+      { label: 'OpenAI GPT OSS 120B (Recommended)', value: 'openai/gpt-oss-120b' },
+      { label: 'Llama 3.3 70B Versatile', value: 'llama-3.3-70b-versatile' },
+      { label: 'Llama 3 70B (8192)', value: 'llama3-70b-8192' },
+      { label: 'Mixtral 8x7B (32768)', value: 'mixtral-8x7b-32768' },
+    ],
+    default: 'openai/gpt-oss-120b',
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'ai.temperature',
+    label: 'Sampling Temperature',
+    description: 'Controls creativity of the generated commit titles (0.0 to 1.0).',
+    category: 'ai',
+    subcategory: 'Model Configuration',
+    type: 'number',
+    min: 0.0,
+    max: 1.0,
+    step: 0.1,
+    default: 0.7,
+    scope: 'app',
+  },
+
   // ==========================================
   // COMMONLY USED (Pinned Quick Access)
   // ==========================================

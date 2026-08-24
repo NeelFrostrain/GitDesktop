@@ -84,10 +84,19 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
             continue;
         }
 
+        if s.contains(Status::IGNORED) {
+            continue;
+        }
+
         let is_staged = s.contains(Status::INDEX_NEW)
             || s.contains(Status::INDEX_MODIFIED)
             || s.contains(Status::INDEX_DELETED)
             || s.contains(Status::INDEX_RENAMED);
+
+        // If unstaged working tree changes match .gitignore, omit them
+        if !is_staged && repo.is_path_ignored(Path::new(&path_str)).unwrap_or(false) {
+            continue;
+        }
 
         let is_wt = s.contains(Status::WT_NEW)
             || s.contains(Status::WT_MODIFIED)

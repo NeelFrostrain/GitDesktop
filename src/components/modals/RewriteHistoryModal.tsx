@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { UserAvatar } from '../common/UserAvatar';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
 
@@ -119,11 +118,11 @@ export const RewriteHistoryModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
               {pendingHistoryOp.type === 'reorder' ? (
                 <ArrowUpDown className="w-4 h-4" />
               ) : (
@@ -143,7 +142,7 @@ export const RewriteHistoryModal: React.FC = () => {
           </div>
           <button
             onClick={handleClose}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -153,10 +152,10 @@ export const RewriteHistoryModal: React.FC = () => {
         <form onSubmit={handleConfirm} className="p-5 space-y-4 overflow-y-auto">
           {/* Uncommitted changes blocking alert */}
           {hasUncommittedChanges && (
-            <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-md flex items-start gap-2.5 text-xs text-red-200">
-              <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
+              <AlertTriangle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold text-red-300 block mb-0.5">Uncommitted changes detected</strong>
+                <strong className="font-bold text-git-removed block mb-0.5">Uncommitted changes detected</strong>
                 Your working directory contains uncommitted changes. Please commit or stash your changes before rewriting Git history to avoid loss of uncommitted work.
               </div>
             </div>
@@ -164,10 +163,10 @@ export const RewriteHistoryModal: React.FC = () => {
 
           {/* Remote branch warning */}
           {!hasUncommittedChanges && isPushedToRemote && (
-            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-md flex items-start gap-2.5 text-xs text-amber-200">
-              <Info className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-git-modified-bg border border-git-modified/40 rounded-sm flex items-start gap-2.5 text-xs text-git-modified">
+              <Info className="w-4 h-4 text-git-modified flex-shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold text-amber-300 block mb-0.5">Remote Branch Sync Notice</strong>
+                <strong className="font-bold text-git-modified block mb-0.5">Remote Branch Sync Notice</strong>
                 Rewriting history changes commit hashes. Updating a remote branch will require a manual force push (the application will not force push automatically).
               </div>
             </div>
@@ -180,45 +179,25 @@ export const RewriteHistoryModal: React.FC = () => {
                 You are moving the commit:
               </p>
 
-              {/* Source Commit Preview */}
-              <div className="p-3 bg-base-2 border border-commito-coral/50 rounded-md space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-text-primary truncate">
-                    {pendingHistoryOp.sourceCommit.message}
-                  </span>
-                  <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
-                    {pendingHistoryOp.sourceCommit.short_sha}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-text-muted">
-                  <div className="flex items-center gap-1.5">
-                    <UserAvatar name={pendingHistoryOp.sourceCommit.author_name} className="w-3.5 h-3.5" iconClassName="w-2 h-2" />
-                    <span>{pendingHistoryOp.sourceCommit.author_name}</span>
-                  </div>
-                  <span>{pendingHistoryOp.sourceCommit.relative_date}</span>
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
+                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.sourceCommit.message}</h4>
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                  <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
+                  <span>•</span>
+                  <span>{pendingHistoryOp.sourceCommit.author_name}</span>
                 </div>
               </div>
 
-              <div className="text-center text-xs font-bold text-commito-coral uppercase tracking-wider">
-                ↓ Move {pendingHistoryOp.position} ↓
-              </div>
+              <p className="text-xs text-text-secondary">
+                To position <strong className="text-text-primary uppercase">{pendingHistoryOp.position}</strong> commit:
+              </p>
 
-              {/* Target Commit Preview */}
-              <div className="p-3 bg-base-2 border border-border rounded-md space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-text-primary truncate">
-                    {pendingHistoryOp.targetCommit.message}
-                  </span>
-                  <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
-                    {pendingHistoryOp.targetCommit.short_sha}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px] text-text-muted">
-                  <div className="flex items-center gap-1.5">
-                    <UserAvatar name={pendingHistoryOp.targetCommit.author_name} className="w-3.5 h-3.5" iconClassName="w-2 h-2" />
-                    <span>{pendingHistoryOp.targetCommit.author_name}</span>
-                  </div>
-                  <span>{pendingHistoryOp.targetCommit.relative_date}</span>
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
+                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.targetCommit.message}</h4>
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                  <span>{pendingHistoryOp.targetCommit.short_sha}</span>
+                  <span>•</span>
+                  <span>{pendingHistoryOp.targetCommit.author_name}</span>
                 </div>
               </div>
             </div>
@@ -233,8 +212,8 @@ export const RewriteHistoryModal: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 {/* Target (Base) Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 block">First Commit (Target)</span>
+                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-git-added block">First Commit (Target)</span>
                   <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.targetCommit.message}</h4>
                   <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
                     {pendingHistoryOp.targetCommit.short_sha}
@@ -242,7 +221,7 @@ export const RewriteHistoryModal: React.FC = () => {
                 </div>
 
                 {/* Source Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-md space-y-1">
+                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-commito-coral block">Second Commit (Source)</span>
                   <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.sourceCommit.message}</h4>
                   <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
@@ -261,7 +240,7 @@ export const RewriteHistoryModal: React.FC = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Enter combined commit message..."
-                  className="w-full px-3 py-2 bg-base-0 border border-border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 resize-y font-sans leading-relaxed"
+                  className="w-full px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 resize-y font-sans leading-relaxed"
                   required
                 />
               </div>
@@ -273,14 +252,14 @@ export const RewriteHistoryModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-md text-xs font-semibold text-text-secondary transition cursor-pointer"
+              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
-              className={`px-5 py-2 rounded-md text-xs font-bold flex items-center gap-2 transition shadow-xs ${
+              className={`px-5 py-2 rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs ${
                 hasUncommittedChanges
                   ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed'
                   : 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer'
