@@ -249,7 +249,9 @@ src-tauri/src/git/
 
 3. **Run frontend typechecking**:
    ```bash
-   npm run build
+   npm run typecheck
+   # or
+   bun run typecheck
    ```
 
 4. **Verify Rust backend**:
