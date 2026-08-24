@@ -27,7 +27,7 @@ export const RepositoryHeader: React.FC = () => {
     <>
       <div className="p-2.5 border-b border-border space-y-2 select-none">
         {/* Top: Home Dashboard Navigation Button */}
-        <button
+        {/* <button
           onClick={() => setCurrentNavView('home')}
           className={`w-full px-2.5 py-1.5 rounded-md text-xs font-bold flex items-center justify-between transition cursor-pointer ${isHomeActive
               ? 'bg-commito-coral text-white shadow-sm'
@@ -41,7 +41,7 @@ export const RepositoryHeader: React.FC = () => {
           {isHomeActive && (
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
           )}
-        </button>
+        </button> */}
 
         {/* Bottom: Active Repo Card Switcher */}
         {activeRepoPath ? (
@@ -49,8 +49,8 @@ export const RepositoryHeader: React.FC = () => {
             ref={repoCardRef}
             onClick={handleOpenRepoSwitcher}
             className={`p-2 rounded-md border flex items-center justify-between cursor-pointer transition shadow-xs ${!isHomeActive
-                ? 'bg-commito-card border-commito-coral/40 shadow-xs'
-                : 'bg-base-2/40 border-border hover:border-border-strong hover:bg-base-2'
+              ? 'bg-commito-card border-commito-coral/40 shadow-xs'
+              : 'bg-base-2/40 border-border hover:border-border-strong hover:bg-base-2'
               }`}
           >
             <div className="flex items-center gap-2 min-w-0">

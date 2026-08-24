@@ -211,34 +211,44 @@ export const App: React.FC = () => {
     }
   };
 
+  const isHome = currentNavView === 'home';
+
   return (
     <ErrorBoundary>
-      <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans min-w-[960px]">
+      <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans">
         {/* Custom Application Titlebar */}
         <Titlebar />
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Left rail navigation & tabs */}
-          <Sidebar />
+          {isHome ? (
+            /* ── Home page: full-width, no sidebar ── */
+            <HomeDashboard />
+          ) : (
+            /* ── Repo page: sidebar + main content ── */
+            <div className="flex flex-1 min-w-[960px] overflow-hidden">
+              {/* Left rail navigation & tabs */}
+              <Sidebar />
 
-          {/* Main workspace body */}
-          <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            <Header />
-            <Suspense fallback={null}>
-              <ConflictView />
-            </Suspense>
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 flex min-h-0 overflow-hidden">
-                <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-base-0 text-text-muted text-xs">Loading view...</div>}>
-                  {renderMainContent()}
+              {/* Main workspace body */}
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                <Header />
+                <Suspense fallback={null}>
+                  <ConflictView />
                 </Suspense>
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  <div className="flex-1 flex min-h-0 overflow-hidden">
+                    <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-base-0 text-text-muted text-xs">Loading view...</div>}>
+                      {renderMainContent()}
+                    </Suspense>
+                  </div>
+                  {/* Dockable Terminal Panel */}
+                  <Suspense fallback={null}>
+                    <TerminalPanel />
+                  </Suspense>
+                </div>
               </div>
-              {/* Dockable Terminal Panel */}
-              <Suspense fallback={null}>
-                <TerminalPanel />
-              </Suspense>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Global Dialog Modals (Lazy Loaded) */}

@@ -1,70 +1,54 @@
 import React, { useEffect } from 'react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRepoStore } from '../../store/repoStore';
-import { useAccountStore } from '../../store/accountStore';
-import { useActivityStore } from '../../store/activityStore';
 import { UserAvatar } from '../common/UserAvatar';
 import { RepoList } from '../home/RepoList';
-import { AccountsWidget } from '../home/AccountsWidget';
-import { ActivityFeed } from '../home/ActivityFeed';
 
 export const HomeDashboard: React.FC = () => {
   const { user } = useGitStore();
   const { loadRepos } = useRepoStore();
-  const { fetchAccounts } = useAccountStore();
-  const { refresh: refreshActivity } = useActivityStore();
 
   useEffect(() => {
     loadRepos();
-    fetchAccounts();
-    refreshActivity();
-  }, [loadRepos, fetchAccounts, refreshActivity]);
+  }, [loadRepos]);
 
-  const getDayGreeting = () => {
-    const hours = new Date().getHours();
-    if (hours < 12) return 'Good morning. Ready to build something great today?';
-    if (hours < 18) return 'Good afternoon. Keep up the great coding momentum.';
-    return 'Good evening. Review your repositories and sync latest changes.';
+  const getGreeting = () => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   return (
-    <div className="flex-1 bg-base-0 overflow-y-auto p-6 space-y-6 select-none">
-      {/* Top Welcome Banner */}
-      <div className="flex items-center justify-between border-b border-border pb-5">
-        <div className="flex items-center gap-3.5">
-          <UserAvatar
-            url={user?.avatar_url}
-            name={user?.name || user?.username}
-            provider={user?.provider}
-            className="w-11 h-11 ring-2 ring-border/80 shadow-sm"
-            iconClassName="w-5 h-5"
-          />
-          <div>
-            <h1 className="text-base font-bold text-text-primary leading-tight">
-              {user ? `Welcome back, ${user.name || user.username}` : 'Welcome to Git Desktop'}
-            </h1>
-            <p className="text-xs text-text-muted mt-0.5">{getDayGreeting()}</p>
-          </div>
+    <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none">
+      {/* Welcome strip */}
+      <div className="px-6 py-4 border-b border-border flex items-center gap-3 flex-shrink-0">
+        <UserAvatar
+          url={user?.avatar_url}
+          name={user?.name || user?.username}
+          provider={user?.provider}
+          className="w-8 h-8 ring-1 ring-border/60 flex-shrink-0"
+          iconClassName="w-4 h-4"
+        />
+        <div className="min-w-0">
+          <h1 className="text-sm font-semibold text-text-primary leading-tight">
+            {user ? `${getGreeting()}, ${user.name || user.username}` : 'Welcome to Git Desktop'}
+          </h1>
+          <p className="text-[11px] text-text-muted mt-0.5 leading-none">
+            {user ? 'Review your repositories and sync latest changes.' : 'Connect an account to get started.'}
+          </p>
         </div>
       </div>
 
-      {/* Main 2-Column Responsive Dashboard */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Left Column (2/3 width on large screens): Repositories List */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+      {/* Main content */}
+      <div className="p-6 space-y-6">
+        {/* 2-column layout */}
+        <div className="space-y-3">
+            <p className="text-[10px] font-semibold text-text-faint uppercase tracking-widest">
               Your Repositories
-            </h2>
+            </p>
+            <RepoList />
           </div>
-          <RepoList />
-        </div>
-
-        {/* Right Column (1/3 width): Accounts Widget + Activity Feed */}
-        <div className="space-y-5">
-          <AccountsWidget />
-          <ActivityFeed />
-        </div>
       </div>
     </div>
   );

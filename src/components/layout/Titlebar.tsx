@@ -9,6 +9,7 @@ import {
   User,
   Plus,
   LogOut,
+  Home,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useAccountServicesStore } from '../../features/account-services';
@@ -21,7 +22,7 @@ import { AccountService } from '../../services/accounts/accountService';
  * and native window control buttons (minimize, maximize/restore, close).
  */
 export const Titlebar: React.FC = () => {
-  const { user, accounts, setUser, setAccounts, setActiveRepoPath, setStatus, setBranches } = useGitStore();
+  const { user, accounts, setUser, setAccounts, setActiveRepoPath, setStatus, setBranches, currentNavView, setCurrentNavView } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -73,7 +74,7 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.minimizeWindow();
     } catch {
-      await appWindow.minimize().catch(() => {});
+      await appWindow.minimize().catch(() => { });
     }
   };
 
@@ -84,7 +85,7 @@ export const Titlebar: React.FC = () => {
       const isNowMaximized = await SystemService.toggleMaximizeWindow();
       setIsMaximized(isNowMaximized);
     } catch {
-      await appWindow.toggleMaximize().catch(() => {});
+      await appWindow.toggleMaximize().catch(() => { });
       const maximized = await appWindow.isMaximized().catch(() => false);
       setIsMaximized(maximized);
     }
@@ -96,7 +97,7 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.closeWindow();
     } catch {
-      await appWindow.close().catch(() => {});
+      await appWindow.close().catch(() => { });
     }
   };
 
@@ -119,11 +120,12 @@ export const Titlebar: React.FC = () => {
       data-tauri-drag-region
       className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Icon */}
-      <div data-tauri-drag-region className="flex items-center gap-3">
+      {/* Left: App Icon + Home nav */}
+      <div data-tauri-drag-region className="flex items-center gap-2">
         <div className="flex items-center gap-2 pointer-events-none">
           <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-md object-contain shadow-xs" />
         </div>
+
       </div>
 
       {/* Right: Profile Dropdown + Window Action Controls */}
@@ -131,25 +133,35 @@ export const Titlebar: React.FC = () => {
         className="titlebar-no-drag flex items-center gap-2.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
+        {currentNavView !== 'home' && (
+          <button
+            type="button"
+            onClick={() => setCurrentNavView('home')}
+            className="titlebar-no-drag flex items-center gap-1.5 px-2 py-1 rounded-sm text-text-muted hover:text-text-primary bg-base-2 transition cursor-pointer text-xs"
+            title="Go to Home"
+          >
+            <Home className="w-3.5 h-3.5" />
+            <span className="font-medium">Home</span>
+          </button>
+        )}
         {/* User Account Profile Menu */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
               url={user?.avatar_url}
               name={user?.name || user?.username || 'Guest'}
               provider={user?.provider}
-              className="w-5 h-5"
+              className="w-4.5 h-4.5"
               iconClassName="w-3 h-3"
             />
             <ChevronDown
-              className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${
-                isProfileOpen ? 'rotate-180' : ''
-              }`}
+              className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
+                }`}
             />
           </button>
 
