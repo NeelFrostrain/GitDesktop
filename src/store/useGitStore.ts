@@ -336,8 +336,27 @@ export const useGitStore = create<GitState>((set, get) => ({
   setAccounts: (accounts) => set({ accounts }),
 
   setStatus: (status) => {
-    const currentStaged = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
-    set({ status, stagedFiles: currentStaged });
+    const allFilePaths = status ? status.files.map((f) => f.path) : [];
+    const currentStaged = get().stagedFiles;
+
+    let nextStaged: string[];
+    if (currentStaged.length === 0) {
+      // First load or after a repo switch — default-select all files
+      nextStaged = allFilePaths;
+    } else {
+      // Keep whatever the user has selected, drop files that no longer exist,
+      // and add any files that became git-staged externally (e.g. git add in terminal)
+      const gitStagedPaths = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
+      const stillExist = new Set(allFilePaths);
+      nextStaged = [
+        ...new Set([
+          ...currentStaged.filter((p) => stillExist.has(p)),
+          ...gitStagedPaths,
+        ]),
+      ];
+    }
+
+    set({ status, stagedFiles: nextStaged });
   },
 
   setBranches: (branches) => set({ branches }),

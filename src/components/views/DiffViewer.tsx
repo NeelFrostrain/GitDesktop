@@ -1,12 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   FileText,
   Binary,
   HardDrive,
-  GitPullRequest,
-  ExternalLink,
-  CheckCircle,
   Clock,
   ChevronDown,
   ChevronRight,
@@ -36,7 +32,6 @@ export const DiffViewer: React.FC = () => {
     diffViewMode,
     setDiffViewMode,
     status,
-    user,
     setError,
   } = useGitStore();
 
@@ -115,31 +110,7 @@ export const DiffViewer: React.FC = () => {
     }
   };
 
-  const repoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || activeRepoPath
-    : '';
 
-  const handleOpenMergeRequest = async () => {
-    if (!user || !status?.current_branch) return;
-    const url = `${user.server_url}/${repoName}/-/merge_requests/new?merge_request%5Bsource_branch%5D=${status.current_branch}`;
-    try {
-      await openUrl(url);
-    } catch {
-      window.open(url, '_blank');
-    }
-  };
-
-  const handleViewPipelines = async () => {
-    if (!user) return;
-    const url = `${user.server_url}/${repoName}/-/pipelines`;
-    try {
-      await openUrl(url);
-    } catch {
-      window.open(url, '_blank');
-    }
-  };
-
-  const isCurrentBranchPushed = (status?.ahead || 0) === 0;
 
   // ── Render Changes Diff Content ──────────────────────────────────────────
   const renderChangesDiff = () => {
@@ -313,44 +284,6 @@ export const DiffViewer: React.FC = () => {
 
   return (
     <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-base-0 overflow-hidden">
-      {/* Action Banner */}
-      <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-git-added" />
-          <span className="text-text-primary font-medium">Branch status:</span>
-          <span className="text-text-muted">
-            {isCurrentBranchPushed ? 'Up to date with origin' : `${status?.ahead || 0} commits ahead`}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleOpenMergeRequest}
-            disabled={!user || !isCurrentBranchPushed}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user && isCurrentBranchPushed
-              ? 'bg-git-modified/20 text-git-modified border border-git-modified/40 hover:bg-git-modified/30'
-              : 'bg-base-2 text-text-disabled border border-border cursor-not-allowed'
-              }`}
-            title={!isCurrentBranchPushed ? 'Push branch to origin before creating Merge Request' : ''}
-          >
-            <GitPullRequest className="w-3.5 h-3.5" />
-            Create Merge Request
-          </button>
-
-          <button
-            onClick={handleViewPipelines}
-            disabled={!user}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user
-              ? 'bg-base-2 text-text-primary border border-border hover:bg-base-3'
-              : 'bg-base-2 text-text-disabled border border-border cursor-not-allowed'
-              }`}
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-            View Pipelines
-          </button>
-        </div>
-      </div>
-
       {/* Main Diff / Details Display */}
       <div className="flex-1 min-h-0">
         {activeTab === 'changes' ? renderChangesDiff() : renderHistoryDetails()}
