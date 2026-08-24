@@ -10,7 +10,6 @@ import { toAppError } from '../shared/utils/errorUtils';
 export function useCommitForm() {
   const {
     activeRepoPath,
-    status,
     setStatus,
     stagedFiles,
     commitSummary,
@@ -42,13 +41,12 @@ export function useCommitForm() {
     commitOptions.bypassHooks || commitOptions.signOff || commitOptions.allowEmpty
   );
 
-  const allFilesCount = status?.files?.length || 0;
   const canCommit = Boolean(
-    commitSummary.trim() && (stagedFiles.length > 0 || allFilesCount > 0 || commitOptions.allowEmpty)
+    commitSummary.trim() && stagedFiles.length > 0
   );
 
   const handleCommit = async () => {
-    if (!activeRepoPath || !commitSummary.trim()) return;
+    if (!activeRepoPath || !commitSummary.trim() || stagedFiles.length === 0) return;
 
     // Verify Git author identity is configured before committing
     const identity = await GitService.getUserIdentity(activeRepoPath);

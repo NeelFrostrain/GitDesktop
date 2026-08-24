@@ -567,9 +567,9 @@ export const CommitPanel: React.FC = () => {
           {/* Primary Commit Action Button */}
           <button
             onClick={onExecuteCommit}
-            disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt}
+            disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt || count === 0}
             className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${
-              canCommit && !isSelectingAi && !isApiKeyPrompt
+              canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0
                 ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
                 : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
             }`}
@@ -580,7 +580,7 @@ export const CommitPanel: React.FC = () => {
                 ? 'Committing...'
                 : count > 0
                   ? `Commit ${count} file${count > 1 ? 's' : ''} to ${currentBranch}`
-                  : `Commit to ${currentBranch}`}
+                  : 'No staged files to commit'}
             </span>
           </button>
         </div>
