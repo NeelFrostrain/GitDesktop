@@ -259,7 +259,7 @@ export const StashManagerView: React.FC = () => {
                         e.stopPropagation();
                         handleDropStash(s.index);
                       }}
-                      className="p-1 text-text-muted hover:text-red-400 transition cursor-pointer"
+                      className="p-1 text-text-muted hover:text-git-removed transition cursor-pointer"
                       title="Drop stash"
                     >
                       <Trash2 className="w-3.5 h-3.5" />

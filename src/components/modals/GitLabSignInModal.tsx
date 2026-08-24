@@ -156,8 +156,8 @@ export const GitLabSignInModal: React.FC = () => {
         {/* Body Form */}
         <div className="p-5 space-y-4">
           {localError && (
-            <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-md flex items-start gap-2.5 text-xs text-red-300">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2.5 text-xs text-git-removed">
+              <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="flex-1">{localError}</div>
             </div>
           )}
@@ -200,7 +200,7 @@ export const GitLabSignInModal: React.FC = () => {
 
               <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1.5">
                 <div className="flex items-center gap-1.5 font-semibold text-text-secondary">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-git-added" />
                   <span>Secure Browser Sign-In</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-text-muted">

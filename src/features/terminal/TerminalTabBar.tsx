@@ -117,9 +117,9 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         {gitProgress && (
           <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium border transition-all duration-300 ${
             gitProgress.status === 'completed'
-              ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              ? 'bg-git-added-bg border-git-added/30 text-git-added'
               : gitProgress.status === 'error'
-              ? 'bg-red-500/10 border-red-500/30 text-red-400'
+              ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
               : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
           }`}>
             {gitProgress.status === 'completed' ? (
@@ -157,7 +157,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         {activeTab === 'shell' && (
           <span
             className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-              isAlive ? 'bg-emerald-400 shadow-[0_0_6px_#34d399]' : 'bg-gray-500'
+              isAlive ? 'bg-git-added shadow-[0_0_6px_var(--git-added)]' : 'bg-text-disabled'
             }`}
             title={isAlive ? 'Process running' : 'Process stopped'}
           />
@@ -234,7 +234,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded border border-transparent hover:border-border transition cursor-pointer"
             title="Restart shell process"
           >
-            <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+            <RotateCcw className="w-3.5 h-3.5 text-git-modified" />
           </button>
         )}
 

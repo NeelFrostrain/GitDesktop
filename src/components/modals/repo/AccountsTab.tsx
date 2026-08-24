@@ -198,7 +198,7 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
 
                 <button
                   onClick={() => handleRemoveAccount(account.id)}
-                  className="p-1 text-text-muted hover:text-red-400 hover:bg-red-950/30 rounded transition cursor-pointer"
+                  className="p-1 text-text-muted hover:text-git-removed hover:bg-git-removed-bg rounded transition cursor-pointer"
                   title="Remove account"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

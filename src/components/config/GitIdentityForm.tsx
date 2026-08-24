@@ -48,13 +48,13 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
           onChange={(e) => onEmailChange(e.target.value)}
           className={`w-full px-2.5 py-1.5 bg-base-0 border rounded-md text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans ${
             email && !isValidEmail(email)
-              ? 'border-red-500/60 focus:border-red-500'
+              ? 'border-git-removed focus:border-danger'
               : 'border-border focus:border-commito-coral/50'
           }`}
           required
         />
         {email && !isValidEmail(email) && (
-          <span className="text-[10px] text-red-400 block pt-0.5 font-medium">
+          <span className="text-[10px] text-git-removed block pt-0.5 font-medium">
             Please enter a valid email address.
           </span>
         )}

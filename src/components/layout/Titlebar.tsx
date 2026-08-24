@@ -198,7 +198,7 @@ export const Titlebar: React.FC = () => {
                   <div className="h-px bg-border mx-2 my-1" />
                   <button
                     onClick={handleSignOut}
-                    className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-950/40 hover:text-red-300 transition flex items-center gap-2 cursor-pointer"
+                    className="w-full text-left px-3 py-2 text-git-removed hover:bg-git-removed-bg hover:text-danger transition flex items-center gap-2 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Sign Out

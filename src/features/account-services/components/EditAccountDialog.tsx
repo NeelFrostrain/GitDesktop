@@ -61,7 +61,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="p-2.5 bg-red-950/40 border border-red-800/40 rounded-md text-xs text-red-300">
+            <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-md text-xs text-git-removed">
               {error}
             </div>
           )}

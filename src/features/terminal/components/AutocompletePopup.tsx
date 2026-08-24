@@ -24,15 +24,15 @@ const getKindIcon = (kind: AutocompleteKind) => {
     case 'branch':
       return <GitBranch className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />;
     case 'remote':
-      return <Globe className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />;
+      return <Globe className="w-3.5 h-3.5 text-git-added flex-shrink-0" />;
     case 'file':
-      return <File className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />;
+      return <File className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />;
     case 'tag':
-      return <Tag className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />;
+      return <Tag className="w-3.5 h-3.5 text-git-tag flex-shrink-0" />;
     case 'flag':
-      return <Flag className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />;
+      return <Flag className="w-3.5 h-3.5 text-accent flex-shrink-0" />;
     case 'stash':
-      return <Archive className="w-3.5 h-3.5 text-indigo-400 flex-shrink-0" />;
+      return <Archive className="w-3.5 h-3.5 text-gitlab-teal flex-shrink-0" />;
     case 'subcommand':
       return <Layers className="w-3.5 h-3.5 text-gitlab-teal flex-shrink-0" />;
     case 'command':

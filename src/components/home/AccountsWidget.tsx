@@ -16,7 +16,7 @@ export const AccountsWidget: React.FC = () => {
     if (account.token_status === 'expired') {
       return (
         <span
-          className="w-2 h-2 rounded-full bg-red-400 ring-2 ring-red-400/20 flex-shrink-0"
+          className="w-2 h-2 rounded-full bg-git-removed ring-2 ring-git-removed/20 flex-shrink-0"
           title="Token expired - re-authentication required"
         />
       );
@@ -24,14 +24,14 @@ export const AccountsWidget: React.FC = () => {
     if (account.token_status === 'expiring_soon') {
       return (
         <span
-          className="w-2 h-2 rounded-full bg-amber-400 ring-2 ring-amber-400/20 flex-shrink-0"
+          className="w-2 h-2 rounded-full bg-git-modified ring-2 ring-git-modified/20 flex-shrink-0"
           title="Token expiring soon"
         />
       );
     }
     return (
       <span
-        className="w-2 h-2 rounded-full bg-emerald-400 ring-2 ring-emerald-400/20 flex-shrink-0"
+        className="w-2 h-2 rounded-full bg-git-added ring-2 ring-git-added/20 flex-shrink-0"
         title="Token active"
       />
     );
@@ -68,7 +68,7 @@ export const AccountsWidget: React.FC = () => {
             <div
               key={acc.id}
               onClick={() => openModalWithTab('accounts')}
-              className="p-2 rounded-md bg-base-1 border border-border/80 hover:border-[#fc6d26]/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
+              className="p-2 rounded-md bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-center justify-between cursor-pointer group"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="relative">
@@ -108,8 +108,9 @@ export const AccountsWidget: React.FC = () => {
             No remote accounts connected yet.
           </p>
           <button
+            type="button"
             onClick={() => openModalWithTab('add')}
-            className="px-3 py-1.5 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 w-full cursor-pointer"
+            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold transition shadow-xs flex items-center justify-center gap-1.5 w-full cursor-pointer"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             <span>Connect Account</span>

@@ -87,7 +87,7 @@ export const SigningSettings: React.FC = () => {
         {/* Header */}
         <div className="h-12 bg-base-0 border-b border-border px-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 text-git-added" />
             <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider">
               Commit Signing & Verification
             </h2>
@@ -103,15 +103,15 @@ export const SigningSettings: React.FC = () => {
         {/* Form Body */}
         <form onSubmit={handleSave} className="p-5 space-y-5">
           {localError && (
-            <div className="p-3 bg-red-950/40 border border-red-800/60 rounded-md flex items-start gap-2.5 text-xs text-red-300">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2.5 text-xs text-git-removed">
+              <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="flex-1">{localError}</div>
             </div>
           )}
 
           {savedSuccess && (
-            <div className="p-3 bg-emerald-950/40 border border-emerald-800/60 rounded-md flex items-center gap-2 text-xs text-emerald-300">
-              <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+            <div className="p-3 bg-git-added-bg border border-git-added/40 rounded-md flex items-center gap-2 text-xs text-git-added">
+              <Check className="w-4 h-4 text-git-added flex-shrink-0" />
               <span>Signing configuration saved successfully.</span>
             </div>
           )}
@@ -208,7 +208,7 @@ export const SigningSettings: React.FC = () => {
                     </select>
                   ) : (
                     <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
-                      <div className="flex items-center gap-1 text-amber-400 font-semibold">
+                      <div className="flex items-center gap-1 text-git-modified font-semibold">
                         <AlertCircle className="w-3.5 h-3.5" />
                         <span>No GPG secret keys found</span>
                       </div>
@@ -232,7 +232,7 @@ export const SigningSettings: React.FC = () => {
                   </select>
                 ) : (
                   <div className="p-3 bg-base-2 border border-border rounded-md text-xs text-text-muted space-y-1">
-                    <div className="flex items-center gap-1 text-amber-400 font-semibold">
+                    <div className="flex items-center gap-1 text-git-modified font-semibold">
                       <AlertCircle className="w-3.5 h-3.5" />
                       <span>No SSH keys found</span>
                     </div>

@@ -3,9 +3,11 @@ import { Search } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { ChangeFileList } from './ChangeFileList';
+import { ChangesHeaderContextMenu } from '../../context-menus/ChangesHeaderContextMenu';
 
 export const ChangesPanel: React.FC = () => {
   const [fileFilter, setFileFilter] = useState('');
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const { status, stagedFiles, setAllStaged } = useGitStore();
 
   const allFiles = status?.files || [];
@@ -27,8 +29,14 @@ export const ChangesPanel: React.FC = () => {
           />
         </div>
 
-        {/* Selection Count Checkbox Row */}
-        <div className="flex items-center justify-between text-xs text-text-muted px-1.5 py-0.5">
+        {/* Selection Count Checkbox Row — right-click for bulk actions */}
+        <div
+          className="flex items-center justify-between text-xs text-text-muted px-1.5 py-0.5 rounded cursor-default"
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY });
+          }}
+        >
           <Checkbox
             checked={isAllStaged}
             indeterminate={stagedFiles.length > 0 && !isAllStaged}
@@ -40,6 +48,15 @@ export const ChangesPanel: React.FC = () => {
 
       {/* File Items List */}
       <ChangeFileList filter={fileFilter} />
+
+      {/* Bulk-action context menu */}
+      {contextMenu && (
+        <ChangesHeaderContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 };

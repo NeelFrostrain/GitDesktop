@@ -6,6 +6,7 @@
   "permissions": [
     "core:default",
     "core:window:default",
+    "core:window:allow-show",
     "core:event:default",
     "opener:default",
     "dialog:default",

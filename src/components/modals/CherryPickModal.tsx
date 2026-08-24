@@ -109,7 +109,7 @@ export const CherryPickModal: React.FC = () => {
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-git-added-bg border border-git-added/40 text-git-added flex items-center justify-center">
               <GitCommit className="w-4 h-4" />
             </div>
             <div>

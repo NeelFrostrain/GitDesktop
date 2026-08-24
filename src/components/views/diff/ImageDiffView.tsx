@@ -25,7 +25,7 @@ export const ImageDiffView: React.FC<ImageDiffViewProps> = ({ filePath, repoPath
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-[#141316]">
+      <div className="flex-1 overflow-auto flex items-center justify-center p-6 bg-base-0">
         <img
           src={fileUrl}
           alt={filePath}

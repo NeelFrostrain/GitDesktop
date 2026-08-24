@@ -179,7 +179,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({
       <div className="p-1">
         <button
           onClick={handleDiscardChanges}
-          className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2.5 transition text-left font-medium cursor-pointer"
+          className="w-full px-2.5 py-1.5 rounded-md hover:bg-git-removed-bg text-git-removed hover:text-danger flex items-center gap-2.5 transition text-left font-medium cursor-pointer"
         >
           <RotateCcw className="w-3.5 h-3.5" />
           <span>Discard changes</span>

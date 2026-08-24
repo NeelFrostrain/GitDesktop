@@ -227,7 +227,7 @@ export const TagsView: React.FC = () => {
               <div className="flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => handleDeleteTag(tag.name)}
-                  className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
+                  className="p-1.5 text-text-muted hover:text-git-removed bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                   title="Delete tag"
                 >
                   <Trash2 className="w-3.5 h-3.5" />

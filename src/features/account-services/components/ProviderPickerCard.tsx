@@ -38,11 +38,11 @@ export const ProviderPickerCard: React.FC = () => {
         <div
           onClick={() => handleProviderSelect('gitlab')}
           className={`p-4 rounded-md border transition-all cursor-pointer flex flex-col items-center justify-center text-center space-y-2.5 ${selectedProvider === 'gitlab'
-            ? 'bg-base-2 border-[#fc6d26] ring-2 ring-[#fc6d26]/20 shadow-md'
+            ? 'bg-base-2 border-gitlab-orange ring-2 ring-gitlab-orange/20 shadow-md'
             : 'bg-base-2/50 border-border hover:border-border-strong hover:bg-base-2'
             }`}
         >
-          <div className="w-10 h-10 rounded-md bg-[#fc6d26]/15 flex items-center justify-center text-[#fc6d26]">
+          <div className="w-10 h-10 rounded-md bg-gitlab-orange/15 flex items-center justify-center text-gitlab-orange">
             <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
               <path d="m23.6 9.6-2.1-6.5c-.2-.6-.9-.9-1.5-.6l-4.5 3.3H8.5L4 2.5C3.4 2.2 2.7 2.5 2.5 3.1L.4 9.6c-.2.5 0 1.1.4 1.4L12 19.8l11.2-8.8c.4-.3.6-.9.4-1.4z" />
             </svg>
@@ -87,7 +87,7 @@ export const ProviderPickerCard: React.FC = () => {
       {/* Configuration & Continue Form */}
       <form onSubmit={handleContinue} className="p-4 bg-base-2/40 border border-border rounded-md space-y-4">
         {error && (
-          <div className="p-2.5 bg-red-950/40 border border-red-800/40 rounded-md text-xs text-red-300">
+          <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-md text-xs text-git-removed">
             {error}
           </div>
         )}
@@ -118,7 +118,7 @@ export const ProviderPickerCard: React.FC = () => {
           <button
             type="submit"
             disabled={isWaiting}
-            className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md"
+            className="px-4 py-2 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-md"
           >
             {isWaiting ? (
               <>

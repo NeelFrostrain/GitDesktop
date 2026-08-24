@@ -44,8 +44,8 @@ export const GitUserConfigModal: React.FC = () => {
 
         <form onSubmit={handleSave} className="p-4 space-y-4 overflow-y-auto">
           {modalError && (
-            <div className="p-2.5 bg-red-950/40 border border-red-800/60 rounded-md flex items-start gap-2 text-xs text-red-200">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+            <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-md flex items-start gap-2 text-xs text-git-removed">
+              <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div className="leading-snug">{modalError}</div>
             </div>
           )}

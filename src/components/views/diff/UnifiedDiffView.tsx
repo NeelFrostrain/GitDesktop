@@ -32,15 +32,15 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = ({ lines }) => {
         let prefix = ' ';
 
         if (line.line_type === 'addition') {
-          lineBg = 'bg-green-950/40 text-green-300';
-          textColor = 'text-green-300';
+          lineBg = 'bg-diff-add-bg text-diff-add-text';
+          textColor = 'text-diff-add-text';
           prefix = '+';
         } else if (line.line_type === 'deletion') {
-          lineBg = 'bg-red-950/40 text-red-300';
-          textColor = 'text-red-300';
+          lineBg = 'bg-diff-remove-bg text-diff-remove-text';
+          textColor = 'text-diff-remove-text';
           prefix = '-';
         } else if (line.line_type === 'header') {
-          lineBg = 'bg-base-2 text-gitlab-blue font-semibold text-[11px] py-0.5';
+          lineBg = 'bg-base-2 text-diff-highlight font-semibold text-[11px] py-0.5';
         }
 
         return (

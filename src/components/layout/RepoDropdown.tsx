@@ -101,7 +101,7 @@ function ActiveRepoCard({
                 {branch}
               </span>
               <span className="text-text-muted">•</span>
-              <span className={isClean ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>
+              <span className={isClean ? 'text-git-clean font-semibold' : 'text-git-dirty font-semibold'}>
                 {isClean ? 'clean' : `${fileCount} change${fileCount === 1 ? '' : 's'}`}
               </span>
             </div>
@@ -165,7 +165,7 @@ function RepoRow({
               e.stopPropagation();
               onRemove();
             }}
-            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-base-3 text-text-muted hover:text-red-400 transition"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-base-3 text-text-muted hover:text-git-removed transition"
             title="Remove from recent repositories"
           >
             <X className="w-3 h-3" />

@@ -244,7 +244,7 @@ export const BranchesView: React.FC = () => {
                       />
                       <button
                         onClick={() => handleRenameBranch(b.name)}
-                        className="p-1 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded cursor-pointer"
+                        className="p-1 bg-git-added text-text-on-accent rounded cursor-pointer"
                         title="Save rename"
                       >
                         <Check className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export const BranchesView: React.FC = () => {
 
                       <button
                         onClick={() => handleDeleteBranch(b.name)}
-                        className="p-1.5 text-text-muted hover:text-red-400 bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
+                        className="p-1.5 text-text-muted hover:text-git-removed bg-base-3 hover:bg-base-1 border border-border rounded-md transition cursor-pointer"
                         title="Delete branch"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

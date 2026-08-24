@@ -136,7 +136,7 @@ export const LfsView: React.FC = () => {
       </div>
 
       {!isLfsInstalled && (
-        <div className="p-4 bg-amber-950/40 border border-amber-800/60 rounded-md text-amber-300 text-xs flex items-center gap-3">
+        <div className="p-4 bg-git-modified-bg border border-git-modified/40 rounded-md text-git-modified text-xs flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 flex-shrink-0" />
           <span>
             Git LFS CLI was not detected on your system environment PATH. Install Git LFS to utilize binary file locking.
@@ -167,7 +167,7 @@ export const LfsView: React.FC = () => {
             <button
               type="submit"
               disabled={!trackPattern.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Track</span>
@@ -191,8 +191,9 @@ export const LfsView: React.FC = () => {
                     <span className="truncate text-text-primary">{file.path}</span>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleUntrackPattern(file.path)}
-                    className="p-1 text-text-muted hover:text-red-400 transition cursor-pointer"
+                    className="p-1 text-text-muted hover:text-git-removed transition cursor-pointer"
                     title="Untrack pattern"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -224,7 +225,7 @@ export const LfsView: React.FC = () => {
             <button
               type="submit"
               disabled={!lockFilePath.trim()}
-              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-md text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <Lock className="w-3.5 h-3.5" />
               <span>Lock</span>
@@ -252,10 +253,11 @@ export const LfsView: React.FC = () => {
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleUnlockFile(lock.path)}
                     className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border text-text-secondary rounded text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer"
                   >
-                    <Unlock className="w-3 h-3 text-emerald-400" />
+                    <Unlock className="w-3 h-3 text-git-added" />
                     <span>Unlock</span>
                   </button>
                 </div>

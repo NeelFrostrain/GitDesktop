@@ -1,6 +1,9 @@
 import React from 'react';
 
-interface State { hasError: boolean; error: string | null }
+interface State {
+  hasError: boolean;
+  error: string | null;
+}
 
 export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, State> {
   constructor(props: React.PropsWithChildren<{}>) {
@@ -19,23 +22,20 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 9999,
-          background: '#0d0d14', color: '#f0f0f3',
-          display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          padding: '2rem', fontFamily: 'monospace', gap: '1rem'
-        }}>
-          <h2 style={{ color: '#FC6D26', margin: 0 }}>⚠ Rendering Error</h2>
-          <p style={{ color: '#c8c8ce', margin: 0, maxWidth: 600, textAlign: 'center', fontSize: '0.85rem' }}>
+        <div className="fixed inset-0 z-[9999] bg-base-0 text-text-primary flex flex-col items-center justify-center p-8 font-mono gap-4 select-none">
+          <h2 className="text-commito-coral text-lg font-bold m-0 flex items-center gap-2">
+            <span>⚠</span> Rendering Error
+          </h2>
+          <p className="text-text-secondary m-0 max-w-xl text-center text-xs break-words">
             {this.state.error}
           </p>
           <button
-            onClick={() => { this.setState({ hasError: false, error: null }); window.location.reload(); }}
-            style={{
-              padding: '0.5rem 1.5rem', background: '#FC6D26', color: 'white',
-              border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600
+            type="button"
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              window.location.reload();
             }}
+            className="px-6 py-2 bg-commito-coral hover:bg-commito-coralHover text-white rounded-md cursor-pointer text-xs font-semibold shadow-xs transition"
           >
             Reload App
           </button>

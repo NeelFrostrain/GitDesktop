@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
@@ -6,48 +6,51 @@ import { invoke } from '@tauri-apps/api/core';
 import { Sidebar } from './components/sidebar/Sidebar';
 import { ErrorBoundary } from './components/common';
 import { Titlebar, Header } from './components/layout';
-import {
-  HomeDashboard,
-  DiffViewer,
-  FileBrowser,
-  ConflictView,
-  BranchesView,
-  LfsView,
-  StashManagerView,
-  TagsView,
-  SubmodulesView,
-  BlameViewer,
-} from './components/views';
-import {
-  RepoModal,
-  CreateRepoModal,
-  MergeRequestModal,
-  WorktreeModal,
-  ConflictResolverModal,
-  RebaseModal,
-  CherryPickModal,
-  ReflogModal,
-  PatchModal,
-  GitConfigModal,
-  RewriteHistoryModal,
-  SigningSettings,
-  GitLabSignInModal,
-} from './components/modals';
-import { GitUserConfigModal } from './components/config/GitUserConfigModal';
-import { LogModal } from './components/logs/LogModal';
-import { AccountServicesModal } from './features/account-services';
-import { TerminalPanel, useTerminalStore } from './features/terminal';
-import { SettingsPanel, useSettingsStore } from './features/settings';
-import { useGitRuntime, MinGitSetupModal } from './features/git-runtime';
+import { HomeDashboard } from './components/views';
+import { useTerminalStore } from './features/terminal';
+import { useSettingsStore } from './features/settings';
+import { useGitRuntime } from './features/git-runtime';
 import { useGitStore } from './store/useGitStore';
 import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
 
+// Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
+const DiffViewer = lazy(() => import('./components/views/DiffViewer').then(m => ({ default: m.DiffViewer })));
+const FileBrowser = lazy(() => import('./components/views/FileBrowser').then(m => ({ default: m.FileBrowser })));
+const ConflictView = lazy(() => import('./components/views/ConflictView').then(m => ({ default: m.ConflictView })));
+const BranchesView = lazy(() => import('./components/views/BranchesView').then(m => ({ default: m.BranchesView })));
+const LfsView = lazy(() => import('./components/views/LfsView').then(m => ({ default: m.LfsView })));
+const StashManagerView = lazy(() => import('./components/views/StashManagerView').then(m => ({ default: m.StashManagerView })));
+const TagsView = lazy(() => import('./components/views/TagsView').then(m => ({ default: m.TagsView })));
+const SubmodulesView = lazy(() => import('./components/views/SubmodulesView').then(m => ({ default: m.SubmodulesView })));
+const BlameViewer = lazy(() => import('./components/views/BlameViewer').then(m => ({ default: m.BlameViewer })));
+
+// Lazy-loaded Modals & Panels (loaded only when triggered by user actions)
+const RepoModal = lazy(() => import('./components/modals/RepoModal').then(m => ({ default: m.RepoModal })));
+const CreateRepoModal = lazy(() => import('./components/modals/CreateRepoModal').then(m => ({ default: m.CreateRepoModal })));
+const MergeRequestModal = lazy(() => import('./components/modals/MergeRequestModal').then(m => ({ default: m.MergeRequestModal })));
+const WorktreeModal = lazy(() => import('./components/modals/WorktreeModal').then(m => ({ default: m.WorktreeModal })));
+const ConflictResolverModal = lazy(() => import('./components/modals/ConflictResolverModal').then(m => ({ default: m.ConflictResolverModal })));
+const RebaseModal = lazy(() => import('./components/modals/RebaseModal').then(m => ({ default: m.RebaseModal })));
+const CherryPickModal = lazy(() => import('./components/modals/CherryPickModal').then(m => ({ default: m.CherryPickModal })));
+const ReflogModal = lazy(() => import('./components/modals/ReflogModal').then(m => ({ default: m.ReflogModal })));
+const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m => ({ default: m.PatchModal })));
+const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
+const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
+const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
+const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
+const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
+const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
+const SigningSettings = lazy(() => import('./components/modals/SigningSettings').then(m => ({ default: m.SigningSettings })));
+const SettingsPanel = lazy(() => import('./features/settings').then(m => ({ default: m.SettingsPanel })));
+const TerminalPanel = lazy(() => import('./features/terminal').then(m => ({ default: m.TerminalPanel })));
+const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => ({ default: m.MinGitSetupModal })));
+
 /**
- * Root application component orchestrating the top-level layout, deep links,
- * global keyboard shortcuts, and modal dialogs.
+ * Root application component orchestrating top-level layout, deep links,
+ * global keyboard shortcuts, and code-split modal dialogs.
  */
 export const App: React.FC = () => {
   const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
@@ -55,17 +58,13 @@ export const App: React.FC = () => {
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
-    // Load accounts list
+    // Single consolidated startup call to list accounts and restore active session
     AccountService.listSavedAccounts()
       .then((accounts) => {
-        if (accounts) setAccounts(accounts);
-      })
-      .catch(() => {});
+        if (!accounts) return;
+        setAccounts(accounts);
+        if (accounts.length === 0) return;
 
-    // Attempt session restoration — restore whichever provider account is marked active
-    AccountService.listSavedAccounts()
-      .then((accounts) => {
-        if (!accounts || accounts.length === 0) return;
         const active = accounts.find((a) => a.is_active) || accounts[0];
         if (!active) return;
 
@@ -225,37 +224,47 @@ export const App: React.FC = () => {
           {/* Main workspace body */}
           <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
             <Header />
-            <ConflictView />
+            <Suspense fallback={null}>
+              <ConflictView />
+            </Suspense>
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 flex min-h-0 overflow-hidden">{renderMainContent()}</div>
+              <div className="flex-1 flex min-h-0 overflow-hidden">
+                <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-base-0 text-text-muted text-xs">Loading view...</div>}>
+                  {renderMainContent()}
+                </Suspense>
+              </div>
               {/* Dockable Terminal Panel */}
-              <TerminalPanel />
+              <Suspense fallback={null}>
+                <TerminalPanel />
+              </Suspense>
             </div>
           </div>
         </div>
 
-        {/* Global Dialog Modals */}
-        <ErrorBoundary>
-          <RepoModal />
-        </ErrorBoundary>
-        <CreateRepoModal />
-        <MergeRequestModal />
-        <WorktreeModal />
-        <ConflictResolverModal />
-        <RebaseModal />
-        <CherryPickModal />
-        <BlameViewer />
-        <ReflogModal />
-        <PatchModal />
-        <GitConfigModal />
-        <RewriteHistoryModal />
-        <GitUserConfigModal />
-        <LogModal />
-        <AccountServicesModal />
-        <GitLabSignInModal />
-        <SigningSettings />
-        <SettingsPanel />
-        <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
+        {/* Global Dialog Modals (Lazy Loaded) */}
+        <Suspense fallback={null}>
+          <ErrorBoundary>
+            <RepoModal />
+          </ErrorBoundary>
+          <CreateRepoModal />
+          <MergeRequestModal />
+          <WorktreeModal />
+          <ConflictResolverModal />
+          <RebaseModal />
+          <CherryPickModal />
+          <BlameViewer />
+          <ReflogModal />
+          <PatchModal />
+          <GitConfigModal />
+          <RewriteHistoryModal />
+          <GitUserConfigModal />
+          <LogModal />
+          <AccountServicesModal />
+          <GitLabSignInModal />
+          <SigningSettings />
+          <SettingsPanel />
+          <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
+        </Suspense>
       </div>
     </ErrorBoundary>
   );

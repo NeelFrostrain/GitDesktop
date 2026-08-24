@@ -5,10 +5,165 @@
     <link rel="icon" type="image/png" href="/app-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Git Desktop</title>
+
+    <!-- Preload and load main stylesheet upfront -->
+    <link rel="preload" href="/src/main.css" as="style" />
+    <link rel="stylesheet" href="/src/main.css" />
+
+    <!-- Inline Critical Styles for Instant Frame-1 Splash Screen -->
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #121113;
+        color: #e6e4e8;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        overflow: hidden;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+
+      .app-loader-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at center, #1b191e 0%, #121113 70%);
+      }
+
+      .app-loader-icon-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px;
+        height: 80px;
+        margin-bottom: 24px;
+      }
+
+      .app-loader-glow {
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        background: radial-gradient(circle, rgba(224, 86, 56, 0.35) 0%, rgba(224, 86, 56, 0) 70%);
+        border-radius: 50%;
+        animation: loader-pulse 2s ease-in-out infinite alternate;
+      }
+
+      .app-loader-logo {
+        position: relative;
+        width: 64px;
+        height: 64px;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 16px rgba(224, 86, 56, 0.4));
+        animation: loader-float 3s ease-in-out infinite;
+      }
+
+      .app-loader-title {
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #e6e4e8;
+        margin-bottom: 6px;
+      }
+
+      .app-loader-subtitle {
+        font-size: 11px;
+        color: #85818c;
+        margin-bottom: 20px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .app-loader-progress-track {
+        width: 140px;
+        height: 3px;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 9999px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .app-loader-progress-bar {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 45%;
+        background: linear-gradient(90deg, #e05638 0%, #f06344 100%);
+        border-radius: 9999px;
+        animation: loader-slide 1.4s ease-in-out infinite;
+      }
+
+      @keyframes loader-slide {
+        0% {
+          transform: translateX(-100%);
+        }
+        50% {
+          transform: translateX(120%);
+        }
+        100% {
+          transform: translateX(250%);
+        }
+      }
+
+      @keyframes loader-pulse {
+        0% {
+          transform: scale(0.9);
+          opacity: 0.4;
+        }
+        100% {
+          transform: scale(1.3);
+          opacity: 0.9;
+        }
+      }
+
+      @keyframes loader-float {
+        0%, 100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
+    </style>
+
+    <!-- Early theme preset detection -->
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('git-desktop-theme-preset') || 'commito-dark';
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (_) {}
+      })();
+    </script>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Instant Frame-1 Loading Splash Screen (Replaced automatically when React mounts) -->
+      <div class="app-loader-container">
+        <div class="app-loader-icon-box">
+          <div class="app-loader-glow"></div>
+          <img src="/app-icon.png" alt="Git Desktop" class="app-loader-logo" />
+        </div>
+        <div class="app-loader-title">Git Desktop</div>
+        <div class="app-loader-subtitle">Initializing Workspace</div>
+        <div class="app-loader-progress-track">
+          <div class="app-loader-progress-bar"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

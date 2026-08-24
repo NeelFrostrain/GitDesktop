@@ -62,11 +62,11 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
                   <RefreshCw className="w-3 h-3 animate-spin" /> Detecting...
                 </span>
               ) : runtimeInfo?.is_available ? (
-                <span className="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                <span className="inline-flex items-center gap-1 text-git-added font-medium">
                   <CheckCircle className="w-3.5 h-3.5" /> Available
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-amber-400 font-medium">
+                <span className="inline-flex items-center gap-1 text-git-modified font-medium">
                   <AlertTriangle className="w-3.5 h-3.5" /> Not Found
                 </span>
               )}

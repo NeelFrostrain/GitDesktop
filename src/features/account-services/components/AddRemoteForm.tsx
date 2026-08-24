@@ -63,7 +63,7 @@ export const AddRemoteForm: React.FC<AddRemoteFormProps> = ({ repoPath }) => {
       </div>
 
       {error && (
-        <div className="p-2 bg-red-950/40 border border-red-800/40 rounded-md text-xs text-red-300">
+        <div className="p-2 bg-git-removed-bg border border-git-removed/40 rounded-md text-xs text-git-removed">
           {error}
         </div>
       )}

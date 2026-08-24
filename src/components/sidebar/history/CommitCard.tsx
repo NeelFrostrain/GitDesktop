@@ -44,7 +44,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       return (
         <span
           title={`Verified commit (Signed by ${signer || 'GPG/SSH key'})`}
-          className="flex items-center gap-0.5 text-emerald-400 font-mono text-[9px] bg-emerald-950/40 border border-emerald-800/40 px-1 py-0.2 rounded"
+          className="flex items-center gap-0.5 text-git-added font-mono text-[9px] bg-git-added-bg border border-git-added/40 px-1 py-0.2 rounded"
         >
           <ShieldCheck className="w-2.5 h-2.5" />
           <span>Verified</span>
@@ -57,7 +57,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       return (
         <span
           title={`Unverified signature: ${reason || 'Untrusted or expired key'}`}
-          className="flex items-center gap-0.5 text-amber-400 font-mono text-[9px] bg-amber-950/40 border border-amber-800/40 px-1 py-0.2 rounded"
+          className="flex items-center gap-0.5 text-git-modified font-mono text-[9px] bg-git-modified-bg border border-git-modified/40 px-1 py-0.2 rounded"
         >
           <ShieldAlert className="w-2.5 h-2.5" />
           <span>Unverified</span>
@@ -127,8 +127,8 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         <div className="flex items-center gap-2 flex-shrink-0">
           {commit.additions !== undefined && commit.deletions !== undefined && (commit.additions > 0 || commit.deletions > 0) && (
             <div className="flex items-center gap-1 font-mono text-[9px] font-semibold">
-              <span className="text-emerald-400">+{commit.additions}</span>
-              <span className="text-red-400">-{commit.deletions}</span>
+              <span className="text-git-added">+{commit.additions}</span>
+              <span className="text-git-removed">-{commit.deletions}</span>
             </div>
           )}
           <span className="font-mono text-[10px] text-text-faint">{commit.relative_date}</span>

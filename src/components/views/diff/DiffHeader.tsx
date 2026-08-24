@@ -42,7 +42,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
         <span className="font-mono text-xs font-semibold text-text-primary truncate">{filePath}</span>
 
         {staged && (
-          <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800/40 font-medium">
+          <span className="text-[10px] px-1.5 py-0.2 rounded bg-git-added-bg text-git-added border border-git-added/40 font-medium">
             Staged
           </span>
         )}

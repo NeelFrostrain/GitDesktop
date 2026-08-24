@@ -133,9 +133,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-amber-950/40 border-b border-amber-800/40 flex items-center justify-between">
+        <div className="px-5 py-3.5 bg-git-modified-bg border-b border-git-modified/40 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-md bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-md bg-git-modified-bg border border-git-modified/40 text-git-modified flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div>
@@ -143,12 +143,13 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Uncommitted Changes Detected
               </h2>
               <p className="text-[11px] text-text-muted">
-                Switching branch from <span className="font-mono text-amber-400">{currentBranch}</span> to{' '}
+                Switching branch from <span className="font-mono text-git-modified">{currentBranch}</span> to{' '}
                 <span className="font-mono text-commito-coral">{targetBranch}</span>
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 text-text-muted hover:text-text-primary rounded-md hover:bg-base-2 transition cursor-pointer"
           >
@@ -165,6 +166,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
           {/* Option 1: Bring Changes */}
           <button
+            type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
             className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-commito-coral/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
@@ -187,6 +189,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
           {/* Option 2: Leave Changes */}
           <button
+            type="button"
             onClick={handleLeaveChanges}
             disabled={isProcessing}
             className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-text-muted rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
@@ -206,15 +209,16 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
           {/* Option 3: Discard / Force */}
           <button
+            type="button"
             onClick={handleForceCheckout}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-2 hover:bg-red-950/30 border border-border hover:border-red-800/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
+            className="w-full p-3.5 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-md text-left transition flex items-start gap-3 group cursor-pointer"
           >
-            <div className="w-7 h-7 rounded bg-red-500/15 border border-red-500/30 text-red-400 flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Trash2 className="w-3.5 h-3.5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-red-400">
+              <div className="text-xs font-bold text-git-removed">
                 Discard Changes & Force Checkout
               </div>
               <p className="text-[11px] text-text-muted mt-0.5">

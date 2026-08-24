@@ -254,7 +254,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
           onClick={handleRevertCommit}
           className="w-full px-2.5 py-1.5 rounded-md hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
         >
-          <RotateCcw className="w-3.5 h-3.5 text-red-400" />
+          <RotateCcw className="w-3.5 h-3.5 text-git-removed" />
           <span>Revert commit</span>
         </button>
       </div>

@@ -5,7 +5,6 @@ import { SearchAddon } from '@xterm/addon-search';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { ptyBridge } from '../lib/ptyBridge';
 import { useGitAutocomplete } from './useGitAutocomplete';
-import '@xterm/xterm/css/xterm.css';
 
 // Global cache of Terminal instances per repository path to preserve buffer state
 const terminalCache = new Map<
@@ -18,7 +17,11 @@ const terminalCache = new Map<
   }
 >();
 
-export function useRepoTerminal(repoId: string | null, repoPath: string | null) {
+export function useRepoTerminal(
+  repoId: string | null,
+  repoPath: string | null,
+  isEnabled: boolean = true
+) {
   const terminalContainerRef = useRef<HTMLDivElement>(null);
   const [isSessionAlive, setIsSessionAlive] = useState<boolean>(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -57,7 +60,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   const historyIndexRef = useRef<number>(-1);
   const localHistoryRef = useRef<string[]>([]);
 
-  const autocomplete = useGitAutocomplete(repoPath);
+  const autocomplete = useGitAutocomplete(isEnabled ? repoPath : null);
   const autocompleteRef = useRef(autocomplete);
   autocompleteRef.current = autocomplete;
 
@@ -155,11 +158,14 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   // Setup terminal mount, PTY connection, event listeners
   useEffect(() => {
     isMountedRef.current = true;
-    if (!repoId || !repoPath || !terminalContainerRef.current) {
+    if (!isEnabled || !repoId || !repoPath || !terminalContainerRef.current) {
+      setIsSessionAlive(false);
       return;
     }
 
-    const { terminal, fitAddon, isInitialized } = getOrCreateTerminal(repoId);
+    const currentRepoId = repoId;
+    const currentRepoPath = repoPath;
+    const { terminal, fitAddon, isInitialized } = getOrCreateTerminal(currentRepoId);
 
     // Attach to DOM if not attached to current container
     if (terminal.element?.parentElement !== terminalContainerRef.current) {
@@ -182,10 +188,13 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
 
     const setupSession = async () => {
       try {
-        // Replay history on first open
-        if (!isInitialized) {
+        if (isInitialized) {
+          // Fresh clear on reconnect / reopen
+          terminal.clear();
+        } else {
+          // Replay history on first open
           try {
-            const history = await ptyBridge.getHistory(repoId, 6, 0);
+            const history = await ptyBridge.getHistory(currentRepoId, 6, 0);
             if (history && history.length > 0 && isActive) {
               terminal.writeln('\x1b[90m┌── Previous Session Commands ──────────────────────────┐\x1b[0m');
               for (const entry of history) {
@@ -196,21 +205,21 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
             }
           } catch {}
 
-          const cached = terminalCache.get(repoId);
+          const cached = terminalCache.get(currentRepoId);
           if (cached) cached.isInitialized = true;
         }
 
         if (!isActive) return;
 
-        // Open backend PTY session
-        const sessionInfo = await ptyBridge.open(repoId, repoPath);
+        // Open backend PTY session (lazy spawn)
+        const sessionInfo = await ptyBridge.open(currentRepoId, currentRepoPath);
         if (!isActive) return;
 
         setIsSessionAlive(sessionInfo.is_alive);
         setSessionId(sessionInfo.session_id);
 
         // Sync size
-        await ptyBridge.resize(repoId, terminal.cols, terminal.rows);
+        await ptyBridge.resize(currentRepoId, terminal.cols, terminal.rows);
         if (!isActive) return;
 
         // Clean up previous listeners if any exist
@@ -224,7 +233,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         }
 
         // Subscribe to PTY stream events
-        const safeRepoId = repoId.replace(/\\/g, '/').replace(/:/g, '_');
+        const safeRepoId = currentRepoId.replace(/\\/g, '/').replace(/:/g, '_');
         const unData = await listen<string>(`terminal:${safeRepoId}:data`, (event) => {
           if (event.payload && isMountedRef.current) {
             terminal.write(event.payload);
@@ -257,7 +266,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
 
     // Keystroke handler attached to terminal
     const onDataDisposable = terminal.onData((data) => {
-      if (!repoId) return;
+      if (!currentRepoId) return;
 
       const auto = autocompleteRef.current;
 
@@ -266,13 +275,13 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         const fullCmd = inputBufferRef.current.trim();
         if (fullCmd.length > 0) {
           localHistoryRef.current.push(fullCmd);
-          ptyBridge.recordHistory(repoId, fullCmd).catch(() => {});
+          ptyBridge.recordHistory(currentRepoId, fullCmd).catch(() => {});
         }
         inputBufferRef.current = '';
         cursorPosRef.current = 0;
         historyIndexRef.current = -1;
         auto.clearSuggestions();
-        ptyBridge.write(repoId, data);
+        ptyBridge.write(currentRepoId, data);
         return;
       }
 
@@ -344,7 +353,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       }
 
       // Forward keystroke to backend PTY
-      ptyBridge.write(repoId, data);
+      ptyBridge.write(currentRepoId, data);
     });
 
     const onCursorMoveDisposable = terminal.onCursorMove(() => {
@@ -356,8 +365,8 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
       try {
         fitAddon.fit();
         calculateCursorPositionRef.current();
-        if (repoId && terminal.cols > 0 && terminal.rows > 0) {
-          ptyBridge.resize(repoId, terminal.cols, terminal.rows).catch(() => {});
+        if (currentRepoId && terminal.cols > 0 && terminal.rows > 0) {
+          ptyBridge.resize(currentRepoId, terminal.cols, terminal.rows).catch(() => {});
         }
       } catch {}
     });
@@ -380,8 +389,10 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
         unlistenExitRef.current();
         unlistenExitRef.current = null;
       }
+      // Kill PTY child process (PowerShell) on close/unmount to free RAM immediately
+      ptyBridge.kill(currentRepoId).catch(() => {});
     };
-  }, [repoId, repoPath, getOrCreateTerminal]);
+  }, [isEnabled, repoId, repoPath, getOrCreateTerminal]);
 
   // Actions
   const clearTerminal = useCallback(() => {
@@ -393,7 +404,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
   }, [repoId]);
 
   const restartTerminal = useCallback(async () => {
-    if (!repoId || !repoPath) return;
+    if (!isEnabled || !repoId || !repoPath) return;
     const cached = terminalCache.get(repoId);
     if (cached) {
       cached.terminal.clear();
@@ -406,7 +417,7 @@ export function useRepoTerminal(repoId: string | null, repoPath: string | null) 
     if (cached) {
       await ptyBridge.resize(repoId, cached.terminal.cols, cached.terminal.rows);
     }
-  }, [repoId, repoPath]);
+  }, [isEnabled, repoId, repoPath]);
 
   const searchInTerminal = useCallback(
     (query: string, findNext = true) => {

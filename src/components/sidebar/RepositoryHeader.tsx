@@ -54,7 +54,7 @@ export const RepositoryHeader: React.FC = () => {
               }`}
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-md bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 flex items-center justify-center flex-shrink-0">
+              <div className="w-7 h-7 rounded-md bg-git-added-bg border border-git-added/40 text-git-added flex items-center justify-center flex-shrink-0">
                 <FolderGit2 className="w-3.5 h-3.5" />
               </div>
               <div className="min-w-0">

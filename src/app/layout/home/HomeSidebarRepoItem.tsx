@@ -49,10 +49,11 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {/* Repo Icon */}
         <div
-          className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${repo.pinned
-              ? 'bg-amber-950/40 text-amber-400 border-amber-800/40'
-              : 'bg-emerald-950/40 text-emerald-400 border-emerald-800/40'
-            }`}
+          className={`w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0 border ${
+            repo.pinned
+              ? 'bg-git-modified-bg text-git-modified border-git-modified/40'
+              : 'bg-git-added-bg text-git-added border-git-added/40'
+          }`}
         >
           {repo.pinned ? (
             <Pin className="w-3 h-3 rotate-45" />
@@ -77,7 +78,7 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
 
             {hasDirtyFiles && (
               <span
-                className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0"
+                className="w-1.5 h-1.5 rounded-full bg-git-dirty flex-shrink-0"
                 title={`${status?.dirty_files} uncommitted change(s)`}
               />
             )}
@@ -90,10 +91,11 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
         type="button"
         onClick={handlePinToggle}
         title={repo.pinned ? 'Unpin repository' : 'Pin repository to top'}
-        className={`p-1 rounded text-text-muted hover:text-amber-400 hover:bg-base-3 transition flex-shrink-0 cursor-pointer ${repo.pinned ? 'opacity-100 text-amber-400' : 'opacity-0 group-hover/repo:opacity-100'
-          }`}
+        className={`p-1 rounded text-text-muted hover:text-git-modified hover:bg-base-3 transition flex-shrink-0 cursor-pointer ${
+          repo.pinned ? 'opacity-100 text-git-modified' : 'opacity-0 group-hover/repo:opacity-100'
+        }`}
       >
-        <Pin className={`w-3 h-3 ${repo.pinned ? 'rotate-45 fill-amber-400/20' : ''}`} />
+        <Pin className={`w-3 h-3 ${repo.pinned ? 'rotate-45 fill-git-modified/20' : ''}`} />
       </button>
     </div>
   );

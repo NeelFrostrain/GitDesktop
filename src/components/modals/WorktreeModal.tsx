@@ -194,7 +194,7 @@ export const WorktreeModal: React.FC = () => {
                       <GitBranch className="w-3 h-3 text-commito-coral" />
                       <span>{wt.branch || 'detached'}</span>
                       {wt.head_sha && <span>({wt.head_sha.slice(0, 7)})</span>}
-                      {wt.is_bare && <span className="text-amber-400 font-bold">[bare]</span>}
+                      {wt.is_bare && <span className="text-git-modified font-bold">[bare]</span>}
                     </div>
                   </div>
 
@@ -208,7 +208,7 @@ export const WorktreeModal: React.FC = () => {
                     {!wt.path.endsWith('.git') && (
                       <button
                         onClick={() => handleRemoveWorktree(wt.path)}
-                        className="p-1.5 text-text-muted hover:text-red-400 transition cursor-pointer"
+                        className="p-1.5 text-text-muted hover:text-git-removed transition cursor-pointer"
                         title="Remove worktree"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

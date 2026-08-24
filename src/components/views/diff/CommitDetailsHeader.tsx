@@ -63,9 +63,10 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           <div className="flex items-center gap-1.5">
             {verification && verification.status === 'Verified' && (
               <span
-                title={`Cryptographically verified commit (Signed by ${typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
-                  })`}
-                className="flex items-center gap-1 text-emerald-400 font-mono text-[11px] bg-emerald-950/40 border border-emerald-800/40 px-2 py-0.5 rounded-md font-medium"
+                title={`Cryptographically verified commit (Signed by ${
+                  typeof verification.details === 'object' ? verification.details?.signer || 'GPG/SSH' : 'GPG/SSH'
+                })`}
+                className="flex items-center gap-1 text-git-added font-mono text-[11px] bg-git-added-bg border border-git-added/40 px-2 py-0.5 rounded-md font-medium"
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 <span>Verified</span>
@@ -74,7 +75,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
             {verification && verification.status === 'Unverified' && (
               <span
                 title="Unverified commit signature"
-                className="flex items-center gap-1 text-amber-400 font-mono text-[11px] bg-amber-950/40 border border-amber-800/40 px-2 py-0.5 rounded-md font-medium"
+                className="flex items-center gap-1 text-git-modified font-mono text-[11px] bg-git-modified-bg border border-git-modified/40 px-2 py-0.5 rounded-md font-medium"
               >
                 <ShieldAlert className="w-3.5 h-3.5" />
                 <span>Unverified</span>
@@ -116,12 +117,12 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
 
         <div className="flex items-center gap-3 font-mono font-bold text-xs flex-shrink-0">
           {(commitDetails.total_additions !== undefined || commitDetails.commit.additions !== undefined) && (
-            <span className="text-emerald-400">
+            <span className="text-git-added">
               +{commitDetails.total_additions ?? commitDetails.commit.additions ?? 0}
             </span>
           )}
           {(commitDetails.total_deletions !== undefined || commitDetails.commit.deletions !== undefined) && (
-            <span className="text-red-400">
+            <span className="text-git-removed">
               -{commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0}
             </span>
           )}

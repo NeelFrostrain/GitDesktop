@@ -278,7 +278,7 @@ export const MergeRequestModal: React.FC = () => {
 
               {mergeRequests.length === 0 ? (
                 <div className="p-8 text-center bg-base-2 border border-border rounded-md space-y-2">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
+                  <CheckCircle2 className="w-8 h-8 text-git-added mx-auto" />
                   <p className="text-xs text-text-muted font-medium">
                     No open requests found for this project
                   </p>
@@ -292,7 +292,7 @@ export const MergeRequestModal: React.FC = () => {
                     >
                       <div className="space-y-1 min-w-0 flex-1 pr-3">
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[10px] font-mono font-bold rounded uppercase">
+                          <span className="px-2 py-0.5 bg-git-added-bg border border-git-added/40 text-git-added text-[10px] font-mono font-bold rounded uppercase">
                             {mr.state}
                           </span>
                           <h4 className="text-xs font-bold text-text-primary truncate">

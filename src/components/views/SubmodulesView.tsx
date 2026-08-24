@@ -147,12 +147,12 @@ export const SubmodulesView: React.FC = () => {
 
               <div className="flex items-center gap-2 flex-shrink-0">
                 {sub.is_dirty && (
-                  <span className="px-2 py-0.5 bg-amber-950/60 border border-amber-800/40 text-amber-300 text-[10px] font-mono font-bold rounded">
+                  <span className="px-2 py-0.5 bg-git-modified-bg border border-git-modified/40 text-git-modified text-[10px] font-mono font-bold rounded">
                     Modified
                   </span>
                 )}
                 {sub.is_initialized ? (
-                  <span className="px-2 py-0.5 bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 text-[10px] font-mono font-bold rounded">
+                  <span className="px-2 py-0.5 bg-git-added-bg border border-git-added/40 text-git-added text-[10px] font-mono font-bold rounded">
                     Active
                   </span>
                 ) : (

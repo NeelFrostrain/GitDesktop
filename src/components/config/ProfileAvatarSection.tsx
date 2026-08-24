@@ -60,7 +60,7 @@ export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
               <button
                 type="button"
                 onClick={onRemoveAvatar}
-                className="px-2 py-0.5 bg-base-1 hover:bg-base-2 border border-border rounded text-[10px] font-semibold text-red-400 hover:text-red-300 flex items-center gap-1 transition cursor-pointer"
+                className="px-2 py-0.5 bg-base-1 hover:bg-base-2 border border-border rounded text-[10px] font-semibold text-git-removed hover:text-danger flex items-center gap-1 transition cursor-pointer"
               >
                 <Trash2 className="w-2.5 h-2.5" />
                 <span>Reset</span>

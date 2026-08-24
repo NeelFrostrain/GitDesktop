@@ -105,7 +105,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
             </button>
             <button
               onClick={handleRemoveClick}
-              className="p-1 rounded text-text-muted hover:text-red-400 hover:bg-red-950/40 transition cursor-pointer"
+              className="p-1 rounded text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
               title="Remove from list"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -134,13 +134,13 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
         {status && (status.ahead > 0 || status.behind > 0) && (
           <div className="flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 bg-base-1 border border-border rounded-md text-text-muted">
             {status.ahead > 0 && (
-              <span className="flex items-center gap-0.5 text-commito-coral font-bold">
+              <span className="flex items-center gap-0.5 text-git-added font-bold">
                 <ArrowUpRight className="w-3 h-3" />
                 {status.ahead}
               </span>
             )}
             {status.behind > 0 && (
-              <span className="flex items-center gap-0.5 text-gitlab-blue font-bold">
+              <span className="flex items-center gap-0.5 text-git-renamed font-bold">
                 <ArrowDownLeft className="w-3 h-3" />
                 {status.behind}
               </span>
@@ -150,12 +150,12 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status }) => {
 
         {/* Dirty files count badge */}
         {status && status.dirty_files > 0 ? (
-          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-amber-950/40 border border-amber-800/40 rounded-md text-[10px] font-mono text-amber-400 font-bold">
+          <div className="flex items-center gap-1 px-1.5 py-0.5 bg-git-modified-bg border border-git-modified/40 rounded-md text-[10px] font-mono text-git-modified font-bold">
             <FileEdit className="w-3 h-3" />
             <span>{status.dirty_files} modified</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-[10px] font-mono text-emerald-400/80 px-1.5 py-0.5 bg-emerald-950/20 rounded">
+          <div className="flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.5 bg-git-added-bg rounded">
             <CircleDot className="w-2.5 h-2.5" />
             <span>Clean</span>
           </div>

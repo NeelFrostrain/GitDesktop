@@ -163,7 +163,7 @@ export const DiffViewer: React.FC = () => {
     if (diff.is_large_file) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-center p-6">
-          <HardDrive className="w-12 h-12 text-amber-400 mb-3" />
+          <HardDrive className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Large File Warning</h3>
           <p className="text-xs text-text-muted max-w-md">
             File <span className="font-mono text-text-primary">{selectedFile}</span> exceeds the maximum diff preview
@@ -179,11 +179,11 @@ export const DiffViewer: React.FC = () => {
 
     if (diff.is_binary) {
       return (
-        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-[#141316]">
-          <Binary className="w-12 h-12 text-commito-coral mb-3" />
+        <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-base-0">
+          <Binary className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Binary File Detected</h3>
           <p className="text-xs text-text-muted max-w-md mb-2">Binary files cannot be rendered as text diffs.</p>
-          <span className="text-xs font-mono text-emerald-400 px-2.5 py-1 bg-base-1 border border-border rounded-md">
+          <span className="text-xs font-mono text-git-added px-2.5 py-1 bg-base-1 border border-border rounded-md">
             File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
           </span>
         </div>
@@ -200,7 +200,7 @@ export const DiffViewer: React.FC = () => {
           staged={isStaged}
         />
 
-        <div className="flex-1 overflow-auto bg-[#141316]">
+        <div className="flex-1 overflow-auto bg-base-0">
           {diffViewMode === 'split' ? (
             <SplitDiffView lines={diff.lines} />
           ) : (
@@ -216,7 +216,7 @@ export const DiffViewer: React.FC = () => {
     if (!selectedCommitSha) {
       return (
         <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm">
-          <Clock className="w-12 h-12 mb-3 opacity-30 text-gitlab-orange" />
+          <Clock className="w-12 h-12 mb-3 opacity-30 text-git-modified" />
           Select a commit from history to view metadata and changed files.
         </div>
       );
@@ -263,20 +263,20 @@ export const DiffViewer: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 truncate min-w-0">
                       {isOpen ? (
-                        <ChevronDown className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
+                        <ChevronDown className="w-3.5 h-3.5 text-git-modified flex-shrink-0" />
                       ) : (
                         <ChevronRight className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
                       )}
                       <span className="text-text-muted select-none">-</span>
-                      <FileCode className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
+                      <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0" />
                       <span className="truncate font-mono font-medium">{file}</span>
                     </div>
 
                     <div className="flex items-center gap-3 flex-shrink-0">
                       {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
                         <div className="flex items-center gap-1.5 text-[11px] font-mono font-semibold">
-                          {fileStat.additions > 0 && <span className="text-emerald-400">+{fileStat.additions}</span>}
-                          {fileStat.deletions > 0 && <span className="text-red-400">-{fileStat.deletions}</span>}
+                          {fileStat.additions > 0 && <span className="text-git-added">+{fileStat.additions}</span>}
+                          {fileStat.deletions > 0 && <span className="text-git-removed">-{fileStat.deletions}</span>}
                         </div>
                       )}
                       <CopyButton text={file} />
@@ -312,13 +312,13 @@ export const DiffViewer: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-github-dark-bg overflow-hidden">
+    <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-base-0 overflow-hidden">
       {/* Action Banner */}
-      <div className="h-10 bg-github-dark-sidebar border-b border-github-dark-border px-4 flex items-center justify-between text-xs">
+      <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between text-xs">
         <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-github-dark-success" />
-          <span className="text-github-dark-heading font-medium">Branch status:</span>
-          <span className="text-gray-400">
+          <CheckCircle className="w-4 h-4 text-git-added" />
+          <span className="text-text-primary font-medium">Branch status:</span>
+          <span className="text-text-muted">
             {isCurrentBranchPushed ? 'Up to date with origin' : `${status?.ahead || 0} commits ahead`}
           </span>
         </div>
@@ -328,8 +328,8 @@ export const DiffViewer: React.FC = () => {
             onClick={handleOpenMergeRequest}
             disabled={!user || !isCurrentBranchPushed}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user && isCurrentBranchPushed
-              ? 'bg-orange-950/80 text-orange-400 border border-orange-800/50 hover:bg-orange-900/80'
-              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              ? 'bg-git-modified/20 text-git-modified border border-git-modified/40 hover:bg-git-modified/30'
+              : 'bg-base-2 text-text-disabled border border-border cursor-not-allowed'
               }`}
             title={!isCurrentBranchPushed ? 'Push branch to origin before creating Merge Request' : ''}
           >
@@ -341,8 +341,8 @@ export const DiffViewer: React.FC = () => {
             onClick={handleViewPipelines}
             disabled={!user}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition cursor-pointer ${user
-              ? 'bg-github-dark-header text-github-dark-heading border border-github-dark-border hover:bg-github-dark-hover'
-              : 'bg-github-dark-header text-gray-500 border border-github-dark-border cursor-not-allowed'
+              ? 'bg-base-2 text-text-primary border border-border hover:bg-base-3'
+              : 'bg-base-2 text-text-disabled border border-border cursor-not-allowed'
               }`}
           >
             <ExternalLink className="w-3.5 h-3.5" />

@@ -12,7 +12,7 @@ export const ProviderBadge: React.FC<ProviderBadgeProps> = ({ provider, classNam
   if (isGitLab) {
     return (
       <span
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#fc6d26]/20 border border-[#fc6d26]/40 text-[#fc6d26] text-[11px] font-bold tracking-wide select-none ${className}`}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gitlab-orange/20 border border-gitlab-orange/40 text-gitlab-orange text-[11px] font-bold tracking-wide select-none ${className}`}
       >
         <svg className="w-3 h-3 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
           <path d="m23.6 9.6-2.1-6.5c-.2-.6-.9-.9-1.5-.6l-4.5 3.3H8.5L4 2.5C3.4 2.2 2.7 2.5 2.5 3.1L.4 9.6c-.2.5 0 1.1.4 1.4L12 19.8l11.2-8.8c.4-.3.6-.9.4-1.4z" />

@@ -200,7 +200,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       </div>
 
       {loginError && (
-        <div className="flex items-start gap-2 p-3 bg-red-950/40 border border-red-800/60 rounded-lg text-xs text-red-300">
+        <div className="flex items-start gap-2 p-3 bg-git-removed-bg border border-git-removed/40 rounded-lg text-xs text-git-removed">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span className="flex-1">{loginError}</span>
         </div>

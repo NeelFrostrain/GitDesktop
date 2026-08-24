@@ -266,7 +266,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
           <div className="p-1">
             <button
               onClick={handleRemoveRepo}
-              className="w-full px-2.5 py-1.5 rounded-md hover:bg-red-950/40 text-red-400 hover:text-red-300 flex items-center gap-2 transition font-medium cursor-pointer"
+              className="w-full px-2.5 py-1.5 rounded-md hover:bg-git-removed-bg text-git-removed hover:text-danger flex items-center gap-2 transition font-medium cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Remove...</span>

@@ -21,7 +21,7 @@ export const AccountsTab: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('add')}
-          className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md flex-shrink-0"
+          className="px-4 py-2 bg-gitlab-orange hover:bg-commito-coral-hover text-white rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md flex-shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
           <span>Add Account</span>
@@ -49,7 +49,7 @@ export const AccountsTab: React.FC = () => {
           </div>
           <button
             onClick={() => setActiveTab('add')}
-            className="px-4 py-2 bg-[#fc6d26] hover:bg-[#e24329] text-white rounded-md text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+            className="px-4 py-2 bg-gitlab-orange hover:bg-commito-coral-hover text-white rounded-md text-xs font-bold transition inline-flex items-center gap-1.5 cursor-pointer shadow-md"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Connect Account</span>

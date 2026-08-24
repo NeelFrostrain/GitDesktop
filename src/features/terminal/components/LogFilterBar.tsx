@@ -118,7 +118,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
 
         <button
           onClick={onClear}
-          className="px-2.5 py-1 bg-base-2 hover:bg-red-500/15 hover:border-red-500/30 border border-border rounded-md text-text-muted hover:text-red-400 flex items-center gap-1.5 transition cursor-pointer"
+          className="px-2.5 py-1 bg-base-2 hover:bg-git-removed-bg hover:border-git-removed/40 border border-border rounded-md text-text-muted hover:text-git-removed flex items-center gap-1.5 transition cursor-pointer"
           title="Clear log store"
         >
           <Trash2 className="w-3.5 h-3.5" />

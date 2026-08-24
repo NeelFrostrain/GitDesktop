@@ -84,7 +84,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
           {!remote.is_default && (
             <button
               onClick={handleSetDefault}
-              className="p-1 rounded-md text-text-muted hover:text-amber-400 hover:bg-base-3 transition cursor-pointer text-xs flex items-center gap-1 font-semibold"
+              className="p-1 rounded-md text-text-muted hover:text-git-modified hover:bg-base-3 transition cursor-pointer text-xs flex items-center gap-1 font-semibold"
               title="Set as default push/pull remote"
             >
               <Star className="w-3.5 h-3.5" />
@@ -103,7 +103,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1.5 rounded-md text-text-muted hover:text-red-400 hover:bg-red-950/40 transition cursor-pointer"
+            className="p-1.5 rounded-md text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
             title="Delete Remote"
           >
             {isDeleting ? (
@@ -142,7 +142,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
       {/* Matching Credential Note */}
       {matchingAccount && (
         <div className="flex items-center gap-1.5 text-[10px] text-text-muted pt-1 border-t border-border/40">
-          <Key className="w-3 h-3 text-[#fc6d26]" />
+          <Key className="w-3 h-3 text-gitlab-orange" />
           <span>Uses {matchingAccount.handle}'s credentials for authentication</span>
         </div>
       )}
