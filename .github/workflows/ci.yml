@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, dev]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, dev]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,16 +18,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: 20
+          cache: 'npm'
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile || bun install
+        run: npm install
 
       - name: Typecheck and Build Frontend
-        run: bun run build
+        run: npm run build
 
   rust-check:
     name: Rust Backend (${{ matrix.platform }})
