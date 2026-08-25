@@ -78,7 +78,7 @@ export const AccountsWidget: React.FC = () => {
           <p className="text-[11px] text-text-muted">No accounts connected</p>
           <button
             type="button"
-            onClick={() => openModalWithTab('add')}
+            onClick={() => setIsUserConfigModalOpen(true)}
             className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-semibold transition cursor-pointer"
           >
             Connect Account

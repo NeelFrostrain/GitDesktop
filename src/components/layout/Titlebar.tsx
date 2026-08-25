@@ -7,7 +7,6 @@ import {
   X,
   ChevronDown,
   User,
-  Plus,
   LogOut,
   Home,
   FolderGit2,
