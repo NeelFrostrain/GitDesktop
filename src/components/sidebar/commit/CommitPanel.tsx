@@ -437,52 +437,62 @@ export const CommitPanel: React.FC = () => {
                 })}
               </div>
 
-              {/* Description Mode Selector Row */}
-              <div className="pt-0.5 space-y-1">
-                <div className="text-[10px] font-semibold text-text-muted flex items-center gap-1">
-                  <span>Description Format</span>
-                </div>
-                <div className="grid grid-cols-3 gap-1.5 select-none">
-                  <button
-                    type="button"
-                    onClick={() => setDescriptionMode('report')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'report'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>Full Report</span>
-                  </button>
+                {/* Description Mode Selector Row */}
+                <div className="pt-0.5 space-y-1">
+                  <div className="text-[10px] font-semibold text-text-muted flex items-center justify-between">
+                    <span>Description Format</span>
+                    <span className="text-[9.5px] font-mono text-text-faint">
+                      {descriptionMode === 'report'
+                        ? 'Full Report'
+                        : descriptionMode === 'bullets'
+                        ? 'Key Bullets'
+                        : 'Summary Only'}
+                    </span>
+                  </div>
+                  <div className="flex rounded-sm border border-border bg-base-0 p-0.5 select-none gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setDescriptionMode('report')}
+                      className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                        descriptionMode === 'report'
+                          ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                          : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                      title="Include full technical report in commit description"
+                    >
+                      <FileText className="w-3 h-3 flex-shrink-0" />
+                      <span>Report</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setDescriptionMode('bullets')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'bullets'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    <ListFilter className="w-3 h-3" />
-                    <span>Bullets</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setDescriptionMode('bullets')}
+                      className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                        descriptionMode === 'bullets'
+                          ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                          : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                      title="Include concise bullet points in commit description"
+                    >
+                      <ListFilter className="w-3 h-3 flex-shrink-0" />
+                      <span>Bullets</span>
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setDescriptionMode('none')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'none'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
-                  >
-                    <Ban className="w-3 h-3" />
-                    <span>None</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setDescriptionMode('none')}
+                      className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                        descriptionMode === 'none'
+                          ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                          : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                      title="No commit description (summary only)"
+                    >
+                      <Ban className="w-3 h-3 flex-shrink-0" />
+                      <span>None</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
               {/* Action Toolbar */}
               <div className="flex items-center justify-between pt-1 border-t border-border/60 text-xs">
