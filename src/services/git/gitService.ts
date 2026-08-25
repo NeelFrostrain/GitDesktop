@@ -6,6 +6,7 @@ import {
   CommitInfo,
   CommitDetails,
   PullResult,
+  RemoteInfo,
   LfsFile,
   LfsLock,
   WorktreeInfo,
@@ -454,5 +455,12 @@ export class GitService {
     newPath: string
   ): Promise<void> {
     return invoke<void>('rename_file_cmd', { repoPath, oldPath, newPath });
+  }
+
+  /**
+   * Lists all configured Git remotes for the repository.
+   */
+  static async listRemotes(repoPath: string): Promise<RemoteInfo[]> {
+    return invoke<RemoteInfo[]>('list_remotes_cmd', { repoPath });
   }
 }

@@ -60,6 +60,8 @@ export const App: React.FC = () => {
     setAccounts,
     activeRepoPath,
     setStatus,
+    setBranches,
+    setTags,
     setError,
     currentNavView,
     isCreateTagModalOpen,
@@ -176,6 +178,19 @@ export const App: React.FC = () => {
     // Initial sync
     syncStatus();
 
+    // Proactively fetch branches and tags when repo loads or changes
+    GitService.listBranches(activeRepoPath)
+      .then((b) => {
+        if (!isDisposed && b) setBranches(b);
+      })
+      .catch(() => {});
+
+    GitService.listTags(activeRepoPath)
+      .then((t) => {
+        if (!isDisposed && t) setTags(t);
+      })
+      .catch(() => {});
+
     // 1. Periodic background polling (every 2 seconds) for external file modifications
     const intervalId = setInterval(syncStatus, 2000);
 
@@ -206,7 +221,7 @@ export const App: React.FC = () => {
       document.removeEventListener('visibilitychange', handleVisibility);
       if (unlistenTauriFocus) unlistenTauriFocus();
     };
-  }, [activeRepoPath, setStatus]);
+  }, [activeRepoPath, setStatus, setBranches, setTags]);
 
   // Global shortcuts: Ctrl+` / Cmd+` (Terminal) and Ctrl+, / Cmd+, (Settings)
   useEffect(() => {

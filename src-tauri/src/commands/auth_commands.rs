@@ -333,7 +333,7 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
         ));
     }
 
-    let client = GitHubClient::new(&token)?;
+    let client = GitHubClient::new(Some(&token))?;
     let gh_user = client.get_current_user().await?;
 
     let server_url = "https://github.com".to_string();
@@ -373,7 +373,7 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
 pub async fn get_github_user() -> Result<Option<GitHubUser>, AppError> {
     if let Some(acct) = keyring::get_active_account() {
         if acct.provider == "github" && !acct.token.trim().is_empty() {
-            let client = GitHubClient::new(&acct.token)?;
+            let client = GitHubClient::new(Some(&acct.token))?;
             match client.get_current_user().await {
                 Ok(user) => return Ok(Some(user)),
                 Err(_) => return Ok(None),

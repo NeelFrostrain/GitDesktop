@@ -37,6 +37,7 @@ export const TagsView: React.FC = () => {
     setTags,
     releases,
     setReleases,
+    setBranches,
     setError,
     setIsCreateReleaseModalOpen,
     setEditingRelease,
@@ -56,12 +57,14 @@ export const TagsView: React.FC = () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
-      const [tagsRes, releasesRes] = await Promise.all([
+      const [tagsRes, releasesRes, branchesRes] = await Promise.all([
         GitService.listTags(activeRepoPath).catch(() => []),
         ReleaseService.listReleases(activeRepoPath).catch(() => []),
+        GitService.listBranches(activeRepoPath).catch(() => []),
       ]);
       setTags(tagsRes || []);
       setReleases(releasesRes || []);
+      setBranches(branchesRes || []);
     } catch {
       setTags([]);
       setReleases([]);
