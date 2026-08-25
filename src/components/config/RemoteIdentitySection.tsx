@@ -50,7 +50,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
         <button
           type="button"
           onClick={onToggleDropdown}
-          className="w-full h-8 px-2.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-inner"
+          className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs"
         >
           <div className="flex items-center gap-2 truncate min-w-0">
             {selectedSyncAccount === 'custom' ? (
@@ -89,7 +89,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
         </button>
 
         {isDropdownOpen && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-full mt-1 bg-base-1 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
             <button
               type="button"
               onClick={() => handleSelect('custom')}

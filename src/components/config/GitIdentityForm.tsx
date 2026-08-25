@@ -31,7 +31,7 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
           placeholder="e.g. Neel Frostrain"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          className="w-full h-8 px-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary placeholder:text-text-faint font-sans focus:outline-none transition shadow-inner"
+          className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary placeholder:text-text-faint font-sans focus:outline-none transition shadow-2xs"
           required
         />
       </div>
@@ -46,7 +46,7 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
           placeholder="e.g. example@email.com"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
-          className={`w-full h-8 px-2.5 bg-base-0 border rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none font-mono transition shadow-inner ${
+          className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none font-mono transition shadow-2xs ${
             email && !isValidEmail(email)
               ? 'border-git-removed focus:border-danger'
               : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30'

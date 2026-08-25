@@ -18,7 +18,7 @@ export const ConfigFooter: React.FC<ConfigFooterProps> = ({
         type="button"
         onClick={onClose}
         disabled={isSubmitting}
-        className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+        className="h-7.5 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
       >
         Cancel
       </button>

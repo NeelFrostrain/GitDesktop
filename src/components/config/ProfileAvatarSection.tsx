@@ -23,7 +23,7 @@ export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
         Profile
       </label>
 
-      <div className="p-3 bg-base-0 border border-border rounded-sm flex items-center gap-3.5 shadow-2xs">
+      <div className="p-3 bg-base-1 border border-border rounded-sm flex items-center gap-3.5 shadow-2xs">
         <UserAvatar
           url={avatarUrl}
           name={name || 'User'}
@@ -50,7 +50,7 @@ export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="h-6 px-2.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-[10.5px] font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              className="h-6 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-[10.5px] font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             >
               <Upload className="w-2.5 h-2.5 text-commito-coral" />
               <span>Upload</span>
@@ -60,7 +60,7 @@ export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
               <button
                 type="button"
                 onClick={onRemoveAvatar}
-                className="h-6 px-2.5 bg-base-1 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-[10.5px] font-semibold text-git-removed hover:text-danger flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                className="h-6 px-2.5 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-[10.5px] font-semibold text-git-removed hover:text-danger flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               >
                 <Trash2 className="w-2.5 h-2.5" />
                 <span>Reset</span>
