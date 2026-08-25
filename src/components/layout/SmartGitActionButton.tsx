@@ -36,17 +36,17 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const busyCls =
-    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none';
+    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none shadow-xs';
   const primaryCls =
-    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
   const secondaryCls =
-    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
   const upToDateCls =
-    'px-2.5 py-1 rounded-sm border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition select-none';
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition select-none active:scale-95';
   const mutedCls =
-    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none shadow-xs';
   const warnCls =
-    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-xs';
 
   if (!hasRepo) {
     return {
@@ -67,7 +67,7 @@ function getButtonConfig(
       ? 'Fetching...'
       : 'Working...';
     return {
-      icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+      icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />,
       label: opLabel,
       tooltip: 'Git operation in progress',
       className: busyCls,
@@ -166,7 +166,7 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
     ? 'bg-commito-coral'
     : isPulling
     ? 'bg-gitlab-blue'
-    : 'bg-text-muted/60';
+    : 'bg-commito-coral';
 
   return (
     <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden rounded-b-md bg-white/10">
@@ -179,8 +179,7 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
 }
 
 /**
- * Smart reactive action button adapting automatically to the repository's sync state
- * with unified fetch/reload action.
+ * Smart reactive action button adapting automatically to the repository's sync state.
  */
 export const SmartGitActionButton: React.FC = () => {
   const {
@@ -213,7 +212,7 @@ export const SmartGitActionButton: React.FC = () => {
     !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
-    if (isBusy) return;
+    if (isBusy || config.disabled) return;
     if (syncStatus === 'up-to-date') {
       refreshSync();
     } else {
@@ -225,39 +224,17 @@ export const SmartGitActionButton: React.FC = () => {
     <div className="flex items-center gap-1.5">
       {showDirtyWarning && <DirtyWarningBanner />}
 
-      <div className="relative inline-flex items-stretch rounded-sm shadow-xs">
+      <div className="relative">
         <button
           type="button"
           onClick={handleClick}
           disabled={config.disabled || isBusy}
-          className={`${config.className} ${
-            syncStatus !== 'up-to-date' && hasRepo ? 'rounded-r-none border-r-0' : ''
-          }`}
+          className={config.className}
           title={config.tooltip}
         >
           {config.icon}
           <span>{config.label}</span>
         </button>
-
-        {/* Integrated Fetch / Reload companion trigger when in active action state */}
-        {syncStatus !== 'up-to-date' && hasRepo && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              refreshSync();
-            }}
-            disabled={isBusy}
-            className="px-1.5 py-1 bg-base-2 hover:bg-base-3 border border-border border-l-border/60 text-text-muted hover:text-text-primary rounded-r-sm transition cursor-pointer flex items-center justify-center disabled:opacity-50"
-            title="Fetch & Refresh repository status"
-          >
-            <RefreshCw
-              className={`w-3.5 h-3.5 text-commito-coral ${
-                isFetching ? 'animate-spin' : ''
-              }`}
-            />
-          </button>
-        )}
 
         {isBusy && <ProgressBar isPushing={isPushing} isPulling={isPulling} />}
       </div>
