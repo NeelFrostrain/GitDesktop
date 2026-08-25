@@ -3,22 +3,18 @@ import {
   GitPullRequest,
   AlertCircle,
   X,
-  Settings,
-  RefreshCw,
   Globe,
   Terminal,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { useTerminalStore } from '../../features/terminal';
-import { useSettingsStore } from '../../features/settings';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
-import { useRepositorySync } from '../../hooks/useRepositorySync';
 
 /**
- * Top application header bar displaying essential tools (Refresh, Terminal, Settings),
- * active sync status button, remote selector, and branch switcher.
+ * Top application header bar displaying terminal toggle,
+ * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
   const {
@@ -37,7 +33,6 @@ export const Header: React.FC = () => {
   } = useRemoteStore();
 
   const isTerminalOpen = useTerminalStore((s) => s.isOpen);
-  const { refreshSync, isFetching } = useRepositorySync();
 
   useEffect(() => {
     if (activeRepoPath) {
@@ -49,20 +44,9 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Essential Tools Group */}
+      {/* Left: Repository Terminal Toggle */}
       <div className="flex items-center gap-1.5">
-        {/* Fetch/Refresh Status */}
-        <button
-          onClick={refreshSync}
-          disabled={isFetching || !activeRepoPath}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-          title="Refresh Repository Status"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-commito-coral ${isFetching ? 'animate-spin' : ''}`} />
-        </button>
-
         {!isHome && (
-          /* Repository Terminal */
           <button
             onClick={() => useTerminalStore.getState().toggleIsOpen()}
             className={`p-1 rounded-sm border transition cursor-pointer ${
@@ -75,15 +59,6 @@ export const Header: React.FC = () => {
             <Terminal className="w-3.5 h-3.5" />
           </button>
         )}
-
-        {/* Settings */}
-        <button
-          onClick={() => useSettingsStore.getState().openSettings()}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-          title="Open Settings (Ctrl+,)"
-        >
-          <Settings className="w-3.5 h-3.5 text-text-secondary" />
-        </button>
       </div>
 
       {/* Right: Sync, Push, Branch & PR Action Group */}
@@ -121,7 +96,7 @@ export const Header: React.FC = () => {
               </div>
             )}
 
-            {/* Smart Git Action Button */}
+            {/* Smart Git Action Button (with integrated Fetch / Reload) */}
             <SmartGitActionButton />
 
             {/* Branch Switcher Dropdown */}

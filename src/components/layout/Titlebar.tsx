@@ -12,9 +12,11 @@ import {
   Home,
   FolderGit2,
   GitBranch,
+  Settings,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useAccountServicesStore } from '../../features/account-services';
+import { useSettingsStore } from '../../features/settings';
 import { UserAvatar } from '../common/UserAvatar';
 import { SystemService } from '../../services/system/systemService';
 import { AccountService } from '../../services/accounts/accountService';
@@ -176,11 +178,10 @@ export const Titlebar: React.FC = () => {
             {/* Status Indicator Chip (Clean / Modified) */}
             <div
               data-tauri-drag-region
-              className={`h-5 px-1.5 inline-flex items-center gap-1 rounded-sm text-[10.5px] font-mono font-medium border flex-shrink-0 ${
-                isClean
-                  ? 'bg-git-added/10 text-git-added border-git-added/25'
-                  : 'bg-git-modified/10 text-git-modified border-git-modified/25'
-              }`}
+              className={`h-5 px-1.5 inline-flex items-center gap-1 rounded-sm text-[10.5px] font-mono font-medium border flex-shrink-0 ${isClean
+                ? 'bg-git-added/10 text-git-added border-git-added/25'
+                : 'bg-git-modified/10 text-git-modified border-git-modified/25'
+                }`}
               title={isClean ? 'Working directory clean' : `${uncommittedCount} modified files in working directory`}
             >
               <span>{isClean ? 'clean' : `${uncommittedCount} modified`}</span>
@@ -213,39 +214,40 @@ export const Titlebar: React.FC = () => {
         )}
       </div>
 
-      {/* Right: Profile Dropdown + Window Action Controls */}
+      {/* Right: Actions, Profile Dropdown & Window Control Buttons */}
       <div
-        className="titlebar-no-drag flex items-center gap-2.5 z-50"
+        className="titlebar-no-drag flex items-center gap-1.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {currentNavView !== 'home' && (
           <button
             type="button"
             onClick={() => setCurrentNavView('home')}
-            className="titlebar-no-drag flex items-center gap-1.5 px-2 py-1 rounded-sm text-text-muted hover:text-text-primary bg-base-2 transition cursor-pointer text-xs"
+            className="titlebar-no-drag h-6.5 px-2 flex items-center gap-1.5 rounded-sm text-text-muted hover:text-text-primary bg-base-2 hover:bg-base-3 border border-border transition cursor-pointer text-xs font-medium shadow-xs select-none"
             title="Go to Home"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="font-medium">Home</span>
+            <span>Home</span>
           </button>
         )}
+
         {/* User Account Profile Menu */}
         <div className="relative" ref={menuRef}>
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="flex items-center gap-1.5 px-1.5 py-0.5 rounded-sm bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs"
+            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs select-none"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
               url={user?.avatar_url}
               name={user?.name || user?.username || 'Guest'}
               provider={user?.provider}
-              className="w-4.5 h-4.5"
-              iconClassName="w-3 h-3"
+              className="w-4 h-4 rounded-full"
+              iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
-              className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
+              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
                 }`}
             />
           </button>
@@ -305,6 +307,16 @@ export const Titlebar: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Settings Button */}
+        <button
+          type="button"
+          onClick={() => useSettingsStore.getState().openSettings()}
+          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm text-text-muted hover:text-text-primary bg-base-2 hover:bg-base-3 border border-border transition cursor-pointer shadow-xs"
+          title="Open Settings (Ctrl+,)"
+        >
+          <Settings className="w-3.5 h-3.5 text-text-secondary" />
+        </button>
 
         {/* Vertical Separator */}
         <div className="h-4 w-px bg-border my-auto" />

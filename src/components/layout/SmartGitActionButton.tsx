@@ -3,10 +3,10 @@ import {
   Upload,
   Download,
   ArrowUpDown,
-  Check,
   AlertTriangle,
   Loader2,
   GitBranch,
+  RefreshCw,
 } from 'lucide-react';
 import { useRepositorySync, GitSyncStatus } from '../../hooks/useRepositorySync';
 
@@ -41,6 +41,8 @@ function getButtonConfig(
     'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
   const secondaryCls =
     'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+  const upToDateCls =
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition select-none';
   const mutedCls =
     'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none';
   const warnCls =
@@ -102,11 +104,17 @@ function getButtonConfig(
       };
     case 'up-to-date':
       return {
-        icon: <Check className="w-3.5 h-3.5" />,
-        label: 'Up to date',
-        tooltip: `Your branch is up to date with origin/${branch}`,
-        className: mutedCls,
-        disabled: true,
+        icon: (
+          <RefreshCw
+            className={`w-3.5 h-3.5 text-commito-coral ${
+              isFetching ? 'animate-spin' : ''
+            }`}
+          />
+        ),
+        label: isFetching ? 'Fetching...' : 'Up to date',
+        tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
+        className: upToDateCls,
+        disabled: false,
       };
     case 'no-upstream':
       return {
@@ -172,7 +180,7 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
 
 /**
  * Smart reactive action button adapting automatically to the repository's sync state
- * (Push, Pull, Sync, Publish, or Up-to-date).
+ * with unified fetch/reload action.
  */
 export const SmartGitActionButton: React.FC = () => {
   const {
@@ -182,6 +190,7 @@ export const SmartGitActionButton: React.FC = () => {
     isPushing,
     isPulling,
     executeAction,
+    refreshSync,
     hasRepo,
   } = useRepositorySync();
 
@@ -204,25 +213,51 @@ export const SmartGitActionButton: React.FC = () => {
     !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
-    if (config.disabled) return;
-    executeAction();
+    if (isBusy) return;
+    if (syncStatus === 'up-to-date') {
+      refreshSync();
+    } else {
+      executeAction();
+    }
   };
 
   return (
     <div className="flex items-center gap-1.5">
       {showDirtyWarning && <DirtyWarningBanner />}
 
-      <div className="relative">
+      <div className="relative inline-flex items-stretch rounded-sm shadow-xs">
         <button
           type="button"
           onClick={handleClick}
-          disabled={config.disabled}
-          className={config.className}
+          disabled={config.disabled || isBusy}
+          className={`${config.className} ${
+            syncStatus !== 'up-to-date' && hasRepo ? 'rounded-r-none border-r-0' : ''
+          }`}
           title={config.tooltip}
         >
           {config.icon}
           <span>{config.label}</span>
         </button>
+
+        {/* Integrated Fetch / Reload companion trigger when in active action state */}
+        {syncStatus !== 'up-to-date' && hasRepo && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              refreshSync();
+            }}
+            disabled={isBusy}
+            className="px-1.5 py-1 bg-base-2 hover:bg-base-3 border border-border border-l-border/60 text-text-muted hover:text-text-primary rounded-r-sm transition cursor-pointer flex items-center justify-center disabled:opacity-50"
+            title="Fetch & Refresh repository status"
+          >
+            <RefreshCw
+              className={`w-3.5 h-3.5 text-commito-coral ${
+                isFetching ? 'animate-spin' : ''
+              }`}
+            />
+          </button>
+        )}
 
         {isBusy && <ProgressBar isPushing={isPushing} isPulling={isPulling} />}
       </div>
