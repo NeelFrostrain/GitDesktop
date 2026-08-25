@@ -15,27 +15,27 @@ const getStatusBadge = (statusStr?: string) => {
   const statusUpper = (statusStr || '').toUpperCase();
   if (statusUpper.includes('NEW') || statusUpper.includes('ADD') || statusUpper.includes('UNTRACKED')) {
     return (
-      <span className="w-4 h-4 rounded-xs bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
+      <span className="w-4 h-4 rounded-sm bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
         +
       </span>
     );
   }
   if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
     return (
-      <span className="w-4 h-4 rounded-xs bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
+      <span className="w-4 h-4 rounded-sm bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
         -
       </span>
     );
   }
   if (statusUpper.includes('RENAME')) {
     return (
-      <span className="w-4 h-4 rounded-xs bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
+      <span className="w-4 h-4 rounded-sm bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
         R
       </span>
     );
   }
   return (
-    <span className="w-4 h-4 rounded-xs bg-git-modified/15 text-git-modified text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-modified/25">
+    <span className="w-4 h-4 rounded-sm bg-git-modified/15 text-git-modified text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-modified/25">
       M
     </span>
   );
@@ -68,10 +68,10 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   if (filteredFiles.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150 text-text-faint">
-        <div className="w-7 h-7 rounded-sm bg-base-1 border border-border flex items-center justify-center mb-2">
-          <Check className="w-3.5 h-3.5 text-git-added/70 stroke-[2.5]" />
+        <div className="w-8 h-8 rounded-sm bg-base-1 border border-border/60 flex items-center justify-center mb-2 shadow-xs">
+          <Check className="w-4 h-4 text-git-added/80 stroke-[2.5]" />
         </div>
-        <p className="text-[11px] font-medium text-text-muted">
+        <p className="text-xs font-medium text-text-muted">
           {filter ? `No files matching "${filter}"` : 'No uncommitted changes'}
         </p>
       </div>
@@ -80,7 +80,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5">
+      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3">
         {filteredFiles.map((file) => {
           const isStaged = stagedFiles.includes(file.path);
           const isSelected = selectedFile === file.path;
@@ -97,13 +97,13 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
               }}
               className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 ${
                 isSelected
-                  ? 'bg-base-2 text-text-primary font-medium border border-border-strong shadow-xs'
-                  : 'hover:bg-base-2/60 text-text-secondary border border-transparent'
+                  ? 'bg-base-2 text-text font-medium border border-border-strong/70 shadow-xs'
+                  : 'hover:bg-base-2/60 text-text-subtle border border-transparent'
               }`}
             >
               <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
               {getStatusBadge(file.status)}
-              <span className="truncate flex-1 font-mono text-[11px] text-text-primary">{file.path}</span>
+              <span className="truncate flex-1 font-mono text-[11px] text-text">{file.path}</span>
             </div>
           );
         })}

@@ -10,6 +10,8 @@ import {
   Plus,
   LogOut,
   Home,
+  FolderGit2,
+  GitBranch,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useAccountServicesStore } from '../../features/account-services';
@@ -19,14 +21,33 @@ import { AccountService } from '../../services/accounts/accountService';
 
 /**
  * Custom frameless application titlebar with drag region, user profile menu,
- * and native window control buttons (minimize, maximize/restore, close).
+ * repository details, and native window control buttons (minimize, maximize/restore, close).
  */
 export const Titlebar: React.FC = () => {
-  const { user, accounts, setUser, setAccounts, setActiveRepoPath, setStatus, setBranches, currentNavView, setCurrentNavView } = useGitStore();
+  const {
+    user,
+    accounts,
+    setUser,
+    setAccounts,
+    activeRepoPath,
+    setActiveRepoPath,
+    status,
+    setStatus,
+    setBranches,
+    currentNavView,
+    setCurrentNavView,
+  } = useGitStore();
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const appWindow = getCurrentWindow();
+
+  const activeRepoName = activeRepoPath
+    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository'
+    : null;
+  const currentBranch = status?.current_branch || 'main';
+  const uncommittedCount = status?.files?.length || 0;
+  const isClean = status?.is_clean ?? (uncommittedCount === 0);
 
   useEffect(() => {
     const checkMaximized = async () => {
@@ -120,12 +141,76 @@ export const Titlebar: React.FC = () => {
       data-tauri-drag-region
       className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Icon + Home nav */}
-      <div data-tauri-drag-region className="flex items-center gap-2">
-        <div className="flex items-center gap-2 pointer-events-none">
+      {/* Left: App Icon + Current Open Repo Details */}
+      <div data-tauri-drag-region className="flex items-center gap-2.5 min-w-0">
+        <div className="flex items-center gap-2 pointer-events-none flex-shrink-0">
           <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-sm object-contain shadow-xs" />
         </div>
 
+        {activeRepoName ? (
+          <div data-tauri-drag-region className="flex items-center gap-2 min-w-0">
+            <div className="h-3.5 w-px bg-border/70 flex-shrink-0" />
+
+            {/* Repo Name */}
+            <div
+              data-tauri-drag-region
+              className="flex items-center gap-1.5 min-w-0"
+              title={`Repository: ${activeRepoName}\nPath: ${activeRepoPath}`}
+            >
+              <FolderGit2 className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
+              <span className="font-semibold text-xs text-text truncate max-w-[160px]">
+                {activeRepoName}
+              </span>
+            </div>
+
+            {/* Active Branch Chip */}
+            <div
+              data-tauri-drag-region
+              className="h-5 px-1.5 inline-flex items-center gap-1 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono text-text-subtle flex-shrink-0"
+              title={`Branch: ${currentBranch}`}
+            >
+              <GitBranch className="w-3 h-3 text-commito-coral flex-shrink-0" />
+              <span className="truncate max-w-[120px]">{currentBranch}</span>
+            </div>
+
+            {/* Status Indicator Chip (Clean / Modified) */}
+            <div
+              data-tauri-drag-region
+              className={`h-5 px-1.5 inline-flex items-center gap-1 rounded-sm text-[10.5px] font-mono font-medium border flex-shrink-0 ${
+                isClean
+                  ? 'bg-git-added/10 text-git-added border-git-added/25'
+                  : 'bg-git-modified/10 text-git-modified border-git-modified/25'
+              }`}
+              title={isClean ? 'Working directory clean' : `${uncommittedCount} modified files in working directory`}
+            >
+              <span>{isClean ? 'clean' : `${uncommittedCount} modified`}</span>
+            </div>
+
+            {/* Ahead / Behind Counts Chip */}
+            {Boolean(status?.ahead || status?.behind) && (
+              <div
+                data-tauri-drag-region
+                className="h-5 px-1.5 inline-flex items-center gap-1.5 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono flex-shrink-0"
+              >
+                {Boolean(status?.ahead) && (
+                  <span className="text-git-ahead" title={`${status?.ahead} commits ahead of remote`}>
+                    ↑{status?.ahead}
+                  </span>
+                )}
+                {Boolean(status?.behind) && (
+                  <span className="text-git-behind" title={`${status?.behind} commits behind remote`}>
+                    ↓{status?.behind}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div data-tauri-drag-region className="flex items-center gap-2">
+            <div className="h-3.5 w-px bg-border/70" />
+            <span className="text-xs text-text-muted font-medium">Git Desktop</span>
+          </div>
+        )}
       </div>
 
       {/* Right: Profile Dropdown + Window Action Controls */}

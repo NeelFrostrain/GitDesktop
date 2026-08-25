@@ -4,14 +4,18 @@ import { useGitStore } from '../../store/useGitStore';
 import { RepoDropdown } from '../layout/RepoDropdown';
 
 export const RepositoryHeader: React.FC = () => {
-  const { activeRepoPath, status, branches } = useGitStore();
+  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = useState(false);
   const [repoCardRect, setRepoCardRect] = useState<DOMRect | null>(null);
-  const repoCardRef = useRef<HTMLDivElement>(null);
+  const repoCardRef = useRef<HTMLButtonElement>(null);
 
   const activeRepoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).pop() || 'Repository'
     : 'No Repository';
+
+  const branchCount = branches.length || 1;
+  const currentBranch = status?.current_branch || 'main';
+  const fileCount = status?.files?.length || 0;
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -23,42 +27,78 @@ export const RepositoryHeader: React.FC = () => {
 
   return (
     <>
-      <div className="px-2.5 py-2 border-b border-border bg-base-0 select-none">
-        {/* Active Repo Card Switcher */}
+      {/* Single Unified Header Row: Compact Repo Switcher (Left) + View Tabs (Right) */}
+      <div className="px-2.5 py-2 border-b border-border/40 bg-base-0 select-none flex items-stretch justify-between gap-1.5">
+        {/* Left: Compact Repository Switcher Box */}
         {activeRepoPath ? (
-          <div
+          <button
             ref={repoCardRef}
+            type="button"
             onClick={handleOpenRepoSwitcher}
-            className="p-2 rounded-sm border bg-base-1 border-border hover:border-border-strong hover:bg-base-2 flex items-center justify-between cursor-pointer transition-all duration-150 shadow-xs group"
+            className="w-[110px] min-w-0 h-8 px-2 rounded-sm border border-border/60 bg-base-1/90 hover:bg-base-2/90 hover:border-border-strong/80 flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 shadow-xs group outline-none text-left flex-shrink-0"
+            title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}`}
           >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6.5 h-6.5 rounded-sm bg-commito-coral/10 border border-commito-coral/25 text-commito-coral flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                <FolderGit2 className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <div className="w-4.5 h-4.5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform duration-150">
+                <FolderGit2 className="w-3 h-3" />
               </div>
-              <div className="min-w-0">
-                <h3 className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors">
-                  {activeRepoName}
-                </h3>
-                <p className="text-[10px] text-text-muted font-mono truncate mt-0.5 leading-none">
-                  {status?.current_branch || 'main'} <span className="text-text-faint">•</span> {branches.length || 1} branch{branches.length !== 1 ? 'es' : ''}
-                </p>
-              </div>
+              <span className="text-[11.5px] font-semibold text-text truncate block leading-tight group-hover:text-commito-coral transition-colors duration-150">
+                {activeRepoName}
+              </span>
             </div>
-            <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors flex-shrink-0" />
-          </div>
+            <ChevronsUpDown className="w-3 h-3 text-text-muted group-hover:text-text transition-colors flex-shrink-0" />
+          </button>
         ) : (
-          <div
+          <button
             ref={repoCardRef}
+            type="button"
             onClick={handleOpenRepoSwitcher}
-            className="p-2 bg-base-1 border border-dashed border-border hover:border-commito-coral/50 hover:bg-base-2 rounded-sm flex items-center justify-between cursor-pointer transition-all duration-150"
+            className="w-[100px] min-w-0 h-8 px-2 bg-base-1/50 border border-dashed border-border/70 hover:border-commito-coral/50 hover:bg-base-2/60 rounded-sm flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 group outline-none text-left flex-shrink-0"
           >
-            <div className="flex items-center gap-2 text-xs text-text-muted">
-              <FolderGit2 className="w-3.5 h-3.5 text-text-faint" />
-              <span>Select Repository...</span>
+            <div className="flex items-center gap-1.5 text-xs text-text-muted min-w-0">
+              <FolderGit2 className="w-3 h-3 text-text-faint group-hover:text-commito-coral transition-colors flex-shrink-0" />
+              <span className="font-medium truncate group-hover:text-text transition-colors">Select Repo...</span>
             </div>
-            <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
-          </div>
+            <ChevronsUpDown className="w-3 h-3 text-text-faint group-hover:text-text-muted transition-colors flex-shrink-0" />
+          </button>
         )}
+
+        {/* Right: View Change Tabs Box (Changes / History) */}
+        <div className="flex-1 min-w-0 h-8 bg-base-1/90 border border-border/60 rounded-sm p-0.5 flex items-center gap-0.5 shadow-xs">
+          <button
+            type="button"
+            onClick={() => setActiveTab('changes')}
+            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer ${activeTab === 'changes'
+              ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
+              : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
+              }`}
+          >
+            <span className="truncate">Changes</span>
+            <span
+              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[9.5px] font-mono font-bold leading-none transition-all duration-150 flex-shrink-0 ${fileCount > 0
+                ? activeTab === 'changes'
+                  ? 'bg-commito-coral text-white shadow-xs shadow-commito-coral/30'
+                  : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
+                : activeTab === 'changes'
+                  ? 'bg-base-3 text-text-muted'
+                  : 'bg-base-2 text-text-faint'
+                }`}
+            >
+              {fileCount}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('history')}
+            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-all duration-150 cursor-pointer ${activeTab === 'history'
+              ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
+              : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
+              }`}
+          >
+            <span className="truncate">History</span>
+          </button>
+        </div>
       </div>
 
       <RepoDropdown
