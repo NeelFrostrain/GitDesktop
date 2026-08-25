@@ -17,6 +17,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { CommitInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
+import { CreateTagModal } from '../modals/CreateTagModal';
 
 interface CommitContextMenuProps {
   commit: CommitInfo;
@@ -46,6 +47,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   } = useGitStore();
 
   const menuRef = useRef<HTMLDivElement>(null);
+  const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -164,25 +166,8 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   };
 
   // 6. Create Tag...
-  const handleCreateTag = async () => {
-    if (!activeRepoPath) return;
-
-    const tagName = prompt(`Enter tag name for commit ${commit.short_sha} (e.g. v1.0.1):`);
-    if (tagName && tagName.trim()) {
-      try {
-        await invoke('create_tag_cmd', {
-          repoPath: activeRepoPath,
-          name: tagName.trim(),
-          message: `Release ${tagName.trim()}`,
-          targetSha: commit.sha,
-        });
-
-        useLogStore.getState().addLog('success', 'Git', `Created tag '${tagName.trim()}' at commit ${commit.short_sha}`);
-      } catch (error: unknown) {
-        setError(toAppError(error, 'TAG_ERROR'));
-      }
-    }
-    onClose();
+  const handleCreateTag = () => {
+    setIsTagModalOpen(true);
   };
 
   // 7. Cherry-pick commit...
@@ -226,12 +211,14 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   const adjustedX = Math.min(x, window.innerWidth - 250);
   const adjustedY = Math.min(y, window.innerHeight - 390);
 
-  return createPortal(
-    <div
-      ref={menuRef}
-      style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-sm shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
-    >
+  return (
+    <>
+      {createPortal(
+        <div
+          ref={menuRef}
+          style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
+          className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-sm shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+        >
       {/* Group 1: Commit Modifications */}
       <div className="p-1 space-y-0.5">
         <button
@@ -334,5 +321,18 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       </div>
     </div>,
     document.body
-  );
+  )}
+
+  {isTagModalOpen && (
+    <CreateTagModal
+      isOpen={isTagModalOpen}
+      targetCommitSha={commit.sha}
+      onClose={() => {
+        setIsTagModalOpen(false);
+        onClose();
+      }}
+    />
+  )}
+</>
+);
 };

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { GitMerge, GitCommit, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { GitMerge, GitCommit, ShieldCheck, ShieldAlert, Tag } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
 import { UserAvatar } from '../../common/UserAvatar';
 import { useSigningStore } from '../../../store/signingStore';
@@ -26,9 +26,18 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   onClick,
   onContextMenu,
 }) => {
-  const { activeRepoPath } = useGitStore();
+  const { activeRepoPath, tags } = useGitStore();
   const { verifiedCommits, verifyCommit } = useSigningStore();
   const verification = verifiedCommits[commit.sha];
+
+  // Match any tags pointing to this commit
+  const commitTags = tags.filter(
+    (t) =>
+      t.sha &&
+      (t.sha === commit.sha ||
+        commit.sha.startsWith(t.sha) ||
+        t.sha.startsWith(commit.short_sha))
+  );
 
   useEffect(() => {
     if (activeRepoPath && !verification && commit.sha) {
@@ -111,6 +120,22 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Git Tag Badges (if any) */}
+      {commitTags.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap pointer-events-none -mt-0.5">
+          {commitTags.map((tag) => (
+            <span
+              key={tag.name}
+              title={tag.message ? `Git Tag: ${tag.name} (${tag.message})` : `Git Tag: ${tag.name}`}
+              className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[9px] font-bold rounded-xs"
+            >
+              <Tag className="w-2.5 h-2.5" />
+              <span className="truncate max-w-[120px]">{tag.name}</span>
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Card Footer: Author + Relative Time + Additions/Deletions */}
       <div className="flex items-center justify-between text-[11px] text-text-muted pointer-events-none">

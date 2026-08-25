@@ -289,10 +289,24 @@ export class GitService {
   }
 
   /**
-   * Pushes all local tags to remote origin.
+   * Pushes all local tags to remote (default: origin).
    */
-  static async pushTags(repoPath: string): Promise<void> {
-    return invoke('push_tags_cmd', { repoPath });
+  static async pushTags(repoPath: string, remote?: string | null): Promise<void> {
+    return invoke('push_tags_cmd', { repoPath, remote: remote || null });
+  }
+
+  /**
+   * Pushes a specific tag to remote.
+   */
+  static async pushSpecificTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+    return invoke('push_specific_tag_cmd', { repoPath, tagName, remote: remote || null });
+  }
+
+  /**
+   * Deletes a tag on the remote repository.
+   */
+  static async deleteRemoteTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+    return invoke('delete_remote_tag_cmd', { repoPath, tagName, remote: remote || null });
   }
 
   // ── Submodules ───────────────────────────────────────────────────────────────

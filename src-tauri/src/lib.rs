@@ -149,6 +149,8 @@ pub fn run() {
             create_tag_cmd,
             delete_tag_cmd,
             push_tags_cmd,
+            push_specific_tag_cmd,
+            delete_remote_tag_cmd,
             get_file_blame_cmd,
             list_reflog_cmd,
             restore_reflog_target_cmd,

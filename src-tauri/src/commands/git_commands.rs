@@ -502,10 +502,36 @@ pub async fn delete_tag_cmd(repo_path: String, name: String) -> Result<(), AppEr
 }
 
 #[command]
-pub async fn push_tags_cmd(repo_path: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || crate::git::tags::push_tags(&repo_path))
+pub async fn push_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::tags::push_tags_to_remote(&repo_path, remote.as_deref()))
         .await
         .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn push_specific_tag_cmd(
+    repo_path: String,
+    remote: Option<String>,
+    tag_name: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::tags::push_specific_tag(&repo_path, remote.as_deref(), &tag_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn delete_remote_tag_cmd(
+    repo_path: String,
+    remote: Option<String>,
+    tag_name: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::tags::delete_remote_tag(&repo_path, remote.as_deref(), &tag_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 // Blame

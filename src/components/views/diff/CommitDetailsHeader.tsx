@@ -10,9 +10,11 @@ import {
   Copy,
   Check,
   Files,
+  Tag,
 } from 'lucide-react';
 import { CommitDetails } from '../../../types/git';
 import { useSigningStore } from '../../../store/signingStore';
+import { useGitStore } from '../../../store/useGitStore';
 import { UserAvatar } from '../../common/UserAvatar';
 
 interface CommitDetailsHeaderProps {
@@ -49,6 +51,15 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   const deletions = commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0;
 
   const isAllOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+
+  const tags = useGitStore((s) => s.tags);
+  const commitTags = tags.filter(
+    (t) =>
+      t.sha &&
+      (t.sha === commitDetails.commit.sha ||
+        commitDetails.commit.sha.startsWith(t.sha) ||
+        t.sha.startsWith(commitDetails.commit.short_sha))
+  );
 
   const handleCopySha = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -152,6 +163,18 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
               <Copy className="w-2.5 h-2.5 text-text-faint ml-0.5 opacity-70" />
             )}
           </button>
+
+          {/* Git Tag Badges */}
+          {commitTags.map((tag) => (
+            <span
+              key={tag.name}
+              title={tag.message ? `Git Tag: ${tag.name} (${tag.message})` : `Git Tag: ${tag.name}`}
+              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-sm px-1.5 py-0.5"
+            >
+              <Tag className="w-2.5 h-2.5" />
+              <span>{tag.name}</span>
+            </span>
+          ))}
 
           <span className="text-text-faint select-none">/</span>
 

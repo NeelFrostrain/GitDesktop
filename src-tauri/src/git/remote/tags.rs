@@ -114,6 +114,10 @@ pub fn delete_tag(repo_path: &str, name: &str) -> Result<(), AppError> {
 }
 
 pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
+    push_tags_to_remote(repo_path, None)
+}
+
+pub fn push_tags_to_remote(repo_path: &str, remote: Option<&str>) -> Result<(), AppError> {
     use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
 
     let auth_info = get_git_auth_info(repo_path);
@@ -121,13 +125,71 @@ pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
     cmd.current_dir(repo_path);
     apply_git_auth_args_pub(&mut cmd, &auth_info);
 
-    cmd.arg("push").arg("origin").arg("--tags");
+    let remote_name = remote.unwrap_or("origin");
+    cmd.arg("push").arg(remote_name).arg("--tags");
 
     let output = cmd.output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(AppError::Git(format!(
-            "Failed to push tags: {}",
+            "Failed to push tags to '{}': {}",
+            remote_name,
+            stderr.trim()
+        )));
+    }
+    Ok(())
+}
+
+pub fn push_specific_tag(
+    repo_path: &str,
+    remote: Option<&str>,
+    tag_name: &str,
+) -> Result<(), AppError> {
+    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
+
+    let auth_info = get_git_auth_info(repo_path);
+    let mut cmd = silent_git_command();
+    cmd.current_dir(repo_path);
+    apply_git_auth_args_pub(&mut cmd, &auth_info);
+
+    let remote_name = remote.unwrap_or("origin");
+    cmd.arg("push").arg(remote_name).arg(tag_name);
+
+    let output = cmd.output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to push tag '{}' to '{}': {}",
+            tag_name,
+            remote_name,
+            stderr.trim()
+        )));
+    }
+    Ok(())
+}
+
+pub fn delete_remote_tag(
+    repo_path: &str,
+    remote: Option<&str>,
+    tag_name: &str,
+) -> Result<(), AppError> {
+    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
+
+    let auth_info = get_git_auth_info(repo_path);
+    let mut cmd = silent_git_command();
+    cmd.current_dir(repo_path);
+    apply_git_auth_args_pub(&mut cmd, &auth_info);
+
+    let remote_name = remote.unwrap_or("origin");
+    cmd.arg("push").arg(remote_name).arg("--delete").arg(tag_name);
+
+    let output = cmd.output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to delete remote tag '{}' on '{}': {}",
+            tag_name,
+            remote_name,
             stderr.trim()
         )));
     }

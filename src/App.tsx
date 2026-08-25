@@ -40,6 +40,7 @@ const ReflogModal = lazy(() => import('./components/modals/ReflogModal').then(m 
 const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m => ({ default: m.PatchModal })));
 const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
 const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
+const CreateTagModal = lazy(() => import('./components/modals/CreateTagModal').then(m => ({ default: m.CreateTagModal })));
 const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
 const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
 const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
@@ -53,7 +54,16 @@ const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => (
  * global keyboard shortcuts, and code-split modal dialogs.
  */
 export const App: React.FC = () => {
-  const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
+  const {
+    setUser,
+    setAccounts,
+    activeRepoPath,
+    setStatus,
+    setError,
+    currentNavView,
+    isCreateTagModalOpen,
+    setIsCreateTagModalOpen,
+  } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
@@ -287,6 +297,7 @@ export const App: React.FC = () => {
           <PatchModal />
           <GitConfigModal />
           <RewriteHistoryModal />
+          <CreateTagModal isOpen={isCreateTagModalOpen} onClose={() => setIsCreateTagModalOpen(false)} />
           <GitUserConfigModal />
           <LogModal />
           <GitLabSignInModal />

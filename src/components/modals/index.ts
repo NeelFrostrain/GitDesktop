@@ -14,3 +14,4 @@ export { SigningSettings } from './SigningSettings';
 export { GitLabSignInModal } from './GitLabSignInModal';
 export { CreateItemModal } from './CreateItemModal';
 export { RenameItemModal } from './RenameItemModal';
+export { CreateTagModal } from './CreateTagModal';

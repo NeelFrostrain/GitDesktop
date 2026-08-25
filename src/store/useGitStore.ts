@@ -120,6 +120,7 @@ export interface GitState {
   isPatchModalOpen: boolean;
   isConfigModalOpen: boolean;
   isRewriteModalOpen: boolean;
+  isCreateTagModalOpen: boolean;
   pendingHistoryOp: HistoryOperation | null;
   isUserConfigModalOpen: boolean;
   pendingCommitData: { summary: string; description?: string } | null;
@@ -176,6 +177,7 @@ export interface GitState {
   setIsPatchModalOpen: (open: boolean) => void;
   setIsConfigModalOpen: (open: boolean) => void;
   setIsRewriteModalOpen: (open: boolean) => void;
+  setIsCreateTagModalOpen: (open: boolean) => void;
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
   setIsUserConfigModalOpen: (open: boolean) => void;
   setPendingCommitData: (data: { summary: string; description?: string } | null) => void;
@@ -236,6 +238,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   isPatchModalOpen: false,
   isConfigModalOpen: false,
   isRewriteModalOpen: false,
+  isCreateTagModalOpen: false,
   pendingHistoryOp: null,
   isUserConfigModalOpen: false,
   pendingCommitData: null,
@@ -520,6 +523,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
+  setIsCreateTagModalOpen: (isCreateTagModalOpen) => set({ isCreateTagModalOpen }),
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
   setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),
   setPendingCommitData: (pendingCommitData) => set({ pendingCommitData }),
