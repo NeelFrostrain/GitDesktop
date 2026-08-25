@@ -289,10 +289,24 @@ export class GitService {
   }
 
   /**
-   * Pushes all local tags to remote origin.
+   * Pushes all local tags to remote (default: origin).
    */
-  static async pushTags(repoPath: string): Promise<void> {
-    return invoke('push_tags_cmd', { repoPath });
+  static async pushTags(repoPath: string, remote?: string | null): Promise<void> {
+    return invoke('push_tags_cmd', { repoPath, remote: remote || null });
+  }
+
+  /**
+   * Pushes a specific tag to remote.
+   */
+  static async pushSpecificTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+    return invoke('push_specific_tag_cmd', { repoPath, tagName, remote: remote || null });
+  }
+
+  /**
+   * Deletes a tag on the remote repository.
+   */
+  static async deleteRemoteTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+    return invoke('delete_remote_tag_cmd', { repoPath, tagName, remote: remote || null });
   }
 
   // ── Submodules ───────────────────────────────────────────────────────────────
@@ -402,5 +416,43 @@ export class GitService {
       customApiKey: customApiKey || null,
       model: model || null,
     });
+  }
+
+  // ── File Content & Editing ──────────────────────────────────────────────────
+
+  /**
+   * Reads raw file content from the local working repository.
+   */
+  static async readFileContent(repoPath: string, filePath: string): Promise<string> {
+    return invoke<string>('read_file_content_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Saves raw file content back to the local repository.
+   */
+  static async saveFileContent(
+    repoPath: string,
+    filePath: string,
+    content: string
+  ): Promise<void> {
+    return invoke<void>('save_file_content_cmd', { repoPath, filePath, content });
+  }
+
+  /**
+   * Creates a directory in the local working repository.
+   */
+  static async createDirectory(repoPath: string, folderPath: string): Promise<void> {
+    return invoke<void>('create_directory_cmd', { repoPath, folderPath });
+  }
+
+  /**
+   * Renames or moves a file in the local working repository.
+   */
+  static async renameFile(
+    repoPath: string,
+    oldPath: string,
+    newPath: string
+  ): Promise<void> {
+    return invoke<void>('rename_file_cmd', { repoPath, oldPath, newPath });
   }
 }

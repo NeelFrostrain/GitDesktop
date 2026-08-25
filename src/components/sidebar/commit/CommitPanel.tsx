@@ -179,6 +179,11 @@ export const CommitPanel: React.FC = () => {
     const key = newApiKeyInput.trim();
     if (!key || !activeRepoPath) return;
 
+    if (!key.startsWith('gsk_')) {
+      setInlineError('Groq API keys start with "gsk_". Get your free key at console.groq.com/keys.');
+      return;
+    }
+
     setIsInlineGenerating(true);
     setInlineError(null);
     try {
@@ -200,10 +205,14 @@ export const CommitPanel: React.FC = () => {
         await setSettingValue('ai.groq_api_keys', list);
       }
 
+      if (stagedFiles.length > 0) {
+        await GitService.stageFiles(activeRepoPath, stagedFiles);
+      }
+
       const model = getEffectiveValue('ai.model') || undefined;
       const res = await GitService.generateAiCommitMessage(
         activeRepoPath,
-        stagedFiles.length > 0,
+        true, // Strictly analyze staged files
         key,
         model
       );
@@ -413,11 +422,10 @@ export const CommitPanel: React.FC = () => {
                       key={idx}
                       onClick={() => setSelectedTitleIndex(idx)}
                       onDoubleClick={() => handleApplyAiSelection(opt)}
-                      className={`p-2.5 rounded-sm cursor-pointer flex items-start gap-2 transition text-xs select-none bg-base-0 border ${
-                        isSelected
-                          ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
-                          : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
-                      }`}
+                      className={`p-2.5 rounded-sm cursor-pointer flex items-start gap-2 transition text-xs select-none bg-base-0 border ${isSelected
+                        ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
+                        : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
+                        }`}
                     >
                       <span className="text-[10px] font-mono font-bold text-commito-coral mt-0.5 flex-shrink-0">
                         {idx + 1}.
@@ -435,46 +443,53 @@ export const CommitPanel: React.FC = () => {
 
               {/* Description Mode Selector Row */}
               <div className="pt-0.5 space-y-1">
-                <div className="text-[10px] font-semibold text-text-muted flex items-center gap-1">
+                <div className="text-[10px] font-semibold text-text-muted flex items-center justify-between">
                   <span>Description Format</span>
+                  <span className="text-[9.5px] font-mono text-text-faint">
+                    {descriptionMode === 'report'
+                      ? 'Full Report'
+                      : descriptionMode === 'bullets'
+                        ? 'Key Bullets'
+                        : 'Summary Only'}
+                  </span>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 select-none">
+                <div className="flex rounded-sm border border-border bg-base-0 p-0.5 select-none gap-0.5">
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('report')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'report'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'report'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                    title="Include full technical report in commit description"
                   >
-                    <FileText className="w-3 h-3" />
-                    <span>Full Report</span>
+                    <FileText className="w-3 h-3 flex-shrink-0" />
+                    <span>Report</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('bullets')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'bullets'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'bullets'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                    title="Include concise bullet points in commit description"
                   >
-                    <ListFilter className="w-3 h-3" />
+                    <ListFilter className="w-3 h-3 flex-shrink-0" />
                     <span>Bullets</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('none')}
-                    className={`px-2 py-1.5 rounded-sm border text-[11px] font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                      descriptionMode === 'none'
-                        ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-semibold'
-                        : 'bg-base-0 border-border hover:border-border-strong text-text-muted hover:text-text-primary'
-                    }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'none'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      }`}
+                    title="No commit description (summary only)"
                   >
-                    <Ban className="w-3 h-3" />
+                    <Ban className="w-3 h-3 flex-shrink-0" />
                     <span>None</span>
                   </button>
                 </div>
@@ -568,11 +583,10 @@ export const CommitPanel: React.FC = () => {
           <button
             onClick={onExecuteCommit}
             disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt || count === 0}
-            className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${
-              canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0
-                ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
-                : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
-            }`}
+            className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0
+              ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
+              : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
+              }`}
           >
             <GitCommit className="w-3.5 h-3.5 flex-shrink-0" />
             <span>
@@ -591,22 +605,20 @@ export const CommitPanel: React.FC = () => {
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${
-          isOpen
-            ? 'bg-base-2 text-text-primary border-border-strong'
-            : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
-        }`}
+        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${isOpen
+          ? 'bg-base-2 text-text-primary border-border-strong'
+          : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
+          }`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <GitCommit className="w-3.5 h-3.5 flex-shrink-0 text-commito-coral" />
           <span className="truncate">Initialize commit</span>
           {count > 0 && (
             <span
-              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none border ${
-                isOpen
-                  ? 'bg-white/20 border-white/30 text-white'
-                  : 'bg-base-0 border-border text-text-muted'
-              }`}
+              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none border ${isOpen
+                ? 'bg-white/20 border-white/30 text-white'
+                : 'bg-base-0 border-border text-text-muted'
+                }`}
             >
               {count}
             </span>
@@ -614,9 +626,8 @@ export const CommitPanel: React.FC = () => {
         </div>
 
         <ChevronUp
-          className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
-            isOpen ? 'rotate-180 text-white' : 'text-text-muted'
-          }`}
+          className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180 text-white' : 'text-text-muted'
+            }`}
         />
       </button>
     </div>

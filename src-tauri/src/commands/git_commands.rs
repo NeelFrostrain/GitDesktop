@@ -502,10 +502,116 @@ pub async fn delete_tag_cmd(repo_path: String, name: String) -> Result<(), AppEr
 }
 
 #[command]
-pub async fn push_tags_cmd(repo_path: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || crate::git::tags::push_tags(&repo_path))
+pub async fn push_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::tags::push_tags_to_remote(&repo_path, remote.as_deref()))
         .await
         .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn push_specific_tag_cmd(
+    repo_path: String,
+    remote: Option<String>,
+    tag_name: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::tags::push_specific_tag(&repo_path, remote.as_deref(), &tag_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn delete_remote_tag_cmd(
+    repo_path: String,
+    remote: Option<String>,
+    tag_name: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::tags::delete_remote_tag(&repo_path, remote.as_deref(), &tag_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+// Releases
+#[command]
+pub async fn list_releases_cmd(
+    repo_path: String,
+) -> Result<Vec<crate::git::remote::releases::ReleaseInfo>, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::remote::releases::list_releases(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn create_release_cmd(
+    repo_path: String,
+    tag_name: String,
+    name: String,
+    description: String,
+    target_ref: Option<String>,
+    push_immediately: Option<bool>,
+    remote: Option<String>,
+) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    let pi = push_immediately.unwrap_or(true);
+    tokio::task::spawn_blocking(move || {
+        crate::git::remote::releases::create_release(
+            &repo_path,
+            &tag_name,
+            &name,
+            &description,
+            target_ref.as_deref(),
+            pi,
+            remote.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn update_release_cmd(
+    repo_path: String,
+    tag_name: String,
+    name: String,
+    description: String,
+    push_immediately: Option<bool>,
+    remote: Option<String>,
+) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    let pi = push_immediately.unwrap_or(true);
+    tokio::task::spawn_blocking(move || {
+        crate::git::remote::releases::update_release(
+            &repo_path,
+            &tag_name,
+            &name,
+            &description,
+            pi,
+            remote.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn delete_release_cmd(
+    repo_path: String,
+    tag_name: String,
+    delete_tag: Option<bool>,
+    remote: Option<String>,
+) -> Result<(), AppError> {
+    let dt = delete_tag.unwrap_or(true);
+    tokio::task::spawn_blocking(move || {
+        crate::git::remote::releases::delete_release(
+            &repo_path,
+            &tag_name,
+            dt,
+            remote.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 // Blame

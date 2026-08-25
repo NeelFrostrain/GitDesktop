@@ -1,31 +1,25 @@
 import React, { useEffect } from 'react';
 import {
   GitPullRequest,
-  AlertCircle,
-  X,
+  Tag,
+  Sparkles,
+  FolderGit2,
+  FileCode,
   RotateCcw,
   History,
-  FileCode,
-  Settings,
-  GitCommit,
-  RefreshCw,
+  AlertCircle,
+  X,
   Globe,
-  ShieldCheck,
-  Terminal,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { useAccountServicesStore } from '../../features/account-services';
 import { useRemoteStore } from '../../store/remoteStore';
-import { useSigningStore } from '../../store/signingStore';
-import { useTerminalStore } from '../../features/terminal';
-import { useSettingsStore } from '../../features/settings';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
-import { useRepositorySync } from '../../hooks/useRepositorySync';
+import { Dropdown } from '../common/Dropdown';
 
 /**
- * Top application header bar displaying quick tool shortcuts (Rebase, Cherry-pick, Reflog, Patch,
- * Terminal, Settings), active sync status button, remote selector, and branch switcher.
+ * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Worktree, Patch, Rebase, Reflog),
+ * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
   const {
@@ -34,10 +28,13 @@ export const Header: React.FC = () => {
     setError,
     currentNavView,
     setIsMergeRequestModalOpen,
-    setIsRebaseModalOpen,
-    setIsCherryPickModalOpen,
-    setIsReflogModalOpen,
+    setIsCreateTagModalOpen,
+    setIsCreateReleaseModalOpen,
+    setEditingRelease,
+    setIsWorktreeModalOpen,
     setIsPatchModalOpen,
+    setIsRebaseModalOpen,
+    setIsReflogModalOpen,
   } = useGitStore();
 
   const {
@@ -47,116 +44,94 @@ export const Header: React.FC = () => {
     loadRemotes,
   } = useRemoteStore();
 
-  const { setIsSigningSettingsOpen, config, loadConfig } = useSigningStore();
-  const isTerminalOpen = useTerminalStore((s) => s.isOpen);
-  const { refreshSync, isFetching } = useRepositorySync();
-
   useEffect(() => {
     if (activeRepoPath) {
       loadRemotes(activeRepoPath);
-      loadConfig(activeRepoPath);
     }
-  }, [activeRepoPath, loadRemotes, loadConfig]);
+  }, [activeRepoPath, loadRemotes]);
 
   const isHome = currentNavView === 'home';
 
   return (
-    <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Action Tools Group */}
+    <header className="h-10 bg-base-0 border-b border-border px-2 flex items-center justify-between flex-shrink-0 select-none">
+      {/* Left: Quick Create & Inspection Tools */}
       <div className="flex items-center gap-1.5">
-        {/* Fetch/Refresh Status */}
-        <button
-          onClick={refreshSync}
-          disabled={isFetching || !activeRepoPath}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-          title="Refresh Repository Status"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 text-commito-coral ${isFetching ? 'animate-spin' : ''}`} />
-        </button>
-
         {!isHome && (
           <>
-            {/* Remote Manager */}
+            {/* Draft Release */}
             <button
-              onClick={() => useAccountServicesStore.getState().openModalWithTab('remotes')}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Manage Git Remotes"
+              type="button"
+              onClick={() => {
+                setEditingRelease(null);
+                setIsCreateReleaseModalOpen(true);
+              }}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Draft Release..."
             >
-              <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
+              <Sparkles className="w-3.5 h-3.5" />
             </button>
 
-            {/* Commit Signing Settings */}
+            {/* Create Tag */}
             <button
-              onClick={() => setIsSigningSettingsOpen(true)}
-              className={`p-1 rounded-sm border border-border transition cursor-pointer ${
-                config?.enabled
-                  ? 'text-git-added bg-git-added-bg border-git-added/40 hover:bg-git-added-bg/80'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2'
-              }`}
-              title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
+              type="button"
+              onClick={() => setIsCreateTagModalOpen(true)}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-amber-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Create Git Tag..."
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <Tag className="w-3.5 h-3.5" />
             </button>
 
-            {/* Rebase Tool */}
+            {/* Create Merge / Pull Request */}
             <button
-              onClick={() => setIsRebaseModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Interactive Rebase"
+              type="button"
+              onClick={() => setIsMergeRequestModalOpen(true)}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Create Merge / Pull Request"
             >
-              <RotateCcw className="w-3.5 h-3.5 text-text-muted hover:text-commito-coral" />
+              <GitPullRequest className="w-3.5 h-3.5" />
             </button>
 
-            {/* Cherry Pick Tool */}
+            {/* Worktrees Tool */}
             <button
-              onClick={() => setIsCherryPickModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Cherry-Pick Commits"
+              type="button"
+              onClick={() => setIsWorktreeModalOpen(true)}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-emerald-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Manage Worktrees"
             >
-              <GitCommit className="w-3.5 h-3.5 text-git-added" />
-            </button>
-
-            {/* Reflog Tool */}
-            <button
-              onClick={() => setIsReflogModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Reflog Safety Net"
-            >
-              <History className="w-3.5 h-3.5 text-gitlab-teal" />
+              <FolderGit2 className="w-3.5 h-3.5" />
             </button>
 
             {/* Patch Studio */}
             <button
+              type="button"
               onClick={() => setIsPatchModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-cyan-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Export / Apply Patch"
             >
-              <FileCode className="w-3.5 h-3.5 text-git-modified" />
+              <FileCode className="w-3.5 h-3.5" />
             </button>
 
-            {/* Repository Terminal */}
+            {/* Interactive Rebase */}
             <button
-              onClick={() => useTerminalStore.getState().toggleIsOpen()}
-              className={`p-1 rounded-sm border transition cursor-pointer ${
-                isTerminalOpen
-                  ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2 border-border'
-              }`}
-              title="Toggle Repository Terminal (Ctrl+`)"
+              type="button"
+              onClick={() => setIsRebaseModalOpen(true)}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Interactive Rebase"
             >
-              <Terminal className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Reflog History */}
+            <button
+              type="button"
+              onClick={() => setIsReflogModalOpen(true)}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-gitlab-teal hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Reflog History"
+            >
+              <History className="w-3.5 h-3.5" />
             </button>
           </>
         )}
-
-        {/* Settings & Design Tokens */}
-        <button
-          onClick={() => useSettingsStore.getState().openSettings()}
-          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-          title="Open Settings & CSS Design Tokens (Ctrl+,)"
-        >
-          <Settings className="w-3.5 h-3.5 text-text-secondary" />
-        </button>
       </div>
 
       {/* Right: Sync, Push, Branch & PR Action Group */}
@@ -178,36 +153,26 @@ export const Header: React.FC = () => {
           <>
             {/* Remote Selector Dropdown (when 2+ remotes exist) */}
             {remotes.length > 1 && (
-              <div className="flex items-center gap-1 bg-base-2 border border-border rounded-sm px-2 py-1 text-xs text-text-secondary">
-                <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
-                <select
+              <div className="w-32">
+                <Dropdown
+                  options={remotes.map((r) => ({
+                    value: r.name,
+                    label: r.name,
+                    icon: <Globe className="w-3 h-3 text-gitlab-teal" />,
+                  }))}
                   value={activeRemote}
-                  onChange={(e) => setActiveRemote(e.target.value)}
-                  className="bg-transparent text-text-primary text-xs font-mono font-semibold focus:outline-none cursor-pointer"
-                >
-                  {remotes.map((r) => (
-                    <option key={r.name} value={r.name} className="bg-base-1 text-text-primary font-mono">
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setActiveRemote(val)}
+                  placeholder="Remote..."
+                  size="sm"
+                />
               </div>
             )}
 
-            {/* Smart Git Action Button */}
+            {/* Smart Git Action Button (with integrated Fetch / Reload) */}
             <SmartGitActionButton />
 
             {/* Branch Switcher Dropdown */}
             <BranchDropdown />
-
-            {/* PR / Merge Button */}
-            <button
-              onClick={() => setIsMergeRequestModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Create Merge / Pull Request"
-            >
-              <GitPullRequest className="w-4 h-4 text-commito-coral" />
-            </button>
           </>
         )}
       </div>

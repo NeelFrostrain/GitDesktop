@@ -3,10 +3,10 @@ import {
   Upload,
   Download,
   ArrowUpDown,
-  Check,
   AlertTriangle,
   Loader2,
   GitBranch,
+  RefreshCw,
 } from 'lucide-react';
 import { useRepositorySync, GitSyncStatus } from '../../hooks/useRepositorySync';
 
@@ -36,15 +36,17 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const busyCls =
-    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none';
+    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none shadow-xs';
   const primaryCls =
-    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
   const secondaryCls =
-    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer';
+    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
+  const upToDateCls =
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition select-none active:scale-95';
   const mutedCls =
-    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none shadow-xs';
   const warnCls =
-    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none';
+    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-xs';
 
   if (!hasRepo) {
     return {
@@ -65,7 +67,7 @@ function getButtonConfig(
       ? 'Fetching...'
       : 'Working...';
     return {
-      icon: <Loader2 className="w-3.5 h-3.5 animate-spin" />,
+      icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />,
       label: opLabel,
       tooltip: 'Git operation in progress',
       className: busyCls,
@@ -102,11 +104,17 @@ function getButtonConfig(
       };
     case 'up-to-date':
       return {
-        icon: <Check className="w-3.5 h-3.5" />,
-        label: 'Up to date',
-        tooltip: `Your branch is up to date with origin/${branch}`,
-        className: mutedCls,
-        disabled: true,
+        icon: (
+          <RefreshCw
+            className={`w-3.5 h-3.5 text-commito-coral ${
+              isFetching ? 'animate-spin' : ''
+            }`}
+          />
+        ),
+        label: isFetching ? 'Fetching...' : 'Up to date',
+        tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
+        className: upToDateCls,
+        disabled: false,
       };
     case 'no-upstream':
       return {
@@ -158,7 +166,7 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
     ? 'bg-commito-coral'
     : isPulling
     ? 'bg-gitlab-blue'
-    : 'bg-text-muted/60';
+    : 'bg-commito-coral';
 
   return (
     <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden rounded-b-md bg-white/10">
@@ -171,8 +179,7 @@ function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: 
 }
 
 /**
- * Smart reactive action button adapting automatically to the repository's sync state
- * (Push, Pull, Sync, Publish, or Up-to-date).
+ * Smart reactive action button adapting automatically to the repository's sync state.
  */
 export const SmartGitActionButton: React.FC = () => {
   const {
@@ -182,6 +189,7 @@ export const SmartGitActionButton: React.FC = () => {
     isPushing,
     isPulling,
     executeAction,
+    refreshSync,
     hasRepo,
   } = useRepositorySync();
 
@@ -204,8 +212,12 @@ export const SmartGitActionButton: React.FC = () => {
     !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
-    if (config.disabled) return;
-    executeAction();
+    if (isBusy || config.disabled) return;
+    if (syncStatus === 'up-to-date') {
+      refreshSync();
+    } else {
+      executeAction();
+    }
   };
 
   return (
@@ -216,7 +228,7 @@ export const SmartGitActionButton: React.FC = () => {
         <button
           type="button"
           onClick={handleClick}
-          disabled={config.disabled}
+          disabled={config.disabled || isBusy}
           className={config.className}
           title={config.tooltip}
         >

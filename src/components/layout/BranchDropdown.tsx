@@ -164,12 +164,12 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className="px-2.5 py-1 rounded-sm bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer select-none"
+        className="h-7 px-2.5 rounded-sm bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer select-none shadow-2xs"
         title={`Current branch: ${currentBranch}`}
       >
-        <GitBranch className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
+        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
         <span className="truncate max-w-[130px] font-mono">{currentBranch}</span>
-        <ChevronDown className="w-3 h-3 text-text-muted flex-shrink-0" />
+        <ChevronDown className={`w-3 h-3 text-text-muted shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {/* Dropdown Menu Portal */}
@@ -183,20 +183,20 @@ export const BranchDropdown: React.FC = () => {
               top: `${topPos}px`,
               width: `${menuWidth}px`,
             }}
-            className="fixed z-[9999] bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+            className="fixed z-[9999] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[460px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
           >
             {/* Header Bar */}
-            <div className="px-3 py-2 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
-              <div className="flex items-center gap-1.5">
+            <div className="px-3.5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
                 <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
-                <span className="font-extrabold text-xs text-text-primary">Switch Branch</span>
+                <span className="font-bold text-xs text-text-primary">Switch Branch</span>
                 {isLoading && <Loader2 className="w-3 h-3 text-commito-coral animate-spin ml-1" />}
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowCreateModal(true)}
-                className="px-2 py-0.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded text-[11px] font-bold flex items-center gap-1 transition cursor-pointer"
+                className="h-6 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
                 title="Create new branch"
               >
                 <Plus className="w-3 h-3" />
@@ -205,7 +205,7 @@ export const BranchDropdown: React.FC = () => {
             </div>
 
             {/* Search Bar */}
-            <div className="p-2 border-b border-border bg-base-0/50 flex-shrink-0">
+            <div className="p-2 border-b border-border/80 bg-base-0 shrink-0">
               <div className="relative flex items-center">
                 <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
                 <input
@@ -214,7 +214,7 @@ export const BranchDropdown: React.FC = () => {
                   placeholder="Filter branches..."
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
-                  className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                  className="w-full h-7.5 pl-8 pr-7 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono shadow-inner"
                 />
                 {filterQuery && (
                   <button
@@ -229,14 +229,14 @@ export const BranchDropdown: React.FC = () => {
             </div>
 
             {/* Scrollable Branch List */}
-            <div className="flex-1 overflow-y-auto py-1 space-y-2 min-h-0">
+            <div className="flex-1 overflow-y-auto py-1.5 space-y-2 min-h-0">
               {/* Local Branches Section */}
               <div>
-                <div className="px-3 pt-1.5 pb-1 select-none flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
+                <div className="px-3 pt-1 pb-1 select-none flex items-center justify-between">
+                  <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
                     LOCAL BRANCHES
                   </span>
-                  <span className="text-[10px] font-mono text-text-muted bg-base-2 px-1.5 py-0.2 rounded border border-border">
+                  <span className="text-[9.5px] font-mono text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border">
                     {localBranches.length}
                   </span>
                 </div>
@@ -246,22 +246,22 @@ export const BranchDropdown: React.FC = () => {
                     {filterQuery ? 'No local branches match search.' : 'No local branches.'}
                   </div>
                 ) : (
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 px-1.5">
                     {localBranches.map((branchItem: BranchInfo) => {
                       const isCurrent = branchItem.name === currentBranch;
                       return (
                         <div
                           key={branchItem.name}
                           onClick={() => handleSelectBranch(branchItem.name)}
-                          className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm cursor-pointer transition ${
+                          className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-sm cursor-pointer transition ${
                             isCurrent
-                              ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
-                              : 'hover:bg-base-2 text-text-primary'
+                              ? 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/30 shadow-2xs'
+                              : 'hover:bg-base-1 text-text-primary'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
                             <GitBranch
-                              className={`w-3.5 h-3.5 flex-shrink-0 ${
+                              className={`w-3.5 h-3.5 shrink-0 ${
                                 isCurrent ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
                               }`}
                             />
@@ -269,8 +269,8 @@ export const BranchDropdown: React.FC = () => {
                           </div>
 
                           {isCurrent && (
-                            <div className="flex items-center gap-1.5 flex-shrink-0">
-                              <span className="text-[9px] font-extrabold px-1 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30">
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-commito-coral/20 text-commito-coral border border-commito-coral/40">
                                 CURRENT
                               </span>
                               <Check className="w-3.5 h-3.5 text-commito-coral" />
@@ -285,25 +285,25 @@ export const BranchDropdown: React.FC = () => {
 
               {/* Remote Branches Section */}
               {remoteBranches.length > 0 && (
-                <div className="pt-1 border-t border-border/40">
-                  <div className="px-3 pt-1.5 pb-1 select-none flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
+                <div className="pt-1.5 border-t border-border/60">
+                  <div className="px-3 pt-1 pb-1 select-none flex items-center justify-between">
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
                       REMOTE BRANCHES
                     </span>
-                    <span className="text-[10px] font-mono text-text-muted bg-base-2 px-1.5 py-0.2 rounded border border-border">
+                    <span className="text-[9.5px] font-mono text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border">
                       {remoteBranches.length}
                     </span>
                   </div>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-0.5 px-1.5">
                     {remoteBranches.map((remoteBranchItem: BranchInfo) => (
                       <div
                         key={remoteBranchItem.name}
                         onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                        className="group flex items-center gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm hover:bg-base-2 text-text-primary cursor-pointer transition"
+                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-sm hover:bg-base-1 text-text-secondary hover:text-text-primary cursor-pointer transition font-mono"
                       >
-                        <Globe className="w-3.5 h-3.5 text-gitlab-blue flex-shrink-0" />
-                        <span className="truncate text-xs font-mono">{remoteBranchItem.name}</span>
+                        <Globe className="w-3.5 h-3.5 text-gitlab-blue shrink-0" />
+                        <span className="truncate text-xs">{remoteBranchItem.name}</span>
                       </div>
                     ))}
                   </div>
@@ -316,12 +316,12 @@ export const BranchDropdown: React.FC = () => {
 
       {/* Create New Branch Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/75 flex items-center justify-center p-4 select-none font-sans">
+        <div className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
-            className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+            className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
           >
-            <div className="px-4 py-3 bg-base-0 border-b border-border flex items-center justify-between">
+            <div className="px-4 py-3 bg-base-1 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <GitBranch className="w-4 h-4 text-commito-coral" />
                 <h3 className="text-xs font-bold text-text-primary">Create Branch</h3>
@@ -337,30 +337,30 @@ export const BranchDropdown: React.FC = () => {
 
             <div className="p-4 space-y-3">
               <div>
-                <label className="text-[11px] font-semibold text-text-muted block mb-1">Branch Name</label>
+                <label className="text-[11px] font-semibold text-text-primary block mb-1">Branch Name</label>
                 <input
                   type="text"
                   autoFocus
                   placeholder="feature/new-feature"
                   value={newBranchName}
                   onChange={(e) => setNewBranchName(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono shadow-inner"
                 />
               </div>
             </div>
 
-            <div className="px-4 py-2.5 bg-base-0 border-t border-border flex items-center justify-end gap-2">
+            <div className="px-4 py-3 bg-base-1 border-t border-border flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1 bg-base-2 hover:bg-base-3 border border-border rounded text-xs font-semibold text-text-secondary transition cursor-pointer"
+                className="h-7.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!newBranchName.trim() || isCreating}
-                className="px-3 py-1 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded text-xs font-bold transition cursor-pointer flex items-center gap-1.5"
+                className="h-7.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
               >
                 {isCreating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                 <span>Create & Checkout</span>

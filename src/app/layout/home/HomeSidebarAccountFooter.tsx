@@ -1,12 +1,10 @@
 import React from 'react';
 import { Settings } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
-import { useAccountServicesStore } from '../../../features/account-services';
 import { UserAvatar } from '../../../components/common/UserAvatar';
 
 export const HomeSidebarAccountFooter: React.FC = () => {
-  const { user } = useGitStore();
-  const openModalWithTab = useAccountServicesStore((s) => s.openModalWithTab);
+  const { user, setIsUserConfigModalOpen } = useGitStore();
 
   const displayName = user?.name || user?.username || 'No Account';
   const handle = user?.username ? `@${user.username}` : 'Click to connect';
@@ -15,9 +13,9 @@ export const HomeSidebarAccountFooter: React.FC = () => {
     <div className="flex-shrink-0 border-t border-border px-2.5 py-2">
       <button
         type="button"
-        onClick={() => openModalWithTab('accounts')}
+        onClick={() => setIsUserConfigModalOpen(true)}
         className="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-base-1 transition text-left cursor-pointer group"
-        title="Manage accounts"
+        title="Git User Configuration"
       >
         <UserAvatar
           url={user?.avatar_url}

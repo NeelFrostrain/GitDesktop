@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
 import { GitService } from '../../../services/git/gitService';
 import { CommitFilters } from './CommitFilters';
 import { CommitList } from './CommitList';
+
+const PAGE_SIZE = 50;
 
 const sampleCommits: CommitInfo[] = [
   {
@@ -28,37 +30,105 @@ const sampleCommits: CommitInfo[] = [
 
 /**
  * Sidebar panel displaying the repository commit log timeline with text search filtering
- * and interactive drag-and-drop history rewriting.
+ * and dynamic infinite-scroll pagination.
  */
 export const HistoryPanel: React.FC = () => {
   const [commitFilter, setCommitFilter] = useState('');
   const [commits, setCommits] = useState<CommitInfo[]>([]);
-  const { activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha } = useGitStore();
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingInitial, setIsLoadingInitial] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  useEffect(() => {
-    if (activeTab !== 'history') return;
+  const { activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha, setTags } =
+    useGitStore();
 
+  const isFetchingRef = useRef(false);
+
+  // Load initial batch of commits
+  const loadInitialCommits = useCallback(async () => {
     if (!activeRepoPath) {
       setCommits(sampleCommits);
+      setHasMore(false);
       if (sampleCommits.length > 0 && !selectedCommitSha) {
         setSelectedCommitSha(sampleCommits[0].sha);
       }
       return;
     }
 
-    GitService.getCommitHistory(activeRepoPath, 50, 0)
-      .then((res) => {
-        if (res && res.length > 0) {
-          setCommits(res);
-          if (!selectedCommitSha) setSelectedCommitSha(res[0].sha);
-        } else {
-          setCommits(sampleCommits);
+    setIsLoadingInitial(true);
+    setHasMore(true);
+
+    try {
+      // 1. Fetch tags in parallel
+      GitService.listTags(activeRepoPath)
+        .then((tagsRes) => {
+          if (tagsRes) setTags(tagsRes);
+        })
+        .catch(() => {});
+
+      // 2. Fetch first batch of commits
+      const res = await GitService.getCommitHistory(activeRepoPath, PAGE_SIZE, 0);
+      if (res && res.length > 0) {
+        setCommits(res);
+        setHasMore(res.length === PAGE_SIZE);
+        if (!selectedCommitSha) {
+          setSelectedCommitSha(res[0].sha);
         }
-      })
-      .catch(() => {
-        setCommits(sampleCommits);
-      });
-  }, [activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha]);
+      } else {
+        setCommits([]);
+        setHasMore(false);
+      }
+    } catch {
+      setCommits(sampleCommits);
+      setHasMore(false);
+    } finally {
+      setIsLoadingInitial(false);
+    }
+  }, [activeRepoPath, selectedCommitSha, setSelectedCommitSha, setTags]);
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadInitialCommits();
+    }
+  }, [activeTab, activeRepoPath, loadInitialCommits]);
+
+  // Load next batch on scroll
+  const handleLoadMore = useCallback(async () => {
+    if (
+      !activeRepoPath ||
+      !hasMore ||
+      isLoadingMore ||
+      isLoadingInitial ||
+      isFetchingRef.current ||
+      commits.length === 0
+    ) {
+      return;
+    }
+
+    isFetchingRef.current = true;
+    setIsLoadingMore(true);
+
+    try {
+      const offset = commits.length;
+      const nextBatch = await GitService.getCommitHistory(activeRepoPath, PAGE_SIZE, offset);
+
+      if (nextBatch && nextBatch.length > 0) {
+        setCommits((prev) => {
+          const existingShas = new Set(prev.map((c) => c.sha));
+          const fresh = nextBatch.filter((c) => !existingShas.has(c.sha));
+          return [...prev, ...fresh];
+        });
+        setHasMore(nextBatch.length === PAGE_SIZE);
+      } else {
+        setHasMore(false);
+      }
+    } catch {
+      setHasMore(false);
+    } finally {
+      setIsLoadingMore(false);
+      isFetchingRef.current = false;
+    }
+  }, [activeRepoPath, hasMore, isLoadingMore, isLoadingInitial, commits.length]);
 
   const filteredCommits = commits.filter(
     (c) =>
@@ -68,9 +138,16 @@ export const HistoryPanel: React.FC = () => {
   );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
+    <div className="flex-1 flex flex-col min-h-0 select-none">
       <CommitFilters filter={commitFilter} onFilterChange={setCommitFilter} />
-      <CommitList commits={filteredCommits} />
+      <CommitList
+        commits={filteredCommits}
+        totalLoadedCount={commits.length}
+        hasMore={hasMore}
+        isLoadingMore={isLoadingMore}
+        isLoadingInitial={isLoadingInitial}
+        onLoadMore={handleLoadMore}
+      />
     </div>
   );
 };

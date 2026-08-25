@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   FileText,
   Binary,
@@ -18,10 +18,11 @@ import { UnifiedDiffView } from './diff/UnifiedDiffView';
 import { SplitDiffView } from './diff/SplitDiffView';
 import { ImageDiffView } from './diff/ImageDiffView';
 import { CleanWorkingTreeView } from './diff/CleanWorkingTreeView';
+import { FileEditorView } from './diff/FileEditorView';
 
 /**
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
- * and historical commit inspection in Unified and Split layout modes.
+ * and historical commit inspection in Unified, Split, and Edit layout modes.
  */
 export const DiffViewer: React.FC = () => {
   const {
@@ -38,6 +39,18 @@ export const DiffViewer: React.FC = () => {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Editor mode state & handle
+  const [editorState, setEditorState] = useState<{
+    isDirty: boolean;
+    isSaving: boolean;
+    saveSuccess: boolean;
+  }>({
+    isDirty: false,
+    isSaving: false,
+    saveSuccess: false,
+  });
+  const editorHandleRef = useRef<import('./diff/FileEditorView').FileEditorHandle | null>(null);
 
   // Expanded per-file diff cache in History mode
   const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
@@ -218,17 +231,43 @@ export const DiffViewer: React.FC = () => {
     }
 
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col min-h-0">
         <DiffHeader
           filePath={selectedFile}
           diffResult={diff}
           diffViewMode={diffViewMode}
           onChangeViewMode={setDiffViewMode}
           staged={isStaged}
+          isDirty={editorState.isDirty}
+          isSaving={editorState.isSaving}
+          saveSuccess={editorState.saveSuccess}
+          onSave={() => editorHandleRef.current?.save()}
+          onRevert={() => editorHandleRef.current?.revert()}
         />
 
-        <div className="flex-1 overflow-auto bg-base-0">
-          {diffViewMode === 'split' ? (
+        <div className="flex-1 overflow-auto bg-base-0 flex flex-col min-h-0">
+          {diffViewMode === 'edit' && activeRepoPath ? (
+            <FileEditorView
+              repoPath={activeRepoPath}
+              filePath={selectedFile}
+              isStaged={isStaged}
+              editorRefHandle={editorHandleRef}
+              onStateChange={setEditorState}
+              onExitEditMode={() => setDiffViewMode('unified')}
+              onSaved={async () => {
+                if (activeRepoPath) {
+                  try {
+                    const latestStatus = await GitService.getRepoStatus(activeRepoPath);
+                    useGitStore.getState().setStatus(latestStatus);
+                    const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
+                    setDiff(newDiff);
+                  } catch (e) {
+                    console.error('Failed to sync git status after saving:', e);
+                  }
+                }
+              }}
+            />
+          ) : diffViewMode === 'split' ? (
             <SplitDiffView lines={diff.lines} />
           ) : (
             <UnifiedDiffView lines={diff.lines} />
@@ -257,45 +296,30 @@ export const DiffViewer: React.FC = () => {
 
     if (!commitDetails) return null;
 
+    const handleToggleAllFiles = () => {
+      const allOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+      const nextState: Record<string, boolean> = {};
+      commitDetails.changed_files.forEach((f) => {
+        nextState[f] = !allOpen;
+        if (!allOpen && selectedCommitSha && !expandedHistoryFiles[f]) {
+          fetchCommitFileDiff(selectedCommitSha, f);
+        }
+      });
+      setOpenFiles(nextState);
+    };
+
     return (
       <div className="h-full flex flex-col overflow-hidden">
         <CommitDetailsHeader
           commitDetails={commitDetails}
           diffViewMode={diffViewMode}
           onChangeViewMode={setDiffViewMode}
+          openFiles={openFiles}
+          onToggleExpandAll={handleToggleAllFiles}
         />
 
         {/* Changed Files with Accordion Diffs */}
-        <div className="flex-1 p-3 overflow-y-auto space-y-2.5 bg-base-0">
-          <div className="px-1 flex items-center justify-between text-xs select-none">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-text-primary">Changed Files</span>
-              <span className="text-[10px] font-mono font-bold bg-base-2 text-text-muted px-1.5 py-0.5 rounded-sm border border-border">
-                {commitDetails.changed_files.length}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  const allOpen = commitDetails.changed_files.every((f) => openFiles[f]);
-                  const nextState: Record<string, boolean> = {};
-                  commitDetails.changed_files.forEach((f) => {
-                    nextState[f] = !allOpen;
-                    if (!allOpen && selectedCommitSha && !expandedHistoryFiles[f]) {
-                      fetchCommitFileDiff(selectedCommitSha, f);
-                    }
-                  });
-                  setOpenFiles(nextState);
-                }}
-                className="text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-1 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
-              >
-                {commitDetails.changed_files.every((f) => openFiles[f]) ? 'Collapse All' : 'Expand All'}
-              </button>
-            </div>
-          </div>
-
+        <div className="flex-1 p-1 py-1.5 overflow-y-auto space-y-2 bg-base-0">
           <div className="space-y-2">
             {commitDetails.changed_files.map((file) => {
               const isOpen = Boolean(openFiles[file]);
@@ -311,9 +335,8 @@ export const DiffViewer: React.FC = () => {
               return (
                 <div
                   key={file}
-                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
-                    isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
-                  }`}
+                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
+                    }`}
                 >
                   {/* File Accordion Header */}
                   <button
@@ -322,9 +345,8 @@ export const DiffViewer: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 truncate min-w-0 flex-1">
                       <ChevronRight
-                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
-                          isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
-                        }`}
+                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
+                          }`}
                       />
                       <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
                       <div className="truncate min-w-0 flex items-baseline gap-0.5">

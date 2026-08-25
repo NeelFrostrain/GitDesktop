@@ -9,37 +9,57 @@ import {
   ChevronDown,
   Copy,
   Check,
+  Files,
+  Tag,
 } from 'lucide-react';
 import { CommitDetails } from '../../../types/git';
 import { useSigningStore } from '../../../store/signingStore';
+import { useGitStore } from '../../../store/useGitStore';
 import { UserAvatar } from '../../common/UserAvatar';
 
 interface CommitDetailsHeaderProps {
   commitDetails: CommitDetails;
-  diffViewMode: 'unified' | 'split';
-  onChangeViewMode: (mode: 'unified' | 'split') => void;
+  diffViewMode: 'unified' | 'split' | 'edit';
+  onChangeViewMode: (mode: 'unified' | 'split' | 'edit') => void;
+  openFiles: Record<string, boolean>;
+  onToggleExpandAll: () => void;
 }
 
 /**
- * Modern, clean, high-density commit header with metadata, diff stats, and view controls.
+ * Modern, merged, high-density commit header with metadata, diff stats, changed files count, and view controls.
  */
 export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   commitDetails,
   diffViewMode,
   onChangeViewMode,
+  openFiles,
+  onToggleExpandAll,
 }) => {
   const [showCommitBody, setShowCommitBody] = useState(false);
   const [copiedSha, setCopiedSha] = useState(false);
 
   const fullMessage = commitDetails.commit.message || '';
   const firstNewlineIndex = fullMessage.indexOf('\n');
-  const commitTitle = firstNewlineIndex !== -1 ? fullMessage.substring(0, firstNewlineIndex).trim() : fullMessage;
-  const commitBody = firstNewlineIndex !== -1 ? fullMessage.substring(firstNewlineIndex + 1).trim() : '';
+  const commitTitle =
+    firstNewlineIndex !== -1 ? fullMessage.substring(0, firstNewlineIndex).trim() : fullMessage;
+  const commitBody =
+    firstNewlineIndex !== -1 ? fullMessage.substring(firstNewlineIndex + 1).trim() : '';
 
   const verification = useSigningStore.getState().verifiedCommits[commitDetails.commit.sha];
 
   const additions = commitDetails.total_additions ?? commitDetails.commit.additions ?? 0;
   const deletions = commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0;
+
+  const isAllOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+
+  const tags = useGitStore((s) => s.tags);
+  const commitTags = tags.filter(
+    (t) =>
+      t.sha &&
+      (t.sha === commitDetails.commit.sha ||
+        commitDetails.commit.sha.startsWith(t.sha) ||
+        t.sha.startsWith(commitDetails.commit.short_sha))
+  );
 
   const handleCopySha = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,8 +69,8 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   };
 
   return (
-    <div className="bg-base-1/60 border-b border-border flex-shrink-0 select-none">
-      {/* Top Row: Title + View Switcher & Actions */}
+    <div className="bg-base-1/70 border-b border-border flex-shrink-0 select-none">
+      {/* Top Row: Title + View Switcher & Verification */}
       <div className="px-4 pt-3 pb-2 flex items-start justify-between gap-4">
         <h2
           className="text-xs font-semibold text-text-primary leading-snug truncate min-w-0 flex-1"
@@ -110,7 +130,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
         </div>
       </div>
 
-      {/* Bottom Row: Author meta bar, SHA pill, Time, Diff Stats */}
+      {/* Bottom Row: Author meta bar, SHA pill, Time, Changed Files count, Diff Stats & Expand button */}
       <div className="px-4 pb-2.5 flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2.5 min-w-0 text-[11px] text-text-muted">
           {/* Author */}
@@ -144,6 +164,18 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
             )}
           </button>
 
+          {/* Git Tag Badges */}
+          {commitTags.map((tag) => (
+            <span
+              key={tag.name}
+              title={tag.message ? `Git Tag: ${tag.name} (${tag.message})` : `Git Tag: ${tag.name}`}
+              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-sm px-1.5 py-0.5"
+            >
+              <Tag className="w-2.5 h-2.5" />
+              <span>{tag.name}</span>
+            </span>
+          ))}
+
           <span className="text-text-faint select-none">/</span>
 
           {/* Time */}
@@ -151,16 +183,33 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
             <Clock className="w-3 h-3" />
             <span>{commitDetails.commit.relative_date}</span>
           </div>
+
+          <span className="text-text-faint select-none">/</span>
+
+          {/* Merged Changed Files Badge */}
+          <div className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-0 border border-border/80 rounded-sm px-1.5 py-0.5">
+            <Files className="w-2.5 h-2.5 text-commito-coral" />
+            <span>{commitDetails.changed_files.length} changed</span>
+          </div>
         </div>
 
-        {/* Diff stats + Expand details button */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        {/* Right: Diff stats + Expand/Collapse All + Expand details button */}
+        <div className="flex items-center gap-2 flex-shrink-0">
           {(additions > 0 || deletions > 0) && (
             <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-0 border border-border shadow-2xs">
               {additions > 0 && <span className="text-git-added">+{additions}</span>}
               {deletions > 0 && <span className="text-git-removed">-{deletions}</span>}
             </div>
           )}
+
+          {/* Merged Expand / Collapse All Button */}
+          <button
+            type="button"
+            onClick={onToggleExpandAll}
+            className="text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
+          >
+            {isAllOpen ? 'Collapse All' : 'Expand All'}
+          </button>
 
           {commitBody && (
             <button

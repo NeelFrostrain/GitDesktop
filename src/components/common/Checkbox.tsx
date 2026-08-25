@@ -37,9 +37,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'w-3.5 h-3.5 rounded',
-    md: 'w-4 h-4 rounded-sm',
-    lg: 'w-5 h-5 rounded-sm',
+    sm: 'w-3.5 h-3.5 rounded-xs',
+    md: 'w-4 h-4 rounded-xs',
+    lg: 'w-5 h-5 rounded-xs',
   };
 
   const iconSizeClasses = {
@@ -56,15 +56,15 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       tabIndex={disabled ? -1 : 0}
-      className={`inline-flex items-center gap-2 select-none ${
-        disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer group'
+      className={`inline-flex items-center gap-2.5 select-none ${
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer group'
       } ${className}`}
     >
       <div
-        className={`flex items-center justify-center border transition-all duration-150 flex-shrink-0 ${sizeClasses[size]} ${
+        className={`flex items-center justify-center border transition-all duration-150 shrink-0 ${sizeClasses[size]} ${
           isSelected
-            ? 'bg-commito-coral border-commito-coral text-text-on-accent shadow-xs shadow-commito-coral/20'
-            : 'bg-base-2/80 border-border group-hover:border-commito-coral/60 group-hover:bg-base-3 text-transparent'
+            ? 'bg-commito-coral border-commito-coral text-white shadow-2xs'
+            : 'bg-base-0 border-border hover:border-border-strong group-hover:border-commito-coral/50 text-transparent'
         }`}
       >
         {indeterminate ? (
@@ -75,7 +75,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       </div>
 
       {label && (
-        <span className="text-xs text-text-primary group-hover:text-text-primary transition-colors">
+        <span className="text-xs text-text-primary group-hover:text-text-primary transition-colors font-medium font-sans">
           {label}
         </span>
       )}

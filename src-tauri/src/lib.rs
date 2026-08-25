@@ -149,6 +149,12 @@ pub fn run() {
             create_tag_cmd,
             delete_tag_cmd,
             push_tags_cmd,
+            push_specific_tag_cmd,
+            delete_remote_tag_cmd,
+            list_releases_cmd,
+            create_release_cmd,
+            update_release_cmd,
+            delete_release_cmd,
             get_file_blame_cmd,
             list_reflog_cmd,
             restore_reflog_target_cmd,
@@ -234,6 +240,10 @@ pub fn run() {
             git_runtime_get_status,
             git_runtime_install_mingit,
             generate_ai_commit_message_cmd,
+            read_file_content_cmd,
+            save_file_content_cmd,
+            create_directory_cmd,
+            rename_file_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

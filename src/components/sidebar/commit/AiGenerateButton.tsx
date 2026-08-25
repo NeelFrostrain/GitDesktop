@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { useToastStore } from '../../../store/useToastStore';
 import { useSettingsStore } from '../../../features/settings/store/useSettingsStore';
 import { GitService } from '../../../services/git/gitService';
 import { toAppError } from '../../../shared/utils/errorUtils';
@@ -17,7 +18,9 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const { activeRepoPath, stagedFiles } = useGitStore();
-  const { getEffectiveValue } = useSettingsStore();
+  const { getEffectiveValue, setSelectedCategory, openSettings } = useSettingsStore();
+
+  const hasStagedFiles = stagedFiles.length > 0;
 
   const getAnyAvailableKey = (): string | undefined => {
     const activeKey = getEffectiveValue('ai.active_api_key');
@@ -25,7 +28,7 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       return String(activeKey).trim();
     }
 
-    const rawKeys = getEffectiveValue('ai.groq_api_keys');
+    const rawKeys = getEffectiveValue('ai.groq_api_keys') || getEffectiveValue('ai.gemini_api_keys');
     if (Array.isArray(rawKeys) && rawKeys.length > 0) {
       const first = String(rawKeys[0]).trim();
       if (first) return first;
@@ -47,6 +50,16 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
   const handleButtonClick = async () => {
     if (!activeRepoPath) return;
 
+    if (!hasStagedFiles) {
+      useToastStore.getState().showToast({
+        type: 'warning',
+        title: 'No Files Staged',
+        message: 'Please check/stage the files you want Commit-AI to analyze.',
+      });
+      useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Please stage/select the files you want to analyze.');
+      return;
+    }
+
     const availableKey = getAnyAvailableKey();
     if (!availableKey) {
       onRequireApiKey();
@@ -54,14 +67,17 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     }
 
     setIsGenerating(true);
-    useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Analyzing code changes with AI...');
+    useLogStore.getState().addLog('info', 'Git', `[Commit-AI] Analyzing ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with AI...`);
 
     try {
+      // Ensure selected files are staged in git index
+      await GitService.stageFiles(activeRepoPath, stagedFiles);
+
       const model = getEffectiveValue('ai.model') || undefined;
 
       const res = await GitService.generateAiCommitMessage(
         activeRepoPath,
-        stagedFiles.length > 0,
+        true, // Strictly only analyze staged files
         availableKey,
         model
       );
@@ -90,10 +106,29 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
         msg.toLowerCase().includes('all configured groq api keys')
       ) {
         onRequireApiKey();
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'Groq Key Required',
+          message: 'Please enter a valid Groq API key (gsk_...) in Settings.',
+          actionLabel: 'Open Settings',
+          onAction: () => {
+            setSelectedCategory('ai');
+            openSettings();
+          },
+        });
         useLogStore
           .getState()
-          .addLog('info', 'Git', '[Commit-AI] Please enter a valid Groq API Key to proceed.');
+          .addLog(
+            'warning',
+            'Git',
+            `[Commit-AI] ${msg || 'Please enter a valid Groq API Key to proceed.'}`
+          );
       } else {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'Commit-AI Error',
+          message: msg,
+        });
         useLogStore
           .getState()
           .addLog('error', 'Git', `[Commit-AI] Failed to generate message: ${msg}`);
@@ -107,9 +142,9 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     <button
       type="button"
       onClick={handleButtonClick}
-      disabled={isGenerating}
-      title="Analyze changes with Commit-AI"
-      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-50"
+      disabled={isGenerating || !hasStagedFiles}
+      title={hasStagedFiles ? `Analyze ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with Commit-AI` : "Select/stage files to analyze with Commit-AI"}
+      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isGenerating ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />

@@ -15,9 +15,10 @@ import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gi
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
+import { DiffViewer } from './components/views/DiffViewer';
+import { ToastContainer } from './components/common/ToastContainer';
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
-const DiffViewer = lazy(() => import('./components/views/DiffViewer').then(m => ({ default: m.DiffViewer })));
 const FileBrowser = lazy(() => import('./components/views/FileBrowser').then(m => ({ default: m.FileBrowser })));
 const ConflictView = lazy(() => import('./components/views/ConflictView').then(m => ({ default: m.ConflictView })));
 const BranchesView = lazy(() => import('./components/views/BranchesView').then(m => ({ default: m.BranchesView })));
@@ -39,9 +40,10 @@ const ReflogModal = lazy(() => import('./components/modals/ReflogModal').then(m 
 const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m => ({ default: m.PatchModal })));
 const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
 const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
+const CreateTagModal = lazy(() => import('./components/modals/CreateTagModal').then(m => ({ default: m.CreateTagModal })));
+const CreateReleaseModal = lazy(() => import('./components/modals/CreateReleaseModal').then(m => ({ default: m.CreateReleaseModal })));
 const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
 const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
-const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
 const SigningSettings = lazy(() => import('./components/modals/SigningSettings').then(m => ({ default: m.SigningSettings })));
 const SettingsPanel = lazy(() => import('./features/settings').then(m => ({ default: m.SettingsPanel })));
@@ -53,7 +55,20 @@ const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => (
  * global keyboard shortcuts, and code-split modal dialogs.
  */
 export const App: React.FC = () => {
-  const { setUser, setAccounts, activeRepoPath, setStatus, setError, currentNavView } = useGitStore();
+  const {
+    setUser,
+    setAccounts,
+    activeRepoPath,
+    setStatus,
+    setError,
+    currentNavView,
+    isCreateTagModalOpen,
+    setIsCreateTagModalOpen,
+    isCreateReleaseModalOpen,
+    setIsCreateReleaseModalOpen,
+    editingRelease,
+    setEditingRelease,
+  } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
@@ -287,14 +302,25 @@ export const App: React.FC = () => {
           <PatchModal />
           <GitConfigModal />
           <RewriteHistoryModal />
+          <CreateTagModal isOpen={isCreateTagModalOpen} onClose={() => setIsCreateTagModalOpen(false)} />
+          <CreateReleaseModal
+            isOpen={isCreateReleaseModalOpen}
+            initialRelease={editingRelease}
+            onClose={() => {
+              setIsCreateReleaseModalOpen(false);
+              setEditingRelease(null);
+            }}
+          />
           <GitUserConfigModal />
           <LogModal />
-          <AccountServicesModal />
           <GitLabSignInModal />
           <SigningSettings />
           <SettingsPanel />
           <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
         </Suspense>
+
+        {/* Global Toast Notifications */}
+        <ToastContainer />
       </div>
     </ErrorBoundary>
   );

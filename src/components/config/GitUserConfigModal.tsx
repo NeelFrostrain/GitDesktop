@@ -38,14 +38,14 @@ export const GitUserConfigModal: React.FC = () => {
   const isManualMode = selectedSyncAccount === 'custom';
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans">
+      <div className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 max-h-[90vh]">
         <ConfigHeader onClose={handleClose} />
 
         <form onSubmit={handleSave} className="p-4 space-y-4 overflow-y-auto">
           {modalError && (
             <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2 text-xs text-git-removed">
-              <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-git-removed shrink-0 mt-0.5" />
               <div className="leading-snug">{modalError}</div>
             </div>
           )}
@@ -77,27 +77,27 @@ export const GitUserConfigModal: React.FC = () => {
               isValidEmail={isValidEmail}
             />
           ) : (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 font-sans select-none">
               <div className="flex items-center justify-between">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+                <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
                   Git Identity
                 </label>
                 <button
                   type="button"
                   onClick={() => setSelectedSyncAccount('custom')}
-                  className="text-[11px] text-commito-coral hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] text-commito-coral hover:text-commito-coralLight font-semibold flex items-center gap-1 cursor-pointer transition"
                 >
                   <Edit3 className="w-3 h-3" />
                   <span>Edit Manually</span>
                 </button>
               </div>
 
-              <div className="p-3 bg-base-0 border border-border rounded-sm flex items-center justify-between text-xs">
+              <div className="p-3 bg-base-1 border border-border rounded-sm flex items-center justify-between text-xs shadow-2xs">
                 <div className="min-w-0 flex-1 pr-2">
                   <div className="font-bold text-text-primary truncate">{name}</div>
-                  <div className="text-[11px] text-text-muted font-mono truncate">{email}</div>
+                  <div className="text-[11px] text-text-muted font-mono truncate mt-0.5">{email}</div>
                 </div>
-                <span className="text-[10px] text-emerald-400 font-extrabold uppercase bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded flex-shrink-0">
+                <span className="text-[10px] text-emerald-400 font-mono font-bold uppercase bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded-xs shrink-0">
                   Synced
                 </span>
               </div>

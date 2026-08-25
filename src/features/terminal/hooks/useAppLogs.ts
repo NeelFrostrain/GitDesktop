@@ -51,17 +51,30 @@ export function useAppLogs(repoId?: string | null) {
     return () => clearTimeout(timer);
   }, [fetchLogs]);
 
-  // Combine live stream recent logs with queried disk logs (deduplicating by id)
+  // Combine live stream recent logs with queried disk logs (deduplicating by id and signature)
   const combinedLogs = useMemo(() => {
     const map = new Map<string, LogEntry>();
+    const seenSignatures = new Set<string>();
+
+    const getSignature = (log: LogEntry) =>
+      `${log.level}_${log.category}_${log.message}_${Math.floor(new Date(log.at).getTime() / 2000)}`;
+
     for (const log of recentLogs) {
       if (!repoId || !filter.this_repo_only || log.repo_id === repoId) {
-        map.set(log.id, log);
+        const sig = getSignature(log);
+        if (!seenSignatures.has(sig)) {
+          seenSignatures.add(sig);
+          map.set(log.id, log);
+        }
       }
     }
     for (const log of persistedLogs) {
       if (!map.has(log.id)) {
-        map.set(log.id, log);
+        const sig = getSignature(log);
+        if (!seenSignatures.has(sig)) {
+          seenSignatures.add(sig);
+          map.set(log.id, log);
+        }
       }
     }
     return Array.from(map.values()).sort(

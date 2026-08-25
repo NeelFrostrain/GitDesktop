@@ -9,6 +9,7 @@ import {
   WorktreeInfo,
   StashEntry,
   TagInfo,
+  ReleaseInfo,
   BlameLine,
   SubmoduleInfo,
   HistoryOperation,
@@ -93,6 +94,7 @@ export interface GitState {
   worktrees: WorktreeInfo[];
   stashes: StashEntry[];
   tags: TagInfo[];
+  releases: ReleaseInfo[];
   submodules: SubmoduleInfo[];
   blameFile: string | null;
   blameLines: BlameLine[];
@@ -104,7 +106,7 @@ export interface GitState {
   commitSummary: string;
   commitDescription: string;
   activeTab: 'changes' | 'history';
-  diffViewMode: 'unified' | 'split';
+  diffViewMode: 'unified' | 'split' | 'edit';
   currentNavView: NavView;
 
   // Modal dialog visibility states
@@ -120,6 +122,9 @@ export interface GitState {
   isPatchModalOpen: boolean;
   isConfigModalOpen: boolean;
   isRewriteModalOpen: boolean;
+  isCreateTagModalOpen: boolean;
+  isCreateReleaseModalOpen: boolean;
+  editingRelease: ReleaseInfo | null;
   pendingHistoryOp: HistoryOperation | null;
   isUserConfigModalOpen: boolean;
   pendingCommitData: { summary: string; description?: string } | null;
@@ -148,6 +153,7 @@ export interface GitState {
   setWorktrees: (worktrees: WorktreeInfo[]) => void;
   setStashes: (stashes: StashEntry[]) => void;
   setTags: (tags: TagInfo[]) => void;
+  setReleases: (releases: ReleaseInfo[]) => void;
   setSubmodules: (submodules: SubmoduleInfo[]) => void;
   setBlameFile: (file: string | null) => void;
   setBlameLines: (lines: BlameLine[]) => void;
@@ -161,7 +167,7 @@ export interface GitState {
   setCommitOptions: (opts: Partial<CommitOptions>) => void;
   resetCommitOptions: () => void;
   setActiveTab: (tab: 'changes' | 'history') => void;
-  setDiffViewMode: (mode: 'unified' | 'split') => void;
+  setDiffViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   setCurrentNavView: (view: NavView) => void;
 
   setIsRepoModalOpen: (open: boolean) => void;
@@ -176,6 +182,9 @@ export interface GitState {
   setIsPatchModalOpen: (open: boolean) => void;
   setIsConfigModalOpen: (open: boolean) => void;
   setIsRewriteModalOpen: (open: boolean) => void;
+  setIsCreateTagModalOpen: (open: boolean) => void;
+  setIsCreateReleaseModalOpen: (open: boolean) => void;
+  setEditingRelease: (release: ReleaseInfo | null) => void;
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
   setIsUserConfigModalOpen: (open: boolean) => void;
   setPendingCommitData: (data: { summary: string; description?: string } | null) => void;
@@ -205,6 +214,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   worktrees: [],
   stashes: [],
   tags: [],
+  releases: [],
   submodules: [],
   blameFile: null,
   blameLines: [],
@@ -236,6 +246,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   isPatchModalOpen: false,
   isConfigModalOpen: false,
   isRewriteModalOpen: false,
+  isCreateTagModalOpen: false,
+  isCreateReleaseModalOpen: false,
+  editingRelease: null,
   pendingHistoryOp: null,
   isUserConfigModalOpen: false,
   pendingCommitData: null,
@@ -406,6 +419,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   setWorktrees: (worktrees) => set({ worktrees }),
   setStashes: (stashes) => set({ stashes }),
   setTags: (tags) => set({ tags }),
+  setReleases: (releases) => set({ releases }),
   setSubmodules: (submodules) => set({ submodules }),
   setBlameFile: (blameFile) => set({ blameFile }),
   setBlameLines: (blameLines) => set({ blameLines }),
@@ -520,6 +534,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
+  setIsCreateTagModalOpen: (isCreateTagModalOpen) => set({ isCreateTagModalOpen }),
+  setIsCreateReleaseModalOpen: (isCreateReleaseModalOpen) => set({ isCreateReleaseModalOpen }),
+  setEditingRelease: (editingRelease) => set({ editingRelease }),
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
   setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),
   setPendingCommitData: (pendingCommitData) => set({ pendingCommitData }),
