@@ -4,11 +4,9 @@ import {
   AlertCircle,
   X,
   Globe,
-  Terminal,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
-import { useTerminalStore } from '../../features/terminal';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 
@@ -32,8 +30,6 @@ export const Header: React.FC = () => {
     loadRemotes,
   } = useRemoteStore();
 
-  const isTerminalOpen = useTerminalStore((s) => s.isOpen);
-
   useEffect(() => {
     if (activeRepoPath) {
       loadRemotes(activeRepoPath);
@@ -44,22 +40,8 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Repository Terminal Toggle */}
-      <div className="flex items-center gap-1.5">
-        {!isHome && (
-          <button
-            onClick={() => useTerminalStore.getState().toggleIsOpen()}
-            className={`p-1 rounded-sm border transition cursor-pointer ${
-              isTerminalOpen
-                ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
-                : 'text-text-muted hover:text-text-primary hover:bg-base-2 border-border'
-            }`}
-            title="Toggle Repository Terminal (Ctrl+`)"
-          >
-            <Terminal className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
+      {/* Left empty container */}
+      <div className="flex items-center gap-1.5" />
 
       {/* Right: Sync, Push, Branch & PR Action Group */}
       <div className="flex items-center gap-2">
