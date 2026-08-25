@@ -292,24 +292,34 @@ NOW ANALYZE THIS DIFF AND DESCRIBE ONLY WHAT YOU SEE:
     )
 }
 
-fn extract_tag(input: &str, tag: &str) -> Option<String> {
-    let open = format!("<{}>", tag);
-    let close = format!("</{}>", tag);
+fn extract_tag_content(input: &str, tag: &str) -> Option<String> {
+    let lower_input = input.to_lowercase();
+    let open_tag = format!("<{}>", tag.to_lowercase());
+    let close_tag = format!("</{}>", tag.to_lowercase());
 
-    let start = input.find(&open)? + open.len();
-    let end = input.find(&close)?;
-
-    if end > start {
-        Some(input[start..end].trim().to_string())
-    } else {
-        None
+    if let Some(start_idx) = lower_input.find(&open_tag) {
+        let content_start = start_idx + open_tag.len();
+        if let Some(end_idx) = lower_input[content_start..].find(&close_tag) {
+            let actual_end = content_start + end_idx;
+            return Some(input[content_start..actual_end].trim().to_string());
+        } else {
+            // No close tag found (e.g. streaming truncated or omission), take from open tag to end
+            return Some(input[content_start..].trim().to_string());
+        }
     }
+    None
 }
 
 pub fn parse_multi_response(input: &str) -> (Vec<String>, String) {
-    let report = extract_tag(input, "report").unwrap_or_else(|| "Changes analyzed.".to_string());
+    let clean_input = input
+        .replace("```xml", "")
+        .replace("```markdown", "")
+        .replace("```", "")
+        .trim()
+        .to_string();
 
-    let options = if let Some(raw) = extract_tag(input, "options") {
+    // 1. Extract Options
+    let options = if let Some(raw) = extract_tag_content(&clean_input, "options") {
         raw.lines()
             .map(str::trim)
             .filter(|l| !l.is_empty())
@@ -332,13 +342,59 @@ pub fn parse_multi_response(input: &str) -> (Vec<String>, String) {
         vec![]
     };
 
+    // 2. Extract Report
+    let mut report = extract_tag_content(&clean_input, "report")
+        .or_else(|| extract_tag_content(&clean_input, "description"))
+        .or_else(|| extract_tag_content(&clean_input, "summary"));
+
+    if report.is_none() {
+        // Fallback: If </options> is present, everything after </options> is the report
+        let lower = clean_input.to_lowercase();
+        if let Some(opts_end) = lower.find("</options>") {
+            let after = clean_input[opts_end + "</options>".len()..].trim();
+            if !after.is_empty() {
+                report = Some(after.to_string());
+            }
+        } else if !options.is_empty() {
+            // Remove options lines from input
+            let remaining_lines: Vec<&str> = clean_input
+                .lines()
+                .filter(|l| {
+                    let t = l.trim();
+                    !t.starts_with("<options>")
+                        && !t.starts_with("</options>")
+                        && !options.iter().any(|o| t.contains(o))
+                })
+                .collect();
+            let joined = remaining_lines.join("\n").trim().to_string();
+            if !joined.is_empty() {
+                report = Some(joined);
+            }
+        } else {
+            report = Some(clean_input.clone());
+        }
+    }
+
+    let final_report = report.unwrap_or_default().trim().to_string();
+
+    let final_report = if final_report.is_empty() {
+        "Detailed code changes and technical updates applied.".to_string()
+    } else {
+        final_report
+    };
+
     let options = if options.is_empty() {
-        vec!["chore: update project changes".to_string()]
+        let first_line = clean_input
+            .lines()
+            .map(str::trim)
+            .find(|l| !l.is_empty())
+            .unwrap_or("chore: update project changes");
+        vec![first_line.to_string()]
     } else {
         options
     };
 
-    (options, report)
+    (options, final_report)
 }
 
 /// Execute AI Commit Generation via Groq API with multi-key rotation and automatic model fallback
