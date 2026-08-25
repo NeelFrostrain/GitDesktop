@@ -565,4 +565,37 @@ pub async fn create_directory_cmd(
     Ok(())
 }
 
+#[command]
+pub async fn rename_file_cmd(
+    repo_path: String,
+    old_path: String,
+    new_path: String,
+) -> Result<(), AppError> {
+    let full_old = std::path::Path::new(&repo_path).join(&old_path);
+    let full_new = std::path::Path::new(&repo_path).join(&new_path);
+
+    if !full_old.exists() {
+        return Err(AppError::NotFound(format!(
+            "Source file does not exist: {}",
+            full_old.display()
+        )));
+    }
+
+    if let Some(parent) = full_new.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Unknown(format!("Failed to create parent directories: {}", e)))?;
+    }
+
+    std::fs::rename(&full_old, &full_new)
+        .map_err(|e| AppError::Unknown(format!("Failed to rename file: {}", e)))?;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Git,
+        format!("Renamed '{}' to '{}'", old_path, new_path);
+        meta: serde_json::json!({ "old_path": old_path, "new_path": new_path })
+    );
+
+    Ok(())
+}
+
 

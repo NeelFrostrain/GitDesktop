@@ -13,3 +13,4 @@ export { MergeRequestModal } from './MergeRequestModal';
 export { SigningSettings } from './SigningSettings';
 export { GitLabSignInModal } from './GitLabSignInModal';
 export { CreateItemModal } from './CreateItemModal';
+export { RenameItemModal } from './RenameItemModal';

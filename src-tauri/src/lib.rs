@@ -237,6 +237,7 @@ pub fn run() {
             read_file_content_cmd,
             save_file_content_cmd,
             create_directory_cmd,
+            rename_file_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

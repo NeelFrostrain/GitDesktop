@@ -423,4 +423,22 @@ export class GitService {
   ): Promise<void> {
     return invoke<void>('save_file_content_cmd', { repoPath, filePath, content });
   }
+
+  /**
+   * Creates a directory in the local working repository.
+   */
+  static async createDirectory(repoPath: string, folderPath: string): Promise<void> {
+    return invoke<void>('create_directory_cmd', { repoPath, folderPath });
+  }
+
+  /**
+   * Renames or moves a file in the local working repository.
+   */
+  static async renameFile(
+    repoPath: string,
+    oldPath: string,
+    newPath: string
+  ): Promise<void> {
+    return invoke<void>('rename_file_cmd', { repoPath, oldPath, newPath });
+  }
 }

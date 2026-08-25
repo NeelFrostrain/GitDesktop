@@ -4,6 +4,7 @@ import type * as monacoEditor from 'monaco-editor';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { GitService } from '../../../services/git/gitService';
 import { useAppLogStore } from '../../../core/logging/logStore';
+import { useToastStore } from '../../../store/useToastStore';
 
 // In-memory buffer cache across mode switches to prevent discarding edits
 const fileBufferCache = new Map<string, string>();
@@ -130,14 +131,16 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
 
   // Save changes to disk & auto re-stage if previously staged
   const handleSave = useCallback(async () => {
-    if (!repoPath || !filePath || isSaving || !isDirty) return;
+    const currentText = editorRef.current ? editorRef.current.getValue() : content;
+    if (!repoPath || !filePath || isSaving) return;
     setIsSaving(true);
     setError(null);
 
     try {
       // 1. Write file to disk
-      await GitService.saveFileContent(repoPath, filePath, content);
-      setOriginalDiskContent(content);
+      await GitService.saveFileContent(repoPath, filePath, currentText);
+      setContent(currentText);
+      setOriginalDiskContent(currentText);
       fileBufferCache.delete(cacheKey);
 
       // 2. If the file was staged, automatically re-stage the updated content
@@ -151,6 +154,11 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 2000);
       useAppLogStore.getState().addLog('Success', 'Git', `Saved ${filePath} to disk`);
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'File Saved',
+        message: `Saved '${filePath}'`,
+      });
 
       // 3. Trigger diff & status reload
       if (onSaved) onSaved();
@@ -158,10 +166,33 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
       const msg = err instanceof Error ? err.message : String(err);
       setError(`Failed to save: ${msg}`);
       useAppLogStore.getState().addLog('Error', 'Git', `Failed to save ${filePath}: ${msg}`);
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Save Failed',
+        message: msg,
+      });
     } finally {
       setIsSaving(false);
     }
-  }, [repoPath, filePath, content, isDirty, isSaving, isStaged, cacheKey, onSaved]);
+  }, [repoPath, filePath, content, isSaving, isStaged, cacheKey, onSaved]);
+
+  const handleSaveRef = useRef(handleSave);
+  useEffect(() => {
+    handleSaveRef.current = handleSave;
+  }, [handleSave]);
+
+  // Global window Ctrl+S listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+        e.preventDefault();
+        e.stopPropagation();
+        handleSaveRef.current();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, []);
 
   // Revert unsaved edits back to disk content
   const handleRevert = useCallback(() => {
@@ -302,9 +333,9 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
       setTotalLines(editor.getModel()?.getLineCount() || 1);
     });
 
-    // Keybinding: Ctrl+S to Save
+    // Keybinding: Ctrl+S to Save inside Monaco
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
-      handleSave();
+      handleSaveRef.current();
     });
 
     // Keybinding: Escape to exit edit mode back to Diff
