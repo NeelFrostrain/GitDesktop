@@ -4,3 +4,4 @@ export { GitCommitService } from './git/GitCommitService';
 export { AccountService } from './accounts/accountService';
 export { SystemService } from './system/systemService';
 export { ReleaseService } from './git/releaseService';
+export { PullRequestService, parseRemoteRepoInfo } from './git/pullRequestService';

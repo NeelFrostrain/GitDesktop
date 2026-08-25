@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import React, { useState, useEffect, useMemo } from 'react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import {
   X,
@@ -12,8 +11,10 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
+import { useRemoteStore } from '../../store/remoteStore';
 import { UnifiedMergeRequest, BranchInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
+import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
 
@@ -29,6 +30,7 @@ export const MergeRequestModal: React.FC = () => {
     status,
     setError,
   } = useGitStore();
+  const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
   const [activeTab, setActiveTab] = useState<'create' | 'list'>('create');
   const [sourceBranch, setSourceBranch] = useState(status?.current_branch || 'main');
@@ -47,37 +49,26 @@ export const MergeRequestModal: React.FC = () => {
       .then((res) => setBranches(res || []))
       .catch(() => {});
 
+    loadRemotes(activeRepoPath).catch(() => {});
+
     if (status?.current_branch) {
       setSourceBranch(status.current_branch);
     }
-  }, [isMergeRequestModalOpen, activeRepoPath, status?.current_branch]);
+  }, [isMergeRequestModalOpen, activeRepoPath, status?.current_branch, loadRemotes]);
+
+  const targetRemoteInfo = useMemo(() => {
+    const remote = remotes.find((r) => r.name === activeRemote) || remotes[0];
+    return parseRemoteRepoInfo(remote?.url || remote?.push_url);
+  }, [remotes, activeRemote]);
 
   const loadMergeRequests = async () => {
     setIsLoading(true);
     try {
-      const res = await invoke<Record<string, unknown>[]>('get_open_merge_requests', { projectId: '1' });
-      if (Array.isArray(res)) {
-        setMergeRequests(
-          res.map((mr) => {
-            const author = (mr.author as Record<string, unknown>) || {};
-            return {
-              id: (mr.id as number) || (mr.iid as number),
-              iid: mr.iid as number,
-              title: (mr.title as string) || '',
-              description: (mr.description as string) || '',
-              state: (mr.state as string) || 'opened',
-              source_branch: (mr.source_branch as string) || 'feature',
-              target_branch: (mr.target_branch as string) || 'main',
-              web_url: (mr.web_url as string) || '#',
-              author_name: (author.name as string) || 'GitLab User',
-              author_avatar: author.avatar_url as string | undefined,
-              created_at: (mr.created_at as string) || new Date().toISOString(),
-            };
-          })
-        );
-      } else {
-        setMergeRequests([]);
-      }
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
+      setMergeRequests(res || []);
     } catch {
       setMergeRequests([]);
     } finally {
@@ -88,7 +79,7 @@ export const MergeRequestModal: React.FC = () => {
   useEffect(() => {
     if (!isMergeRequestModalOpen || activeTab !== 'list') return;
     loadMergeRequests();
-  }, [isMergeRequestModalOpen, activeTab]);
+  }, [isMergeRequestModalOpen, activeTab, targetRemoteInfo]);
 
   const handleCreateMergeRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,17 +87,22 @@ export const MergeRequestModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      const res = await invoke<{ web_url?: string }>('create_merge_request', {
-        projectId: '1',
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const res = await PullRequestService.createPullRequest(
+        projectPath,
         sourceBranch,
         targetBranch,
-        title,
-        description: description || null,
-      });
+        title.trim(),
+        description.trim() || undefined,
+        serverUrl,
+        provider
+      );
 
       useLogStore
         .getState()
-        .addLog('success', 'Merge Request', `Created Merge Request '${title}' (${sourceBranch} -> ${targetBranch})`);
+        .addLog('success', 'Merge Request', `Created request '${title}' (${sourceBranch} -> ${targetBranch})`);
       setTitle('');
       setDescription('');
       setActiveTab('list');

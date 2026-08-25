@@ -308,6 +308,13 @@ pub struct PagedResult<T> {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MergeRequestAuthor {
+    pub name: Option<String>,
+    pub username: Option<String>,
+    pub avatar_url: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MergeRequest {
     pub id: u64,
     pub iid: u64,
@@ -318,6 +325,7 @@ pub struct MergeRequest {
     pub target_branch: String,
     pub web_url: String,
     pub created_at: String,
+    pub author: Option<MergeRequestAuthor>,
 }
 
 pub struct GitLabClient {

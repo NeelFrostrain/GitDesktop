@@ -6,23 +6,151 @@ use crate::git::remote;
 use tauri::command;
 use tauri_plugin_dialog::DialogExt;
 
+fn get_git_credential_token(host: &str) -> Option<String> {
+    let input = format!("protocol=https\nhost={}\n\n", host);
+    let mut child = crate::git::command::silent_git_command()
+        .arg("credential")
+        .arg("fill")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .ok()?;
+
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        let _ = stdin.write_all(input.as_bytes());
+    }
+
+    let output = child.wait_with_output().ok()?;
+    if output.status.success() {
+        let stdout_str = String::from_utf8_lossy(&output.stdout);
+        for line in stdout_str.lines() {
+            if let Some(password) = line.strip_prefix("password=") {
+                let clean = password.trim();
+                if !clean.is_empty() {
+                    return Some(clean.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
 fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
-    let token = keyring::get_token()?
-        .ok_or_else(|| AppError::Auth("Not authenticated. Please log in first.".to_string()))?;
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let gitlab_acc = provider_accounts
+        .iter()
+        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
+        .or_else(|| {
+            provider_accounts
+                .iter()
+                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
+        });
+
+    let mut gitlab_token = None;
+    let mut instance_url = None;
+
+    if let Some(acc) = gitlab_acc {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
+            gitlab_token = Some(tok);
+            instance_url = Some(acc.instance_url.clone());
+        }
+    }
+
+    if gitlab_token.is_none() {
+        let accounts = keyring::list_accounts();
+        if let Some(a) = accounts
+            .iter()
+            .find(|a| a.provider == "gitlab" && a.is_active)
+            .or_else(|| accounts.iter().find(|a| a.provider == "gitlab"))
+        {
+            gitlab_token = Some(a.token.clone());
+            instance_url = Some(a.server_url.clone());
+        }
+    }
 
     let server_url = match server_override {
         Some(url) if !url.trim().is_empty() => url,
-        _ => keyring::get_server_url()?.unwrap_or_else(|| "https://gitlab.com".to_string()),
+        _ => instance_url
+            .or_else(|| keyring::get_server_url().ok().flatten())
+            .unwrap_or_else(|| "https://gitlab.com".to_string()),
     };
+
+    if gitlab_token.is_none() {
+        let host = server_url
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        gitlab_token = get_git_credential_token(host);
+    }
+
+    let token = gitlab_token
+        .or_else(|| keyring::get_token().ok().flatten())
+        .unwrap_or_default();
 
     GitLabClient::new(server_url, token, None)
 }
 
 fn get_github_client() -> Result<GitHubClient, AppError> {
-    let token = keyring::get_token()?.ok_or_else(|| {
-        AppError::Auth("Not authenticated with GitHub. Please log in first.".to_string())
-    })?;
-    GitHubClient::new(&token)
+    // 1. Try to find GitHub token in token_store (OAuth or PAT)
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let mut github_token = None;
+
+    if let Some(gh_acc) = provider_accounts
+        .iter()
+        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github && a.is_active)
+        .or_else(|| {
+            provider_accounts
+                .iter()
+                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github)
+        })
+    {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&gh_acc.id) {
+            if !tok.trim().is_empty() {
+                github_token = Some(tok);
+            }
+        }
+    }
+
+    // 2. Fallback to legacy keyring store
+    if github_token.is_none() {
+        let accounts = keyring::list_accounts();
+        if let Some(a) = accounts
+            .iter()
+            .find(|a| a.provider == "github" && a.is_active)
+            .or_else(|| accounts.iter().find(|a| a.provider == "github"))
+        {
+            if !a.token.trim().is_empty() {
+                github_token = Some(a.token.clone());
+            }
+        }
+    }
+
+    // 3. Fallback to active account if GitHub
+    if github_token.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" && !a.token.trim().is_empty() {
+                github_token = Some(a.token);
+            }
+        }
+    }
+
+    // 4. Fallback to system Git Credential Manager (GCM)
+    if github_token.is_none() {
+        github_token = get_git_credential_token("github.com");
+    }
+
+    // 5. Fallback to environment variables
+    if github_token.is_none() {
+        if let Ok(env_t) = std::env::var("GITHUB_TOKEN").or_else(|_| std::env::var("GH_TOKEN")) {
+            if !env_t.trim().is_empty() {
+                github_token = Some(env_t.trim().to_string());
+            }
+        }
+    }
+
+    GitHubClient::new(github_token.as_deref())
 }
 
 /// Helper: convert GitLabProject to UnifiedRepo
@@ -111,9 +239,38 @@ pub async fn clone_repository(remote_url: String, local_path: String) -> Result<
 pub async fn get_open_merge_requests(
     project_id: String,
     server_url: Option<String>,
+    provider: Option<String>,
 ) -> Result<Vec<MergeRequest>, AppError> {
-    let client = get_gitlab_client(server_url)?;
-    client.get_open_merge_requests(&project_id).await
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.get_open_pull_requests(&clean_project_id).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.get_open_merge_requests(&clean_project_id).await
+    }
 }
 
 #[command]
@@ -122,12 +279,50 @@ pub async fn create_merge_request(
     source_branch: String,
     target_branch: String,
     title: String,
+    description: Option<String>,
     server_url: Option<String>,
+    provider: Option<String>,
 ) -> Result<MergeRequest, AppError> {
-    let client = get_gitlab_client(server_url)?;
-    client
-        .create_merge_request(&project_id, &source_branch, &target_branch, &title)
-        .await
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client
+            .create_pull_request(
+                &clean_project_id,
+                &source_branch,
+                &target_branch,
+                &title,
+                description.as_deref(),
+            )
+            .await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client
+            .create_merge_request(&clean_project_id, &source_branch, &target_branch, &title)
+            .await
+    }
 }
 
 /// Publish a local repo to GitLab or GitHub depending on active account provider.
@@ -148,7 +343,7 @@ pub async fn publish_repository(
 
     let (unified_repo, token) = if resolved_provider == "github" {
         let tok = keyring::get_token()?.unwrap_or_default();
-        let client = GitHubClient::new(&tok)?;
+        let client = GitHubClient::new(Some(&tok))?;
         let repo = client
             .create_repo(&name, is_private, description.as_deref())
             .await?;
