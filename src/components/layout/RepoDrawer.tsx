@@ -21,13 +21,6 @@ interface RepoDrawerProps {
   onClose: () => void;
 }
 
-function truncatePath(path: string, maxLen = 38): string {
-  if (path.length <= maxLen) return path;
-  const parts = path.replace(/\\/g, '/').split('/');
-  if (parts.length <= 3) return path;
-  return `${parts[0]}/.../${parts[parts.length - 1]}`;
-}
-
 export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const { repos, statuses, loadRepos, addRepo, removeRepo, pinRepo } = useRepoStore();
   const {
@@ -40,6 +33,51 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const [filterQuery, setFilterQuery] = useState('');
   const [isAddingLocal, setIsAddingLocal] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const [drawerWidth, setDrawerWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('repo_drawer_width');
+      return saved ? Math.max(300, Math.min(900, parseInt(saved, 10))) : 420;
+    } catch {
+      return 420;
+    }
+  });
+
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const maxWidth = Math.min(900, window.innerWidth - 60);
+      const newWidth = Math.max(300, Math.min(maxWidth, window.innerWidth - e.clientX));
+      setDrawerWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+      try {
+        localStorage.setItem('repo_drawer_width', drawerWidth.toString());
+      } catch { }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizing, drawerWidth]);
 
   // Load repos & focus search when opening
   useEffect(() => {
@@ -162,7 +200,19 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
       />
 
       {/* Slide-over Right Drawer */}
-      <div className="relative w-full max-w-sm sm:max-w-md h-full bg-base-0 border-l border-border shadow-2xl flex flex-col z-10 text-text-primary">
+      <div
+        style={{ width: `${drawerWidth}px` }}
+        className="relative max-w-full h-full bg-base-0 border-l border-border shadow-2xl flex flex-col z-10 text-text-primary"
+      >
+        {/* Resizable handle on the left border */}
+        <div
+          onMouseDown={startResizing}
+          onDoubleClick={() => setDrawerWidth(420)}
+          title="Drag to resize drawer • Double-click to reset"
+          className={`absolute top-0 -left-1 w-1 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
+            }`}
+        />
+
         {/* 1. Drawer Header */}
         <div className="px-4 py-3 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -278,29 +328,26 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                       handleSelectRepo(repo.path);
                     }
                   }}
-                  className={`group relative px-3 py-2 rounded-sm border transition-colors cursor-pointer flex items-center justify-between gap-2 select-none ${
-                    isActive
+                  className={`group relative px-3 py-2 rounded-sm border transition-colors cursor-pointer flex items-center justify-between gap-2 select-none ${isActive
                       ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
                       : repo.pinned
-                      ? 'bg-base-1 border-border-strong shadow-xs'
-                      : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/60 shadow-xs'
-                  }`}
+                        ? 'bg-base-1 border-border-strong shadow-xs'
+                        : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/60 shadow-xs'
+                    }`}
                 >
                   {/* Left: Icon + Title & Path */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <FolderGit2
-                      className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
-                        isActive ? 'text-commito-coral' : 'text-text-faint group-hover:text-commito-coral'
-                      }`}
+                      className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${isActive ? 'text-commito-coral' : 'text-text-faint group-hover:text-commito-coral'
+                        }`}
                     />
 
                     <div className="min-w-0 flex-1">
                       {/* Top Line: Name + Provider Tag + Branch Chip */}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`text-xs font-semibold truncate leading-none transition-colors ${
-                            isActive ? 'text-commito-coral' : 'text-text-primary group-hover:text-commito-coral'
-                          }`}
+                          className={`text-xs font-semibold truncate leading-none transition-colors ${isActive ? 'text-commito-coral' : 'text-text-primary group-hover:text-commito-coral'
+                            }`}
                           title={repo.name}
                         >
                           {repo.name}
@@ -308,13 +355,13 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                         {renderProvider(status?.remote_provider)}
                         <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
                           <GitBranch className="w-2 h-2 text-commito-coral flex-shrink-0" />
-                          <span className="truncate max-w-[90px]">{status?.current_branch || 'main'}</span>
+                          <span className="truncate max-w-[140px]">{status?.current_branch || 'main'}</span>
                         </div>
                       </div>
 
                       {/* Bottom Line: File Path */}
                       <p className="text-[10px] text-text-faint font-mono truncate mt-0.5 leading-none" title={repo.path}>
-                        {truncatePath(repo.path, 34)}
+                        {repo.path}
                       </p>
                     </div>
                   </div>
@@ -347,16 +394,14 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
                   {/* Absolute Hover Actions: Overlays on hover perfectly centered */}
                   <div
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-sm border border-border/50 shadow-xs ${
-                      isActive ? 'bg-base-2' : repo.pinned ? 'bg-base-1' : 'bg-base-2'
-                    }`}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-sm border border-border/50 shadow-xs ${isActive ? 'bg-base-2' : repo.pinned ? 'bg-base-1' : 'bg-base-2'
+                      }`}
                   >
                     <button
                       type="button"
                       onClick={(e) => handlePinToggle(e, repo.id, repo.pinned)}
-                      className={`w-5 h-5 flex items-center justify-center rounded-sm hover:bg-base-3 transition cursor-pointer ${
-                        repo.pinned ? 'text-commito-coral' : 'text-text-faint hover:text-text-primary'
-                      }`}
+                      className={`w-5 h-5 flex items-center justify-center rounded-sm hover:bg-base-3 transition cursor-pointer ${repo.pinned ? 'text-commito-coral' : 'text-text-faint hover:text-text-primary'
+                        }`}
                       title={repo.pinned ? 'Unpin' : 'Pin to top'}
                     >
                       <Pin className={`w-3 h-3 ${repo.pinned ? 'fill-commito-coral/30' : ''}`} />
