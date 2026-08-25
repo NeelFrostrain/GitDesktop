@@ -16,14 +16,14 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
   isValidEmail,
 }) => {
   return (
-    <div className="space-y-3">
-      <label className="text-[11px] font-bold uppercase tracking-wider text-text-muted block">
+    <div className="space-y-3 font-sans select-none">
+      <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint block">
         Git Identity
       </label>
 
       {/* Name Input */}
       <div className="space-y-1">
-        <label className="text-xs font-bold text-text-primary block">
+        <label className="text-xs font-semibold text-text-primary block">
           Git User Name <span className="text-commito-coral">*</span>
         </label>
         <input
@@ -31,14 +31,14 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
           placeholder="e.g. Neel Frostrain"
           value={name}
           onChange={(e) => onNameChange(e.target.value)}
-          className="w-full px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+          className="w-full h-8 px-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary placeholder:text-text-faint font-sans focus:outline-none transition shadow-inner"
           required
         />
       </div>
 
       {/* Email Input */}
       <div className="space-y-1">
-        <label className="text-xs font-bold text-text-primary block">
+        <label className="text-xs font-semibold text-text-primary block">
           Git User Email <span className="text-commito-coral">*</span>
         </label>
         <input
@@ -46,15 +46,15 @@ export const GitIdentityForm: React.FC<GitIdentityFormProps> = ({
           placeholder="e.g. example@email.com"
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
-          className={`w-full px-2.5 py-1.5 bg-base-0 border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans ${
+          className={`w-full h-8 px-2.5 bg-base-0 border rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none font-mono transition shadow-inner ${
             email && !isValidEmail(email)
               ? 'border-git-removed focus:border-danger'
-              : 'border-border focus:border-commito-coral/50'
+              : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30'
           }`}
           required
         />
         {email && !isValidEmail(email) && (
-          <span className="text-[10px] text-git-removed block pt-0.5 font-medium">
+          <span className="text-[10.5px] text-git-removed block pt-0.5 font-medium">
             Please enter a valid email address.
           </span>
         )}

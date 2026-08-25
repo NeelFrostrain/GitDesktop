@@ -28,17 +28,18 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-1.5 font-sans select-none">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+        <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
           Remote Identity
         </label>
         {selectedSyncAccount !== 'custom' ? (
-          <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded text-[9px] font-extrabold uppercase tracking-wider flex items-center gap-1">
-            <Link className="w-2.5 h-2.5" /> LINKED
+          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xs text-[9.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1">
+            <Link className="w-2.5 h-2.5" />
+            <span>LINKED</span>
           </span>
         ) : (
-          <span className="px-1.5 py-0.5 bg-base-3 text-text-muted border border-border rounded text-[9px] font-semibold uppercase tracking-wider">
+          <span className="px-1.5 py-0.2 bg-base-2 text-text-muted border border-border rounded-xs text-[9.5px] font-mono font-medium uppercase tracking-wider">
             Unlinked / Manual
           </span>
         )}
@@ -49,12 +50,12 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
         <button
           type="button"
           onClick={onToggleDropdown}
-          className="w-full px-2.5 py-1.5 bg-base-0 border border-border hover:border-commito-coral/50 rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-xs"
+          className="w-full h-8 px-2.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-inner"
         >
           <div className="flex items-center gap-2 truncate min-w-0">
             {selectedSyncAccount === 'custom' ? (
               <>
-                <Unlink className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+                <Unlink className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span className="font-semibold text-text-secondary truncate">Manual / Unlinked Identity</span>
               </>
             ) : (
@@ -65,14 +66,14 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
                     name={selectedItem.name || selectedItem.username}
                     email={selectedItem.email || undefined}
                     provider={selectedItem.provider}
-                    className="w-4 h-4"
+                    className="w-4 h-4 rounded-xs"
                     iconClassName="w-2.5 h-2.5"
                   />
                   <span className="font-bold text-text-primary truncate">
                     {selectedItem.provider === 'github' ? 'GitHub' : 'GitLab'}: {selectedItem.name || selectedItem.username}
                   </span>
                   {selectedItem.email && (
-                    <span className="text-[10px] text-text-muted font-mono truncate">
+                    <span className="text-[11px] text-text-muted font-mono truncate">
                       ({selectedItem.email})
                     </span>
                   )}
@@ -81,25 +82,25 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
             )}
           </div>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 flex-shrink-0 ${
+            className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
               isDropdownOpen ? 'rotate-180' : ''
             }`}
           />
         </button>
 
         {isDropdownOpen && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
             <button
               type="button"
               onClick={() => handleSelect('custom')}
               className={`w-full px-2.5 py-1.5 text-left text-xs flex items-center justify-between transition cursor-pointer ${
                 selectedSyncAccount === 'custom'
-                  ? 'bg-commito-coral/20 text-commito-coral font-bold'
+                  ? 'bg-commito-coral/15 text-commito-coral font-bold'
                   : 'hover:bg-base-2 text-text-primary'
               }`}
             >
               <div className="flex items-center gap-2 truncate">
-                <Unlink className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
+                <Unlink className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span>Manual / Unlinked Identity</span>
               </div>
               {selectedSyncAccount === 'custom' && <Check className="w-3.5 h-3.5 text-commito-coral" />}
@@ -112,7 +113,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
                 onClick={() => handleSelect(acc.id)}
                 className={`w-full px-2.5 py-1.5 text-left text-xs flex items-center justify-between transition cursor-pointer ${
                   selectedSyncAccount === acc.id
-                    ? 'bg-commito-coral/20 text-commito-coral font-bold'
+                    ? 'bg-commito-coral/15 text-commito-coral font-bold'
                     : 'hover:bg-base-2 text-text-primary'
                 }`}
               >
@@ -122,7 +123,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
                     name={acc.name || acc.username}
                     email={acc.email || undefined}
                     provider={acc.provider}
-                    className="w-4 h-4"
+                    className="w-4 h-4 rounded-xs"
                     iconClassName="w-2.5 h-2.5"
                   />
                   <div className="truncate">
@@ -130,7 +131,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
                       {acc.provider === 'github' ? 'GitHub' : 'GitLab'}: {acc.name || acc.username}
                     </span>
                     {acc.email && (
-                      <span className="text-[10px] text-text-muted font-mono ml-1">
+                      <span className="text-[11px] text-text-muted font-mono ml-1">
                         ({acc.email})
                       </span>
                     )}
@@ -143,7 +144,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
         )}
       </div>
 
-      <p className="text-[10px] text-text-muted leading-tight">
+      <p className="text-[10.5px] text-text-muted leading-tight">
         Sync your name, email and avatar from your connected account.
       </p>
     </div>
