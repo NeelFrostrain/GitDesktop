@@ -55,35 +55,51 @@ export const useAppLogStore = create<LogStoreState>((set, get) => ({
   setAutoScroll: (autoScroll) => set({ autoScroll }),
 
   addEntryToBuffer: (entry) => {
-    set((state) => ({
-      recentLogs: [entry, ...state.recentLogs].slice(0, 500),
-    }));
+    set((state) => {
+      const isDuplicate = state.recentLogs.some(
+        (e) =>
+          e.id === entry.id ||
+          (e.message === entry.message &&
+            e.level === entry.level &&
+            e.category === entry.category &&
+            Math.abs(new Date(e.at).getTime() - new Date(entry.at).getTime()) < 2000)
+      );
+      if (isDuplicate) return state;
+
+      return {
+        recentLogs: [entry, ...state.recentLogs].slice(0, 500),
+      };
+    });
   },
 
   addLog: async (level, category, message, repoId, metadata) => {
-    const entry: LogEntry = {
-      id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-      at: new Date().toISOString(),
-      level,
-      category,
-      message,
-      repo_id: repoId || undefined,
-      metadata: metadata || undefined,
-    };
-    get().addEntryToBuffer(entry);
-
     try {
-      await invoke<LogEntry>('logs_add', {
+      const backendEntry = await invoke<LogEntry>('logs_add', {
         level,
         category,
         message,
         repoId: repoId || null,
         metadata: metadata || null,
       });
+      if (backendEntry) {
+        get().addEntryToBuffer(backendEntry);
+        return backendEntry;
+      }
     } catch (err) {
       console.warn('[Logging] Backend log invoke error (buffered locally):', err);
+      const fallbackEntry: LogEntry = {
+        id: `live_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        at: new Date().toISOString(),
+        level,
+        category,
+        message,
+        repo_id: repoId || undefined,
+        metadata: metadata || undefined,
+      };
+      get().addEntryToBuffer(fallbackEntry);
+      return fallbackEntry;
     }
-    return entry;
+    return null;
   },
 
   queryLogs: async (filter, limit = 100, offset = 0) => {

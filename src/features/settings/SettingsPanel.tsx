@@ -12,6 +12,7 @@ import { searchSettings } from './lib/fuzzySearch';
 import { CategoryTree } from './components/CategoryTree';
 import { SettingRow } from './components/SettingRow';
 import { AnsiSwatchGrid } from './components/AnsiSwatchGrid';
+import { AiSettingsTab } from './components/AiSettingsTab';
 import { SettingsSearchBar } from './components/SettingsSearchBar';
 import { useGitStore } from '../../store/useGitStore';
 
@@ -233,6 +234,9 @@ export const SettingsPanel: React.FC = () => {
                       : `Configure ${currentCategoryMeta?.label} preferences and CSS tokens.`}
                   </p>
                 </div>
+
+                {/* If AI category, render dedicated AiSettingsTab with multi-key pool */}
+                {selectedCategory === 'ai' && <AiSettingsTab />}
 
                 {/* If Terminal category and on ANSI colors subcategory (or all terminal), render AnsiSwatchGrid */}
                 {selectedCategory === 'terminal' && (!selectedSubcategory || selectedSubcategory === 'ANSI Colors') && (

@@ -16,6 +16,7 @@ import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
 import { DiffViewer } from './components/views/DiffViewer';
+import { ToastContainer } from './components/common/ToastContainer';
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
 const FileBrowser = lazy(() => import('./components/views/FileBrowser').then(m => ({ default: m.FileBrowser })));
@@ -295,6 +296,9 @@ export const App: React.FC = () => {
           <SettingsPanel />
           <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
         </Suspense>
+
+        {/* Global Toast Notifications */}
+        <ToastContainer />
       </div>
     </ErrorBoundary>
   );

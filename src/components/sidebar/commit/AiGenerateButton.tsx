@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { useToastStore } from '../../../store/useToastStore';
 import { useSettingsStore } from '../../../features/settings/store/useSettingsStore';
 import { GitService } from '../../../services/git/gitService';
 import { toAppError } from '../../../shared/utils/errorUtils';
@@ -16,10 +17,10 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
   onRequireApiKey,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { activeRepoPath, stagedFiles, status } = useGitStore();
-  const { getEffectiveValue } = useSettingsStore();
+  const { activeRepoPath, stagedFiles } = useGitStore();
+  const { getEffectiveValue, setSelectedCategory, openSettings } = useSettingsStore();
 
-  const hasChanges = (status?.files && status.files.length > 0) || stagedFiles.length > 0;
+  const hasStagedFiles = stagedFiles.length > 0;
 
   const getAnyAvailableKey = (): string | undefined => {
     const activeKey = getEffectiveValue('ai.active_api_key');
@@ -49,8 +50,13 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
   const handleButtonClick = async () => {
     if (!activeRepoPath) return;
 
-    if (!hasChanges) {
-      useLogStore.getState().addLog('info', 'Git', '[Commit-AI] No changed or staged files to analyze.');
+    if (!hasStagedFiles) {
+      useToastStore.getState().showToast({
+        type: 'warning',
+        title: 'No Files Staged',
+        message: 'Please check/stage the files you want Commit-AI to analyze.',
+      });
+      useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Please stage/select the files you want to analyze.');
       return;
     }
 
@@ -61,14 +67,17 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     }
 
     setIsGenerating(true);
-    useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Analyzing code changes with AI...');
+    useLogStore.getState().addLog('info', 'Git', `[Commit-AI] Analyzing ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with AI...`);
 
     try {
+      // Ensure selected files are staged in git index
+      await GitService.stageFiles(activeRepoPath, stagedFiles);
+
       const model = getEffectiveValue('ai.model') || undefined;
 
       const res = await GitService.generateAiCommitMessage(
         activeRepoPath,
-        stagedFiles.length > 0,
+        true, // Strictly only analyze staged files
         availableKey,
         model
       );
@@ -97,10 +106,25 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
         msg.toLowerCase().includes('all configured groq api keys')
       ) {
         onRequireApiKey();
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'Commit-AI Keys Failed',
+          message: 'All configured Groq API keys failed or rate-limited. Please check your keys in Settings.',
+          actionLabel: 'Open Settings',
+          onAction: () => {
+            setSelectedCategory('ai');
+            openSettings();
+          },
+        });
         useLogStore
           .getState()
-          .addLog('info', 'Git', '[Commit-AI] Please enter a valid Groq API Key to proceed.');
+          .addLog('warning', 'Git', '[Commit-AI] Please enter a valid Groq API Key to proceed.');
       } else {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'Commit-AI Error',
+          message: msg,
+        });
         useLogStore
           .getState()
           .addLog('error', 'Git', `[Commit-AI] Failed to generate message: ${msg}`);
@@ -114,8 +138,8 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     <button
       type="button"
       onClick={handleButtonClick}
-      disabled={isGenerating || !hasChanges}
-      title={hasChanges ? "Analyze changes with Commit-AI" : "No changes to analyze with Commit-AI"}
+      disabled={isGenerating || !hasStagedFiles}
+      title={hasStagedFiles ? `Analyze ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with Commit-AI` : "Select/stage files to analyze with Commit-AI"}
       className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isGenerating ? (

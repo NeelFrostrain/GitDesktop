@@ -200,10 +200,14 @@ export const CommitPanel: React.FC = () => {
         await setSettingValue('ai.groq_api_keys', list);
       }
 
+      if (stagedFiles.length > 0) {
+        await GitService.stageFiles(activeRepoPath, stagedFiles);
+      }
+
       const model = getEffectiveValue('ai.model') || undefined;
       const res = await GitService.generateAiCommitMessage(
         activeRepoPath,
-        stagedFiles.length > 0,
+        true, // Strictly analyze staged files
         key,
         model
       );
