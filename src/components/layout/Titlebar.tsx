@@ -147,7 +147,7 @@ export const Titlebar: React.FC = () => {
           <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-sm object-contain shadow-xs" />
         </div>
 
-        {activeRepoName ? (
+        {activeRepoName && currentNavView !== 'home' ? (
           <div data-tauri-drag-region className="flex items-center gap-2 min-w-0">
             <div className="h-3.5 w-px bg-border/70 flex-shrink-0" />
 

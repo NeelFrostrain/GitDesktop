@@ -15,9 +15,9 @@ import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gi
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
+import { DiffViewer } from './components/views/DiffViewer';
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
-const DiffViewer = lazy(() => import('./components/views/DiffViewer').then(m => ({ default: m.DiffViewer })));
 const FileBrowser = lazy(() => import('./components/views/FileBrowser').then(m => ({ default: m.FileBrowser })));
 const ConflictView = lazy(() => import('./components/views/ConflictView').then(m => ({ default: m.ConflictView })));
 const BranchesView = lazy(() => import('./components/views/BranchesView').then(m => ({ default: m.BranchesView })));

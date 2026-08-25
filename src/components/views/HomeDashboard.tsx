@@ -20,7 +20,7 @@ export const HomeDashboard: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none animate-in fade-in duration-200">
+    <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none">
       {/* Welcome strip */}
       <div className="px-6 py-4 border-b border-border flex items-center gap-3 flex-shrink-0">
         <UserAvatar
