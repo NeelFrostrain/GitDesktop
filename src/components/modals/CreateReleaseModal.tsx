@@ -37,8 +37,8 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   initialRelease,
   onSuccess,
 }) => {
-  const { activeRepoPath, branches, status, tags, setTags, setReleases } = useGitStore();
-  const { remotes, activeRemote } = useRemoteStore();
+  const { activeRepoPath, branches, status, tags, setTags, setReleases, setBranches } = useGitStore();
+  const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
   const isEditMode = Boolean(initialRelease);
 
@@ -52,10 +52,34 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   const [isPrerelease, setIsPrerelease] = useState(false);
   const [selectedRemote, setSelectedRemote] = useState('origin');
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch branches, tags, and remotes whenever the modal opens
+  useEffect(() => {
+    if (isOpen && activeRepoPath) {
+      setIsLoadingBranches(true);
+      GitService.listBranches(activeRepoPath)
+        .then((bList) => {
+          if (bList) setBranches(bList);
+        })
+        .catch(() => {})
+        .finally(() => {
+          setIsLoadingBranches(false);
+        });
+
+      GitService.listTags(activeRepoPath)
+        .then((tList) => {
+          if (tList) setTags(tList);
+        })
+        .catch(() => {});
+
+      loadRemotes(activeRepoPath).catch(() => {});
+    }
+  }, [isOpen, activeRepoPath, setBranches, setTags, loadRemotes]);
 
   useEffect(() => {
     if (isOpen) {
@@ -83,7 +107,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           setTagSource('new');
         }
 
-        const current = status?.current_branch || branches[0]?.name || 'main';
+        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
         setSelectedBranch(current);
       }
 
@@ -97,7 +121,28 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         inputRef.current?.focus();
       }, 50);
     }
-  }, [isOpen, initialRelease, status, branches, tags, activeRemote, remotes]);
+  }, [isOpen, initialRelease, status?.current_branch, activeRemote, remotes]);
+
+  // Keep selectedBranch synced if branches load asynchronously
+  useEffect(() => {
+    if (isOpen && !initialRelease && branches.length > 0) {
+      setSelectedBranch((prev) => {
+        if (prev && branches.some((b) => b.name === prev)) return prev;
+        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
+        return current;
+      });
+    }
+  }, [isOpen, initialRelease, branches, status?.current_branch]);
+
+  // Keep selectedExistingTag synced if tags load asynchronously
+  useEffect(() => {
+    if (isOpen && !initialRelease && tags.length > 0) {
+      setSelectedExistingTag((prev) => {
+        if (prev && tags.some((t) => t.name === prev)) return prev;
+        return tags[0].name;
+      });
+    }
+  }, [isOpen, initialRelease, tags]);
 
   // Branch options for dropdown
   const branchOptions = useMemo(() => {
@@ -331,7 +376,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                       value={selectedBranch}
                       onChange={(val) => setSelectedBranch(val)}
                       disabled={isSubmitting}
-                      placeholder="Target Branch..."
+                      placeholder={isLoadingBranches ? 'Loading branches...' : 'Target Branch...'}
                       size="md"
                     />
                   </div>

@@ -35,8 +35,8 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
   targetBranchName,
   onSuccess,
 }) => {
-  const { activeRepoPath, branches, status, setTags } = useGitStore();
-  const { remotes, activeRemote } = useRemoteStore();
+  const { activeRepoPath, branches, status, setTags, setBranches } = useGitStore();
+  const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
   const [tagName, setTagName] = useState('');
   const [tagMessage, setTagMessage] = useState('');
@@ -46,10 +46,30 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
   const [customCommitSha, setCustomCommitSha] = useState('');
   const [pushImmediately, setPushImmediately] = useState(true);
   const [selectedRemote, setSelectedRemote] = useState('origin');
+  const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch branches and remotes whenever the modal opens
+  useEffect(() => {
+    if (isOpen && activeRepoPath) {
+      setIsLoadingBranches(true);
+      GitService.listBranches(activeRepoPath)
+        .then((bList) => {
+          if (bList) {
+            setBranches(bList);
+          }
+        })
+        .catch(() => {})
+        .finally(() => {
+          setIsLoadingBranches(false);
+        });
+
+      loadRemotes(activeRepoPath).catch(() => {});
+    }
+  }, [isOpen, activeRepoPath, setBranches, loadRemotes]);
 
   useEffect(() => {
     if (isOpen) {
@@ -66,7 +86,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         setTargetType('branch');
         setSelectedBranch(targetBranchName);
       } else {
-        const current = status?.current_branch || branches[0]?.name || 'main';
+        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
         setTargetType('branch');
         setSelectedBranch(current);
       }
@@ -81,7 +101,18 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         inputRef.current?.focus();
       }, 50);
     }
-  }, [isOpen, targetCommitSha, targetBranchName, status, branches, activeRemote, remotes]);
+  }, [isOpen, targetCommitSha, targetBranchName, status?.current_branch, activeRemote, remotes]);
+
+  // Keep selectedBranch synced if branches load asynchronously
+  useEffect(() => {
+    if (isOpen && branches.length > 0 && !targetBranchName && !targetCommitSha) {
+      setSelectedBranch((prev) => {
+        if (prev && branches.some((b) => b.name === prev)) return prev;
+        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
+        return current;
+      });
+    }
+  }, [isOpen, branches, targetBranchName, targetCommitSha, status?.current_branch]);
 
   // Transform branches for Custom Dropdown
   const branchOptions = useMemo(() => {
@@ -290,7 +321,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                   value={selectedBranch}
                   onChange={(val) => setSelectedBranch(val)}
                   disabled={isSubmitting}
-                  placeholder="Select target branch..."
+                  placeholder={isLoadingBranches ? 'Loading branches...' : 'Select target branch...'}
                   size="md"
                 />
               </div>
