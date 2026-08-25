@@ -104,7 +104,7 @@ export interface GitState {
   commitSummary: string;
   commitDescription: string;
   activeTab: 'changes' | 'history';
-  diffViewMode: 'unified' | 'split';
+  diffViewMode: 'unified' | 'split' | 'edit';
   currentNavView: NavView;
 
   // Modal dialog visibility states
@@ -161,7 +161,7 @@ export interface GitState {
   setCommitOptions: (opts: Partial<CommitOptions>) => void;
   resetCommitOptions: () => void;
   setActiveTab: (tab: 'changes' | 'history') => void;
-  setDiffViewMode: (mode: 'unified' | 'split') => void;
+  setDiffViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   setCurrentNavView: (view: NavView) => void;
 
   setIsRepoModalOpen: (open: boolean) => void;

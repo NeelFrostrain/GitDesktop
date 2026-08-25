@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';
+import { ChangesEmptySpaceContextMenu } from '../../context-menus/ChangesEmptySpaceContextMenu';
+import { CreateItemModal } from '../../modals/CreateItemModal';
+import { SystemService } from '../../../services/system/systemService';
 
 interface ChangeFileListProps {
   filter: string;
@@ -42,15 +45,37 @@ const getStatusBadge = (statusStr?: string) => {
 };
 
 /**
- * List of modified, staged, and untracked files in the working directory with filter and context menu support.
+ * List of modified, staged, and untracked files in the working directory with filter,
+ * item context menus, and empty-space context menu actions.
  */
 export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
-  const { status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } = useGitStore();
+  const { activeRepoPath, status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } = useGitStore();
   const [fileContextMenu, setFileContextMenu] = useState<{
     filePath: string;
     x: number;
     y: number;
   } | null>(null);
+
+  const [emptySpaceContextMenu, setEmptySpaceContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const [createModal, setCreateModal] = useState<'file' | 'folder' | null>(null);
+
+  // Keyboard shortcut: Shift+Alt+R to Reveal in File Explorer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.shiftKey && e.altKey && (e.key === 'R' || e.key === 'r')) {
+        e.preventDefault();
+        if (activeRepoPath) {
+          SystemService.showInExplorer(activeRepoPath).catch(console.error);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeRepoPath]);
 
   const allFiles = status?.files || [];
   const uniqueFilesMap = new Map<string, (typeof allFiles)[0]>();
@@ -67,20 +92,50 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
 
   if (filteredFiles.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150 text-text-faint">
-        <div className="w-8 h-8 rounded-sm bg-base-1 border border-border/60 flex items-center justify-center mb-2 shadow-xs">
-          <Check className="w-4 h-4 text-git-added/80 stroke-[2.5]" />
+      <>
+        <div
+          onContextMenu={(e) => {
+            e.preventDefault();
+            setEmptySpaceContextMenu({ x: e.clientX, y: e.clientY });
+          }}
+          className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none animate-in fade-in duration-150 text-text-faint cursor-default"
+        >
+          <div className="w-8 h-8 rounded-sm bg-base-1 border border-border/60 flex items-center justify-center mb-2 shadow-xs">
+            <Check className="w-4 h-4 text-git-added/80 stroke-[2.5]" />
+          </div>
+          <p className="text-xs font-medium text-text-muted">
+            {filter ? `No files matching "${filter}"` : 'No uncommitted changes'}
+          </p>
         </div>
-        <p className="text-xs font-medium text-text-muted">
-          {filter ? `No files matching "${filter}"` : 'No uncommitted changes'}
-        </p>
-      </div>
+
+        {emptySpaceContextMenu && (
+          <ChangesEmptySpaceContextMenu
+            x={emptySpaceContextMenu.x}
+            y={emptySpaceContextMenu.y}
+            onClose={() => setEmptySpaceContextMenu(null)}
+            onNewFile={() => setCreateModal('file')}
+            onNewFolder={() => setCreateModal('folder')}
+          />
+        )}
+
+        <CreateItemModal
+          isOpen={Boolean(createModal)}
+          itemType={createModal || 'file'}
+          onClose={() => setCreateModal(null)}
+        />
+      </>
     );
   }
 
   return (
     <>
-      <div className="flex-1 overflow-y-auto p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3">
+      <div
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setEmptySpaceContextMenu({ x: e.clientX, y: e.clientY });
+        }}
+        className="flex-1 overflow-y-auto p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3"
+      >
         {filteredFiles.map((file) => {
           const isStaged = stagedFiles.includes(file.path);
           const isSelected = selectedFile === file.path;
@@ -117,6 +172,22 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
           onClose={() => setFileContextMenu(null)}
         />
       )}
+
+      {emptySpaceContextMenu && (
+        <ChangesEmptySpaceContextMenu
+          x={emptySpaceContextMenu.x}
+          y={emptySpaceContextMenu.y}
+          onClose={() => setEmptySpaceContextMenu(null)}
+          onNewFile={() => setCreateModal('file')}
+          onNewFolder={() => setCreateModal('folder')}
+        />
+      )}
+
+      <CreateItemModal
+        isOpen={Boolean(createModal)}
+        itemType={createModal || 'file'}
+        onClose={() => setCreateModal(null)}
+      />
     </>
   );
 };

@@ -29,7 +29,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-[110px] min-w-0 h-8 px-2 rounded-sm border border-border/60 bg-base-1/90 hover:bg-base-2/90 hover:border-border-strong/80 flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 shadow-xs group outline-none text-left flex-shrink-0"
+            className="w-[100px] min-w-0 h-8 px-2 rounded-sm border border-border/60 bg-base-1/90 hover:bg-base-2/90 hover:border-border-strong/80 flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 shadow-xs group outline-none text-left flex-shrink-0"
             title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}`}
           >
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -68,7 +68,7 @@ export const RepositoryHeader: React.FC = () => {
           >
             <span className="truncate">Changes</span>
             <span
-              className={`inline-flex items-center justify-center min-w-4 h-4 rounded-sm text-[9.5px] font-mono font-bold leading-none transition-colors duration-75 shrink-0 ${fileCount > 0
+              className={`inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-sm text-[9.5px] font-mono font-bold leading-none transition-colors duration-75 shrink-0 ${fileCount > 0
                 ? activeTab === 'changes'
                   ? 'bg-commito-coral text-white shadow-xs shadow-commito-coral/30'
                   : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'

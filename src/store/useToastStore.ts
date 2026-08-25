@@ -10,6 +10,7 @@ export interface ToastItem {
   durationMs?: number;
   actionLabel?: string;
   onAction?: () => void;
+  count?: number;
 }
 
 interface ToastState {
@@ -22,12 +23,31 @@ export const useToastStore = create<ToastState>((set, get) => ({
   toasts: [],
 
   showToast: (toast) => {
+    // Deduplicate identical toasts by title + message
+    const existingIndex = get().toasts.findIndex(
+      (t) => t.title === toast.title && t.message === toast.message && t.type === toast.type
+    );
+
+    if (existingIndex !== -1) {
+      // Increment count on existing toast rather than stacking duplicates
+      set((state) => {
+        const next = [...state.toasts];
+        const existing = next[existingIndex];
+        next[existingIndex] = {
+          ...existing,
+          count: (existing.count || 1) + 1,
+        };
+        return { toasts: next };
+      });
+      return;
+    }
+
     const id = `${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const duration = toast.durationMs ?? 4500;
-    const newToast: ToastItem = { ...toast, id };
+    const newToast: ToastItem = { ...toast, id, count: 1 };
 
     set((state) => ({
-      toasts: [...state.toasts, newToast].slice(-5), // Keep max 5 visible toasts
+      toasts: [...state.toasts, newToast].slice(-4), // Keep max 4 visible toasts
     }));
 
     if (duration > 0) {

@@ -403,4 +403,24 @@ export class GitService {
       model: model || null,
     });
   }
+
+  // ── File Content & Editing ──────────────────────────────────────────────────
+
+  /**
+   * Reads raw file content from the local working repository.
+   */
+  static async readFileContent(repoPath: string, filePath: string): Promise<string> {
+    return invoke<string>('read_file_content_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Saves raw file content back to the local repository.
+   */
+  static async saveFileContent(
+    repoPath: string,
+    filePath: string,
+    content: string
+  ): Promise<void> {
+    return invoke<void>('save_file_content_cmd', { repoPath, filePath, content });
+  }
 }

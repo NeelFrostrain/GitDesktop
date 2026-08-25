@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, AlertCircle, AlertTriangle, Info, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, AlertTriangle, Info, X, ExternalLink } from 'lucide-react';
 import { useToastStore, ToastItem } from '../../store/useToastStore';
 
 export const ToastContainer: React.FC = () => {
@@ -20,42 +20,53 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
   const getIcon = () => {
     switch (toast.type) {
       case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-git-added flex-shrink-0" />;
+        return <CheckCircle2 className="w-3.5 h-3.5 text-git-added shrink-0" />;
       case 'warning':
-        return <AlertTriangle className="w-4 h-4 text-git-modified flex-shrink-0" />;
+        return <AlertTriangle className="w-3.5 h-3.5 text-git-modified shrink-0" />;
       case 'error':
-        return <AlertCircle className="w-4 h-4 text-git-removed flex-shrink-0" />;
+        return <AlertCircle className="w-3.5 h-3.5 text-git-removed shrink-0" />;
       default:
-        return <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />;
+        return <Info className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
     }
   };
 
   const getBorderAndBg = () => {
     switch (toast.type) {
       case 'success':
-        return 'bg-base-1 border-git-added/30 text-text-primary';
+        return 'border-git-added/40';
       case 'warning':
-        return 'bg-base-1 border-git-modified/30 text-text-primary';
+        return 'border-git-modified/40';
       case 'error':
-        return 'bg-base-1 border-git-removed/40 text-text-primary';
+        return 'border-git-removed/50';
       default:
-        return 'bg-base-1 border-border-strong text-text-primary';
+        return 'border-border-strong';
     }
   };
 
   return (
     <div
-      className={`pointer-events-auto p-3 rounded-sm border shadow-2xl flex items-start gap-2.5 animate-in slide-in-from-bottom-2 fade-in duration-200 ${getBorderAndBg()}`}
+      className={`pointer-events-auto p-3 rounded-sm border bg-base-0 shadow-2xl flex items-start gap-2.5 animate-in slide-in-from-bottom-2 fade-in duration-150 ${getBorderAndBg()}`}
     >
-      <div className="mt-0.5">{getIcon()}</div>
+      {/* Icon Chip */}
+      <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center shrink-0 mt-0.5">
+        {getIcon()}
+      </div>
 
       <div className="min-w-0 flex-1">
-        {toast.title && (
-          <h4 className="text-xs font-semibold leading-tight text-text-primary mb-0.5">
-            {toast.title}
-          </h4>
-        )}
-        <p className="text-[11px] text-text-secondary leading-relaxed break-words">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          {toast.title && (
+            <h4 className="text-xs font-semibold leading-tight text-text-primary">
+              {toast.title}
+            </h4>
+          )}
+          {toast.count && toast.count > 1 && (
+            <span className="px-1 py-0.2 rounded-xs bg-base-1 border border-border text-[9.5px] font-mono font-bold text-text-muted">
+              ×{toast.count}
+            </span>
+          )}
+        </div>
+
+        <p className="text-[11px] text-text-muted leading-relaxed break-words">
           {toast.message}
         </p>
 
@@ -66,9 +77,10 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
               toast.onAction?.();
               onClose();
             }}
-            className="mt-2 text-[11px] font-semibold text-commito-coral hover:underline cursor-pointer flex items-center gap-1"
+            className="mt-2 px-2.5 py-0.8 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-[11px] font-semibold text-commito-coral hover:text-commito-coralLight transition cursor-pointer inline-flex items-center gap-1 shadow-2xs"
           >
-            {toast.actionLabel}
+            <span>{toast.actionLabel}</span>
+            <ExternalLink className="w-2.5 h-2.5 opacity-70" />
           </button>
         )}
       </div>
@@ -76,7 +88,8 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
       <button
         type="button"
         onClick={onClose}
-        className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex-shrink-0 -mr-1 -mt-1"
+        className="w-5.5 h-5.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer flex items-center justify-center shrink-0 -mr-1 -mt-1"
+        title="Dismiss"
       >
         <X className="w-3.5 h-3.5" />
       </button>

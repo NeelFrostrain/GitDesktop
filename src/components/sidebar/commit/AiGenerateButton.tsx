@@ -28,7 +28,7 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       return String(activeKey).trim();
     }
 
-    const rawKeys = getEffectiveValue('ai.groq_api_keys');
+    const rawKeys = getEffectiveValue('ai.groq_api_keys') || getEffectiveValue('ai.gemini_api_keys');
     if (Array.isArray(rawKeys) && rawKeys.length > 0) {
       const first = String(rawKeys[0]).trim();
       if (first) return first;
@@ -108,8 +108,8 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
         onRequireApiKey();
         useToastStore.getState().showToast({
           type: 'error',
-          title: 'Commit-AI Keys Failed',
-          message: 'All configured Groq API keys failed or rate-limited. Please check your keys in Settings.',
+          title: 'Groq Key Required',
+          message: 'Please enter a valid Groq API key (gsk_...) in Settings.',
           actionLabel: 'Open Settings',
           onAction: () => {
             setSelectedCategory('ai');
@@ -118,7 +118,11 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
         });
         useLogStore
           .getState()
-          .addLog('warning', 'Git', '[Commit-AI] Please enter a valid Groq API Key to proceed.');
+          .addLog(
+            'warning',
+            'Git',
+            `[Commit-AI] ${msg || 'Please enter a valid Groq API Key to proceed.'}`
+          );
       } else {
         useToastStore.getState().showToast({
           type: 'error',

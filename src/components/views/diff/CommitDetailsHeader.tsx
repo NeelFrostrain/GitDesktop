@@ -17,8 +17,8 @@ import { UserAvatar } from '../../common/UserAvatar';
 
 interface CommitDetailsHeaderProps {
   commitDetails: CommitDetails;
-  diffViewMode: 'unified' | 'split';
-  onChangeViewMode: (mode: 'unified' | 'split') => void;
+  diffViewMode: 'unified' | 'split' | 'edit';
+  onChangeViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   openFiles: Record<string, boolean>;
   onToggleExpandAll: () => void;
 }

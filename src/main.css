@@ -14,11 +14,11 @@
    2. Runtime Theme Variables (:root / Default: Commito Dark)
    ========================================================================== */
 :root {
-  /* --- Unified Surfaces & Backgrounds (High-Contrast Obsidian Dark) --- */
-  --surface: #141316;                 /* Main workspace & panel background */
-  --surface-subtle: #0d0c0e;          /* Deep canvas / Diff viewport & Terminal canvas */
-  --surface-elevated: #1f1e23;        /* Elevated buttons, chips, cards & dropdowns */
-  --surface-hover: #2a2830;           /* Hover state on buttons, rows & cards */
+  /* --- Unified Surfaces & Backgrounds --- */
+  --surface: #171619;                 /* Main workspace background */
+  --surface-subtle: #121113;          /* Deep frame / Sidebar background */
+  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
+  --surface-hover: #2b292f;           /* Hover state on rows and cards */
   --surface-active: #382221;          /* Pressed/selected active background */
 
   /* Legacy surface aliases */
@@ -30,9 +30,9 @@
   --app-surface-active: var(--surface-active);
 
   /* --- Unified Borders --- */
-  --border: #2b2930;                  /* Default crisp border */
-  --border-subtle: #1c1b20;           /* Subtle inner divider */
-  --border-strong: #3f3d47;           /* Emphasized border / active focus */
+  --border: #29272b;                  /* Default border color */
+  --border-subtle: #201e22;           /* Subtle inner border / divider */
+  --border-strong: #3d3a42;           /* Emphasized border / active focus */
 
   /* Legacy border aliases */
   --app-border: var(--border);
@@ -236,14 +236,14 @@
    ========================================================================== */
 [data-theme="commito-dark"],
 [data-theme="dark"] {
-  --surface: #141316;
-  --surface-subtle: #0d0c0e;
-  --surface-elevated: #1f1e23;
-  --surface-hover: #2a2830;
+  --surface: #171619;
+  --surface-subtle: #121113;
+  --surface-elevated: #201e22;
+  --surface-hover: #2b292f;
   --surface-active: #382221;
-  --border: #2b2930;
-  --border-subtle: #1c1b20;
-  --border-strong: #3f3d47;
+  --border: #29272b;
+  --border-subtle: #201e22;
+  --border-strong: #3d3a42;
   --text: #e6e4e8;
   --text-subtle: #b3b0b8;
   --text-muted: #85818c;
@@ -252,7 +252,7 @@
   --accent-hover: #f06344;
   --scrollbar-thumb: #36353d;
   --scrollbar-thumb-hover: #46454e;
-  --terminal-bg: #0d0c0e;
+  --terminal-bg: #121113;
   --terminal-fg: #e6e4e8;
 }
 

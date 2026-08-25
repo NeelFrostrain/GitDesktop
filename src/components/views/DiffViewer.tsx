@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   FileText,
   Binary,
@@ -18,10 +18,11 @@ import { UnifiedDiffView } from './diff/UnifiedDiffView';
 import { SplitDiffView } from './diff/SplitDiffView';
 import { ImageDiffView } from './diff/ImageDiffView';
 import { CleanWorkingTreeView } from './diff/CleanWorkingTreeView';
+import { FileEditorView } from './diff/FileEditorView';
 
 /**
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
- * and historical commit inspection in Unified and Split layout modes.
+ * and historical commit inspection in Unified, Split, and Edit layout modes.
  */
 export const DiffViewer: React.FC = () => {
   const {
@@ -38,6 +39,18 @@ export const DiffViewer: React.FC = () => {
   const [diff, setDiff] = useState<DiffResult | null>(null);
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Editor mode state & handle
+  const [editorState, setEditorState] = useState<{
+    isDirty: boolean;
+    isSaving: boolean;
+    saveSuccess: boolean;
+  }>({
+    isDirty: false,
+    isSaving: false,
+    saveSuccess: false,
+  });
+  const editorHandleRef = useRef<import('./diff/FileEditorView').FileEditorHandle | null>(null);
 
   // Expanded per-file diff cache in History mode
   const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
@@ -218,17 +231,43 @@ export const DiffViewer: React.FC = () => {
     }
 
     return (
-      <div className="h-full flex flex-col">
+      <div className="h-full flex flex-col min-h-0">
         <DiffHeader
           filePath={selectedFile}
           diffResult={diff}
           diffViewMode={diffViewMode}
           onChangeViewMode={setDiffViewMode}
           staged={isStaged}
+          isDirty={editorState.isDirty}
+          isSaving={editorState.isSaving}
+          saveSuccess={editorState.saveSuccess}
+          onSave={() => editorHandleRef.current?.save()}
+          onRevert={() => editorHandleRef.current?.revert()}
         />
 
-        <div className="flex-1 overflow-auto bg-base-0">
-          {diffViewMode === 'split' ? (
+        <div className="flex-1 overflow-auto bg-base-0 flex flex-col min-h-0">
+          {diffViewMode === 'edit' && activeRepoPath ? (
+            <FileEditorView
+              repoPath={activeRepoPath}
+              filePath={selectedFile}
+              isStaged={isStaged}
+              editorRefHandle={editorHandleRef}
+              onStateChange={setEditorState}
+              onExitEditMode={() => setDiffViewMode('unified')}
+              onSaved={async () => {
+                if (activeRepoPath) {
+                  try {
+                    const latestStatus = await GitService.getRepoStatus(activeRepoPath);
+                    useGitStore.getState().setStatus(latestStatus);
+                    const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
+                    setDiff(newDiff);
+                  } catch (e) {
+                    console.error('Failed to sync git status after saving:', e);
+                  }
+                }
+              }}
+            />
+          ) : diffViewMode === 'split' ? (
             <SplitDiffView lines={diff.lines} />
           ) : (
             <UnifiedDiffView lines={diff.lines} />

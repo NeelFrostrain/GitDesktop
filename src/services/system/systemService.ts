@@ -59,4 +59,11 @@ export class SystemService {
   static async openFileDefault(filePath: string): Promise<void> {
     return invoke('open_file_default_cmd', { filePath });
   }
+
+  /**
+   * Creates a directory on disk.
+   */
+  static async createDirectory(repoPath: string, folderPath: string): Promise<void> {
+    return invoke('create_directory_cmd', { repoPath, folderPath });
+  }
 }

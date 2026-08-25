@@ -514,3 +514,55 @@ pub async fn get_gitlab_activity_cmd(
         Ok(Vec::new())
     }
 }
+
+#[command]
+pub async fn read_file_content_cmd(
+    repo_path: String,
+    file_path: String,
+) -> Result<String, AppError> {
+    let full_path = std::path::Path::new(&repo_path).join(&file_path);
+    if !full_path.exists() {
+        return Err(AppError::NotFound(format!(
+            "File does not exist: {}",
+            full_path.display()
+        )));
+    }
+    std::fs::read_to_string(&full_path)
+        .map_err(|e| AppError::Unknown(format!("Failed to read file: {}", e)))
+}
+
+#[command]
+pub async fn save_file_content_cmd(
+    repo_path: String,
+    file_path: String,
+    content: String,
+) -> Result<(), AppError> {
+    let full_path = std::path::Path::new(&repo_path).join(&file_path);
+    if let Some(parent) = full_path.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Unknown(format!("Failed to create parent directories: {}", e)))?;
+    }
+    std::fs::write(&full_path, content.as_bytes())
+        .map_err(|e| AppError::Unknown(format!("Failed to write file: {}", e)))?;
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Git,
+        format!("File saved from editor: {}", file_path);
+        meta: serde_json::json!({ "file_path": file_path })
+    );
+
+    Ok(())
+}
+
+#[command]
+pub async fn create_directory_cmd(
+    repo_path: String,
+    folder_path: String,
+) -> Result<(), AppError> {
+    let full_path = std::path::Path::new(&repo_path).join(&folder_path);
+    std::fs::create_dir_all(&full_path)
+        .map_err(|e| AppError::Unknown(format!("Failed to create directory: {}", e)))?;
+    Ok(())
+}
+
+

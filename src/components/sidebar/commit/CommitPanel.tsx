@@ -179,6 +179,11 @@ export const CommitPanel: React.FC = () => {
     const key = newApiKeyInput.trim();
     if (!key || !activeRepoPath) return;
 
+    if (!key.startsWith('gsk_')) {
+      setInlineError('Groq API keys start with "gsk_". Get your free key at console.groq.com/keys.');
+      return;
+    }
+
     setIsInlineGenerating(true);
     setInlineError(null);
     try {
@@ -418,8 +423,8 @@ export const CommitPanel: React.FC = () => {
                       onClick={() => setSelectedTitleIndex(idx)}
                       onDoubleClick={() => handleApplyAiSelection(opt)}
                       className={`p-2.5 rounded-sm cursor-pointer flex items-start gap-2 transition text-xs select-none bg-base-0 border ${isSelected
-                          ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
-                          : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
+                        ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
+                        : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
                         }`}
                     >
                       <span className="text-[10px] font-mono font-bold text-commito-coral mt-0.5 flex-shrink-0">
@@ -453,8 +458,8 @@ export const CommitPanel: React.FC = () => {
                     type="button"
                     onClick={() => setDescriptionMode('report')}
                     className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'report'
-                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
                       }`}
                     title="Include full technical report in commit description"
                   >
@@ -466,8 +471,8 @@ export const CommitPanel: React.FC = () => {
                     type="button"
                     onClick={() => setDescriptionMode('bullets')}
                     className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'bullets'
-                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
                       }`}
                     title="Include concise bullet points in commit description"
                   >
@@ -479,8 +484,8 @@ export const CommitPanel: React.FC = () => {
                     type="button"
                     onClick={() => setDescriptionMode('none')}
                     className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'none'
-                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
                       }`}
                     title="No commit description (summary only)"
                   >
@@ -579,8 +584,8 @@ export const CommitPanel: React.FC = () => {
             onClick={onExecuteCommit}
             disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt || count === 0}
             className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0
-                ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
-                : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
+              ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
+              : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
               }`}
           >
             <GitCommit className="w-3.5 h-3.5 flex-shrink-0" />
@@ -601,8 +606,8 @@ export const CommitPanel: React.FC = () => {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${isOpen
-            ? 'bg-base-2 text-text-primary border-border-strong'
-            : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
+          ? 'bg-base-2 text-text-primary border-border-strong'
+          : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
           }`}
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -610,9 +615,9 @@ export const CommitPanel: React.FC = () => {
           <span className="truncate">Initialize commit</span>
           {count > 0 && (
             <span
-              className={`inline-flex items-center justify-center min-w-[16px] h-4 rounded-sm text-[10px] font-mono font-bold leading-none border ${isOpen
-                  ? 'bg-white/20 border-white/30 text-white'
-                  : 'bg-base-0 border-border text-text-muted'
+              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none border ${isOpen
+                ? 'bg-white/20 border-white/30 text-white'
+                : 'bg-base-0 border-border text-text-muted'
                 }`}
             >
               {count}
