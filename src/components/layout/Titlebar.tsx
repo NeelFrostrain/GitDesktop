@@ -15,7 +15,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { useAccountServicesStore } from '../../features/account-services';
 import { useSettingsStore } from '../../features/settings';
 import { UserAvatar } from '../common/UserAvatar';
 import { SystemService } from '../../services/system/systemService';
@@ -272,24 +271,13 @@ export const Titlebar: React.FC = () => {
               {/* Menu Actions */}
               <button
                 onClick={() => {
-                  useAccountServicesStore.getState().openModalWithTab('accounts');
+                  useGitStore.getState().setIsUserConfigModalOpen(true);
                   setIsProfileOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
               >
-                <User className="w-3.5 h-3.5 text-gitlab-teal" />
-                Account Services & Repositories
-              </button>
-
-              <button
-                onClick={() => {
-                  useAccountServicesStore.getState().openModalWithTab('add');
-                  setIsProfileOpen(false);
-                }}
-                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-text-muted" />
-                Add Remote Account
+                <User className="w-3.5 h-3.5 text-commito-coral" />
+                Git User Configuration
               </button>
 
               {user && (

@@ -1,11 +1,12 @@
 import React from 'react';
 import { Plus, ChevronRight } from 'lucide-react';
-import { useAccounts, useAccountServicesStore, ProviderAccount } from '../../features/account-services';
+import { useAccounts, ProviderAccount } from '../../features/account-services';
+import { useGitStore } from '../../store/useGitStore';
 import { UserAvatar } from '../common/UserAvatar';
 
 export const AccountsWidget: React.FC = () => {
   const { accounts } = useAccounts();
-  const { openModalWithTab } = useAccountServicesStore();
+  const { setIsUserConfigModalOpen } = useGitStore();
 
   const getStatusDot = (account: ProviderAccount) => {
     if (account.token_status === 'expired')
@@ -26,12 +27,12 @@ export const AccountsWidget: React.FC = () => {
           Connected Accounts
         </p>
         <button
-          onClick={() => openModalWithTab('add')}
+          onClick={() => setIsUserConfigModalOpen(true)}
           className="flex items-center gap-1 text-[11px] text-text-faint hover:text-text-primary transition cursor-pointer"
-          title="Add account"
+          title="Configure Git Identity & Accounts"
         >
           <Plus className="w-3 h-3" />
-          Add
+          Configure
         </button>
       </div>
 
@@ -40,7 +41,7 @@ export const AccountsWidget: React.FC = () => {
           {accounts.map((acc) => (
             <div
               key={acc.id}
-              onClick={() => openModalWithTab('accounts')}
+              onClick={() => setIsUserConfigModalOpen(true)}
               className="flex items-center gap-2.5 px-2.5 py-2 rounded-sm bg-base-1 border border-border hover:border-border-strong transition cursor-pointer group"
             >
               <div className="relative flex-shrink-0">

@@ -42,7 +42,6 @@ const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').t
 const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
 const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
 const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
-const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
 const SigningSettings = lazy(() => import('./components/modals/SigningSettings').then(m => ({ default: m.SigningSettings })));
 const SettingsPanel = lazy(() => import('./features/settings').then(m => ({ default: m.SettingsPanel })));
@@ -290,7 +289,6 @@ export const App: React.FC = () => {
           <RewriteHistoryModal />
           <GitUserConfigModal />
           <LogModal />
-          <AccountServicesModal />
           <GitLabSignInModal />
           <SigningSettings />
           <SettingsPanel />
