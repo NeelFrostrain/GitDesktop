@@ -7,7 +7,7 @@ import { AutocompletePopup } from './components/AutocompletePopup';
 import { LogViewer } from './components/LogViewer';
 import { useAppLogs } from './hooks/useAppLogs';
 import { LOG_LEVEL_TERMINAL_COLOR, LOG_LEVEL_TERMINAL_TAG } from '../../core/logging';
-import { Copy, Check, ChevronDown, ChevronRight, Pause, Play, Trash2 } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 export const TerminalPanel: React.FC = () => {
   const { activeRepoPath, status } = useGitStore();
@@ -183,14 +183,18 @@ export const TerminalPanel: React.FC = () => {
               searchInTerminal(q, true);
             }
           }}
+          autoScroll={autoScroll}
+          onToggleAutoScroll={() => setAutoScroll(!autoScroll)}
+          logCount={displayedLogs.length}
         />
 
         {/* Viewport Area: Both views stay mounted in DOM to preserve state and stream buffer */}
         <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-base-0">
           {/* 1. Shell View (xterm.js PTY) */}
           <div
-            className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${activeTab === 'shell' ? 'flex flex-col' : 'hidden'
-              }`}
+            className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${
+              activeTab === 'shell' ? 'flex flex-col' : 'hidden'
+            }`}
           >
             <div
               ref={terminalContainerRef}
@@ -218,42 +222,10 @@ export const TerminalPanel: React.FC = () => {
 
           {/* 2. App Log View (Colorized live streaming logger) */}
           <div
-            className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${activeTab === 'app_log' ? 'flex' : 'hidden'
-              }`}
+            className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${
+              activeTab === 'app_log' ? 'flex' : 'hidden'
+            }`}
           >
-            {/* Stream Toolbar */}
-            <div className="h-7.5 bg-base-1/70 border-b border-border px-3 flex items-center justify-between text-[11px] text-text-muted select-none flex-shrink-0">
-              <span className="flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-git-added animate-pulse" />
-                <span className="font-semibold text-text-secondary">Live Application Log</span>
-                <span className="text-[10px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded-sm text-text-muted">
-                  {displayedLogs.length} events
-                </span>
-              </span>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setAutoScroll(!autoScroll)}
-                  className="h-6 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5"
-                  title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
-                >
-                  {autoScroll ? <Pause className="w-3 h-3 text-gitlab-teal" /> : <Play className="w-3 h-3" />}
-                  <span>{autoScroll ? 'Auto-scroll ON' : 'Paused'}</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={clearAllLogs}
-                  className="h-6 px-2 text-text-muted hover:text-git-removed bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5"
-                  title="Clear current logs"
-                >
-                  <Trash2 className="w-3 h-3" />
-                  <span>Clear</span>
-                </button>
-              </div>
-            </div>
-
             {/* Log Stream Output */}
             <div
               ref={logContainerRef}

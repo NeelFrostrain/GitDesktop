@@ -10,6 +10,9 @@ import {
   GitBranch,
   Download,
   CheckCircle,
+  Play,
+  Pause,
+  FolderGit2,
 } from 'lucide-react';
 import { useTerminalStore } from './store/terminalStore';
 import { listen } from '@tauri-apps/api/event';
@@ -24,6 +27,9 @@ export interface TerminalTabBarProps {
   onClear: () => void;
   onRestart: () => void;
   onSearch: (query: string) => void;
+  autoScroll?: boolean;
+  onToggleAutoScroll?: () => void;
+  logCount?: number;
 }
 
 export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
@@ -35,11 +41,12 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
   onClear,
   onRestart,
   onSearch,
+  autoScroll,
+  onToggleAutoScroll,
+  logCount,
 }) => {
   const {
     toggleIsOpen,
-    openLogViewer,
-    activeLogRepoId,
     searchQuery,
     setSearchQuery,
     isSearchOpen,
@@ -55,8 +62,12 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
       if (event.payload.status === 'completed' || event.payload.status === 'error') {
         setTimeout(() => setGitProgress(null), 4000);
       }
-    }).then((fn) => { unlisten = fn; });
-    return () => { if (unlisten) unlisten(); };
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      if (unlisten) unlisten();
+    };
   }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,16 +89,17 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
   return (
     <div className="h-9 bg-base-1 border-b border-border px-3 flex items-center justify-between flex-shrink-0 select-none text-xs">
       {/* Left: Tabs + Repo & Branch info */}
-      <div className="flex items-center gap-2 min-w-0">
-        {/* Unified Segmented Switcher */}
-        <div className="flex items-center bg-base-2/80 rounded-sm border border-border gap-0.5">
+      <div className="flex items-center gap-1.5 min-w-0">
+        {/* Sleek Segmented Switcher */}
+        <div className="h-6.5 flex items-center bg-base-0 border border-border/90 rounded-sm p-0.5 gap-0.5 shadow-2xs">
           <button
             type="button"
             onClick={() => onTabChange('shell')}
-            className={`px-2.5 py-1 rounded-sm text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'shell'
-              ? 'bg-base-0 text-text-primary shadow-xs font-semibold border border-border/80'
-              : 'text-text-muted hover:text-text-primary hover:bg-base-3/40'
-              }`}
+            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'shell'
+                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
+                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
+            }`}
           >
             <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />
             <span>Shell</span>
@@ -95,59 +107,72 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
           <button
             type="button"
             onClick={() => onTabChange('app_log')}
-            className={`px-2.5 py-1 rounded-sm text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${activeTab === 'app_log'
-              ? 'bg-base-0 text-text-primary shadow-xs font-semibold border border-border/80'
-              : 'text-text-muted hover:text-text-primary hover:bg-base-3/40'
-              }`}
+            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'app_log'
+                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
+                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
+            }`}
           >
             <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
             <span>App Log</span>
+            {logCount !== undefined && logCount > 0 && (
+              <span className="px-1 py-0.2 bg-base-1 text-[9px] font-mono text-text-muted rounded-xs border border-border/60 leading-none">
+                {logCount}
+              </span>
+            )}
           </button>
         </div>
 
-        {/* Repo Name Tag */}
-        <span className="font-semibold text-text-primary text-xs truncate max-w-[150px] ml-1">
-          {repoName}
-        </span>
+        {/* Repo Name Chip */}
+        {repoName && (
+          <div className="h-6.5 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[11px] text-text-secondary font-medium truncate max-w-[140px] shadow-2xs">
+            <FolderGit2 className="w-3 h-3 text-text-muted flex-shrink-0" />
+            <span className="truncate">{repoName}</span>
+          </div>
+        )}
 
         {/* Branch badge */}
         {branchName && (
-          <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-base-0 text-text-muted text-[11px] font-mono border border-border max-w-[140px] truncate">
-            <GitBranch className="w-2.5 h-2.5 text-commito-coral flex-shrink-0" />
+          <div className="h-6.5 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[11px] text-text-muted font-mono truncate max-w-[130px] shadow-2xs">
+            <GitBranch className="w-3 h-3 text-commito-coral flex-shrink-0" />
             <span className="truncate">{branchName}</span>
           </div>
         )}
 
-        {/* Process status indicator */}
+        {/* Process status indicator for Shell */}
         {activeTab === 'shell' && (
           <span
-            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isAlive ? 'bg-git-added shadow-[0_0_6px_var(--git-added)]' : 'bg-text-disabled'
-              }`}
+            className={`w-2 h-2 rounded-full flex-shrink-0 mx-0.5 ${
+              isAlive ? 'bg-git-added shadow-[0_0_6px_var(--git-added)]' : 'bg-text-disabled'
+            }`}
             title={isAlive ? 'Process running' : 'Process stopped'}
           />
         )}
 
         {/* MinGit silent download progress pill */}
         {gitProgress && (
-          <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-[10px] font-medium border transition-all duration-300 ${gitProgress.status === 'completed'
-            ? 'bg-git-added-bg border-git-added/30 text-git-added'
-            : gitProgress.status === 'error'
-              ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
-              : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
-            }`}>
+          <div
+            className={`h-6.5 flex items-center gap-1.5 px-2 rounded-sm text-[10px] font-medium border shadow-2xs transition-all duration-300 ${
+              gitProgress.status === 'completed'
+                ? 'bg-git-added-bg border-git-added/30 text-git-added'
+                : gitProgress.status === 'error'
+                ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
+                : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
+            }`}
+          >
             {gitProgress.status === 'completed' ? (
-              <CheckCircle className="w-2.5 h-2.5 flex-shrink-0" />
+              <CheckCircle className="w-3 h-3 flex-shrink-0" />
             ) : (
-              <Download className="w-2.5 h-2.5 flex-shrink-0 animate-bounce" />
+              <Download className="w-3 h-3 flex-shrink-0 animate-bounce" />
             )}
             <span>
               {gitProgress.status === 'completed'
                 ? 'Git ready'
                 : gitProgress.status === 'error'
-                  ? 'Git install failed'
-                  : gitProgress.status === 'extracting'
-                    ? 'Installing git...'
-                    : `Git ${gitProgress.percentage.toFixed(0)}%`}
+                ? 'Git install failed'
+                : gitProgress.status === 'extracting'
+                ? 'Installing git...'
+                : `Git ${gitProgress.percentage.toFixed(0)}%`}
             </span>
           </div>
         )}
@@ -155,14 +180,35 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
 
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5">
+        {/* App Log Mode: Auto-scroll toggle pill */}
+        {activeTab === 'app_log' && onToggleAutoScroll && (
+          <button
+            type="button"
+            onClick={onToggleAutoScroll}
+            className={`h-6.5 px-2 rounded-sm border text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+              autoScroll
+                ? 'bg-base-0 text-gitlab-teal border-border font-semibold'
+                : 'bg-base-0/80 text-text-muted hover:text-text-primary hover:bg-base-2 border border-border'
+            }`}
+            title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
+          >
+            {autoScroll ? (
+              <Pause className="w-3 h-3 text-gitlab-teal" />
+            ) : (
+              <Play className="w-3 h-3 text-text-muted" />
+            )}
+            <span>{autoScroll ? 'Auto-scroll' : 'Paused'}</span>
+          </button>
+        )}
+
         {/* Search input / toggle */}
         {isSearchOpen ? (
-          <div className="flex items-center gap-1.5 bg-base-0 border border-border rounded-sm px-2 py-1 animate-in fade-in duration-100 h-6.5">
+          <div className="h-6.5 flex items-center gap-1.5 bg-base-0 border border-border rounded-sm px-2 animate-in fade-in duration-100 shadow-2xs">
             <Search className="w-3 h-3 text-text-muted flex-shrink-0" />
             <input
               type="text"
               autoFocus
-              placeholder="Find in terminal..."
+              placeholder={activeTab === 'shell' ? 'Find in terminal...' : 'Filter logs...'}
               value={searchQuery}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
@@ -183,47 +229,32 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1"
-            title="Search terminal (Ctrl+F)"
+            className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            title="Search (Ctrl+F)"
           >
             <Search className="w-3 h-3" />
             <span className="text-[11px] hidden sm:inline">Find</span>
           </button>
         )}
 
-        {/* View Logs Modal Button */}
-        <button
-          type="button"
-          onClick={() => {
-            if (activeLogRepoId) {
-              openLogViewer(activeLogRepoId);
-            }
-          }}
-          className="h-6.5 flex items-center gap-1.5 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer text-[11px]"
-          title="Browse persisted log history"
-        >
-          <History className="w-3 h-3 text-gitlab-teal" />
-          <span>View Logs</span>
-        </button>
-
         {/* Restart / Kill (Shell only) */}
         {activeTab === 'shell' && (
           <button
             type="button"
             onClick={onRestart}
-            className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1"
+            className="h-6.5 w-6.5 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
             title="Restart shell process"
           >
             <RotateCcw className="w-3 h-3 text-git-modified" />
           </button>
         )}
 
-        {/* Clear */}
+        {/* Clear Buffer */}
         <button
           type="button"
           onClick={onClear}
-          className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1"
-          title="Clear buffer"
+          className="h-6.5 w-6.5 text-text-muted hover:text-git-removed bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
+          title="Clear output"
         >
           <Trash2 className="w-3 h-3" />
         </button>
@@ -234,7 +265,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         <button
           type="button"
           onClick={toggleIsOpen}
-          className="h-6.5 px-1.5 text-text-muted hover:text-text-primary bg-base-0/60 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center"
+          className="h-6.5 w-6.5 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
           title="Collapse terminal"
         >
           <ChevronDown className="w-3.5 h-3.5" />
