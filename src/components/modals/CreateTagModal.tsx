@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Tag,
@@ -17,6 +17,8 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { Dropdown } from '../common/Dropdown';
+import { Checkbox } from '../common/Checkbox';
 
 export interface CreateTagModalProps {
   isOpen: boolean;
@@ -80,6 +82,25 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       }, 50);
     }
   }, [isOpen, targetCommitSha, targetBranchName, status, branches, activeRemote, remotes]);
+
+  // Transform branches for Custom Dropdown
+  const branchOptions = useMemo(() => {
+    return branches.map((b) => ({
+      value: b.name,
+      label: b.name,
+      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
+      badge: b.is_current ? 'current' : undefined,
+    }));
+  }, [branches]);
+
+  // Transform remotes for Custom Dropdown
+  const remoteOptions = useMemo(() => {
+    return remotes.map((r) => ({
+      value: r.name,
+      label: r.name,
+      description: r.url || r.push_url || undefined,
+    }));
+  }, [remotes]);
 
   if (!isOpen) return null;
 
@@ -193,7 +214,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3.5 max-h-[80vh] overflow-y-auto">
           {/* Tag Name Input */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-text-primary block">
@@ -209,7 +230,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                 if (error) setError(null);
               }}
               disabled={isSubmitting}
-              className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+              className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
               required
             />
           </div>
@@ -261,27 +282,23 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
               </button>
             </div>
 
-            {/* Branch Selector (when Target = Branch) */}
+            {/* Custom Branch Dropdown */}
             {targetType === 'branch' && (
-              <div className="pt-1">
-                <select
+              <div className="pt-0.5">
+                <Dropdown
+                  options={branchOptions}
                   value={selectedBranch}
-                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  onChange={(val) => setSelectedBranch(val)}
                   disabled={isSubmitting}
-                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition cursor-pointer shadow-2xs"
-                >
-                  {branches.map((b) => (
-                    <option key={b.name} value={b.name} className="bg-base-1 text-text-primary">
-                      {b.name} {b.is_current ? '(current branch)' : ''}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Select target branch..."
+                  size="md"
+                />
               </div>
             )}
 
-            {/* Custom Commit Input (when Target = Commit) */}
+            {/* Custom Commit Input */}
             {targetType === 'commit' && (
-              <div className="pt-1">
+              <div className="pt-0.5">
                 <input
                   type="text"
                   placeholder="e.g. 8f9b1c2 or full SHA"
@@ -295,19 +312,18 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
             )}
           </div>
 
-          {/* Tag Annotation Toggle & Message */}
-          <div className="space-y-2 p-3 bg-base-1 border border-border rounded-sm">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isAnnotated}
-                onChange={(e) => setIsAnnotated(e.target.checked)}
-                className="w-3.5 h-3.5 accent-commito-coral rounded-xs cursor-pointer"
-              />
-              <span className="text-xs font-semibold text-text-primary">
-                Annotated Tag (include release notes or message)
-              </span>
-            </label>
+          {/* Tag Annotation Section with Custom Checkbox */}
+          <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2">
+            <Checkbox
+              checked={isAnnotated}
+              onChange={(checked) => setIsAnnotated(checked)}
+              disabled={isSubmitting}
+              label={
+                <span className="text-xs font-semibold text-text-primary">
+                  Annotated Tag (include release notes or message)
+                </span>
+              }
+            />
 
             {isAnnotated && (
               <textarea
@@ -321,37 +337,35 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
             )}
           </div>
 
-          {/* Remote Push Options */}
+          {/* Remote Push Section with Custom Checkbox & Custom Dropdown */}
           <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2.5">
-            <label className="flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={pushImmediately}
-                  onChange={(e) => setPushImmediately(e.target.checked)}
-                  className="w-3.5 h-3.5 accent-commito-coral rounded-xs cursor-pointer"
-                />
-                <span className="text-xs font-semibold text-text-primary">
-                  Push tag to remote immediately
-                </span>
-              </div>
+            <div className="flex items-center justify-between">
+              <Checkbox
+                checked={pushImmediately}
+                onChange={(checked) => setPushImmediately(checked)}
+                disabled={isSubmitting}
+                label={
+                  <span className="text-xs font-semibold text-text-primary">
+                    Push tag to remote immediately
+                  </span>
+                }
+              />
               <Upload className="w-3.5 h-3.5 text-text-muted" />
-            </label>
+            </div>
 
             {pushImmediately && remotes.length > 1 && (
               <div className="pt-1 flex items-center gap-2">
-                <span className="text-[11px] text-text-muted font-medium">Target Remote:</span>
-                <select
-                  value={selectedRemote}
-                  onChange={(e) => setSelectedRemote(e.target.value)}
-                  className="h-7 px-2 bg-base-0 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none cursor-pointer"
-                >
-                  {remotes.map((r) => (
-                    <option key={r.name} value={r.name}>
-                      {r.name} ({r.url || r.push_url})
-                    </option>
-                  ))}
-                </select>
+                <span className="text-[11px] text-text-muted font-medium shrink-0">Target Remote:</span>
+                <div className="flex-1">
+                  <Dropdown
+                    options={remoteOptions}
+                    value={selectedRemote}
+                    onChange={(val) => setSelectedRemote(val)}
+                    disabled={isSubmitting}
+                    placeholder="Select remote..."
+                    size="sm"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -370,7 +384,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="h-7.5 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50"
+              className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               Cancel
             </button>

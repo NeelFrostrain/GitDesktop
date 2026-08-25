@@ -339,3 +339,33 @@ export interface VerifyResult {
     reason?: string;
   } | string;
 }
+
+/**
+ * Release asset link and download metadata.
+ */
+export interface ReleaseAsset {
+  name: string;
+  url: string;
+  size?: number;
+  direct_asset_url?: string;
+}
+
+/**
+ * Git repository Release with release notes, tag association, and publish status.
+ */
+export interface ReleaseInfo {
+  id?: string | number;
+  tag_name: string;
+  name: string;
+  description: string;
+  created_at: string;
+  released_at?: string;
+  author_name?: string;
+  author_avatar?: string;
+  commit_sha?: string;
+  is_draft?: boolean;
+  is_prerelease?: boolean;
+  upcoming_release?: boolean;
+  web_url?: string;
+  assets?: ReleaseAsset[];
+}

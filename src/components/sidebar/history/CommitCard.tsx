@@ -107,35 +107,35 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         </div>
       )}
 
-      {/* Card Header: Commit Message & SHA / Signature */}
+      {/* Card Header: Commit Message & Tag / SHA / Signature */}
       <div className="flex items-start justify-between gap-2 pointer-events-none">
         <h4 className="text-xs font-semibold truncate leading-tight flex-1 text-text-primary group-hover:text-commito-coral transition-colors">
           {commit.message}
         </h4>
         <div className="flex items-center gap-1 flex-shrink-0">
           {renderSigningBadge()}
-          <div className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
-            <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
-            <span>{commit.short_sha}</span>
-          </div>
+          {commitTags.length > 0 ? (
+            commitTags.map((tag) => (
+              <div
+                key={tag.name}
+                title={tag.message ? `Git Tag: ${tag.name} (${tag.message}) • Commit: ${commit.short_sha}` : `Git Tag: ${tag.name} • Commit: ${commit.short_sha}`}
+                className="flex items-center gap-1 px-1.5 py-0.2 bg-amber-500/15 border border-amber-500/35 rounded-xs text-[9.5px] font-mono font-bold text-amber-400 max-w-[110px]"
+              >
+                <Tag className="w-2.5 h-2.5 shrink-0 text-amber-400" />
+                <span className="truncate">{tag.name}</span>
+              </div>
+            ))
+          ) : (
+            <div
+              title={`Commit: ${commit.sha}`}
+              className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted"
+            >
+              <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
+              <span>{commit.short_sha}</span>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Git Tag Badges (if any) */}
-      {commitTags.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap pointer-events-none -mt-0.5">
-          {commitTags.map((tag) => (
-            <span
-              key={tag.name}
-              title={tag.message ? `Git Tag: ${tag.name} (${tag.message})` : `Git Tag: ${tag.name}`}
-              className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-amber-500/10 border border-amber-500/30 text-amber-400 font-mono text-[9px] font-bold rounded-xs"
-            >
-              <Tag className="w-2.5 h-2.5" />
-              <span className="truncate max-w-[120px]">{tag.name}</span>
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* Card Footer: Author + Relative Time + Additions/Deletions */}
       <div className="flex items-center justify-between text-[11px] text-text-muted pointer-events-none">

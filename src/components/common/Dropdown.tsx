@@ -88,35 +88,38 @@ export function Dropdown<T extends string = string>({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-
   const handleSelect = (val: T) => {
     onChange(val);
     setIsOpen(false);
   };
 
   const sizeClasses = {
-    sm: 'px-2.5 py-1 text-xs',
-    md: 'px-3 py-1.5 text-xs',
+    sm: 'h-7 px-2.5 text-xs',
+    md: 'h-8 px-2.5 text-xs',
   };
 
   return (
-    <div className={`relative inline-block ${className}`}>
+    <div className={`relative inline-block w-full ${className}`}>
       <button
         ref={triggerRef}
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral ${
+        className={`w-full flex items-center justify-between gap-2 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral shadow-2xs ${
           isOpen ? 'border-commito-coral ring-1 ring-commito-coral/30' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
         <div className="flex items-center gap-2 truncate min-w-0">
           {icon || selectedOption?.icon}
-          <span className="truncate font-medium">
+          <span className="truncate font-mono text-xs">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-text-muted transition-transform duration-150 flex-shrink-0 ${isOpen ? 'rotate-180 text-commito-coral' : ''}`} />
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-text-muted transition-transform duration-150 shrink-0 ${
+            isOpen ? 'rotate-180 text-commito-coral' : ''
+          }`}
+        />
       </button>
 
       {isOpen &&
@@ -126,9 +129,9 @@ export function Dropdown<T extends string = string>({
             style={{
               left: `${menuCoords.left}px`,
               top: `${menuCoords.top}px`,
-              minWidth: `${menuCoords.width}px`,
+              width: `${menuCoords.width}px`,
             }}
-            className="fixed z-[9999] bg-base-2 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto"
+            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto space-y-0.5"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
@@ -142,25 +145,27 @@ export function Dropdown<T extends string = string>({
                     key={opt.value}
                     type="button"
                     onClick={() => handleSelect(opt.value)}
-                    className={`w-full px-2.5 py-1.5 rounded-sm flex items-center justify-between gap-2.5 transition text-left cursor-pointer ${
+                    className={`w-full px-2.5 py-1.5 rounded-sm flex items-center justify-between gap-2 transition text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-base-3 text-text-primary font-bold'
-                        : 'hover:bg-base-3/60 text-text-secondary hover:text-text-primary'
+                        ? 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/30'
+                        : 'hover:bg-base-1 text-text-primary'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0">
+                    <div className="flex items-center gap-2 truncate min-w-0 font-mono text-xs">
                       {opt.icon}
                       <div className="truncate">
-                        <span className="block truncate font-medium">{opt.label}</span>
+                        <span className="block truncate">{opt.label}</span>
                         {opt.description && (
-                          <span className="block text-[10px] text-text-muted truncate">{opt.description}</span>
+                          <span className="block text-[10px] text-text-muted font-sans truncate">
+                            {opt.description}
+                          </span>
                         )}
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {opt.badge && (
-                        <span className="px-1.5 py-0.2 bg-base-3 border border-border rounded text-[10px] font-mono text-text-muted">
+                        <span className="px-1.5 py-0.2 bg-base-1 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
                           {opt.badge}
                         </span>
                       )}
@@ -175,5 +180,4 @@ export function Dropdown<T extends string = string>({
         )}
     </div>
   );
-
 }

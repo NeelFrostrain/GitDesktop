@@ -18,6 +18,7 @@ import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { CreateTagModal } from '../modals/CreateTagModal';
+import { Dropdown } from '../common/Dropdown';
 
 /**
  * Modern Dark Obsidian View for managing, creating, pushing, and inspecting Git release tags.
@@ -175,19 +176,14 @@ export const TagsView: React.FC = () => {
 
           {/* Remote Selector (when remotes available) */}
           {remotes.length > 1 && (
-            <div className="flex items-center gap-1 bg-base-1 border border-border rounded-sm h-8 px-2 text-xs">
-              <Globe className="w-3 h-3 text-text-muted shrink-0" />
-              <select
+            <div className="w-36">
+              <Dropdown
+                options={remotes.map((r) => ({ value: r.name, label: r.name, icon: <Globe className="w-3.5 h-3.5 text-text-muted" /> }))}
                 value={selectedRemote}
-                onChange={(e) => setSelectedRemote(e.target.value)}
-                className="bg-transparent text-xs font-mono text-text-primary focus:outline-none cursor-pointer"
-              >
-                {remotes.map((r) => (
-                  <option key={r.name} value={r.name} className="bg-base-1 text-text-primary">
-                    {r.name}
-                  </option>
-                ))}
-              </select>
+                onChange={(val) => setSelectedRemote(val)}
+                placeholder="Remote..."
+                size="md"
+              />
             </div>
           )}
 

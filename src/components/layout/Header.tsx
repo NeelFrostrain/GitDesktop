@@ -14,6 +14,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
+import { Dropdown } from '../common/Dropdown';
 
 /**
  * Top application header bar displaying quick creation tools (Tag, PR/MR, Worktree, Patch, Rebase, Reflog),
@@ -49,7 +50,7 @@ export const Header: React.FC = () => {
   const isHome = currentNavView === 'home';
 
   return (
-    <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
+    <header className="h-10 bg-base-0 border-b border-border px-2 flex items-center justify-between flex-shrink-0 select-none">
       {/* Left: Quick Create & Inspection Tools */}
       <div className="flex items-center gap-1.5">
         {!isHome && (
@@ -136,19 +137,18 @@ export const Header: React.FC = () => {
           <>
             {/* Remote Selector Dropdown (when 2+ remotes exist) */}
             {remotes.length > 1 && (
-              <div className="flex items-center gap-1 bg-base-1 border border-border rounded-sm h-7 px-2 text-xs text-text-secondary">
-                <Globe className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
-                <select
+              <div className="w-32">
+                <Dropdown
+                  options={remotes.map((r) => ({
+                    value: r.name,
+                    label: r.name,
+                    icon: <Globe className="w-3 h-3 text-gitlab-teal" />,
+                  }))}
                   value={activeRemote}
-                  onChange={(e) => setActiveRemote(e.target.value)}
-                  className="bg-transparent text-text-primary text-xs font-mono font-semibold focus:outline-none cursor-pointer"
-                >
-                  {remotes.map((r) => (
-                    <option key={r.name} value={r.name} className="bg-base-1 text-text-primary font-mono">
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setActiveRemote(val)}
+                  placeholder="Remote..."
+                  size="sm"
+                />
               </div>
             )}
 
