@@ -15,6 +15,7 @@ import {
   FolderGit2,
 } from 'lucide-react';
 import { useTerminalStore } from './store/terminalStore';
+import { useGitStore } from '../../store/useGitStore';
 import { listen } from '@tauri-apps/api/event';
 import type { MinGitProgress } from '../git-runtime/useGitRuntime';
 
@@ -47,6 +48,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
 }) => {
   const {
     toggleIsOpen,
+    openLogViewer,
     searchQuery,
     setSearchQuery,
     isSearchOpen,
@@ -248,6 +250,20 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             <RotateCcw className="w-3 h-3 text-git-modified" />
           </button>
         )}
+
+        {/* Open Full Logs Modal Button */}
+        <button
+          type="button"
+          onClick={() => {
+            const repoPath = useGitStore.getState().activeRepoPath || 'global';
+            openLogViewer(repoPath);
+          }}
+          className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-[11px]"
+          title="Open full log history viewer"
+        >
+          <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
+          <span>Logs</span>
+        </button>
 
         {/* Clear Buffer */}
         <button

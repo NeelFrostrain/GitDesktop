@@ -158,10 +158,10 @@ export const TerminalPanel: React.FC = () => {
             setTimeout(fitTerminal, 50);
           }}
           title="Drag to resize terminal • Double-click to reset (260px)"
-          className={`absolute -top-1 left-0 w-full h-2 cursor-row-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/50'
+          className={`absolute -top-1 left-0 w-full h-1 cursor-row-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/50'
             }`}
         >
-          <div className="w-12 h-1 rounded-full bg-border group-hover/terminal:bg-commito-coral/80 transition-colors" />
+          {/* <div className="w-12 h-1 rounded-full bg-border group-hover/terminal:bg-commito-coral/80 transition-colors" /> */}
         </div>
 
         {/* Header bar with Shell / App Log tab selector */}
@@ -192,9 +192,8 @@ export const TerminalPanel: React.FC = () => {
         <div className="relative flex-1 min-h-0 w-full overflow-hidden bg-base-0">
           {/* 1. Shell View (xterm.js PTY) */}
           <div
-            className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${
-              activeTab === 'shell' ? 'flex flex-col' : 'hidden'
-            }`}
+            className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${activeTab === 'shell' ? 'flex flex-col' : 'hidden'
+              }`}
           >
             <div
               ref={terminalContainerRef}
@@ -222,9 +221,8 @@ export const TerminalPanel: React.FC = () => {
 
           {/* 2. App Log View (Colorized live streaming logger) */}
           <div
-            className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${
-              activeTab === 'app_log' ? 'flex' : 'hidden'
-            }`}
+            className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${activeTab === 'app_log' ? 'flex' : 'hidden'
+              }`}
           >
             {/* Log Stream Output */}
             <div

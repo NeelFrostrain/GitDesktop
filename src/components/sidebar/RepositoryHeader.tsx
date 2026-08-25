@@ -61,23 +61,21 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('changes')}
-            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-colors duration-75 cursor-pointer ${
-              activeTab === 'changes'
-                ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
-                : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
-            }`}
+            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-colors duration-75 cursor-pointer ${activeTab === 'changes'
+              ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
+              : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
+              }`}
           >
             <span className="truncate">Changes</span>
             <span
-              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[9.5px] font-mono font-bold leading-none transition-colors duration-75 flex-shrink-0 ${
-                fileCount > 0
-                  ? activeTab === 'changes'
-                    ? 'bg-commito-coral text-white shadow-xs shadow-commito-coral/30'
-                    : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                  : activeTab === 'changes'
-                    ? 'bg-base-3 text-text-muted'
-                    : 'bg-base-2 text-text-faint'
-              }`}
+              className={`inline-flex items-center justify-center min-w-4 h-4 rounded-sm text-[9.5px] font-mono font-bold leading-none transition-colors duration-75 shrink-0 ${fileCount > 0
+                ? activeTab === 'changes'
+                  ? 'bg-commito-coral text-white shadow-xs shadow-commito-coral/30'
+                  : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
+                : activeTab === 'changes'
+                  ? 'bg-base-3 text-text-muted'
+                  : 'bg-base-2 text-text-faint'
+                }`}
             >
               {fileCount}
             </span>
@@ -86,11 +84,10 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-colors duration-75 cursor-pointer ${
-              activeTab === 'history'
-                ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
-                : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
-            }`}
+            className={`flex-1 min-w-0 h-full px-1.5 text-xs rounded-sm flex items-center justify-center gap-1 transition-colors duration-75 cursor-pointer ${activeTab === 'history'
+              ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/60'
+              : 'text-text-muted hover:text-text hover:bg-base-2/40 border border-transparent font-medium'
+              }`}
           >
             <span className="truncate">History</span>
           </button>
