@@ -3,20 +3,13 @@ import {
   GitPullRequest,
   AlertCircle,
   X,
-  RotateCcw,
-  History,
-  FileCode,
   Settings,
-  GitCommit,
   RefreshCw,
   Globe,
-  ShieldCheck,
   Terminal,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { useAccountServicesStore } from '../../features/account-services';
 import { useRemoteStore } from '../../store/remoteStore';
-import { useSigningStore } from '../../store/signingStore';
 import { useTerminalStore } from '../../features/terminal';
 import { useSettingsStore } from '../../features/settings';
 import { SmartGitActionButton } from './SmartGitActionButton';
@@ -24,8 +17,8 @@ import { BranchDropdown } from './BranchDropdown';
 import { useRepositorySync } from '../../hooks/useRepositorySync';
 
 /**
- * Top application header bar displaying quick tool shortcuts (Rebase, Cherry-pick, Reflog, Patch,
- * Terminal, Settings), active sync status button, remote selector, and branch switcher.
+ * Top application header bar displaying essential tools (Refresh, Terminal, Settings),
+ * active sync status button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
   const {
@@ -34,10 +27,6 @@ export const Header: React.FC = () => {
     setError,
     currentNavView,
     setIsMergeRequestModalOpen,
-    setIsRebaseModalOpen,
-    setIsCherryPickModalOpen,
-    setIsReflogModalOpen,
-    setIsPatchModalOpen,
   } = useGitStore();
 
   const {
@@ -47,22 +36,20 @@ export const Header: React.FC = () => {
     loadRemotes,
   } = useRemoteStore();
 
-  const { setIsSigningSettingsOpen, config, loadConfig } = useSigningStore();
   const isTerminalOpen = useTerminalStore((s) => s.isOpen);
   const { refreshSync, isFetching } = useRepositorySync();
 
   useEffect(() => {
     if (activeRepoPath) {
       loadRemotes(activeRepoPath);
-      loadConfig(activeRepoPath);
     }
-  }, [activeRepoPath, loadRemotes, loadConfig]);
+  }, [activeRepoPath, loadRemotes]);
 
   const isHome = currentNavView === 'home';
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-4 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Action Tools Group */}
+      {/* Left: Essential Tools Group */}
       <div className="flex items-center gap-1.5">
         {/* Fetch/Refresh Status */}
         <button
@@ -75,85 +62,25 @@ export const Header: React.FC = () => {
         </button>
 
         {!isHome && (
-          <>
-            {/* Remote Manager */}
-            <button
-              onClick={() => useAccountServicesStore.getState().openModalWithTab('remotes')}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Manage Git Remotes"
-            >
-              <Globe className="w-3.5 h-3.5 text-gitlab-teal hover:text-gitlab-tealLight" />
-            </button>
-
-            {/* Commit Signing Settings */}
-            <button
-              onClick={() => setIsSigningSettingsOpen(true)}
-              className={`p-1 rounded-sm border border-border transition cursor-pointer ${
-                config?.enabled
-                  ? 'text-git-added bg-git-added-bg border-git-added/40 hover:bg-git-added-bg/80'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2'
-              }`}
-              title={config?.enabled ? 'Commit Signing Enabled (GPG/SSH)' : 'Configure Commit Signing'}
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Rebase Tool */}
-            <button
-              onClick={() => setIsRebaseModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Interactive Rebase"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-text-muted hover:text-commito-coral" />
-            </button>
-
-            {/* Cherry Pick Tool */}
-            <button
-              onClick={() => setIsCherryPickModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Cherry-Pick Commits"
-            >
-              <GitCommit className="w-3.5 h-3.5 text-git-added" />
-            </button>
-
-            {/* Reflog Tool */}
-            <button
-              onClick={() => setIsReflogModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Reflog Safety Net"
-            >
-              <History className="w-3.5 h-3.5 text-gitlab-teal" />
-            </button>
-
-            {/* Patch Studio */}
-            <button
-              onClick={() => setIsPatchModalOpen(true)}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-              title="Export / Apply Patch"
-            >
-              <FileCode className="w-3.5 h-3.5 text-git-modified" />
-            </button>
-
-            {/* Repository Terminal */}
-            <button
-              onClick={() => useTerminalStore.getState().toggleIsOpen()}
-              className={`p-1 rounded-sm border transition cursor-pointer ${
-                isTerminalOpen
-                  ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2 border-border'
-              }`}
-              title="Toggle Repository Terminal (Ctrl+`)"
-            >
-              <Terminal className="w-3.5 h-3.5" />
-            </button>
-          </>
+          /* Repository Terminal */
+          <button
+            onClick={() => useTerminalStore.getState().toggleIsOpen()}
+            className={`p-1 rounded-sm border transition cursor-pointer ${
+              isTerminalOpen
+                ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
+                : 'text-text-muted hover:text-text-primary hover:bg-base-2 border-border'
+            }`}
+            title="Toggle Repository Terminal (Ctrl+`)"
+          >
+            <Terminal className="w-3.5 h-3.5" />
+          </button>
         )}
 
-        {/* Settings & Design Tokens */}
+        {/* Settings */}
         <button
           onClick={() => useSettingsStore.getState().openSettings()}
           className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer"
-          title="Open Settings & CSS Design Tokens (Ctrl+,)"
+          title="Open Settings (Ctrl+,)"
         >
           <Settings className="w-3.5 h-3.5 text-text-secondary" />
         </button>

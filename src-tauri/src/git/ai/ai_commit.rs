@@ -52,103 +52,112 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
     let mut diff_opts = DiffOptions::new();
     diff_opts.context_lines(2);
     diff_opts.ignore_whitespace_change(true);
+    diff_opts.include_untracked(true);
+    diff_opts.show_untracked_content(true);
+    diff_opts.recurse_untracked_dirs(true);
 
     let head_tree = repo.head().ok().and_then(|h| h.peel_to_tree().ok());
-
     let mut patch_text = String::new();
 
     if staged_only {
         let index = repo
             .index()
             .map_err(|e| AppError::Git(format!("Failed to get index: {}", e)))?;
-        let diff = repo
-            .diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut diff_opts))
-            .map_err(|e| AppError::Git(format!("Failed to compute staged diff: {}", e)))?;
-
-        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
-            if patch_text.len() < MAX_DIFF_CHARS {
-                let origin = line.origin();
-                if origin == '+' || origin == '-' || origin == ' ' {
-                    patch_text.push(origin);
+        if let Ok(diff) = repo.diff_tree_to_index(head_tree.as_ref(), Some(&index), Some(&mut diff_opts)) {
+            let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+                if patch_text.len() < MAX_DIFF_CHARS {
+                    let origin = line.origin();
+                    if origin == '+' || origin == '-' || origin == ' ' {
+                        patch_text.push(origin);
+                    }
+                    if let Ok(content) = std::str::from_utf8(line.content()) {
+                        patch_text.push_str(content);
+                    }
                 }
-                if let Ok(content) = std::str::from_utf8(line.content()) {
-                    patch_text.push_str(content);
-                }
-            }
-            true
-        });
+                true
+            });
+        }
     } else {
-        // Combined unstaged + staged
+        // 1. Try diff_tree_to_workdir_with_index
         let diff = repo
             .diff_tree_to_workdir_with_index(head_tree.as_ref(), Some(&mut diff_opts))
-            .map_err(|e| AppError::Git(format!("Failed to compute working tree diff: {}", e)))?;
+            .ok()
+            .or_else(|| repo.diff_tree_to_workdir(head_tree.as_ref(), Some(&mut diff_opts)).ok())
+            .or_else(|| repo.diff_index_to_workdir(None, Some(&mut diff_opts)).ok());
 
-        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
-            if patch_text.len() < MAX_DIFF_CHARS {
-                let origin = line.origin();
-                if origin == '+' || origin == '-' || origin == ' ' {
-                    patch_text.push(origin);
-                }
-                if let Ok(content) = std::str::from_utf8(line.content()) {
-                    patch_text.push_str(content);
-                }
-            }
-            true
-        });
-    }
-
-    // Also include untracked new files if any
-    let statuses = repo
-        .statuses(None)
-        .map_err(|e| AppError::Git(format!("Failed to get statuses: {}", e)))?;
-    for entry in statuses.iter() {
-        let s = entry.status();
-        if s.contains(git2::Status::WT_NEW) {
-            if let Some(path) = entry.path() {
-                let full_path = Path::new(repo_path).join(path);
-                if full_path.is_file() {
-                    if let Ok(content) = fs::read_to_string(&full_path) {
-                        let sample: String =
-                            content.lines().take(40).collect::<Vec<_>>().join("\n");
-                        patch_text.push_str(&format!(
-                            "\n--- /dev/null\n+++ b/{}\n@@ -0,0 +1,{} @@\n{}\n",
-                            path,
-                            content.lines().count(),
-                            sample
-                        ));
+        if let Some(d) = diff {
+            let _ = d.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+                if patch_text.len() < MAX_DIFF_CHARS {
+                    let origin = line.origin();
+                    if origin == '+' || origin == '-' || origin == ' ' {
+                        patch_text.push(origin);
+                    }
+                    if let Ok(content) = std::str::from_utf8(line.content()) {
+                        patch_text.push_str(content);
                     }
                 }
-            }
-        }
-        if patch_text.len() >= MAX_DIFF_CHARS {
-            break;
+                true
+            });
         }
     }
 
-    // Fallback: If working tree has no uncommitted changes, analyze latest commit diff
-    if patch_text.trim().is_empty() {
-        if let Ok(head) = repo.head() {
-            if let Ok(commit) = head.peel_to_commit() {
-                if let Ok(tree) = commit.tree() {
-                    let parent_tree = commit.parent(0).ok().and_then(|p| p.tree().ok());
-                    if let Ok(diff) = repo.diff_tree_to_tree(
-                        parent_tree.as_ref(),
-                        Some(&tree),
-                        Some(&mut diff_opts),
-                    ) {
-                        let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
-                            if patch_text.len() < MAX_DIFF_CHARS {
-                                let origin = line.origin();
-                                if origin == '+' || origin == '-' || origin == ' ' {
-                                    patch_text.push(origin);
-                                }
-                                if let Ok(content) = std::str::from_utf8(line.content()) {
-                                    patch_text.push_str(content);
-                                }
+    // Also include untracked new files if not staged_only
+    if !staged_only {
+        if let Ok(statuses) = repo.statuses(None) {
+            for entry in statuses.iter() {
+                let s = entry.status();
+                if s.contains(git2::Status::WT_NEW) {
+                    if let Some(path) = entry.path() {
+                        let full_path = Path::new(repo_path).join(path);
+                        if full_path.is_file() {
+                            if let Ok(content) = fs::read_to_string(&full_path) {
+                                let sample: String =
+                                    content.lines().take(40).collect::<Vec<_>>().join("\n");
+                                patch_text.push_str(&format!(
+                                    "\n--- /dev/null\n+++ b/{}\n@@ -0,0 +1,{} @@\n{}\n",
+                                    path,
+                                    content.lines().count(),
+                                    sample
+                                ));
                             }
-                            true
-                        });
+                        }
                     }
+                }
+                if patch_text.len() >= MAX_DIFF_CHARS {
+                    break;
+                }
+            }
+        }
+    }
+
+    // CLI fallback if git2 returns empty text
+    if patch_text.trim().is_empty() {
+        let mut cmd = crate::git::command::silent_git_command();
+        cmd.current_dir(repo_path);
+        if staged_only {
+            cmd.args(["diff", "--cached", "-U2"]);
+        } else {
+            cmd.args(["diff", "HEAD", "-U2"]);
+        }
+        if let Ok(output) = cmd.output() {
+            if output.status.success() {
+                let out_str = String::from_utf8_lossy(&output.stdout);
+                if !out_str.trim().is_empty() {
+                    patch_text = out_str.chars().take(MAX_DIFF_CHARS).collect();
+                }
+            }
+        }
+    }
+
+    if patch_text.trim().is_empty() && !staged_only {
+        let mut cmd = crate::git::command::silent_git_command();
+        cmd.current_dir(repo_path);
+        cmd.args(["diff", "-U2"]);
+        if let Ok(output) = cmd.output() {
+            if output.status.success() {
+                let out_str = String::from_utf8_lossy(&output.stdout);
+                if !out_str.trim().is_empty() {
+                    patch_text = out_str.chars().take(MAX_DIFF_CHARS).collect();
                 }
             }
         }

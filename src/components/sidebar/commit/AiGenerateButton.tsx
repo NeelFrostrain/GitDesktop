@@ -16,8 +16,10 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
   onRequireApiKey,
 }) => {
   const [isGenerating, setIsGenerating] = useState(false);
-  const { activeRepoPath, stagedFiles } = useGitStore();
+  const { activeRepoPath, stagedFiles, status } = useGitStore();
   const { getEffectiveValue } = useSettingsStore();
+
+  const hasChanges = (status?.files && status.files.length > 0) || stagedFiles.length > 0;
 
   const getAnyAvailableKey = (): string | undefined => {
     const activeKey = getEffectiveValue('ai.active_api_key');
@@ -46,6 +48,11 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
 
   const handleButtonClick = async () => {
     if (!activeRepoPath) return;
+
+    if (!hasChanges) {
+      useLogStore.getState().addLog('info', 'Git', '[Commit-AI] No changed or staged files to analyze.');
+      return;
+    }
 
     const availableKey = getAnyAvailableKey();
     if (!availableKey) {
@@ -107,9 +114,9 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     <button
       type="button"
       onClick={handleButtonClick}
-      disabled={isGenerating}
-      title="Analyze changes with Commit-AI"
-      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-50"
+      disabled={isGenerating || !hasChanges}
+      title={hasChanges ? "Analyze changes with Commit-AI" : "No changes to analyze with Commit-AI"}
+      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isGenerating ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
