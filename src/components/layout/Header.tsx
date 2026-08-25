@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import {
   GitPullRequest,
   Tag,
+  Sparkles,
   FolderGit2,
   FileCode,
   RotateCcw,
@@ -17,7 +18,7 @@ import { BranchDropdown } from './BranchDropdown';
 import { Dropdown } from '../common/Dropdown';
 
 /**
- * Top application header bar displaying quick creation tools (Tag, PR/MR, Worktree, Patch, Rebase, Reflog),
+ * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Worktree, Patch, Rebase, Reflog),
  * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
@@ -28,6 +29,8 @@ export const Header: React.FC = () => {
     currentNavView,
     setIsMergeRequestModalOpen,
     setIsCreateTagModalOpen,
+    setIsCreateReleaseModalOpen,
+    setEditingRelease,
     setIsWorktreeModalOpen,
     setIsPatchModalOpen,
     setIsRebaseModalOpen,
@@ -55,6 +58,19 @@ export const Header: React.FC = () => {
       <div className="flex items-center gap-1.5">
         {!isHome && (
           <>
+            {/* Draft Release */}
+            <button
+              type="button"
+              onClick={() => {
+                setEditingRelease(null);
+                setIsCreateReleaseModalOpen(true);
+              }}
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              title="Draft Release..."
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+
             {/* Create Tag */}
             <button
               type="button"

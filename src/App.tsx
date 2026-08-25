@@ -41,6 +41,7 @@ const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m =>
 const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
 const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
 const CreateTagModal = lazy(() => import('./components/modals/CreateTagModal').then(m => ({ default: m.CreateTagModal })));
+const CreateReleaseModal = lazy(() => import('./components/modals/CreateReleaseModal').then(m => ({ default: m.CreateReleaseModal })));
 const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
 const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
 const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
@@ -63,6 +64,10 @@ export const App: React.FC = () => {
     currentNavView,
     isCreateTagModalOpen,
     setIsCreateTagModalOpen,
+    isCreateReleaseModalOpen,
+    setIsCreateReleaseModalOpen,
+    editingRelease,
+    setEditingRelease,
   } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
@@ -298,6 +303,14 @@ export const App: React.FC = () => {
           <GitConfigModal />
           <RewriteHistoryModal />
           <CreateTagModal isOpen={isCreateTagModalOpen} onClose={() => setIsCreateTagModalOpen(false)} />
+          <CreateReleaseModal
+            isOpen={isCreateReleaseModalOpen}
+            initialRelease={editingRelease}
+            onClose={() => {
+              setIsCreateReleaseModalOpen(false);
+              setEditingRelease(null);
+            }}
+          />
           <GitUserConfigModal />
           <LogModal />
           <GitLabSignInModal />
