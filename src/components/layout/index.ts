@@ -3,3 +3,4 @@ export { Header } from './Header';
 export { SmartGitActionButton } from './SmartGitActionButton';
 export { BranchDropdown } from './BranchDropdown';
 export { RepoDropdown } from './RepoDropdown';
+export { RepoDrawer } from './RepoDrawer';
