@@ -24,7 +24,7 @@
 
 ## What It Does
 
-**GitDesktop** is a lightning-fast, modern Git client engineered for speed, clean aesthetics, and complex developer workflows. Powered by a high-throughput **Rust backend** (`libgit2` + native Git subsystem) and a reactive **React 19 / Vite** UI, it eliminates Git bloat, manages multiple accounts, visualizes commit history graphs, performs interactive rebasing, tracks linked worktrees, and supercharges your commit workflow with **Commit-AI** (powered by Groq LLMs).
+**GitDesktop** is a lightning-fast, modern Git client engineered for speed, clean aesthetics, and complex developer workflows. Powered by a high-throughput **Rust backend** (`libgit2` + native Git subsystem) and a reactive **React 19 / Vite** UI, it eliminates Git bloat, manages multiple accounts, visualizes commit history graphs, performs interactive rebasing, tracks linked worktrees, and supercharges your commit workflow with **Commit-AI** (powered by Google Gemini Flash Lite models).
 
 Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential security, hardware-accelerated terminals, and zero-latency file watching.
 
@@ -34,13 +34,13 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 ## Core Features
 
-### Commit-AI Engine (Groq LLMs)
+### Commit-AI Engine (Google Gemini Flash Lite)
 
 - **Context-Aware Code Diff Analysis** — Reads staged and unstaged working tree diffs (and recent commits) to generate conventional, precise commit messages.
 - **3 Curated Title Perspectives** — Delivers 3 distinct commit summaries with conventional commit types (`feat`, `fix`, `refactor`, `chore`, `perf`).
 - **Multi-Format Technical Reports** — Choose between **Full Technical Report**, **Concise Bullet Points**, or **Title-Only** directly in the commit prompt.
-- **Multi-Key API Rotation Pool** — Configure multiple Groq API keys with automated failover on rate limits (HTTP 429) or token expiration.
-- **Model Fallback Engine** — Defaults to high-throughput models (`openai/gpt-oss-120b`, `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`) with automatic fallback to prevent workflow disruption.
+- **Multi-Key API Rotation Pool** — Configure multiple Google Gemini API keys with automated failover on rate limits (HTTP 429) or token expiration.
+- **Model Fallback Engine** — Defaults to high-throughput models (`gemini-2.5-flash-lite`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.0-flash-lite`, `gemini-2.0-flash`) with automatic fallback to prevent workflow disruption.
 - **One-Click Apply** — Seamless in-sidebar commit flow with direct title selection and instant form population.
 
 ### Repository & Workspace Management

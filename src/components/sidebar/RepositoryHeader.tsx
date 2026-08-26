@@ -29,7 +29,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-[100px] min-w-0 h-8 px-2 rounded-sm border border-border/60 bg-base-1/90 hover:bg-base-2/90 hover:border-border-strong/80 flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 shadow-xs group outline-none text-left flex-shrink-0"
+            className="w-[80px] min-w-0 h-8 px-2 rounded-sm border border-border/60 bg-base-1/90 hover:bg-base-2/90 hover:border-border-strong/80 flex items-center justify-between gap-1 cursor-pointer transition-all duration-150 shadow-xs group outline-none text-left flex-shrink-0"
             title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}`}
           >
             <div className="flex items-center gap-1.5 min-w-0 flex-1">

@@ -179,16 +179,11 @@ export const CommitPanel: React.FC = () => {
     const key = newApiKeyInput.trim();
     if (!key || !activeRepoPath) return;
 
-    if (!key.startsWith('gsk_')) {
-      setInlineError('Groq API keys start with "gsk_". Get your free key at console.groq.com/keys.');
-      return;
-    }
-
     setIsInlineGenerating(true);
     setInlineError(null);
     try {
       await setSettingValue('ai.active_api_key', key);
-      const existing = getEffectiveValue('ai.groq_api_keys');
+      const existing = getEffectiveValue('ai.gemini_api_keys') || getEffectiveValue('ai.google_api_keys');
       let list: string[] = [];
       if (Array.isArray(existing)) {
         list = [...existing];
@@ -202,7 +197,7 @@ export const CommitPanel: React.FC = () => {
       }
       if (!list.includes(key)) {
         list.push(key);
-        await setSettingValue('ai.groq_api_keys', list);
+        await setSettingValue('ai.gemini_api_keys', list);
       }
 
       if (stagedFiles.length > 0) {
@@ -274,7 +269,7 @@ export const CommitPanel: React.FC = () => {
               {isApiKeyPrompt ? (
                 <>
                   <Key className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-                  <span className="truncate">Groq API Key Required</span>
+                  <span className="truncate">Google Gemini API Key Required</span>
                 </>
               ) : isSelectingAi ? (
                 <>
@@ -315,7 +310,7 @@ export const CommitPanel: React.FC = () => {
           {isApiKeyPrompt ? (
             <div className="flex flex-col gap-2.5 animate-in fade-in duration-100 font-sans text-xs">
               <p className="text-[11px] text-text-muted leading-relaxed">
-                Enter your free Groq API key to generate commit titles and technical reports with Commit-AI.
+                Enter your free Google Gemini API key to generate commit titles and technical reports with Commit-AI.
               </p>
 
               {/* Guide Box */}
@@ -327,16 +322,16 @@ export const CommitPanel: React.FC = () => {
                   </span>
                   <button
                     type="button"
-                    onClick={() => openUrl('https://console.groq.com/keys')}
+                    onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
                     className="text-commito-coral hover:underline flex items-center gap-1 cursor-pointer font-medium"
                   >
-                    <span>console.groq.com/keys</span>
+                    <span>aistudio.google.com/app/apikey</span>
                     <ExternalLink className="w-2.5 h-2.5 flex-shrink-0" />
                   </button>
                 </div>
                 <ol className="list-decimal list-inside text-text-muted text-[10.5px] space-y-0.5 pl-0.5">
-                  <li>Sign in to Groq Console (free &amp; instant)</li>
-                  <li>Click &quot;Create API Key&quot; &amp; copy your <code className="font-mono text-commito-coral">gsk_...</code></li>
+                  <li>Sign in to Google AI Studio (free &amp; instant)</li>
+                  <li>Click &quot;Create API Key&quot; &amp; copy your <code className="font-mono text-commito-coral">AIza...</code></li>
                   <li>Paste below and click Save &amp; Generate</li>
                 </ol>
               </div>
@@ -353,7 +348,7 @@ export const CommitPanel: React.FC = () => {
                 <input
                   ref={keyInputRef}
                   type="text"
-                  placeholder="gsk_..."
+                  placeholder="AIza..."
                   value={newApiKeyInput}
                   onChange={(e) => {
                     setNewApiKeyInput(e.target.value);

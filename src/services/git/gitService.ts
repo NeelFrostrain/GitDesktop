@@ -403,7 +403,7 @@ export class GitService {
   // ── AI Commit ────────────────────────────────────────────────────────────────
 
   /**
-   * Analyzes git diff changes and generates commit message titles and report using Commit-AI / Groq API.
+   * Analyzes git diff changes and generates commit message titles and report using Commit-AI / Google Gemini API.
    */
   static async generateAiCommitMessage(
     repoPath: string,

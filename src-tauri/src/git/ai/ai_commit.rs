@@ -4,8 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
-const GROQ_API_URL: &str = "https://api.groq.com/openai/v1/chat/completions";
-pub const DEFAULT_MODEL: &str = "openai/gpt-oss-120b";
+const GEMINI_API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta/models";
+pub const DEFAULT_MODEL: &str = "gemini-2.5-flash-lite";
 const MAX_DIFF_CHARS: usize = 28000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -17,31 +17,49 @@ pub struct AiCommitSuggestion {
 }
 
 #[derive(Serialize)]
-struct ChatMessage {
-  role: String,
-  content: String,
+struct GeminiPart {
+  text: String,
 }
 
 #[derive(Serialize)]
-struct ChatCompletionRequest {
-  model: String,
-  messages: Vec<ChatMessage>,
+struct GeminiContent {
+  role: String,
+  parts: Vec<GeminiPart>,
+}
+
+#[derive(Serialize)]
+struct GeminiGenerationConfig {
   temperature: f32,
 }
 
-#[derive(Deserialize)]
-struct ChatResponse {
-  choices: Vec<ChatChoice>,
+#[derive(Serialize)]
+struct GeminiRequest {
+  contents: Vec<GeminiContent>,
+  #[serde(rename = "generationConfig")]
+  generation_config: GeminiGenerationConfig,
 }
 
 #[derive(Deserialize)]
-struct ChatChoice {
-  message: ResponseMessage,
+struct GeminiResponsePart {
+  #[serde(default)]
+  text: String,
 }
 
 #[derive(Deserialize)]
-struct ResponseMessage {
-  content: String,
+struct GeminiResponseContent {
+  #[serde(default)]
+  parts: Vec<GeminiResponsePart>,
+}
+
+#[derive(Deserialize)]
+struct GeminiCandidate {
+  content: Option<GeminiResponseContent>,
+}
+
+#[derive(Deserialize)]
+struct GeminiResponse {
+  #[serde(default)]
+  candidates: Vec<GeminiCandidate>,
 }
 
 /// Helper to get diff text for AI analysis
@@ -161,8 +179,8 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
   Ok(patch_text)
 }
 
-/// Collect all configured Groq API keys in priority order
-pub fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> Vec<String> {
+/// Collect all configured Google Gemini API keys in priority order
+pub fn collect_all_gemini_api_keys(repo_path: &str, custom_key: Option<&str>) -> Vec<String> {
   let mut keys: Vec<String> = Vec::new();
 
   // 1. Explicit custom key passed
@@ -176,17 +194,19 @@ pub fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> V
   let app_settings = crate::domain::settings::store::get_app_settings();
 
   // 2. Active API key from app settings
-  if let Some(val) = app_settings.get("ai.active_api_key") {
-    if let Some(s) = val.as_str() {
-      let trimmed = s.trim();
-      if !trimmed.is_empty() && !keys.contains(&trimmed.to_string()) {
-        keys.push(trimmed.to_string());
+  for setting_name in &["ai.gemini_api_key", "ai.active_api_key", "ai.google_api_key"] {
+    if let Some(val) = app_settings.get(*setting_name) {
+      if let Some(s) = val.as_str() {
+        let trimmed = s.trim();
+        if !trimmed.is_empty() && !keys.contains(&trimmed.to_string()) {
+          keys.push(trimmed.to_string());
+        }
       }
     }
   }
 
   // 3. Multi-keys array from app settings
-  for setting_name in &["ai.groq_api_keys", "ai.gemini_api_keys"] {
+  for setting_name in &["ai.gemini_api_keys", "ai.google_api_keys", "ai.groq_api_keys"] {
     if let Some(val) = app_settings.get(*setting_name) {
       if let Some(arr) = val.as_array() {
         for item in arr {
@@ -214,7 +234,7 @@ pub fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> V
         let trimmed = line.trim();
         if let Some((k, v)) = trimmed.split_once('=') {
           let var_name = k.trim();
-          if var_name == "GROQ_API_KEY" || var_name == "GEMINI_API_KEY" {
+          if var_name == "GEMINI_API_KEY" || var_name == "GOOGLE_API_KEY" || var_name == "GROQ_API_KEY" {
             let val = v.trim().trim_matches('"').trim_matches('\'');
             if !val.is_empty() && !keys.contains(&val.to_string()) {
               keys.push(val.to_string());
@@ -226,7 +246,7 @@ pub fn collect_all_groq_api_keys(repo_path: &str, custom_key: Option<&str>) -> V
   }
 
   // 5. Process environment variables
-  for env_var in &["GROQ_API_KEY", "GEMINI_API_KEY"] {
+  for env_var in &["GEMINI_API_KEY", "GOOGLE_API_KEY", "GROQ_API_KEY"] {
     if let Ok(k) = std::env::var(env_var) {
       let trimmed = k.trim();
       if !trimmed.is_empty() && !keys.contains(&trimmed.to_string()) {
@@ -350,18 +370,18 @@ pub fn parse_multi_response(content: &str) -> (Vec<String>, String) {
   (titles, report)
 }
 
-/// Execute AI Commit Generation via Groq API with multi-key rotation and automatic model fallback
+/// Execute AI Commit Generation via Google Gemini API with multi-key rotation and automatic model fallback
 pub async fn generate_ai_commit_message(
   repo_path: &str,
   staged_only: bool,
   custom_api_key: Option<String>,
   model_override: Option<String>,
 ) -> Result<AiCommitSuggestion, AppError> {
-  let api_keys = collect_all_groq_api_keys(repo_path, custom_api_key.as_deref());
+  let api_keys = collect_all_gemini_api_keys(repo_path, custom_api_key.as_deref());
 
   if api_keys.is_empty() {
     return Err(AppError::Git(
-      "GROQ_API_KEY not found. Please add your free Groq API key in Settings -> AI & Commit-AI."
+      "GEMINI_API_KEY not found. Please add your free Google Gemini API key in Settings -> AI & Commit-AI."
         .to_string(),
     ));
   }
@@ -378,7 +398,7 @@ pub async fn generate_ai_commit_message(
     .or_else(|| std::env::var("COMMIT_AI_MODEL").ok())
     .unwrap_or_else(|| DEFAULT_MODEL.to_string());
 
-  let initial_model = if raw_model.trim().is_empty() || raw_model.contains("gemini") {
+  let initial_model = if raw_model.trim().is_empty() || raw_model.contains("groq") || raw_model.contains("llama") {
     DEFAULT_MODEL.to_string()
   } else {
     raw_model
@@ -391,14 +411,17 @@ pub async fn generate_ai_commit_message(
     .build()
     .map_err(|e| AppError::Git(format!("Failed to build HTTP client: {}", e)))?;
 
-  // Verified active Groq & Open-Source production models
+  // Candidate Google Gemini models with automatic fallback
   let mut candidate_models = vec![initial_model.clone()];
   for fallback in [
-    "llama-3.1-8b-instant",
-    "llama-3.3-70b-versatile",
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "llama-3.1-70b-versatile",
+    "gemini-2.5-flash-lite",
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-flash-8b",
+    "gemini-1.5-pro",
   ] {
     if !candidate_models.contains(&fallback.to_string()) {
       candidate_models.push(fallback.to_string());
@@ -409,18 +432,22 @@ pub async fn generate_ai_commit_message(
 
   for (index, key) in api_keys.iter().enumerate() {
     for model in &candidate_models {
-      let request_body = ChatCompletionRequest {
-        model: model.clone(),
-        messages: vec![ChatMessage {
+      let request_body = GeminiRequest {
+        contents: vec![GeminiContent {
           role: "user".to_string(),
-          content: prompt.clone(),
+          parts: vec![GeminiPart {
+            text: prompt.clone(),
+          }],
         }],
-        temperature: 0.7,
+        generation_config: GeminiGenerationConfig {
+          temperature: 0.7,
+        },
       };
 
+      let url = format!("{}/{}:generateContent?key={}", GEMINI_API_BASE, model, key);
+
       let response = client
-        .post(GROQ_API_URL)
-        .bearer_auth(key)
+        .post(&url)
         .json(&request_body)
         .send()
         .await;
@@ -429,41 +456,50 @@ pub async fn generate_ai_commit_message(
         Ok(resp) => {
           let status = resp.status();
           if status.is_success() {
-            if let Ok(chat_res) = resp.json::<ChatResponse>().await {
-              if let Some(first_choice) = chat_res.choices.into_iter().next() {
-                let (title_options, report) = parse_multi_response(&first_choice.message.content);
-                let summary = title_options
-                  .first()
-                  .cloned()
-                  .unwrap_or_else(|| "chore: update".to_string());
+            if let Ok(gemini_res) = resp.json::<GeminiResponse>().await {
+              if let Some(candidate) = gemini_res.candidates.into_iter().next() {
+                if let Some(content) = candidate.content {
+                  let text_parts: Vec<String> = content.parts.into_iter().map(|p| p.text).collect();
+                  let full_text = text_parts.join("");
+                  if !full_text.trim().is_empty() {
+                    let (title_options, report) = parse_multi_response(&full_text);
+                    let summary = title_options
+                      .first()
+                      .cloned()
+                      .unwrap_or_else(|| "chore: update".to_string());
 
-                return Ok(AiCommitSuggestion {
-                  title_options,
-                  summary,
-                  report,
-                  model_used: model.clone(),
-                });
+                    return Ok(AiCommitSuggestion {
+                      title_options,
+                      summary,
+                      report,
+                      model_used: model.clone(),
+                    });
+                  }
+                }
               }
             }
           } else {
             let status_code = status.as_u16();
             let err_body = resp.text().await.unwrap_or_default();
             last_error = format!(
-              "Groq API key #{} with model `{}` returned {}: {}",
+              "Google Gemini key #{} with model `{}` returned {}: {}",
               index + 1,
               model,
               status,
               err_body
             );
 
-            // If key is invalid (401 Unauthorized), stop testing other models with this invalid key
-            if status_code == 401 {
+            // If key is invalid (400/401/403 Invalid API Key), don't keep hammering other models with this key
+            if status_code == 400 && (err_body.contains("API_KEY_INVALID") || err_body.contains("API key not valid")) {
+              break;
+            }
+            if status_code == 401 || status_code == 403 {
               break;
             }
           }
         }
         Err(e) => {
-          last_error = format!("Network error with Groq key #{}: {}", index + 1, e);
+          last_error = format!("Network error with Google Gemini key #{}: {}", index + 1, e);
           break;
         }
       }
@@ -471,7 +507,7 @@ pub async fn generate_ai_commit_message(
   }
 
   Err(AppError::Git(format!(
-    "All configured Groq API keys ({}) failed. Last error: {}",
+    "All configured Google Gemini API keys ({}) failed. Last error: {}",
     api_keys.len(),
     last_error
   )))

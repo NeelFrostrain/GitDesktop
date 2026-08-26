@@ -101,15 +101,17 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       const msg = appErr.message || '';
 
       if (
+        msg.toLowerCase().includes('gemini_api_key') ||
+        msg.toLowerCase().includes('google_api_key') ||
         msg.toLowerCase().includes('groq_api_key') ||
         msg.toLowerCase().includes('api key') ||
-        msg.toLowerCase().includes('all configured groq api keys')
+        msg.toLowerCase().includes('all configured')
       ) {
         onRequireApiKey();
         useToastStore.getState().showToast({
           type: 'error',
-          title: 'Groq Key Required',
-          message: 'Please enter a valid Groq API key (gsk_...) in Settings.',
+          title: 'Google Gemini Key Required',
+          message: 'Please enter a valid Google Gemini API key (AIza...) in Settings.',
           actionLabel: 'Open Settings',
           onAction: () => {
             setSelectedCategory('ai');
@@ -121,7 +123,7 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
           .addLog(
             'warning',
             'Git',
-            `[Commit-AI] ${msg || 'Please enter a valid Groq API Key to proceed.'}`
+            `[Commit-AI] ${msg || 'Please enter a valid Google Gemini API Key to proceed.'}`
           );
       } else {
         useToastStore.getState().showToast({
