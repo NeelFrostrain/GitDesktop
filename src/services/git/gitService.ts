@@ -276,6 +276,13 @@ export class GitService {
   }
 
   /**
+   * Fetches all tags from remote (cloud).
+   */
+  static async fetchTags(repoPath: string, remote?: string | null): Promise<void> {
+    return invoke('fetch_tags_cmd', { repoPath, remote: remote || null });
+  }
+
+  /**
    * Creates a tag.
    */
   static async createTag(repoPath: string, name: string, message?: string, targetSha?: string | null): Promise<void> {

@@ -23,9 +23,10 @@ export class PullRequestService {
 
     return res.map((mr) => {
       const author = (mr.author as Record<string, unknown>) || {};
+      const prNumber = (mr.iid as number) || (mr.id as number) || 1;
       return {
-        id: (mr.id as number) || (mr.iid as number),
-        iid: (mr.iid as number) || (mr.id as number),
+        id: prNumber,
+        iid: prNumber,
         title: (mr.title as string) || '',
         description: (mr.description as string) || '',
         state: (mr.state as string) || 'open',
@@ -59,6 +60,33 @@ export class PullRequestService {
       description: description || null,
       serverUrl: serverUrl || null,
       provider: provider || null,
+    });
+  }
+
+  /**
+   * Updates an existing pull/merge request (title, description, target branch, state).
+   */
+  static async updatePullRequest(
+    projectIdOrPath: string,
+    mrId: number,
+    params: {
+      title?: string;
+      description?: string;
+      targetBranch?: string;
+      state?: 'open' | 'closed';
+      serverUrl?: string;
+      provider?: string;
+    }
+  ): Promise<UnifiedMergeRequest> {
+    return invoke<UnifiedMergeRequest>('update_merge_request', {
+      projectId: projectIdOrPath,
+      mrId,
+      title: params.title || null,
+      description: params.description ?? null,
+      targetBranch: params.targetBranch || null,
+      state: params.state || null,
+      serverUrl: params.serverUrl || null,
+      provider: params.provider || null,
     });
   }
 }

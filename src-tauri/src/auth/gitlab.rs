@@ -561,16 +561,86 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!(
-                "Failed to create MR: {}",
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else if let Some(m) = val.get("error").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
                 err_text
-            )));
+            };
+
+            return Err(AppError::Network(clean_msg));
         }
 
         let mr: MergeRequest = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse created MR JSON: {}", e)))?;
+
+        Ok(mr)
+    }
+
+    pub async fn update_merge_request(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        title: Option<&str>,
+        description: Option<&str>,
+        target_branch: Option<&str>,
+        state_event: Option<&str>,
+    ) -> Result<MergeRequest, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests/{}",
+            self.server_url, encoded_id, mr_iid
+        );
+
+        let mut payload = serde_json::Map::new();
+        if let Some(t) = title {
+            payload.insert("title".to_string(), serde_json::json!(t.trim()));
+        }
+        if let Some(d) = description {
+            payload.insert("description".to_string(), serde_json::json!(d.trim()));
+        }
+        if let Some(tb) = target_branch {
+            payload.insert("target_branch".to_string(), serde_json::json!(tb.trim()));
+        }
+        if let Some(se) = state_event {
+            payload.insert("state_event".to_string(), serde_json::json!(se.trim()));
+        }
+
+        let resp = self
+            .client
+            .put(&url)
+            .json(&serde_json::Value::Object(payload))
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else if let Some(m) = val.get("error").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
+                err_text
+            };
+
+            return Err(AppError::Network(clean_msg));
+        }
+
+        let mr: MergeRequest = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse updated MR JSON: {}", e)))?;
 
         Ok(mr)
     }

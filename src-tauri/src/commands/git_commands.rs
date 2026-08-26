@@ -502,6 +502,13 @@ pub async fn delete_tag_cmd(repo_path: String, name: String) -> Result<(), AppEr
 }
 
 #[command]
+pub async fn fetch_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::tags::fetch_tags_from_remote(&repo_path, remote.as_deref()))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn push_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || crate::git::tags::push_tags_to_remote(&repo_path, remote.as_deref()))
         .await

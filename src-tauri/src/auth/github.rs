@@ -246,7 +246,6 @@ impl GitHubClient {
 
         let mut results = Vec::new();
         for item in pr_array {
-            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
             let number = item.get("number").and_then(|v| v.as_u64()).unwrap_or(0);
             let title = item
                 .get("title")
@@ -303,7 +302,7 @@ impl GitHubClient {
             });
 
             results.push(crate::auth::gitlab::MergeRequest {
-                id,
+                id: number,
                 iid: number,
                 title,
                 description,
@@ -345,10 +344,29 @@ impl GitHubClient {
         let resp = self.client.post(&url).json(&req_body).send().await?;
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!(
-                "Failed to create GitHub pull request: {}",
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(errs) = val.get("errors").and_then(|e| e.as_array()) {
+                    let msgs: Vec<String> = errs
+                        .iter()
+                        .filter_map(|e| e.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+                        .collect();
+                    if !msgs.is_empty() {
+                        msgs.join("; ")
+                    } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                        m.to_string()
+                    } else {
+                        err_text
+                    }
+                } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
                 err_text
-            )));
+            };
+
+            return Err(AppError::Network(clean_msg));
         }
 
         #[derive(Deserialize)]
@@ -366,7 +384,6 @@ impl GitHubClient {
 
         #[derive(Deserialize)]
         struct RawPR {
-            id: u64,
             number: u64,
             title: String,
             body: Option<String>,
@@ -384,7 +401,117 @@ impl GitHubClient {
             .map_err(|e| AppError::Network(format!("Failed to parse created PR JSON: {}", e)))?;
 
         Ok(crate::auth::gitlab::MergeRequest {
-            id: p.id,
+            id: p.number,
+            iid: p.number,
+            title: p.title,
+            description: p.body,
+            state: p.state,
+            source_branch: p.head.branch_ref,
+            target_branch: p.base.branch_ref,
+            web_url: p.html_url,
+            created_at: p.created_at,
+            author: p.user.map(|u| crate::auth::gitlab::MergeRequestAuthor {
+                name: u.name,
+                username: u.login,
+                avatar_url: u.avatar_url,
+            }),
+        })
+    }
+
+    pub async fn update_pull_request(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+        title: Option<&str>,
+        body: Option<&str>,
+        target_branch: Option<&str>,
+        state: Option<&str>,
+    ) -> Result<crate::auth::gitlab::MergeRequest, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/pulls/{}", GITHUB_API_URL, clean_path, pull_number);
+        let mut req_body = serde_json::Map::new();
+        if let Some(t) = title {
+            req_body.insert("title".to_string(), serde_json::json!(t.trim()));
+        }
+        if let Some(b) = body {
+            req_body.insert("body".to_string(), serde_json::json!(b.trim()));
+        }
+        if let Some(base) = target_branch {
+            req_body.insert("base".to_string(), serde_json::json!(base.trim()));
+        }
+        if let Some(s) = state {
+            req_body.insert("state".to_string(), serde_json::json!(s.trim()));
+        }
+
+        let resp = self
+            .client
+            .patch(&url)
+            .json(&serde_json::Value::Object(req_body))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(errs) = val.get("errors").and_then(|e| e.as_array()) {
+                    let msgs: Vec<String> = errs
+                        .iter()
+                        .filter_map(|e| e.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+                        .collect();
+                    if !msgs.is_empty() {
+                        msgs.join("; ")
+                    } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                        m.to_string()
+                    } else {
+                        err_text
+                    }
+                } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
+                err_text
+            };
+
+            return Err(AppError::Network(clean_msg));
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubPRUser {
+            login: Option<String>,
+            name: Option<String>,
+            avatar_url: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubPRBranch {
+            #[serde(rename = "ref")]
+            branch_ref: String,
+        }
+
+        #[derive(Deserialize)]
+        struct RawPR {
+            number: u64,
+            title: String,
+            body: Option<String>,
+            state: String,
+            html_url: String,
+            head: GitHubPRBranch,
+            base: GitHubPRBranch,
+            created_at: String,
+            user: Option<GitHubPRUser>,
+        }
+
+        let p: RawPR = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse updated PR JSON: {}", e)))?;
+
+        Ok(crate::auth::gitlab::MergeRequest {
+            id: p.number,
             iid: p.number,
             title: p.title,
             description: p.body,

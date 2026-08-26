@@ -325,6 +325,67 @@ pub async fn create_merge_request(
     }
 }
 
+#[command]
+pub async fn update_merge_request(
+    project_id: String,
+    mr_id: u64,
+    title: Option<String>,
+    description: Option<String>,
+    target_branch: Option<String>,
+    state: Option<String>,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<MergeRequest, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client
+            .update_pull_request(
+                &clean_project_id,
+                mr_id,
+                title.as_deref(),
+                description.as_deref(),
+                target_branch.as_deref(),
+                state.as_deref(),
+            )
+            .await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client
+            .update_merge_request(
+                &clean_project_id,
+                mr_id,
+                title.as_deref(),
+                description.as_deref(),
+                target_branch.as_deref(),
+                state.as_deref(),
+            )
+            .await
+    }
+}
+
 /// Publish a local repo to GitLab or GitHub depending on active account provider.
 #[command]
 pub async fn publish_repository(

@@ -56,10 +56,13 @@ export const TagsView: React.FC = () => {
   const [pushingItemMap, setPushingItemMap] = useState<Record<string, boolean>>({});
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = async (fetchRemote = false) => {
     if (!activeRepoPath) return;
     setIsLoading(true);
     try {
+      if (fetchRemote) {
+        await GitService.fetchTags(activeRepoPath, selectedRemote || null).catch(() => {});
+      }
       const [tagsRes, releasesRes, branchesRes] = await Promise.all([
         GitService.listTags(activeRepoPath).catch(() => []),
         ReleaseService.listReleases(activeRepoPath).catch(() => []),
@@ -78,7 +81,7 @@ export const TagsView: React.FC = () => {
 
   useEffect(() => {
     if (activeRepoPath) {
-      loadData();
+      loadData(true);
       loadRemotes(activeRepoPath);
     }
   }, [activeRepoPath]);
@@ -356,14 +359,15 @@ export const TagsView: React.FC = () => {
             </button>
           )}
 
-          {/* Refresh Button */}
+          {/* Refresh & Sync with Cloud Button */}
           <button
-            onClick={loadData}
+            onClick={() => loadData(true)}
             disabled={isLoading}
-            className="h-8 w-8 flex items-center justify-center bg-base-1 hover:bg-base-2 border border-border rounded-sm text-text-muted hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
-            title="Refresh Releases & Tags"
+            className="h-8 px-2.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+            title="Fetch & Sync latest tags and releases from cloud"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Sync with Cloud</span>
           </button>
         </div>
       </div>

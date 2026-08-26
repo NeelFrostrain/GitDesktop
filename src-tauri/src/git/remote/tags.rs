@@ -109,6 +109,29 @@ pub fn push_tags(repo_path: &str) -> Result<(), AppError> {
     push_tags_to_remote(repo_path, None)
 }
 
+pub fn fetch_tags_from_remote(repo_path: &str, remote: Option<&str>) -> Result<(), AppError> {
+    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
+
+    let auth_info = get_git_auth_info(repo_path);
+    let mut cmd = silent_git_command();
+    cmd.current_dir(repo_path);
+    apply_git_auth_args_pub(&mut cmd, &auth_info);
+
+    let remote_name = remote.unwrap_or("origin");
+    cmd.arg("fetch").arg(remote_name).arg("--tags").arg("--force");
+
+    let output = cmd.output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to fetch tags from '{}': {}",
+            remote_name,
+            stderr.trim()
+        )));
+    }
+    Ok(())
+}
+
 pub fn push_tags_to_remote(repo_path: &str, remote: Option<&str>) -> Result<(), AppError> {
     use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
 

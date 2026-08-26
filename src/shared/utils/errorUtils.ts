@@ -38,6 +38,31 @@ export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected
 }
 
 /**
+ * Extracts a human-friendly error message from API error payloads, including embedded JSON.
+ */
+export function parseApiError(error: unknown, fallbackMessage = 'An unexpected error occurred'): string {
+  const raw = getErrorMessage(error, fallbackMessage);
+
+  // Try to find JSON inside the raw message
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(parsed.errors) && parsed.errors.length > 0 && parsed.errors[0].message) {
+        return parsed.errors[0].message;
+      }
+      if (typeof parsed.message === 'string' && parsed.message !== 'Validation Failed') {
+        return parsed.message;
+      }
+    } catch {
+      // ignore JSON parse failures
+    }
+  }
+
+  return raw;
+}
+
+/**
  * Normalizes an unknown error into a structured `AppError` object.
  *
  * @param error - The caught error value.
@@ -57,6 +82,6 @@ export function toAppError(error: unknown, defaultCode = 'UNKNOWN_ERROR'): AppEr
 
   return {
     code: defaultCode,
-    message: getErrorMessage(error),
+    message: parseApiError(error),
   };
 }
