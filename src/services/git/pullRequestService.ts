@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { UnifiedMergeRequest } from '../../types/git';
+import { UnifiedMergeRequest, PullRequestComment } from '../../types/git';
 
 /**
  * Service for fetching and creating GitHub Pull Requests and GitLab Merge Requests.
@@ -24,6 +24,40 @@ export class PullRequestService {
     return res.map((mr) => {
       const author = (mr.author as Record<string, unknown>) || {};
       const prNumber = (mr.iid as number) || (mr.id as number) || 1;
+
+      const assignees = Array.isArray(mr.assignees)
+        ? (mr.assignees as Record<string, unknown>[]).map((u) => ({
+            name: (u.name as string) || (u.username as string) || 'User',
+            username: (u.username as string) || (u.name as string) || 'user',
+            avatar_url: (u.avatar_url as string) || undefined,
+          }))
+        : undefined;
+
+      const reviewers = Array.isArray(mr.reviewers)
+        ? (mr.reviewers as Record<string, unknown>[]).map((u) => ({
+            name: (u.name as string) || (u.username as string) || 'Reviewer',
+            username: (u.username as string) || (u.name as string) || 'reviewer',
+            avatar_url: (u.avatar_url as string) || undefined,
+          }))
+        : undefined;
+
+      const labels = Array.isArray(mr.labels)
+        ? (mr.labels as (string | Record<string, unknown>)[])
+            .map((l) => {
+              if (typeof l === 'string') {
+                return { name: l };
+              }
+              return {
+                name: (l.name as string) || '',
+                color: (l.color as string) || undefined,
+              };
+            })
+            .filter((l) => Boolean(l.name))
+        : undefined;
+
+      const milestone = (mr.milestone as string) || undefined;
+      const isDraft = Boolean(mr.is_draft);
+
       return {
         id: prNumber,
         iid: prNumber,
@@ -36,6 +70,11 @@ export class PullRequestService {
         author_name: (author.name as string) || (author.username as string) || 'Git User',
         author_avatar: (author.avatar_url as string) || undefined,
         created_at: (mr.created_at as string) || new Date().toISOString(),
+        assignees,
+        reviewers,
+        labels,
+        milestone,
+        is_draft: isDraft,
       };
     });
   }
@@ -123,6 +162,75 @@ export class PullRequestService {
       body,
       serverUrl: serverUrl || null,
       provider: provider || null,
+    });
+  }
+
+  /**
+   * Edits an existing comment / note on a pull / merge request.
+   */
+  static async editComment(
+    projectIdOrPath: string,
+    mrId: number,
+    commentId: number,
+    body: string,
+    serverUrl?: string,
+    provider?: 'github' | 'gitlab'
+  ): Promise<PullRequestComment> {
+    return await invoke('edit_pull_request_comment', {
+      projectId: projectIdOrPath,
+      mrId,
+      commentId,
+      body,
+      serverUrl: serverUrl || null,
+      provider: provider || null,
+    });
+  }
+
+  /**
+   * Deletes a comment / note on a pull / merge request.
+   */
+  static async deleteComment(
+    projectIdOrPath: string,
+    mrId: number,
+    commentId: number,
+    serverUrl?: string,
+    provider?: 'github' | 'gitlab'
+  ): Promise<boolean> {
+    return await invoke('delete_pull_request_comment', {
+      projectId: projectIdOrPath,
+      mrId,
+      commentId,
+      serverUrl: serverUrl || null,
+      provider: provider || null,
+    });
+  }
+
+  /**
+   * Merges a pull / merge request.
+   */
+  static async mergePullRequest(
+    projectIdOrPath: string,
+    mrId: number,
+    options?: {
+      mergeMethod?: 'merge' | 'squash' | 'rebase';
+      commitTitle?: string;
+      commitMessage?: string;
+      squash?: boolean;
+      shouldRemoveSourceBranch?: boolean;
+      serverUrl?: string;
+      provider?: 'github' | 'gitlab';
+    }
+  ): Promise<boolean> {
+    return await invoke('merge_pull_request', {
+      projectId: projectIdOrPath,
+      mrId,
+      mergeMethod: options?.mergeMethod || null,
+      commitTitle: options?.commitTitle || null,
+      commitMessage: options?.commitMessage || null,
+      squash: options?.squash ?? null,
+      shouldRemoveSourceBranch: options?.shouldRemoveSourceBranch ?? null,
+      serverUrl: options?.serverUrl || null,
+      provider: options?.provider || null,
     });
   }
 }

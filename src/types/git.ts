@@ -172,6 +172,17 @@ export interface WorktreeInfo {
   lock_reason?: string;
 }
 
+export interface MergeRequestLabel {
+  name: string;
+  color?: string;
+}
+
+export interface MergeRequestMember {
+  name?: string;
+  username?: string;
+  avatar_url?: string;
+}
+
 /**
  * Unified Merge Request / Pull Request representation.
  */
@@ -187,6 +198,11 @@ export interface UnifiedMergeRequest {
   author_name: string;
   author_avatar?: string;
   created_at: string;
+  assignees?: MergeRequestMember[];
+  reviewers?: MergeRequestMember[];
+  labels?: MergeRequestLabel[];
+  milestone?: string;
+  is_draft?: boolean;
 }
 
 /**

@@ -32,8 +32,10 @@ import {
   Tag,
   Users,
   Clock,
-  Columns2,
-  Rows3,
+  AlignJustify,
+  Columns,
+  GitMerge,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -112,6 +114,23 @@ export const MergeRequestModal: React.FC = () => {
   const [newCommentText, setNewCommentText] = useState('');
   const [commentEditorTab, setCommentEditorTab] = useState<'write' | 'preview'>('write');
   const [isPostingComment, setIsPostingComment] = useState(false);
+  const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Comment Actions & Context Menu
+  const [activeCommentMenuId, setActiveCommentMenuId] = useState<number | string | null>(null);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentBody, setEditingCommentBody] = useState('');
+  const [isSavingCommentEdit, setIsSavingCommentEdit] = useState(false);
+  const [hiddenCommentIds, setHiddenCommentIds] = useState<Set<number>>(new Set());
+
+  // Merge PR Modal State
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [mergeMethod, setMergeMethod] = useState<'merge' | 'squash' | 'rebase'>('merge');
+  const [mergeCommitTitle, setMergeCommitTitle] = useState('');
+  const [mergeCommitMessage, setMergeCommitMessage] = useState('');
+  const [deleteBranchAfterMerge, setDeleteBranchAfterMerge] = useState(false);
+  const [squashAfterMerge, setSquashAfterMerge] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
 
   const [prCommits, setPrCommits] = useState<CommitInfo[]>([]);
   const [prFiles, setPrFiles] = useState<CommitFileStat[]>([]);
@@ -240,6 +259,17 @@ export const MergeRequestModal: React.FC = () => {
       badge: b.is_current ? 'current' : undefined,
     }));
   }, [branches]);
+
+  // Global click listener to dismiss comment context menu
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (activeCommentMenuId !== null) {
+        setActiveCommentMenuId(null);
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [activeCommentMenuId]);
 
   // Remote options
   const remoteOptions = useMemo(() => {
@@ -433,6 +463,193 @@ export const MergeRequestModal: React.FC = () => {
     } finally {
       setIsPostingComment(false);
     }
+  };
+
+  // Open Merge Modal
+  const handleOpenMergeModal = () => {
+    if (!activeSelectedMr) return;
+    setMergeCommitTitle(`Merge pull request #${activeSelectedMr.id} from ${activeSelectedMr.source_branch}`);
+    setMergeCommitMessage(`Merge branch '${activeSelectedMr.source_branch}' into ${activeSelectedMr.target_branch}`);
+    setShowMergeModal(true);
+  };
+
+  // Execute Merge
+  const handleMergePr = async () => {
+    if (!activeSelectedMr || isMerging) return;
+    setIsMerging(true);
+    try {
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
+
+      await PullRequestService.mergePullRequest(projectPath, prNumber, {
+        mergeMethod,
+        commitTitle: mergeCommitTitle.trim() || undefined,
+        commitMessage: mergeCommitMessage.trim() || undefined,
+        squash: squashAfterMerge,
+        shouldRemoveSourceBranch: deleteBranchAfterMerge,
+        serverUrl,
+        provider,
+      });
+
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: `${requestTypeLabel} Merged`,
+        message: `Successfully merged #${activeSelectedMr.id} into ${activeSelectedMr.target_branch}`,
+      });
+
+      setShowMergeModal(false);
+      await loadMergeRequests();
+    } catch (err: unknown) {
+      const msg = parseApiError(err);
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Merge Failed',
+        message: msg,
+      });
+    } finally {
+      setIsMerging(false);
+    }
+  };
+
+  // Comment Context Actions
+  const handleCopyCommentLink = (commentId?: number) => {
+    if (!activeSelectedMr) return;
+    const url = commentId
+      ? `${activeSelectedMr.web_url}#issuecomment-${commentId}`
+      : activeSelectedMr.web_url;
+    navigator.clipboard.writeText(url);
+    useToastStore.getState().showToast({
+      type: 'info',
+      title: 'Link Copied',
+      message: 'Direct link copied to clipboard',
+    });
+    setActiveCommentMenuId(null);
+  };
+
+  const handleCopyCommentMarkdown = (body: string) => {
+    navigator.clipboard.writeText(body);
+    useToastStore.getState().showToast({
+      type: 'info',
+      title: 'Markdown Copied',
+      message: 'Markdown text copied to clipboard',
+    });
+    setActiveCommentMenuId(null);
+  };
+
+  const handleQuoteReply = (body: string) => {
+    const quoted = body
+      .split('\n')
+      .map((line) => `> ${line}`)
+      .join('\n');
+    setNewCommentText((prev) => (prev.trim() ? `${prev.trim()}\n\n${quoted}\n\n` : `${quoted}\n\n`));
+    setCommentEditorTab('write');
+    setActiveCommentMenuId(null);
+    setTimeout(() => {
+      commentTextareaRef.current?.focus();
+    }, 60);
+  };
+
+  const handleReferenceInNewIssue = (commentId?: number) => {
+    if (!activeSelectedMr) return;
+    const refText = commentId
+      ? `Ref: ${activeSelectedMr.title} (#${activeSelectedMr.id} comment #${commentId})`
+      : `Ref: ${activeSelectedMr.title} (#${activeSelectedMr.id})`;
+    navigator.clipboard.writeText(refText);
+    useToastStore.getState().showToast({
+      type: 'info',
+      title: 'Reference Copied',
+      message: 'Reference text copied to clipboard for new issue',
+    });
+    setActiveCommentMenuId(null);
+  };
+
+  const handleStartEditComment = (commentId: number, currentBody: string) => {
+    setEditingCommentId(commentId);
+    setEditingCommentBody(currentBody);
+    setActiveCommentMenuId(null);
+  };
+
+  const handleSaveEditComment = async (commentId: number) => {
+    if (!activeSelectedMr || !editingCommentBody.trim() || isSavingCommentEdit) return;
+    setIsSavingCommentEdit(true);
+    try {
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
+
+      const updated = await PullRequestService.editComment(
+        projectPath,
+        prNumber,
+        commentId,
+        editingCommentBody.trim(),
+        serverUrl,
+        provider
+      );
+
+      setPrComments((prev) =>
+        prev.map((c) => (c.id === commentId ? { ...c, body: updated.body } : c))
+      );
+      setEditingCommentId(null);
+      setEditingCommentBody('');
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Comment Updated',
+        message: 'Your comment has been edited.',
+      });
+    } catch (err: unknown) {
+      const msg = parseApiError(err);
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Edit Failed',
+        message: msg,
+      });
+    } finally {
+      setIsSavingCommentEdit(false);
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!activeSelectedMr) return;
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    setActiveCommentMenuId(null);
+
+    try {
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
+
+      await PullRequestService.deleteComment(projectPath, prNumber, commentId, serverUrl, provider);
+      setPrComments((prev) => prev.filter((c) => c.id !== commentId));
+      useToastStore.getState().showToast({
+        type: 'info',
+        title: 'Comment Deleted',
+        message: 'Comment was removed.',
+      });
+    } catch (err: unknown) {
+      const msg = parseApiError(err);
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Delete Failed',
+        message: msg,
+      });
+    }
+  };
+
+  const handleToggleHideComment = (commentId: number) => {
+    setHiddenCommentIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
+    setActiveCommentMenuId(null);
   };
 
   // Switch to Full 50/50 Workspace for Editing Selected PR
@@ -813,30 +1030,18 @@ export const MergeRequestModal: React.FC = () => {
               <X className="w-4 h-4" />
             </button>
           </div>
-        </div>
-
-        {/* Modal Body */}
+        </div>        {/* Modal Body */}
         {activeTab === 'create' ? (
-          /* CREATE PULL REQUEST WORKSPACE (Symmetrical 50/50) */
-          <form onSubmit={handleCreateMergeRequest} className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 50% Column */}
-            <div className="p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
+          /* CREATE PULL REQUEST WORKSPACE (30% Left / 70% Right) */
+          <form onSubmit={handleCreateMergeRequest} className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
+            {/* Left 30% Column */}
+            <div className="w-full md:w-[30%] shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
                     <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
                     <span>Branch Comparison</span>
                   </span>
-                  {sourceBranch === targetBranch ? (
-                    <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.2 rounded-xs font-mono font-semibold">
-                      Branches are identical
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded-xs font-mono font-semibold flex items-center gap-1">
-                      <Check className="w-2.5 h-2.5" />
-                      <span>Ready to merge</span>
-                    </span>
-                  )}
                 </div>
 
                 <div className="grid grid-cols-[1fr_32px_1fr] items-end gap-2.5 pt-0.5 w-full">
@@ -889,29 +1094,9 @@ export const MergeRequestModal: React.FC = () => {
                     />
                   </div>
                 </div>
-
-                {existingPrForSource && (
-                  <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xs flex items-center justify-between gap-2 text-xs">
-                    <div className="flex items-center gap-1.5 text-amber-400 min-w-0">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">
-                        An open request <strong>#{existingPrForSource.id}</strong> already exists for <code className="text-text-primary">{sourceBranch}</code>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedMrId(String(existingPrForSource.id));
-                        setActiveTab('list');
-                      }}
-                      className="text-[11px] font-bold text-amber-400 hover:text-amber-300 underline shrink-0 cursor-pointer"
-                    >
-                      View Request →
-                    </button>
-                  </div>
-                )}
               </div>
 
+              {/* Title Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-text-primary block">
                   {requestTypeLabel} Title <span className="text-commito-coral">*</span>
@@ -919,18 +1104,19 @@ export const MergeRequestModal: React.FC = () => {
                 <input
                   ref={titleInputRef}
                   type="text"
-                  placeholder="e.g. feat(releases): add draft release modal & AI changelog synthesizer"
+                  placeholder="e.g. Add dark mode toggle or Fix issue with sync"
                   value={title}
                   onChange={(e) => {
                     setTitle(e.target.value);
                     if (formError) setFormError(null);
                   }}
-                  disabled={isSubmitting}
-                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                  disabled={isSubmitting || isGeneratingAi}
+                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
                   required
                 />
               </div>
 
+              {/* Remote Dropdown if multiple */}
               {remotes.length > 1 && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-text-primary block">Target Remote</label>
@@ -938,13 +1124,14 @@ export const MergeRequestModal: React.FC = () => {
                     options={remoteOptions}
                     value={selectedRemote}
                     onChange={setSelectedRemote}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || isGeneratingAi}
                     size="md"
                   />
                 </div>
               )}
 
-              <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
+              {/* Settings & Options */}
+              <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-2.5 shadow-2xs">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted block pb-1 border-b border-border/60">
                   Settings & Options
                 </span>
@@ -952,14 +1139,14 @@ export const MergeRequestModal: React.FC = () => {
                 <Checkbox
                   checked={isDraft}
                   onChange={setIsDraft}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isGeneratingAi}
                   label={
                     <div>
                       <span className="text-xs font-semibold text-text-primary block">
-                        Mark as Draft / Work in Progress (WIP)
+                        Mark as Draft
                       </span>
                       <span className="text-[10.5px] text-text-muted block">
-                        Prevents accidental merging until marked ready for review
+                        Prevents merging until marked ready
                       </span>
                     </div>
                   }
@@ -968,14 +1155,11 @@ export const MergeRequestModal: React.FC = () => {
                 <Checkbox
                   checked={squashCommits}
                   onChange={setSquashCommits}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isGeneratingAi}
                   label={
                     <div>
                       <span className="text-xs font-semibold text-text-primary block">
                         Squash commits upon merge
-                      </span>
-                      <span className="text-[10.5px] text-text-muted block">
-                        Combines all branch commits into a single clean commit
                       </span>
                     </div>
                   }
@@ -984,19 +1168,62 @@ export const MergeRequestModal: React.FC = () => {
                 <Checkbox
                   checked={deleteSourceBranch}
                   onChange={setDeleteSourceBranch}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isGeneratingAi}
                   label={
                     <div>
                       <span className="text-xs font-semibold text-text-primary block">
-                        Delete source branch after merge
-                      </span>
-                      <span className="text-[10.5px] text-text-muted block">
-                        Automatically cleans up remote branch when merged
+                        Delete branch after merge
                       </span>
                     </div>
                   }
                 />
               </div>
+
+              {/* Branch Warning Alerts */}
+              {existingPrForSource ? (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/40 rounded-sm space-y-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Existing Request Found</span>
+                  </div>
+                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                    A pull request (<span className="font-mono text-amber-400">#{existingPrForSource.id}</span>) from{' '}
+                    <span className="font-mono text-commito-coral">'{sourceBranch}'</span> already exists.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMrId(String(existingPrForSource.id));
+                      setActiveTab('list');
+                    }}
+                    className="mt-1 text-[11px] font-semibold text-commito-coral hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>View Pull Request #{existingPrForSource.id}</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : sourceBranch === targetBranch ? (
+                <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm space-y-1 text-xs text-git-removed">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>Identical Branches</span>
+                  </div>
+                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                    Choose two different branches to create a {requestTypeLabel.toLowerCase()}.
+                  </p>
+                </div>
+              ) : (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-sm space-y-1 text-xs text-emerald-400">
+                  <div className="flex items-center gap-1.5 font-bold">
+                    <Check className="w-4 h-4 shrink-0" />
+                    <span>Branches Differ</span>
+                  </div>
+                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                    Changes on <span className="font-mono text-commito-coral">'{sourceBranch}'</span> will be submitted into{' '}
+                    <span className="font-mono text-emerald-400">'{targetBranch}'</span>.
+                  </p>
+                </div>
+              )}
 
               {formError && (
                 <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
@@ -1006,8 +1233,8 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right 50% Column */}
-            <div className="p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            {/* Right 70% Column */}
+            <div className="flex-1 min-w-0 w-full md:w-[70%] p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -1031,12 +1258,12 @@ export const MergeRequestModal: React.FC = () => {
                   onClick={handleGenerateAiDescription}
                   disabled={isSubmitting || isGeneratingAi || !sourceBranch}
                   className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/35 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
-                  title="Analyze commits between source and target branch using AI"
+                  title="Generate notes analyzing commit history"
                 >
                   {isGeneratingAi ? (
                     <>
                       <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
-                      <span>Analyzing Commits...</span>
+                      <span>Synthesizing Commits...</span>
                     </>
                   ) : (
                     <>
@@ -1047,14 +1274,15 @@ export const MergeRequestModal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
+              {/* Description Input / Markdown Area */}
+              <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-sm overflow-hidden flex flex-col shadow-2xs">
                 {editorTab === 'write' ? (
                   <textarea
-                    placeholder="Provide a thorough summary of changes, issue references (e.g. fixes #12), testing steps... (Markdown supported)"
+                    placeholder="Enter full description, checklist, or click 'Generate Notes with AI' to analyze commits between branches automatically..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    disabled={isSubmitting}
-                    className="w-full h-full p-3 bg-transparent text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono resize-none leading-relaxed overflow-y-auto"
+                    disabled={isSubmitting || isGeneratingAi}
+                    className="w-full h-full p-3.5 bg-transparent resize-none text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none leading-relaxed transition"
                   />
                 ) : (
                   <div className="w-full h-full p-3.5 overflow-y-auto">
@@ -1075,9 +1303,10 @@ export const MergeRequestModal: React.FC = () => {
             </div>
           </form>
         ) : activeTab === 'edit' && editingMr ? (
-          /* EDIT EXISTING PULL REQUEST WORKSPACE (Symmetrical 50/50) */
-          <form onSubmit={handleSaveFullEdit} className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            <div className="p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
+          /* EDIT EXISTING PULL REQUEST WORKSPACE (30% Left / 70% Right) */
+          <form onSubmit={handleSaveFullEdit} className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
+            {/* Left 30% Column */}
+            <div className="w-full md:w-[30%] shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
@@ -1170,7 +1399,8 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            <div className="p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            {/* Right 70% Column */}
+            <div className="flex-1 min-w-0 w-full md:w-[70%] p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -1210,14 +1440,14 @@ export const MergeRequestModal: React.FC = () => {
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
+              <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-sm overflow-hidden flex flex-col shadow-2xs">
                 {editEditorTab === 'write' ? (
                   <textarea
-                    placeholder="Write description & notes for this pull request... (Markdown supported)"
+                    placeholder="Enter updated pull request description or checklist..."
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
                     disabled={isSavingEdit}
-                    className="w-full h-full p-3 bg-transparent text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono resize-none leading-relaxed overflow-y-auto"
+                    className="w-full h-full p-3.5 bg-transparent resize-none text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none leading-relaxed transition"
                   />
                 ) : (
                   <div className="w-full h-full p-3.5 overflow-y-auto">
@@ -1240,8 +1470,8 @@ export const MergeRequestModal: React.FC = () => {
         ) : (
           /* LIST & INSPECT OPEN REQUESTS (Master-Detail with Conversation, Commits, Files & Comments) */
           <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left Column: Search & Request Cards List */}
-            <div className="w-full md:w-[360px] shrink-0 p-4 flex flex-col min-h-0 overflow-hidden space-y-3 bg-base-0">
+            {/* Left 30% Column: Search & Request Cards List */}
+            <div className="w-full md:w-[30%] shrink-0 p-4 flex flex-col min-h-0 overflow-hidden space-y-3 bg-base-0">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
@@ -1316,7 +1546,12 @@ export const MergeRequestModal: React.FC = () => {
                             {' → '}
                             <span className="text-emerald-400 font-semibold">{mr.target_branch}</span>
                           </span>
-                          <span className="truncate shrink-0">@{mr.author_name.replace(/\s+/g, '')}</span>
+                          <span className="truncate shrink-0 flex items-center gap-1">
+                            {mr.author_avatar ? (
+                              <img src={mr.author_avatar} alt="" className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0" />
+                            ) : null}
+                            <span>@{mr.author_name.replace(/\s+/g, '')}</span>
+                          </span>
                         </div>
                       </div>
                     );
@@ -1340,13 +1575,24 @@ export const MergeRequestModal: React.FC = () => {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        {(activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened') && (
+                          <button
+                            type="button"
+                            onClick={handleOpenMergeModal}
+                            className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                          >
+                            <GitMerge className="w-3.5 h-3.5" />
+                            <span>Merge</span>
+                          </button>
+                        )}
+
                         <button
                           type="button"
                           onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
-                          className="h-7 px-3 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                          className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95"
                         >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Edit Request</span>
+                          <Edit3 className="w-3.5 h-3.5 text-text-muted" />
+                          <span>Edit</span>
                         </button>
 
                         {activeSelectedMr.web_url && (
@@ -1375,8 +1621,16 @@ export const MergeRequestModal: React.FC = () => {
 
                       <span className="text-border">•</span>
 
-                      <div className="flex items-center gap-1 text-[11px] text-text-muted">
-                        <User className="w-3.5 h-3.5 text-text-faint" />
+                      <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
+                        {activeSelectedMr.author_avatar ? (
+                          <img
+                            src={activeSelectedMr.author_avatar}
+                            alt=""
+                            className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0"
+                          />
+                        ) : (
+                          <User className="w-3.5 h-3.5 text-text-faint shrink-0" />
+                        )}
                         <span>@{activeSelectedMr.author_name.replace(/\s+/g, '')}</span>
                       </div>
 
@@ -1389,62 +1643,44 @@ export const MergeRequestModal: React.FC = () => {
                     </div>
 
                     {/* Inspector Sub-Tabs Navigation (GitHub/GitLab style) */}
-                    <div className="pt-2 border-t border-border/70 flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setInspectorTab('conversation')}
-                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                          inspectorTab === 'conversation'
-                            ? 'bg-commito-coral text-white shadow-xs'
-                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
-                        }`}
-                      >
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>Conversation</span>
-                        {prComments.length > 0 && (
-                          <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'conversation' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
-                            {prComments.length}
-                          </span>
-                        )}
-                      </button>
+                    <div className="pt-2 border-t border-border/70 flex items-center justify-between">
+                      <Tabs<InspectorTab>
+                        tabs={[
+                          {
+                            id: 'conversation',
+                            label: 'Conversation',
+                            icon: <MessageSquare className="w-3.5 h-3.5" />,
+                            badge: prComments.length > 0 ? prComments.length : undefined,
+                            badgeVariant: 'neutral',
+                          },
+                          {
+                            id: 'commits',
+                            label: 'Commits',
+                            icon: <GitCommit className="w-3.5 h-3.5" />,
+                            badge: isLoadingBranchDiff ? undefined : prCommits.length,
+                            badgeVariant: 'neutral',
+                          },
+                          {
+                            id: 'files',
+                            label: 'Files Changed',
+                            icon: <FileCode className="w-3.5 h-3.5" />,
+                            badge: isLoadingBranchDiff ? undefined : prFiles.length,
+                            badgeVariant: 'neutral',
+                          },
+                        ]}
+                        activeTab={inspectorTab}
+                        onChange={setInspectorTab}
+                        size="sm"
+                        variant="segmented"
+                        ariaLabel="Pull request sub tabs"
+                      />
 
-                      <button
-                        type="button"
-                        onClick={() => setInspectorTab('commits')}
-                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                          inspectorTab === 'commits'
-                            ? 'bg-commito-coral text-white shadow-xs'
-                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
-                        }`}
-                      >
-                        <GitCommit className="w-3.5 h-3.5" />
-                        <span>Commits</span>
-                        <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'commits' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
-                          {isLoadingBranchDiff ? '...' : prCommits.length}
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setInspectorTab('files')}
-                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                          inspectorTab === 'files'
-                            ? 'bg-commito-coral text-white shadow-xs'
-                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
-                        }`}
-                      >
-                        <FileCode className="w-3.5 h-3.5" />
-                        <span>Files Changed</span>
-                        <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'files' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
-                          {isLoadingBranchDiff ? '...' : prFiles.length}
-                        </span>
-                        {totalAdditions > 0 || totalDeletions > 0 ? (
-                          <span className="text-[10px] font-mono font-normal ml-1">
-                            <span className="text-emerald-400">+{totalAdditions}</span>{' '}
-                            <span className="text-red-400">-{totalDeletions}</span>
-                          </span>
-                        ) : null}
-                      </button>
+                      {(totalAdditions > 0 || totalDeletions > 0) && (
+                        <div className="hidden sm:flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-1 border border-border text-text-muted">
+                          <span className="text-emerald-400">+{totalAdditions}</span>
+                          <span className="text-red-400">-{totalDeletions}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1455,25 +1691,90 @@ export const MergeRequestModal: React.FC = () => {
                         {/* Main Conversation Stream (col 8) */}
                         <div className="lg:col-span-8 space-y-4">
                           {/* PR Description Post Card */}
-                          <div className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs">
-                            <div className="px-3.5 py-2 bg-base-1 border-b border-border/80 flex items-center justify-between">
+                          <div className="bg-base-0 border border-border rounded-sm shadow-2xs">
+                            <div className="px-3.5 py-2 bg-base-1 border-b border-border/80 flex items-center justify-between relative rounded-t-sm">
                               <div className="flex items-center gap-2">
-                                <div className="w-5 h-5 rounded-full bg-commito-coral/20 border border-commito-coral/40 flex items-center justify-center text-[10px] font-bold text-commito-coral">
-                                  {activeSelectedMr.author_name.charAt(0).toUpperCase()}
-                                </div>
+                                {activeSelectedMr.author_avatar ? (
+                                  <img
+                                    src={activeSelectedMr.author_avatar}
+                                    alt={activeSelectedMr.author_name}
+                                    className="w-5 h-5 rounded-full object-cover border border-border shrink-0"
+                                  />
+                                ) : (
+                                  <div className="w-5 h-5 rounded-full bg-commito-coral/20 border border-commito-coral/40 flex items-center justify-center text-[10px] font-bold text-commito-coral shrink-0">
+                                    {activeSelectedMr.author_name.charAt(0).toUpperCase()}
+                                  </div>
+                                )}
                                 <span className="text-xs font-bold text-text-primary">
                                   @{activeSelectedMr.author_name.replace(/\s+/g, '')}
                                 </span>
                                 <span className="text-[10.5px] text-text-muted">opened this request</span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
-                                className="text-[11px] font-semibold text-commito-coral hover:text-commito-coralLight flex items-center gap-1 transition cursor-pointer"
-                              >
-                                <Edit3 className="w-3 h-3" />
-                                <span>Edit</span>
-                              </button>
+
+                              <div className="relative flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveCommentMenuId(activeCommentMenuId === 'desc' ? null : 'desc');
+                                  }}
+                                  className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
+                                  title="Options"
+                                >
+                                  <MoreHorizontal className="w-3.5 h-3.5" />
+                                </button>
+
+                                {activeCommentMenuId === 'desc' && (
+                                  <div
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                  >
+                                    <div className="py-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyCommentLink()}
+                                        className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                      >
+                                        Copy link
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleCopyCommentMarkdown(activeSelectedMr.description || '')}
+                                        className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                      >
+                                        Copy Markdown
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleQuoteReply(activeSelectedMr.description || '')}
+                                        className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                      >
+                                        Quote reply
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleReferenceInNewIssue()}
+                                        className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                      >
+                                        Reference in new issue
+                                      </button>
+                                    </div>
+
+                                    <div className="py-0.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveCommentMenuId(null);
+                                          handleOpenFullEditWorkspace(activeSelectedMr);
+                                        }}
+                                        className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                      >
+                                        Edit
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                             <div className="p-4 max-h-[320px] overflow-y-auto">
                               <MarkdownPreview
@@ -1491,24 +1792,165 @@ export const MergeRequestModal: React.FC = () => {
                             </div>
                           ) : prComments.length > 0 ? (
                             <div className="space-y-3">
-                              {prComments.map((comment) => (
-                                <div key={comment.id} className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs animate-in fade-in duration-100">
-                                  <div className="px-3.5 py-1.5 bg-base-1 border-b border-border/70 flex items-center justify-between text-xs">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-400">
-                                        {comment.author_name.charAt(0).toUpperCase()}
-                                      </div>
-                                      <span className="font-bold text-text-primary">@{comment.author_username}</span>
-                                      <span className="text-[10.5px] text-text-muted">
-                                        commented {comment.created_at ? comment.created_at.slice(0, 10) : ''}
-                                      </span>
+                              {prComments.map((comment) => {
+                                const isHidden = hiddenCommentIds.has(comment.id);
+                                const isEditing = editingCommentId === comment.id;
+
+                                if (isHidden) {
+                                  return (
+                                    <div
+                                      key={comment.id}
+                                      className="bg-base-0 border border-border/70 rounded-sm px-3.5 py-2 flex items-center justify-between text-xs text-text-muted"
+                                    >
+                                      <span className="italic">This comment was hidden.</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleToggleHideComment(comment.id)}
+                                        className="text-[11px] font-semibold text-commito-coral hover:underline cursor-pointer"
+                                      >
+                                        Unhide
+                                      </button>
                                     </div>
+                                  );
+                                }
+
+                                return (
+                                  <div
+                                    key={comment.id}
+                                    className="bg-base-0 border border-border rounded-sm shadow-2xs animate-in fade-in duration-100 relative"
+                                  >
+                                    <div className="px-3.5 py-1.5 bg-base-1 border-b border-border/70 flex items-center justify-between text-xs relative rounded-t-sm">
+                                      <div className="flex items-center gap-2">
+                                        {comment.author_avatar ? (
+                                          <img
+                                            src={comment.author_avatar}
+                                            alt={comment.author_name}
+                                            className="w-5 h-5 rounded-full object-cover border border-border shrink-0"
+                                          />
+                                        ) : (
+                                          <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0">
+                                            {comment.author_name.charAt(0).toUpperCase()}
+                                          </div>
+                                        )}
+                                        <span className="font-bold text-text-primary">@{comment.author_username}</span>
+                                        <span className="text-[10.5px] text-text-muted">
+                                          commented {comment.created_at ? comment.created_at.slice(0, 10) : ''}
+                                        </span>
+                                      </div>
+
+                                      <div className="relative flex items-center gap-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setActiveCommentMenuId(activeCommentMenuId === comment.id ? null : comment.id);
+                                          }}
+                                          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
+                                          title="Options"
+                                        >
+                                          <MoreHorizontal className="w-3.5 h-3.5" />
+                                        </button>
+
+                                        {activeCommentMenuId === comment.id && (
+                                          <div
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                          >
+                                            <div className="py-0.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleCopyCommentLink(comment.id)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Copy link
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleCopyCommentMarkdown(comment.body)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Copy Markdown
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleQuoteReply(comment.body)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Quote reply
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleReferenceInNewIssue(comment.id)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Reference in new issue
+                                              </button>
+                                            </div>
+
+                                            <div className="py-0.5">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleStartEditComment(comment.id, comment.body)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Edit
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleToggleHideComment(comment.id)}
+                                                className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Hide
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteComment(comment.id)}
+                                                className="w-full px-3.5 py-1.5 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer text-xs font-normal"
+                                              >
+                                                Delete
+                                              </button>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {isEditing ? (
+                                      <div className="p-3 space-y-2">
+                                        <textarea
+                                          value={editingCommentBody}
+                                          onChange={(e) => setEditingCommentBody(e.target.value)}
+                                          disabled={isSavingCommentEdit}
+                                          className="w-full h-24 p-2.5 bg-base-1 border border-border focus:border-commito-coral rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
+                                        />
+                                        <div className="flex items-center justify-end gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => setEditingCommentId(null)}
+                                            disabled={isSavingCommentEdit}
+                                            className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold cursor-pointer"
+                                          >
+                                            Cancel
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSaveEditComment(comment.id)}
+                                            disabled={isSavingCommentEdit || !editingCommentBody.trim()}
+                                            className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                          >
+                                            {isSavingCommentEdit && <Loader2 className="w-3 h-3 animate-spin" />}
+                                            <span>Save Changes</span>
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="p-3.5 text-xs text-text-primary">
+                                        <MarkdownPreview content={comment.body} />
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="p-3.5 text-xs text-text-primary">
-                                    <MarkdownPreview content={comment.body} />
-                                  </div>
-                                </div>
-                              ))}
+                                );
+                              })}
                             </div>
                           ) : null}
 
@@ -1534,6 +1976,7 @@ export const MergeRequestModal: React.FC = () => {
                             <div className="p-3">
                               {commentEditorTab === 'write' ? (
                                 <textarea
+                                  ref={commentTextareaRef}
                                   placeholder="Add your comment here... (Markdown supported)"
                                   value={newCommentText}
                                   onChange={(e) => setNewCommentText(e.target.value)}
@@ -1580,51 +2023,105 @@ export const MergeRequestModal: React.FC = () => {
                         <div className="lg:col-span-4 space-y-3">
                           <div className="p-3.5 bg-base-0 border border-border rounded-sm space-y-3 shadow-2xs text-xs font-sans">
                             {/* Reviewers */}
-                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                            <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
                                 <span className="flex items-center gap-1">
                                   <Users className="w-3.5 h-3.5 text-commito-coral" />
                                   <span>Reviewers</span>
                                 </span>
                               </div>
-                              <p className="text-[11px] text-text-muted">No reviews requested</p>
+                              {activeSelectedMr.reviewers && activeSelectedMr.reviewers.length > 0 ? (
+                                <div className="space-y-1.5 pt-0.5">
+                                  {activeSelectedMr.reviewers.map((r, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5">
+                                      {r.avatar_url ? (
+                                        <img src={r.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
+                                          {(r.name || r.username || 'R').charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <span className="font-mono text-text-primary text-[11px] font-medium truncate">
+                                        @{r.username || r.name}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-[11px] text-text-muted">No reviews requested</p>
+                              )}
                             </div>
 
                             {/* Assignees */}
-                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                            <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
                                 <span className="flex items-center gap-1">
                                   <User className="w-3.5 h-3.5 text-emerald-400" />
                                   <span>Assignees</span>
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5 pt-0.5">
-                                <div className="w-4.5 h-4.5 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
-                                  @
+                              {activeSelectedMr.assignees && activeSelectedMr.assignees.length > 0 ? (
+                                <div className="space-y-1.5 pt-0.5">
+                                  {activeSelectedMr.assignees.map((a, idx) => (
+                                    <div key={idx} className="flex items-center gap-1.5">
+                                      {a.avatar_url ? (
+                                        <img src={a.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                                      ) : (
+                                        <div className="w-4 h-4 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
+                                          {(a.name || a.username || 'A').charAt(0).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <span className="font-mono text-text-primary text-[11px] font-medium truncate">
+                                        @{a.username || a.name}
+                                      </span>
+                                    </div>
+                                  ))}
                                 </div>
-                                <span className="font-mono text-text-primary text-[11.5px] font-semibold">
-                                  @{activeSelectedMr.author_name.replace(/\s+/g, '')}
-                                </span>
-                              </div>
+                              ) : (
+                                <p className="text-[11px] text-text-muted">No one assigned</p>
+                              )}
                             </div>
 
                             {/* Labels */}
-                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                            <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
                                 <span className="flex items-center gap-1">
                                   <Tag className="w-3.5 h-3.5 text-amber-400" />
                                   <span>Labels</span>
                                 </span>
                               </div>
-                              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                                <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[10px] font-mono font-semibold rounded-xs">
-                                  enhancement
-                                </span>
-                                <span className="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold rounded-xs">
-                                  ready
-                                </span>
-                              </div>
+                              {activeSelectedMr.labels && activeSelectedMr.labels.length > 0 ? (
+                                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                  {activeSelectedMr.labels.map((l, idx) => (
+                                    <span
+                                      key={idx}
+                                      style={{
+                                        backgroundColor: l.color ? `${l.color}20` : undefined,
+                                        borderColor: l.color ? `${l.color}50` : undefined,
+                                        color: l.color || undefined,
+                                      }}
+                                      className="px-1.5 py-0.2 bg-base-2 border border-border text-text-secondary text-[10px] font-mono font-semibold rounded-xs"
+                                    >
+                                      {l.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="text-[11px] text-text-muted">None yet</p>
+                              )}
                             </div>
+
+                            {/* Milestone (if any) */}
+                            {activeSelectedMr.milestone && (
+                              <div className="space-y-1 pb-2.5 border-b border-border/70">
+                                <div className="text-text-secondary font-bold text-[11px] uppercase tracking-wider">
+                                  Milestone
+                                </div>
+                                <p className="text-[11px] font-mono text-text-primary font-semibold">
+                                  {activeSelectedMr.milestone}
+                                </p>
+                              </div>
+                            )}
 
                             {/* Status & Lifecycle Action */}
                             <div className="space-y-2 pt-1">
@@ -1730,34 +2227,32 @@ export const MergeRequestModal: React.FC = () => {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {/* 2 View Mode Switcher (Unified vs Split) */}
+                            {/* 2 View Mode Switcher (Unified vs Split - matches History view) */}
                             <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5 shadow-2xs">
                               <button
                                 type="button"
                                 onClick={() => setDiffViewMode('unified')}
-                                className={`px-2 py-1 rounded-xs text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                                className={`p-1 rounded-sm text-xs transition cursor-pointer ${
                                   diffViewMode === 'unified'
-                                    ? 'bg-commito-coral text-white shadow-2xs'
+                                    ? 'bg-base-2 text-text-primary shadow-xs'
                                     : 'text-text-muted hover:text-text-primary'
                                 }`}
-                                title="Unified (Inline) Diff View"
+                                title="Unified View"
                               >
-                                <Rows3 className="w-3.5 h-3.5" />
-                                <span>Unified</span>
+                                <AlignJustify className="w-3.5 h-3.5" />
                               </button>
 
                               <button
                                 type="button"
                                 onClick={() => setDiffViewMode('split')}
-                                className={`px-2 py-1 rounded-xs text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                                className={`p-1 rounded-sm text-xs transition cursor-pointer ${
                                   diffViewMode === 'split'
-                                    ? 'bg-commito-coral text-white shadow-2xs'
+                                    ? 'bg-base-2 text-text-primary shadow-xs'
                                     : 'text-text-muted hover:text-text-primary'
                                 }`}
-                                title="Split (Side-by-Side) Diff View"
+                                title="Split (Side-by-Side) View"
                               >
-                                <Columns2 className="w-3.5 h-3.5" />
-                                <span>Split</span>
+                                <Columns className="w-3.5 h-3.5" />
                               </button>
                             </div>
 
@@ -1987,6 +2482,157 @@ export const MergeRequestModal: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Merge Confirmation Dialog Modal */}
+        {showMergeModal && activeSelectedMr && (
+          <div
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-100"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isMerging) setShowMergeModal(false);
+            }}
+          >
+            <div
+              className="w-full max-w-lg bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Merge Modal Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+                  <GitMerge className="w-4 h-4" />
+                  <span>Merge {requestTypeLabel} #{activeSelectedMr.id}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => !isMerging && setShowMergeModal(false)}
+                  disabled={isMerging}
+                  className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Merge Modal Body */}
+              <div className="p-4 space-y-4 text-xs">
+                {/* Branch route */}
+                <div className="p-2.5 bg-base-1 border border-border rounded-sm flex items-center gap-2 font-mono text-[11.5px]">
+                  <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                  <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
+                  <span className="text-text-muted">merges into</span>
+                  <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
+                </div>
+
+                {/* Strategy Selector (GitHub) */}
+                {providerName === 'GitHub' ? (
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                      Merge Strategy
+                    </label>
+                    <div className="space-y-1.5">
+                      {[
+                        { id: 'merge' as const, label: 'Create a merge commit', desc: 'All commits from this branch will be added to the base branch via a merge commit.' },
+                        { id: 'squash' as const, label: 'Squash and merge', desc: 'The commits from this branch will be combined into one commit in the base branch.' },
+                        { id: 'rebase' as const, label: 'Rebase and merge', desc: 'The commits from this branch will be rebased and added to the base branch.' },
+                      ].map((strat) => (
+                        <div
+                          key={strat.id}
+                          onClick={() => setMergeMethod(strat.id)}
+                          className={`p-2.5 rounded-sm border transition cursor-pointer flex items-start gap-2.5 ${
+                            mergeMethod === strat.id
+                              ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/20'
+                              : 'bg-base-1 border-border hover:bg-base-2'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="merge_strategy"
+                            checked={mergeMethod === strat.id}
+                            onChange={() => setMergeMethod(strat.id)}
+                            className="mt-0.5 accent-emerald-500 cursor-pointer"
+                          />
+                          <div className="space-y-0.5">
+                            <div className="font-bold text-text-primary">{strat.label}</div>
+                            <div className="text-[11px] text-text-muted">{strat.desc}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Checkbox
+                      checked={squashAfterMerge}
+                      onChange={setSquashAfterMerge}
+                      label="Squash commits before merging"
+                    />
+                    <Checkbox
+                      checked={deleteBranchAfterMerge}
+                      onChange={setDeleteBranchAfterMerge}
+                      label="Delete source branch after merge"
+                    />
+                  </div>
+                )}
+
+                {/* Commit Title */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                    Commit Title
+                  </label>
+                  <input
+                    type="text"
+                    value={mergeCommitTitle}
+                    onChange={(e) => setMergeCommitTitle(e.target.value)}
+                    placeholder="Merge commit title"
+                    className="w-full h-8 px-2.5 bg-base-1 border border-border focus:border-emerald-500 rounded-sm text-xs text-text-primary font-mono focus:outline-none transition"
+                  />
+                </div>
+
+                {/* Commit Message */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
+                    Commit Message
+                  </label>
+                  <textarea
+                    value={mergeCommitMessage}
+                    onChange={(e) => setMergeCommitMessage(e.target.value)}
+                    placeholder="Optional extended commit message"
+                    className="w-full h-16 p-2 bg-base-1 border border-border focus:border-emerald-500 rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
+                  />
+                </div>
+              </div>
+
+              {/* Merge Modal Footer */}
+              <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-base-1">
+                <button
+                  type="button"
+                  onClick={() => !isMerging && setShowMergeModal(false)}
+                  disabled={isMerging}
+                  className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMergePr}
+                  disabled={isMerging}
+                  className="h-7.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
+                >
+                  {isMerging ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Merging...</span>
+                    </>
+                  ) : (
+                    <>
+                      <GitMerge className="w-3.5 h-3.5" />
+                      <span>Confirm Merge</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body

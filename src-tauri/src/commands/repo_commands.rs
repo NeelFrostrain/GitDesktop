@@ -1,4 +1,4 @@
-use crate::auth::github::{GitHubClient, UnifiedRepo};
+use crate::auth::github::{GitHubClient, PullRequestComment, UnifiedRepo};
 use crate::auth::gitlab::{GitLabClient, GitLabProject, MergeRequest, PagedResult};
 use crate::auth::keyring;
 use crate::error::AppError;
@@ -473,6 +473,140 @@ pub async fn add_pull_request_comment(
     } else {
         let client = get_gitlab_client(server_url)?;
         client.add_merge_request_comment(&clean_project_id, mr_id, &body).await
+    }
+}
+
+#[command]
+pub async fn edit_pull_request_comment(
+    project_id: String,
+    mr_id: u64,
+    comment_id: u64,
+    body: String,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<PullRequestComment, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.edit_pull_request_comment(&clean_project_id, comment_id, &body).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.edit_merge_request_comment(&clean_project_id, mr_id, comment_id, &body).await
+    }
+}
+
+#[command]
+pub async fn delete_pull_request_comment(
+    project_id: String,
+    mr_id: u64,
+    comment_id: u64,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<bool, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.delete_pull_request_comment(&clean_project_id, comment_id).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.delete_merge_request_comment(&clean_project_id, mr_id, comment_id).await
+    }
+}
+
+#[command]
+pub async fn merge_pull_request(
+    project_id: String,
+    mr_id: u64,
+    merge_method: Option<String>,
+    commit_title: Option<String>,
+    commit_message: Option<String>,
+    squash: Option<bool>,
+    should_remove_source_branch: Option<bool>,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<bool, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.merge_pull_request(
+            &clean_project_id,
+            mr_id,
+            merge_method.as_deref(),
+            commit_title.as_deref(),
+            commit_message.as_deref(),
+        ).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.merge_merge_request(
+            &clean_project_id,
+            mr_id,
+            squash,
+            should_remove_source_branch,
+            commit_message.as_deref(),
+        ).await
     }
 }
 
