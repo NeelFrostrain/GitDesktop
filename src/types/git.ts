@@ -365,6 +365,7 @@ export interface ReleaseInfo {
   commit_sha?: string;
   is_draft?: boolean;
   is_prerelease?: boolean;
+  is_latest?: boolean;
   upcoming_release?: boolean;
   web_url?: string;
   assets?: ReleaseAsset[];

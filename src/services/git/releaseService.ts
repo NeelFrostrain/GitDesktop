@@ -22,7 +22,9 @@ export class ReleaseService {
     description: string,
     targetRef?: string | null,
     pushImmediately = true,
-    remote?: string | null
+    remote?: string | null,
+    isLatest?: boolean,
+    filePaths?: string[]
   ): Promise<ReleaseInfo> {
     return invoke<ReleaseInfo>('create_release_cmd', {
       repoPath,
@@ -32,6 +34,8 @@ export class ReleaseService {
       targetRef: targetRef || null,
       pushImmediately,
       remote: remote || null,
+      isLatest: isLatest ?? null,
+      filePaths: filePaths && filePaths.length > 0 ? filePaths : null,
     });
   }
 
@@ -44,7 +48,9 @@ export class ReleaseService {
     name: string,
     description: string,
     pushImmediately = true,
-    remote?: string | null
+    remote?: string | null,
+    isLatest?: boolean,
+    filePaths?: string[]
   ): Promise<ReleaseInfo> {
     return invoke<ReleaseInfo>('update_release_cmd', {
       repoPath,
@@ -53,6 +59,8 @@ export class ReleaseService {
       description,
       pushImmediately,
       remote: remote || null,
+      isLatest: isLatest ?? null,
+      filePaths: filePaths && filePaths.length > 0 ? filePaths : null,
     });
   }
 

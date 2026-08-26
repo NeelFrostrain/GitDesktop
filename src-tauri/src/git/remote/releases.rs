@@ -11,6 +11,15 @@ pub struct ReleaseAsset {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ReleaseProgressPayload {
+    pub stage: String,
+    pub message: String,
+    pub current_file: Option<String>,
+    pub file_index: Option<usize>,
+    pub total_files: Option<usize>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReleaseInfo {
     pub id: Option<String>,
     pub tag_name: String,
@@ -23,9 +32,131 @@ pub struct ReleaseInfo {
     pub commit_sha: Option<String>,
     pub is_draft: Option<bool>,
     pub is_prerelease: Option<bool>,
+    pub is_latest: Option<bool>,
     pub upcoming_release: Option<bool>,
     pub web_url: Option<String>,
     pub assets: Vec<ReleaseAsset>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ReleaseMeta {
+    pub is_latest: Option<bool>,
+    pub web_url: Option<String>,
+}
+
+/// Helper to save release metadata to .git/releases/<tag_name>/meta.json
+pub fn save_local_release_meta(
+    repo_path: &str,
+    tag_name: &str,
+    is_latest: Option<bool>,
+    web_url: Option<String>,
+) {
+    let local_dir = std::path::Path::new(repo_path)
+        .join(".git")
+        .join("releases")
+        .join(tag_name);
+
+    let _ = std::fs::create_dir_all(&local_dir);
+    let meta_path = local_dir.join("meta.json");
+
+    let existing = load_local_release_meta(repo_path, tag_name);
+    let meta = ReleaseMeta {
+        is_latest: is_latest.or_else(|| existing.as_ref().and_then(|e| e.is_latest)),
+        web_url: web_url.or_else(|| existing.as_ref().and_then(|e| e.web_url.clone())),
+    };
+
+    if let Ok(json) = serde_json::to_string_pretty(&meta) {
+        let _ = std::fs::write(meta_path, json);
+    }
+}
+
+/// Helper to load release metadata from .git/releases/<tag_name>/meta.json
+pub fn load_local_release_meta(repo_path: &str, tag_name: &str) -> Option<ReleaseMeta> {
+    let meta_path = std::path::Path::new(repo_path)
+        .join(".git")
+        .join("releases")
+        .join(tag_name)
+        .join("meta.json");
+
+    if meta_path.is_file() {
+        if let Ok(content) = std::fs::read_to_string(meta_path) {
+            return serde_json::from_str::<ReleaseMeta>(&content).ok();
+        }
+    }
+    None
+}
+
+/// Helper to load local assets from .git/releases/<tag_name>
+pub fn load_local_release_assets(repo_path: &str, tag_name: &str) -> Vec<ReleaseAsset> {
+    let local_dir = std::path::Path::new(repo_path)
+        .join(".git")
+        .join("releases")
+        .join(tag_name);
+
+    let mut assets = Vec::new();
+    if local_dir.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(&local_dir) {
+            for entry in entries.flatten() {
+                if let Ok(ft) = entry.file_type() {
+                    if ft.is_file() {
+                        let fname = entry.file_name().to_string_lossy().to_string();
+                        // Ignore internal meta.json file from assets list
+                        if fname == "meta.json" {
+                            continue;
+                        }
+                        let size = entry.metadata().ok().map(|m| m.len());
+                        let path_str = entry.path().to_string_lossy().to_string();
+                        assets.push(ReleaseAsset {
+                            name: fname,
+                            url: path_str.clone(),
+                            size,
+                            direct_asset_url: Some(path_str),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    assets
+}
+
+/// Helper to copy local asset files into .git/releases/<tag_name>
+pub fn save_local_release_assets(
+    repo_path: &str,
+    tag_name: &str,
+    file_paths: &[String],
+) -> Vec<ReleaseAsset> {
+    let local_dir = std::path::Path::new(repo_path)
+        .join(".git")
+        .join("releases")
+        .join(tag_name);
+
+    let _ = std::fs::create_dir_all(&local_dir);
+    let mut assets = Vec::new();
+
+    for fp in file_paths {
+        let src_path = std::path::Path::new(fp);
+        if let Some(fname) = src_path.file_name().and_then(|n| n.to_str()) {
+            if fname == "meta.json" {
+                continue;
+            }
+            let dest_path = local_dir.join(fname);
+            let size = if let Ok(meta) = std::fs::metadata(fp) {
+                let _ = std::fs::copy(fp, &dest_path);
+                Some(meta.len())
+            } else {
+                None
+            };
+            let path_str = dest_path.to_string_lossy().to_string();
+            assets.push(ReleaseAsset {
+                name: fname.to_string(),
+                url: path_str.clone(),
+                size,
+                direct_asset_url: Some(path_str),
+            });
+        }
+    }
+    assets
 }
 
 /// Lists all releases and annotated release markers in the repository.
@@ -49,7 +180,22 @@ pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
     let stdout = String::from_utf8_lossy(&output.stdout);
     let mut releases = Vec::new();
 
+    // First pass: check if any release explicitly claimed is_latest = true
+    let mut any_explicit_latest = false;
     for line in stdout.lines() {
+        let parts: Vec<&str> = line.splitn(6, '|').collect();
+        if !parts.is_empty() && !parts[0].trim().is_empty() {
+            let tag_name = parts[0].trim();
+            if let Some(meta) = load_local_release_meta(repo_path, tag_name) {
+                if meta.is_latest == Some(true) {
+                    any_explicit_latest = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    for (index, line) in stdout.lines().enumerate() {
         let parts: Vec<&str> = line.splitn(6, '|').collect();
         if !parts.is_empty() && !parts[0].trim().is_empty() {
             let tag_name = parts[0].trim().to_string();
@@ -79,6 +225,29 @@ pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
                 || tag_name.to_lowercase().contains("alpha")
                 || tag_name.to_lowercase().contains("rc");
 
+            let assets = load_local_release_assets(repo_path, &tag_name);
+            let local_meta = load_local_release_meta(repo_path, &tag_name);
+
+            let is_latest = if let Some(meta) = &local_meta {
+                if let Some(explicit_latest) = meta.is_latest {
+                    Some(explicit_latest)
+                } else if is_prerelease {
+                    Some(false)
+                } else if !any_explicit_latest {
+                    Some(index == 0)
+                } else {
+                    Some(false)
+                }
+            } else if is_prerelease {
+                Some(false)
+            } else if !any_explicit_latest {
+                Some(index == 0)
+            } else {
+                Some(false)
+            };
+
+            let web_url = local_meta.and_then(|m| m.web_url);
+
             releases.push(ReleaseInfo {
                 id: Some(tag_name.clone()),
                 tag_name,
@@ -91,9 +260,10 @@ pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
                 commit_sha: Some(sha),
                 is_draft: Some(false),
                 is_prerelease: Some(is_prerelease),
+                is_latest,
                 upcoming_release: Some(false),
-                web_url: None,
-                assets: Vec::new(),
+                web_url,
+                assets,
             });
         }
     }
@@ -110,6 +280,8 @@ pub fn create_release(
     target_ref: Option<&str>,
     push_immediately: bool,
     remote: Option<&str>,
+    is_latest: Option<bool>,
+    file_paths: Option<&[String]>,
 ) -> Result<ReleaseInfo, AppError> {
     let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
@@ -149,6 +321,14 @@ pub fn create_release(
         || tag_name.to_lowercase().contains("alpha")
         || tag_name.to_lowercase().contains("rc");
 
+    let assets = if let Some(files) = file_paths {
+        save_local_release_assets(repo_path, tag_name.trim(), files)
+    } else {
+        Vec::new()
+    };
+
+    save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
+
     Ok(ReleaseInfo {
         id: Some(tag_name.to_string()),
         tag_name: tag_name.to_string(),
@@ -161,9 +341,10 @@ pub fn create_release(
         commit_sha: None,
         is_draft: Some(false),
         is_prerelease: Some(is_prerelease),
+        is_latest,
         upcoming_release: Some(false),
         web_url: None,
-        assets: Vec::new(),
+        assets,
     })
 }
 
@@ -175,6 +356,8 @@ pub fn update_release(
     description: &str,
     push_immediately: bool,
     remote: Option<&str>,
+    is_latest: Option<bool>,
+    file_paths: Option<&[String]>,
 ) -> Result<ReleaseInfo, AppError> {
     let full_message = if !name.trim().is_empty() && !description.trim().is_empty() {
         format!("{}\n\n{}", name.trim(), description.trim())
@@ -201,6 +384,20 @@ pub fn update_release(
         super::tags::push_specific_tag(repo_path, remote, tag_name.trim())?;
     }
 
+    let mut assets = load_local_release_assets(repo_path, tag_name.trim());
+    if let Some(files) = file_paths {
+        let new_saved = save_local_release_assets(repo_path, tag_name.trim(), files);
+        for a in new_saved {
+            if !assets.iter().any(|existing| existing.name == a.name) {
+                assets.push(a);
+            }
+        }
+    }
+
+    save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
+
+    let is_prerelease = tag_name.to_lowercase().contains("beta") || tag_name.to_lowercase().contains("rc");
+
     Ok(ReleaseInfo {
         id: Some(tag_name.to_string()),
         tag_name: tag_name.to_string(),
@@ -212,10 +409,11 @@ pub fn update_release(
         author_avatar: None,
         commit_sha: None,
         is_draft: Some(false),
-        is_prerelease: Some(tag_name.to_lowercase().contains("beta") || tag_name.to_lowercase().contains("rc")),
+        is_prerelease: Some(is_prerelease),
+        is_latest,
         upcoming_release: Some(false),
         web_url: None,
-        assets: Vec::new(),
+        assets,
     })
 }
 
@@ -337,14 +535,18 @@ pub fn find_token_for_host(repo_path: &str, host: &str) -> Option<String> {
     None
 }
 
-/// Publishes a release to GitHub / GitLab platform API if connected account credentials exist
+/// Publishes a release to GitHub / GitLab platform API if connected account credentials exist,
+/// configuring latest status and uploading attached release assets with real-time stage progress.
 pub async fn publish_release_to_remote_api(
+    app_handle: Option<&tauri::AppHandle>,
     repo_path: &str,
     tag_name: &str,
     name: &str,
     description: &str,
     remote: Option<&str>,
-) -> Result<Option<String>, AppError> {
+    is_latest: Option<bool>,
+    file_paths: Option<&[String]>,
+) -> Result<(Option<String>, Vec<ReleaseAsset>), AppError> {
     let remote_name = remote.unwrap_or("origin");
     let remote_url_str = {
         if let Ok(repo) = git2::Repository::open(repo_path) {
@@ -360,12 +562,12 @@ pub async fn publish_release_to_remote_api(
 
     let remote_url_str = match remote_url_str {
         Some(u) => u,
-        None => return Ok(None),
+        None => return Ok((None, Vec::new())),
     };
 
     let (host, owner, repo_name) = match parse_remote_url_parts(&remote_url_str) {
         Some(parts) => parts,
-        None => return Ok(None),
+        None => return Ok((None, Vec::new())),
     };
 
     let is_prerelease = tag_name.to_lowercase().contains("beta")
@@ -373,23 +575,49 @@ pub async fn publish_release_to_remote_api(
         || tag_name.to_lowercase().contains("rc");
 
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
+        .timeout(std::time::Duration::from_secs(60))
         .build()
         .map_err(|e| AppError::Git(format!("Failed to build HTTP client: {}", e)))?;
+
+    let mut uploaded_assets = Vec::new();
+    let mut release_web_url: Option<String> = None;
 
     // 1. GitHub API Release
     if host.contains("github.com") {
         if let Some(token) = find_token_for_host(repo_path, &host) {
             let token = token.trim();
             if !token.is_empty() {
+                if let Some(app) = app_handle {
+                    use tauri::Emitter;
+                    let _ = app.emit(
+                        "release:progress",
+                        &ReleaseProgressPayload {
+                            stage: "publishing".to_string(),
+                            message: format!("Publishing release '{}' to GitHub API...", name),
+                            current_file: None,
+                            file_index: None,
+                            total_files: None,
+                        },
+                    );
+                }
+
+                let make_latest_val = match is_latest {
+                    Some(true) => "true",
+                    Some(false) => "false",
+                    None => if is_prerelease { "false" } else { "legacy" },
+                };
+
                 let create_url = format!("https://api.github.com/repos/{}/{}/releases", owner, repo_name);
                 let body = serde_json::json!({
                     "tag_name": tag_name,
                     "name": name,
                     "body": description,
                     "draft": false,
-                    "prerelease": is_prerelease
+                    "prerelease": is_prerelease,
+                    "make_latest": make_latest_val
                 });
+
+                let mut github_release_id: Option<u64> = None;
 
                 let res = client
                     .post(&create_url)
@@ -403,8 +631,8 @@ pub async fn publish_release_to_remote_api(
                 if let Ok(resp) = res {
                     if resp.status().is_success() {
                         if let Ok(json) = resp.json::<serde_json::Value>().await {
-                            let html_url = json.get("html_url").and_then(|u| u.as_str()).map(|s| s.to_string());
-                            return Ok(html_url);
+                            release_web_url = json.get("html_url").and_then(|u| u.as_str()).map(|s| s.to_string());
+                            github_release_id = json.get("id").and_then(|i| i.as_u64());
                         }
                     } else if resp.status().as_u16() == 422 {
                         // Release already exists for tag, try to update it
@@ -420,11 +648,13 @@ pub async fn publish_release_to_remote_api(
                         if let Ok(tag_resp) = get_res {
                             if let Ok(tag_json) = tag_resp.json::<serde_json::Value>().await {
                                 if let Some(release_id) = tag_json.get("id").and_then(|i| i.as_u64()) {
+                                    github_release_id = Some(release_id);
                                     let update_url = format!("https://api.github.com/repos/{}/{}/releases/{}", owner, repo_name, release_id);
                                     let update_body = serde_json::json!({
                                         "name": name,
                                         "body": description,
-                                        "prerelease": is_prerelease
+                                        "prerelease": is_prerelease,
+                                        "make_latest": make_latest_val
                                     });
 
                                     let patch_res = client
@@ -438,8 +668,7 @@ pub async fn publish_release_to_remote_api(
 
                                     if let Ok(patch_resp) = patch_res {
                                         if let Ok(p_json) = patch_resp.json::<serde_json::Value>().await {
-                                            let html_url = p_json.get("html_url").and_then(|u| u.as_str()).map(|s| s.to_string());
-                                            return Ok(html_url);
+                                            release_web_url = p_json.get("html_url").and_then(|u| u.as_str()).map(|s| s.to_string());
                                         }
                                     }
                                 }
@@ -447,6 +676,74 @@ pub async fn publish_release_to_remote_api(
                         }
                     }
                 }
+
+                // Upload attached files to GitHub release assets
+                if let (Some(rel_id), Some(files)) = (github_release_id, file_paths) {
+                    let total_cnt = files.len();
+                    for (idx, fp) in files.iter().enumerate() {
+                        let fname = std::path::Path::new(fp)
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("asset");
+
+                        if let Some(app) = app_handle {
+                            use tauri::Emitter;
+                            let _ = app.emit(
+                                "release:progress",
+                                &ReleaseProgressPayload {
+                                    stage: "uploading".to_string(),
+                                    message: format!("Uploading asset ({}/{}): {}", idx + 1, total_cnt, fname),
+                                    current_file: Some(fname.to_string()),
+                                    file_index: Some(idx + 1),
+                                    total_files: Some(total_cnt),
+                                },
+                            );
+                        }
+
+                        if let Ok(data) = tokio::fs::read(fp).await {
+                            let encoded_name = urlencoding::encode(fname);
+                            let upload_url = format!(
+                                "https://uploads.github.com/repos/{}/{}/releases/{}/assets?name={}",
+                                owner, repo_name, rel_id, encoded_name
+                            );
+
+                            let up_res = client
+                                .post(&upload_url)
+                                .header("User-Agent", "GitDesktop")
+                                .header("Accept", "application/vnd.github+json")
+                                .header("Content-Type", "application/octet-stream")
+                                .bearer_auth(token)
+                                .body(data)
+                                .send()
+                                .await;
+
+                            if let Ok(up_resp) = up_res {
+                                if let Ok(asset_json) = up_resp.json::<serde_json::Value>().await {
+                                    let name_str = asset_json
+                                        .get("name")
+                                        .and_then(|n| n.as_str())
+                                        .unwrap_or(fname)
+                                        .to_string();
+                                    let download_url = asset_json
+                                        .get("browser_download_url")
+                                        .and_then(|u| u.as_str())
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_default();
+                                    let size_num = asset_json.get("size").and_then(|s| s.as_u64());
+
+                                    uploaded_assets.push(ReleaseAsset {
+                                        name: name_str,
+                                        url: download_url.clone(),
+                                        size: size_num,
+                                        direct_asset_url: Some(download_url),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+
+                return Ok((release_web_url, uploaded_assets));
             }
         }
     } else if host.contains("gitlab") {
@@ -454,6 +751,20 @@ pub async fn publish_release_to_remote_api(
         if let Some(token) = find_token_for_host(repo_path, &host) {
             let token = token.trim();
             if !token.is_empty() {
+                if let Some(app) = app_handle {
+                    use tauri::Emitter;
+                    let _ = app.emit(
+                        "release:progress",
+                        &ReleaseProgressPayload {
+                            stage: "publishing".to_string(),
+                            message: format!("Publishing release '{}' to GitLab API...", name),
+                            current_file: None,
+                            file_index: None,
+                            total_files: None,
+                        },
+                    );
+                }
+
                 let project_path = format!("{}/{}", owner, repo_name);
                 let encoded_project: String = urlencoding::encode(&project_path).to_string();
                 let base_server = if host == "gitlab.com" {
@@ -462,12 +773,21 @@ pub async fn publish_release_to_remote_api(
                     format!("https://{}", host)
                 };
 
+                let released_at_val = match is_latest {
+                    Some(true) => Some(chrono::Utc::now().to_rfc3339()),
+                    Some(false) => Some((chrono::Utc::now() - chrono::Duration::days(365)).to_rfc3339()),
+                    None => None,
+                };
+
                 let create_url = format!("{}/api/v4/projects/{}/releases", base_server, encoded_project);
-                let body = serde_json::json!({
+                let mut body = serde_json::json!({
                     "name": name,
                     "tag_name": tag_name,
                     "description": description
                 });
+                if let Some(r_at) = &released_at_val {
+                    body["released_at"] = serde_json::json!(r_at);
+                }
 
                 let res = client
                     .post(&create_url)
@@ -479,16 +799,22 @@ pub async fn publish_release_to_remote_api(
                 if let Ok(resp) = res {
                     if resp.status().is_success() {
                         if let Ok(json) = resp.json::<serde_json::Value>().await {
-                            let web_url = json.get("_links").and_then(|l| l.get("self")).and_then(|u| u.as_str()).map(|s| s.to_string());
-                            return Ok(web_url);
+                            release_web_url = json
+                                .get("_links")
+                                .and_then(|l| l.get("self"))
+                                .and_then(|u| u.as_str())
+                                .map(|s| s.to_string());
                         }
                     } else if resp.status().as_u16() == 409 {
                         // Release already exists, update it via PUT
                         let update_url = format!("{}/api/v4/projects/{}/releases/{}", base_server, encoded_project, tag_name);
-                        let update_body = serde_json::json!({
+                        let mut update_body = serde_json::json!({
                             "name": name,
                             "description": description
                         });
+                        if let Some(r_at) = &released_at_val {
+                            update_body["released_at"] = serde_json::json!(r_at);
+                        }
 
                         let put_res = client
                             .put(&update_url)
@@ -499,17 +825,94 @@ pub async fn publish_release_to_remote_api(
 
                         if let Ok(p_resp) = put_res {
                             if let Ok(p_json) = p_resp.json::<serde_json::Value>().await {
-                                let web_url = p_json.get("_links").and_then(|l| l.get("self")).and_then(|u| u.as_str()).map(|s| s.to_string());
-                                return Ok(web_url);
+                                release_web_url = p_json
+                                    .get("_links")
+                                    .and_then(|l| l.get("self"))
+                                    .and_then(|u| u.as_str())
+                                    .map(|s| s.to_string());
                             }
                         }
                     }
                 }
+
+                // Upload attached files to GitLab uploads & release asset links
+                if let Some(files) = file_paths {
+                    let total_cnt = files.len();
+                    for (idx, fp) in files.iter().enumerate() {
+                        let fname = std::path::Path::new(fp)
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("asset")
+                            .to_string();
+
+                        if let Some(app) = app_handle {
+                            use tauri::Emitter;
+                            let _ = app.emit(
+                                "release:progress",
+                                &ReleaseProgressPayload {
+                                    stage: "uploading".to_string(),
+                                    message: format!("Uploading asset ({}/{}): {}", idx + 1, total_cnt, fname),
+                                    current_file: Some(fname.clone()),
+                                    file_index: Some(idx + 1),
+                                    total_files: Some(total_cnt),
+                                },
+                            );
+                        }
+
+                        if let Ok(data) = tokio::fs::read(fp).await {
+                            let part = reqwest::multipart::Part::bytes(data).file_name(fname.clone());
+                            let form = reqwest::multipart::Form::new().part("file", part);
+
+                            let upload_url = format!("{}/api/v4/projects/{}/uploads", base_server, encoded_project);
+                            let up_res = client
+                                .post(&upload_url)
+                                .header("PRIVATE-TOKEN", token)
+                                .multipart(form)
+                                .send()
+                                .await;
+
+                            if let Ok(up_resp) = up_res {
+                                if let Ok(up_json) = up_resp.json::<serde_json::Value>().await {
+                                    if let Some(rel_url) = up_json.get("url").and_then(|u| u.as_str()) {
+                                        let full_asset_url = format!("{}{}", base_server, rel_url);
+                                        let link_url = format!(
+                                            "{}/api/v4/projects/{}/releases/{}/assets/links",
+                                            base_server, encoded_project, tag_name
+                                        );
+                                        let link_body = serde_json::json!({
+                                            "name": fname,
+                                            "url": full_asset_url,
+                                            "direct_asset_url": full_asset_url
+                                        });
+
+                                        let _ = client
+                                            .post(&link_url)
+                                            .header("PRIVATE-TOKEN", token)
+                                            .json(&link_body)
+                                            .send()
+                                            .await;
+
+                                        uploaded_assets.push(ReleaseAsset {
+                                            name: fname,
+                                            url: full_asset_url.clone(),
+                                            size: None,
+                                            direct_asset_url: Some(full_asset_url),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                save_local_release_meta(repo_path, tag_name, is_latest, release_web_url.clone());
+                return Ok((release_web_url, uploaded_assets));
             }
         }
     }
 
-    Ok(None)
+    save_local_release_meta(repo_path, tag_name, is_latest, release_web_url.clone());
+    Ok((release_web_url, uploaded_assets))
 }
 
 /// Deletes a release and optionally removes local and remote tags.

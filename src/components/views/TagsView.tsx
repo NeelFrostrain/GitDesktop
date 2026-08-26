@@ -15,6 +15,8 @@ import {
   Calendar,
   User,
   GitCommit,
+  Paperclip,
+  Package,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -401,10 +403,18 @@ export const TagsView: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredReleases.map((release, index) => {
+            {filteredReleases.map((release) => {
               const isPushing = pushingItemMap[release.tag_name];
               const isCopied = copiedId === `release-${release.tag_name}`;
-              const isLatest = index === 0;
+              const isLatest = Boolean(release.is_latest);
+
+              const formatAssetSize = (bytes?: number) => {
+                if (!bytes && bytes !== 0) return '';
+                if (bytes < 1024) return `${bytes} B`;
+                if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+                if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+                return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+              };
 
               return (
                 <div
@@ -471,7 +481,7 @@ export const TagsView: React.FC = () => {
                           setIsCreateReleaseModalOpen(true);
                         }}
                         className="h-7 px-2.5 bg-base-0 hover:bg-base-2 border border-border text-text-secondary hover:text-text-primary rounded-xs text-[11px] font-medium flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                        title="Edit release title and notes"
+                        title="Edit release title, assets, and notes"
                       >
                         <Edit3 className="w-3 h-3 text-commito-coral" />
                         <span>Edit</span>
@@ -521,6 +531,49 @@ export const TagsView: React.FC = () => {
                       <span className="italic text-text-faint">No description provided for this release.</span>
                     )}
                   </div>
+
+                  {/* Attached Release Assets */}
+                  {release.assets && release.assets.length > 0 && (
+                    <div className="pt-2 border-t border-border/40 space-y-2">
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-text-muted">
+                        <Paperclip className="w-3 h-3 text-commito-coral" />
+                        <span>Assets ({release.assets.length})</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                        {release.assets.map((asset, aIdx) => (
+                          <div
+                            key={asset.name + aIdx}
+                            className="flex items-center justify-between p-2 bg-base-0 border border-border/80 rounded-xs text-xs group hover:border-border-strong transition shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <Package className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
+                              <span className="font-mono text-[11px] text-text-primary truncate" title={asset.name}>
+                                {asset.name}
+                              </span>
+                              {asset.size && (
+                                <span className="text-[10px] text-text-muted font-mono shrink-0">
+                                  ({formatAssetSize(asset.size)})
+                                </span>
+                              )}
+                            </div>
+                            {asset.url && (
+                              <button
+                                onClick={() => handleCopy(asset.direct_asset_url || asset.url, `asset-${asset.name}-${aIdx}`, 'Copied asset link')}
+                                className="p-1 text-text-muted hover:text-text-primary rounded-xs transition cursor-pointer"
+                                title="Copy Asset Link / Path"
+                              >
+                                {copiedId === `asset-${asset.name}-${aIdx}` ? (
+                                  <Check className="w-3 h-3 text-emerald-400" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

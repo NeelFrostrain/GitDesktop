@@ -546,6 +546,7 @@ pub async fn list_releases_cmd(
 
 #[command]
 pub async fn create_release_cmd(
+    app: tauri::AppHandle,
     repo_path: String,
     tag_name: String,
     name: String,
@@ -553,7 +554,11 @@ pub async fn create_release_cmd(
     target_ref: Option<String>,
     push_immediately: Option<bool>,
     remote: Option<String>,
+    is_latest: Option<bool>,
+    file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    use tauri::Emitter;
+
     let pi = push_immediately.unwrap_or(true);
     let rp = repo_path.clone();
     let tn = tag_name.clone();
@@ -561,6 +566,22 @@ pub async fn create_release_cmd(
     let ds = description.clone();
     let tr = target_ref.clone();
     let rm = remote.clone();
+    let fps = file_paths.clone();
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "pushing".to_string(),
+            message: if pi {
+                format!("Creating and pushing tag '{}' to remote...", tn)
+            } else {
+                format!("Creating local release tag '{}'...", tn)
+            },
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
 
     let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::create_release(
@@ -571,43 +592,89 @@ pub async fn create_release_cmd(
             tr.as_deref(),
             pi,
             rm.as_deref(),
+            is_latest,
+            fps.as_deref(),
         )
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))??;
 
     if pi {
-        if let Ok(Some(web_url)) = crate::git::remote::releases::publish_release_to_remote_api(
+        if let Ok((web_url, remote_assets)) = crate::git::remote::releases::publish_release_to_remote_api(
+            Some(&app),
             &repo_path,
             &tag_name,
             &name,
             &description,
             remote.as_deref(),
+            is_latest,
+            file_paths.as_deref(),
         )
         .await
         {
-            release_info.web_url = Some(web_url);
+            if let Some(url) = web_url {
+                release_info.web_url = Some(url);
+            }
+            if !remote_assets.is_empty() {
+                for ra in remote_assets {
+                    if !release_info.assets.iter().any(|a| a.name == ra.name) {
+                        release_info.assets.push(ra);
+                    }
+                }
+            }
         }
     }
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "finishing".to_string(),
+            message: "Finishing release and updating repository tags...".to_string(),
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
 
     Ok(release_info)
 }
 
 #[command]
 pub async fn update_release_cmd(
+    app: tauri::AppHandle,
     repo_path: String,
     tag_name: String,
     name: String,
     description: String,
     push_immediately: Option<bool>,
     remote: Option<String>,
+    is_latest: Option<bool>,
+    file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    use tauri::Emitter;
+
     let pi = push_immediately.unwrap_or(true);
     let rp = repo_path.clone();
     let tn = tag_name.clone();
     let nm = name.clone();
     let ds = description.clone();
     let rm = remote.clone();
+    let fps = file_paths.clone();
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "pushing".to_string(),
+            message: if pi {
+                format!("Updating and pushing tag '{}' to remote...", tn)
+            } else {
+                format!("Updating local release tag '{}'...", tn)
+            },
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
 
     let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::update_release(
@@ -617,24 +684,49 @@ pub async fn update_release_cmd(
             &ds,
             pi,
             rm.as_deref(),
+            is_latest,
+            fps.as_deref(),
         )
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))??;
 
     if pi {
-        if let Ok(Some(web_url)) = crate::git::remote::releases::publish_release_to_remote_api(
+        if let Ok((web_url, remote_assets)) = crate::git::remote::releases::publish_release_to_remote_api(
+            Some(&app),
             &repo_path,
             &tag_name,
             &name,
             &description,
             remote.as_deref(),
+            is_latest,
+            file_paths.as_deref(),
         )
         .await
         {
-            release_info.web_url = Some(web_url);
+            if let Some(url) = web_url {
+                release_info.web_url = Some(url);
+            }
+            if !remote_assets.is_empty() {
+                for ra in remote_assets {
+                    if !release_info.assets.iter().any(|a| a.name == ra.name) {
+                        release_info.assets.push(ra);
+                    }
+                }
+            }
         }
     }
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "finishing".to_string(),
+            message: "Finishing release update and refreshing repository...".to_string(),
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
 
     Ok(release_info)
 }
