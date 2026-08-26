@@ -8,9 +8,6 @@ import {
   Upload,
   AlertCircle,
   Check,
-  Eye,
-  Edit3,
-  ListPlus,
   Paperclip,
   Trash2,
   Plus,
@@ -18,11 +15,12 @@ import {
   Archive,
   File as FileIcon,
   Sparkles,
-  CheckCircle2,
-  ArrowRight,
   Package,
   FlaskConical,
   UploadCloud,
+  ExternalLink,
+  Calendar,
+  FileText,
 } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { listen } from '@tauri-apps/api/event';
@@ -35,6 +33,7 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Tabs } from '../common/Tabs';
+import { MarkdownPreview } from '../common/MarkdownPreview';
 import { ReleaseInfo } from '../../types/git';
 
 export interface CreateReleaseModalProps {
@@ -58,17 +57,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   initialRelease,
   onSuccess,
 }) => {
-  const { activeRepoPath, branches, status, tags, setTags, setReleases, setBranches } = useGitStore();
+  const { activeRepoPath, branches, status, tags, releases, setTags, setReleases, setBranches } = useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
-  const isEditMode = Boolean(initialRelease);
-
+  const [tagSource, setTagSource] = useState<'new' | 'existing'>(initialRelease ? 'existing' : 'new');
   const [tagName, setTagName] = useState('');
+  const [selectedExistingTag, setSelectedExistingTag] = useState('');
   const [releaseName, setReleaseName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
-  const [tagSource, setTagSource] = useState<'new' | 'existing'>('new');
-  const [selectedExistingTag, setSelectedExistingTag] = useState('');
   const [pushImmediately, setPushImmediately] = useState(true);
   const [isPrerelease, setIsPrerelease] = useState(false);
   const [isLatest, setIsLatest] = useState(true);
@@ -78,12 +75,25 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentStage, setCurrentStage] = useState<ReleaseStage>('idle');
   const [stageMessage, setStageMessage] = useState<string>('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if current selection is an existing release
+  const activeExistingRelease = useMemo(() => {
+    if (initialRelease) return initialRelease;
+    if (tagSource === 'existing' && selectedExistingTag) {
+      return releases.find((r) => r.tag_name === selectedExistingTag) || null;
+    }
+    return null;
+  }, [initialRelease, tagSource, selectedExistingTag, releases]);
+
+  const isEditingExistingRelease = Boolean(activeExistingRelease);
 
   // Listen to Tauri release progress events
   useEffect(() => {
@@ -115,7 +125,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     };
   }, []);
 
-  // Fetch branches, tags, and remotes whenever the modal opens
+  // Fetch branches, tags, releases, and remotes whenever the modal opens
   useEffect(() => {
     if (isOpen && activeRepoPath) {
       setIsLoadingBranches(true);
@@ -134,28 +144,54 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         })
         .catch(() => {});
 
+      ReleaseService.listReleases(activeRepoPath)
+        .then((rList) => {
+          if (rList) setReleases(rList);
+        })
+        .catch(() => {});
+
       loadRemotes(activeRepoPath).catch(() => {});
     }
-  }, [isOpen, activeRepoPath, setBranches, setTags, loadRemotes]);
+  }, [isOpen, activeRepoPath, setBranches, setTags, setReleases, loadRemotes]);
 
+  // Load a release into form state
+  const loadReleaseData = (rel: ReleaseInfo) => {
+    setTagName(rel.tag_name);
+    setReleaseName(rel.name);
+    setDescription(rel.description || '');
+    setIsPrerelease(Boolean(rel.is_prerelease));
+    setIsLatest(rel.is_latest ?? !rel.is_prerelease);
+    setSelectedExistingTag(rel.tag_name);
+
+    if (rel.assets && rel.assets.length > 0) {
+      setAttachedFiles(
+        rel.assets.map((a) => ({
+          name: a.name,
+          path: a.url || a.direct_asset_url || a.name,
+          size: a.size,
+        }))
+      );
+    } else {
+      setAttachedFiles([]);
+    }
+  };
+
+  // Reset form when modal opens or initialRelease changes
   useEffect(() => {
     if (isOpen) {
       setError(null);
       setIsSubmitting(false);
+      setIsDeleting(false);
       setCurrentStage('idle');
       setStageMessage('');
       setActiveTab('write');
       setAttachedFiles([]);
 
       if (initialRelease) {
-        setTagName(initialRelease.tag_name);
-        setReleaseName(initialRelease.name);
-        setDescription(initialRelease.description);
-        setIsPrerelease(Boolean(initialRelease.is_prerelease));
-        setIsLatest(initialRelease.is_latest ?? !initialRelease.is_prerelease);
         setTagSource('existing');
-        setSelectedExistingTag(initialRelease.tag_name);
+        loadReleaseData(initialRelease);
       } else {
+        setTagSource('new');
         setTagName('');
         setReleaseName('');
         setDescription('');
@@ -163,10 +199,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         setIsLatest(true);
 
         if (tags.length > 0) {
-          setTagSource('new');
           setSelectedExistingTag(tags[0].name);
-        } else {
-          setTagSource('new');
         }
 
         const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
@@ -185,27 +218,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     }
   }, [isOpen, initialRelease, status?.current_branch, activeRemote, remotes]);
 
-  // Keep selectedBranch synced if branches load asynchronously
-  useEffect(() => {
-    if (isOpen && !initialRelease && branches.length > 0) {
-      setSelectedBranch((prev) => {
-        if (prev && branches.some((b) => b.name === prev)) return prev;
-        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
-        return current;
-      });
-    }
-  }, [isOpen, initialRelease, branches, status?.current_branch]);
-
-  // Keep selectedExistingTag synced if tags load asynchronously
-  useEffect(() => {
-    if (isOpen && !initialRelease && tags.length > 0) {
-      setSelectedExistingTag((prev) => {
-        if (prev && tags.some((t) => t.name === prev)) return prev;
-        return tags[0].name;
-      });
-    }
-  }, [isOpen, initialRelease, tags]);
-
   // Branch options for dropdown
   const branchOptions = useMemo(() => {
     return branches.map((b) => ({
@@ -216,15 +228,46 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     }));
   }, [branches]);
 
-  // Tag options for existing tags dropdown
+  // Tag options for existing tags dropdown with rich release metadata
   const tagOptions = useMemo(() => {
-    return tags.map((t) => ({
-      value: t.name,
-      label: t.name,
-      icon: <Tag className="w-3.5 h-3.5 text-amber-400" />,
-      badge: t.sha ? t.sha.slice(0, 7) : undefined,
-    }));
-  }, [tags]);
+    const tagMap = new Map<string, { name: string; sha?: string; release?: ReleaseInfo }>();
+    tags.forEach((t) => {
+      tagMap.set(t.name, { name: t.name, sha: t.sha });
+    });
+    releases.forEach((r) => {
+      const existing = tagMap.get(r.tag_name);
+      if (existing) {
+        existing.release = r;
+      } else {
+        tagMap.set(r.tag_name, { name: r.tag_name, release: r });
+      }
+    });
+
+    return Array.from(tagMap.values()).map(({ name, sha, release }) => {
+      let badge: string | undefined = undefined;
+      if (release?.is_latest) {
+        badge = 'Latest';
+      } else if (release?.is_prerelease) {
+        badge = 'Pre-release';
+      } else if (release) {
+        badge = 'Release';
+      } else if (sha) {
+        badge = sha.slice(0, 7);
+      }
+
+      return {
+        value: name,
+        label: release ? `${name} — ${release.name || 'Release'}` : name,
+        description: release?.description ? release.description.slice(0, 48) : undefined,
+        icon: release ? (
+          <Package className="w-3.5 h-3.5 text-amber-400" />
+        ) : (
+          <Tag className="w-3.5 h-3.5 text-gitlab-teal" />
+        ),
+        badge,
+      };
+    });
+  }, [tags, releases]);
 
   // Remote options for dropdown
   const remoteOptions = useMemo(() => {
@@ -234,8 +277,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       description: r.url || r.push_url || undefined,
     }));
   }, [remotes]);
-
-  if (!isOpen) return null;
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes && bytes !== 0) return '';
@@ -250,8 +291,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     if (lower.endsWith('.zip') || lower.endsWith('.tar') || lower.endsWith('.gz') || lower.endsWith('.7z') || lower.endsWith('.rar')) {
       return <Archive className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
     }
-    if (lower.endsWith('.exe') || lower.endsWith('.msi') || lower.endsWith('.dmg') || lower.endsWith('.deb') || lower.endsWith('.appimage') || lower.endsWith('.apk')) {
-      return <FileCode className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />;
+    if (lower.endsWith('.exe') || lower.endsWith('.msi') || lower.endsWith('.dmg') || lower.endsWith('.appimage') || lower.endsWith('.deb') || lower.endsWith('.rpm')) {
+      return <Package className="w-3.5 h-3.5 text-commito-coral shrink-0" />;
+    }
+    if (lower.endsWith('.js') || lower.endsWith('.json') || lower.endsWith('.ts') || lower.endsWith('.py') || lower.endsWith('.rs')) {
+      return <FileCode className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
     }
     return <FileIcon className="w-3.5 h-3.5 text-text-muted shrink-0" />;
   };
@@ -261,99 +305,170 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       const selected = await openDialog({
         multiple: true,
         directory: false,
-        title: 'Select Release Assets & Binaries',
+        title: 'Select Release Binaries & Assets to Attach',
       });
+
       if (selected) {
-        const paths = Array.isArray(selected) ? selected : [selected];
-        const newFiles: AttachedFile[] = paths.map((p) => {
-          const name = p.split(/[\\/]/).pop() || 'file';
-          return { path: p, name };
-        });
+        const filePaths = Array.isArray(selected) ? selected : [selected];
+        const newFiles: AttachedFile[] = filePaths.map((p) => ({
+          path: p,
+          name: p.split(/[/\\]/).pop() || 'asset',
+        }));
+
         setAttachedFiles((prev) => {
           const existingPaths = new Set(prev.map((f) => f.path));
-          return [...prev, ...newFiles.filter((f) => !existingPaths.has(f.path))];
+          const filtered = newFiles.filter((f) => !existingPaths.has(f.path));
+          return [...prev, ...filtered];
         });
       }
-    } catch (err) {
-      console.warn('Native file dialog error, using HTML fallback:', err);
+    } catch {
       fileInputRef.current?.click();
     }
   };
 
-  const handleHtmlFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleNativeFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const added: AttachedFile[] = [];
-      for (let i = 0; i < e.target.files.length; i++) {
-        const file = e.target.files[i];
-        const filePath = (file as unknown as { path?: string }).path || file.name;
-        added.push({
-          path: filePath,
-          name: file.name,
-          size: file.size,
-        });
-      }
-      setAttachedFiles((prev) => {
-        const existingPaths = new Set(prev.map((f) => f.path));
-        return [...prev, ...added.filter((f) => !existingPaths.has(f.path))];
-      });
+      const files = Array.from(e.target.files);
+      const newFiles: AttachedFile[] = files.map((f) => ({
+        path: (f as unknown as { path?: string }).path || f.name,
+        name: f.name,
+        size: f.size,
+      }));
+      setAttachedFiles((prev) => [...prev, ...newFiles]);
     }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDraggingOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDraggingOver(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDraggingOver(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const dropped: AttachedFile[] = [];
-      for (let i = 0; i < e.dataTransfer.files.length; i++) {
-        const file = e.dataTransfer.files[i];
-        const filePath = (file as unknown as { path?: string }).path || file.name;
-        dropped.push({
-          path: filePath,
-          name: file.name,
-          size: file.size,
-        });
-      }
-      setAttachedFiles((prev) => {
-        const existingPaths = new Set(prev.map((f) => f.path));
-        return [...prev, ...dropped.filter((f) => !existingPaths.has(f.path))];
-      });
+      const files = Array.from(e.dataTransfer.files);
+      const newFiles: AttachedFile[] = files.map((f) => ({
+        path: (f as unknown as { path?: string }).path || f.name,
+        name: f.name,
+        size: f.size,
+      }));
+      setAttachedFiles((prev) => [...prev, ...newFiles]);
     }
   };
 
-  const handleRemoveFile = (indexToRemove: number) => {
-    setAttachedFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const handleGenerateNotesFromCommits = async () => {
+    if (!activeRepoPath || isGeneratingAi || isSubmitting) return;
+
+    const effectiveTag = (tagSource === 'new' ? tagName : selectedExistingTag).trim() || 'v1.0.0';
+    setIsGeneratingAi(true);
+
+    try {
+      // Find latest previous tag
+      const otherTags = tags.filter((t) => t.name !== effectiveTag);
+      const prevTag = otherTags.length > 0 ? otherTags[0].name : undefined;
+
+      const result = await ReleaseService.generateAiReleaseNotes(
+        activeRepoPath,
+        effectiveTag,
+        prevTag,
+        tagSource === 'new' ? selectedBranch || undefined : undefined
+      );
+
+      if (result) {
+        if (result.notes) {
+          setDescription(result.notes);
+        }
+        if (result.title && (!releaseName.trim() || releaseName.startsWith('Release '))) {
+          setReleaseName(result.title);
+        }
+
+        useToastStore.getState().showToast({
+          type: 'success',
+          title: 'Release Notes Generated',
+          message: `Analyzed ${result.commits_analyzed} commits using ${result.model_used}`,
+        });
+      }
+    } catch (err: unknown) {
+      // Graceful fallback to local commit log
+      try {
+        const history = await GitService.getCommitHistory(activeRepoPath, 25, 0);
+        if (history && history.length > 0) {
+          const commitBullets = history
+            .filter((c) => !c.message.startsWith('Merge branch') && !c.message.startsWith('Merge pull request'))
+            .map((c) => {
+              const handle = `@${c.author_name.replace(/\s+/g, '')}`;
+              return `- ${c.message} (\`${c.short_sha}\`) by ${handle}`;
+            })
+            .join('\n');
+          const generated = `### What's Changed in this Release\n\n${commitBullets}\n\n**Full Changelog**: https://github.com/repository/commits/${effectiveTag}`;
+          setDescription(generated);
+          useToastStore.getState().showToast({
+            type: 'info',
+            title: 'Changelog Loaded',
+            message: `Loaded ${history.length} commits into release notes`,
+          });
+        }
+      } catch {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'Notes Generation Failed',
+          message: getErrorMessage(err) || 'Could not generate release notes from commits',
+        });
+      }
+    } finally {
+      setIsGeneratingAi(false);
+    }
   };
 
-  const handleGenerateNotesFromCommits = async () => {
-    if (!activeRepoPath) return;
+  const handleDeleteRelease = async () => {
+    const targetTag = tagSource === 'new' ? tagName.trim() : selectedExistingTag.trim();
+    if (!activeRepoPath || !targetTag || isDeleting || isSubmitting) return;
+
+    if (!window.confirm(`Are you sure you want to delete the release for tag "${targetTag}"?`)) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setError(null);
+
     try {
-      const history = await GitService.getCommitHistory(activeRepoPath, 15, 0);
-      if (history && history.length > 0) {
-        const commitBullets = history
-          .map((c) => `- ${c.message} (${c.short_sha}) - @${c.author_name}`)
-          .join('\n');
-        const generated = `### What's Changed in this Release\n\n${commitBullets}\n\n**Full Changelog**: https://github.com/repository/commits/${tagName || 'v1.0.0'}`;
-        setDescription(generated);
-      }
-    } catch {
+      await ReleaseService.deleteRelease(
+        activeRepoPath,
+        targetTag,
+        true,
+        selectedRemote || null
+      );
+
+      useLogStore.getState().addLog('info', 'Git', `Deleted release '${targetTag}'`);
       useToastStore.getState().showToast({
-        type: 'info',
-        title: 'Generate Notes',
-        message: 'Could not automatically load commits for notes generation',
+        type: 'success',
+        title: 'Release Deleted',
+        message: `Successfully deleted release '${targetTag}'`,
       });
+
+      const updatedReleases = await ReleaseService.listReleases(activeRepoPath);
+      setReleases(updatedReleases || []);
+
+      const updatedTags = await GitService.listTags(activeRepoPath);
+      setTags(updatedTags || []);
+
+      onSuccess?.();
+      onClose();
+    } catch (err: unknown) {
+      const appErr = toAppError(err);
+      setError(appErr.message || getErrorMessage(err) || 'Failed to delete release');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -361,12 +476,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     e.preventDefault();
     if (!activeRepoPath || isSubmitting) return;
 
-    const finalTag = isEditMode
-      ? initialRelease?.tag_name || tagName.trim()
-      : tagSource === 'existing'
-      ? selectedExistingTag
-      : tagName.trim();
-
+    const finalTag = tagSource === 'new' ? tagName.trim() : selectedExistingTag.trim();
     const finalTitle = releaseName.trim() || `Release ${finalTag}`;
     const finalDesc = description.trim();
     const filePaths = attachedFiles.map((f) => f.path);
@@ -381,12 +491,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     setCurrentStage('pushing');
     setStageMessage(
       pushImmediately
-        ? `Creating and pushing tag '${finalTag}' to remote repository...`
-        : `Creating local release tag '${finalTag}'...`
+        ? `Publishing release and syncing tag '${finalTag}' with remote...`
+        : `Saving local release tag '${finalTag}'...`
     );
 
     try {
-      if (isEditMode || tagSource === 'existing') {
+      if (isEditingExistingRelease) {
         await ReleaseService.updateRelease(
           activeRepoPath,
           finalTag,
@@ -399,11 +509,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           filePaths
         );
 
-        useLogStore.getState().addLog('success', 'Git', `Saved release '${finalTitle}' (${finalTag})`);
+        useLogStore.getState().addLog('success', 'Git', `Updated release '${finalTitle}' (${finalTag})`);
         useToastStore.getState().showToast({
           type: 'success',
-          title: isEditMode ? 'Release Updated' : 'Release Published',
-          message: `Successfully published release '${finalTitle}' for tag ${finalTag}`,
+          title: 'Release Updated',
+          message: `Successfully updated release '${finalTitle}' for tag ${finalTag}`,
         });
       } else {
         await ReleaseService.createRelease(
@@ -411,7 +521,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           finalTag,
           finalTitle,
           finalDesc,
-          selectedBranch || null,
+          tagSource === 'new' ? selectedBranch || null : null,
           pushImmediately,
           selectedRemote || null,
           isLatest,
@@ -422,13 +532,13 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         useLogStore.getState().addLog('success', 'Git', `Created release '${finalTitle}' (${finalTag})`);
         useToastStore.getState().showToast({
           type: 'success',
-          title: 'Release Created',
-          message: `Successfully published release '${finalTitle}'${pushImmediately ? ' to remote' : ''}`,
+          title: 'Release Published',
+          message: `Successfully created release '${finalTitle}'${pushImmediately ? ' on remote' : ''}`,
         });
       }
 
       setCurrentStage('done');
-      setStageMessage('Release published successfully!');
+      setStageMessage('Release saved successfully!');
 
       // Refresh releases & tags in store
       const updatedReleases = await ReleaseService.listReleases(activeRepoPath);
@@ -449,649 +559,698 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !isSubmitting) {
+    if (e.key === 'Escape' && !isSubmitting && !isDeleting) {
       onClose();
     }
   };
 
-  // Stage indicator calculation
-  const getStageStatus = (stageName: 'pushing' | 'uploading' | 'finishing') => {
-    if (currentStage === 'done') return 'done';
-    if (currentStage === 'idle') return 'pending';
-
-    if (stageName === 'pushing') {
-      return currentStage === 'pushing' ? 'active' : 'done';
+  const getStageColorClasses = (stage: ReleaseStage) => {
+    switch (stage) {
+      case 'pushing':
+        return {
+          badge: 'text-sky-400 bg-sky-500/15 border-sky-500/35',
+          spinner: 'text-sky-400',
+        };
+      case 'uploading':
+        return {
+          badge: 'text-amber-400 bg-amber-500/15 border-amber-500/35',
+          spinner: 'text-amber-400',
+        };
+      case 'finishing':
+        return {
+          badge: 'text-purple-400 bg-purple-500/15 border-purple-500/35',
+          spinner: 'text-purple-400',
+        };
+      case 'done':
+        return {
+          badge: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/35',
+          spinner: 'text-emerald-400',
+        };
+      default:
+        return {
+          badge: 'text-commito-coral bg-commito-coral/15 border-commito-coral/30',
+          spinner: 'text-commito-coral',
+        };
     }
-    if (stageName === 'uploading') {
-      if (currentStage === 'pushing') return 'pending';
-      return currentStage === 'uploading' ? 'active' : 'done';
-    }
-    if (stageName === 'finishing') {
-      return currentStage === 'finishing' ? 'active' : 'pending';
-    }
-    return 'pending';
   };
 
   const getSubmitButtonLabel = () => {
-    if (!isSubmitting) {
-      return isEditMode ? 'Save Changes' : 'Publish Release';
+    if (isEditingExistingRelease) {
+      return pushImmediately ? 'Save & Push Update' : 'Save Changes';
     }
-    if (currentStage === 'pushing') return 'Pushing Tag...';
-    if (currentStage === 'uploading') return 'Uploading Assets...';
-    if (currentStage === 'finishing') return 'Finishing Up...';
-    return isEditMode ? 'Updating...' : 'Publishing...';
+    return pushImmediately ? 'Publish Release' : 'Save Local Release';
   };
+
+  if (!isOpen) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none font-sans animate-in fade-in duration-100"
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) onClose();
-      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="create-release-title"
       onKeyDown={handleKeyDown}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
-        className="w-full max-w-xl bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100 max-h-[88vh]"
+        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/80 bg-base-1/50 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-xs bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
-              <Package className="w-3.5 h-3.5" />
+            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <Package className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-bold text-xs text-text-primary leading-tight">
-                {isEditMode ? 'Edit Release' : 'Draft New Release'}
+              <h3 id="create-release-title" className="text-sm font-semibold text-text-primary leading-tight">
+                {isEditingExistingRelease ? (
+                  <span>
+                    Manage Release <span className="font-mono text-commito-coral font-bold">{activeExistingRelease?.tag_name}</span>
+                  </span>
+                ) : (
+                  <span>Draft New Release</span>
+                )}
               </h3>
-              <p className="text-[10.5px] text-text-muted mt-0.5 leading-none">
-                {isEditMode
-                  ? `Update release title, notes, and changelog for tag ${initialRelease?.tag_name}`
+              <p className="text-[11px] text-text-muted leading-tight mt-0.5">
+                {isEditingExistingRelease
+                  ? 'Edit release notes, binaries, titles, and publish updates to your git remote'
                   : 'Publish a versioned release package with release notes, assets, and git tag'}
               </p>
             </div>
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isDeleting}
             className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
             title="Close (Esc)"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Hidden HTML file input for fallback */}
+        {/* Hidden Native File Input for drag/drop & manual selection */}
         <input
           type="file"
           ref={fileInputRef}
+          onChange={handleNativeFileInput}
           multiple
-          onChange={handleHtmlFileInputChange}
           className="hidden"
         />
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-3.5 overflow-y-auto flex-1">
-          {/* Target Reference & Tag Selection */}
-          {!isEditMode ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint block">
-                  Release Tag <span className="text-commito-coral">*</span>
-                </label>
-                {tags.length > 0 && (
+        {/* Split 2-Column Form Body */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-border/80">
+          {/* Left Column: Metadata, Tag, Assets, Toggles */}
+          <div className="w-full md:w-1/2 lg:w-[48%] flex flex-col min-h-0 overflow-y-auto p-4 space-y-3.5 shrink-0">
+            {/* Section 1: Tag Source Selector (New Tag vs Existing Tag) */}
+            {!initialRelease ? (
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                    <span>RELEASE TAG</span>
+                    <span className="text-commito-coral font-bold">*</span>
+                  </label>
+
                   <Tabs<'new' | 'existing'>
                     tabs={[
                       { id: 'new', label: 'New Tag' },
-                      { id: 'existing', label: 'Existing Tag' },
+                      {
+                        id: 'existing',
+                        label: 'Existing Tag',
+                        badge: tags.length > 0 ? tags.length : undefined,
+                        badgeVariant: 'amber',
+                      },
                     ]}
                     activeTab={tagSource}
-                    onChange={setTagSource}
+                    onChange={(t) => {
+                      setTagSource(t);
+                      setError(null);
+                      if (t === 'existing' && tags.length > 0) {
+                        const tagToSelect = selectedExistingTag || tags[0].name;
+                        setSelectedExistingTag(tagToSelect);
+                        const existingRel = releases.find((r) => r.tag_name === tagToSelect);
+                        if (existingRel) {
+                          loadReleaseData(existingRel);
+                        } else {
+                          setReleaseName(`Release ${tagToSelect}`);
+                        }
+                      } else if (t === 'new') {
+                        setTagName('');
+                        setReleaseName('');
+                        setDescription('');
+                        setIsLatest(true);
+                        setIsPrerelease(false);
+                        setAttachedFiles([]);
+                      }
+                    }}
                     size="xs"
                     ariaLabel="Tag source selection"
                   />
-                )}
-              </div>
-
-              {tagSource === 'new' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      placeholder="Tag name (e.g. v1.0.0)"
-                      value={tagName}
-                      onChange={(e) => {
-                        setTagName(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      disabled={isSubmitting}
-                      className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <Dropdown
-                      options={branchOptions}
-                      value={selectedBranch}
-                      onChange={(val) => setSelectedBranch(val)}
-                      disabled={isSubmitting}
-                      placeholder={isLoadingBranches ? 'Loading branches...' : 'Target Branch...'}
-                      size="md"
-                    />
-                  </div>
                 </div>
-              ) : (
-                <div>
-                  <Dropdown
-                    options={tagOptions}
-                    value={selectedExistingTag}
-                    onChange={(val) => setSelectedExistingTag(val)}
-                    disabled={isSubmitting}
-                    placeholder="Select existing tag..."
-                    size="md"
-                  />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="p-2.5 bg-base-1 border border-border rounded-xs flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Tag className="w-3.5 h-3.5 text-amber-400" />
-                <span className="font-mono text-xs font-bold text-text-primary">
-                  {initialRelease?.tag_name}
-                </span>
-              </div>
-              <span className="text-[10px] font-mono text-text-muted">Target Tag</span>
-            </div>
-          )}
 
-          {/* Release Title Input */}
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-text-primary block">
-              Release Title
-            </label>
-            <input
-              type="text"
-              placeholder={`e.g. Release ${tagName || 'v1.0.0'}`}
-              value={releaseName}
-              onChange={(e) => setReleaseName(e.target.value)}
-              disabled={isSubmitting}
-              className="w-full h-8 px-2.5 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
-            />
-          </div>
-
-          {/* Release Notes / Description with Markdown Tabs & Helper */}
-          <div className="space-y-1.5 p-3 bg-base-1 border border-border rounded-sm">
-            <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-border/60">
-              <Tabs<'write' | 'preview'>
-                tabs={[
-                  {
-                    id: 'write',
-                    label: 'Write Markdown',
-                    icon: <Edit3 className="w-3 h-3 text-commito-coral" />,
-                  },
-                  {
-                    id: 'preview',
-                    label: 'Preview',
-                    icon: <Eye className="w-3 h-3 text-gitlab-teal" />,
-                  },
-                ]}
-                activeTab={activeTab}
-                onChange={setActiveTab}
-                size="sm"
-                ariaLabel="Release notes view"
-              />
-
-              <button
-                type="button"
-                onClick={handleGenerateNotesFromCommits}
-                className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[10.5px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                title="Generate notes bullet points from recent commits"
-              >
-                <ListPlus className="w-3 h-3 text-commito-coral" />
-                <span>Auto-fill from Commits</span>
-              </button>
-            </div>
-
-            {activeTab === 'write' ? (
-              <textarea
-                placeholder="Describe this release, new features, bugfixes, breaking changes, and contributor mentions..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={isSubmitting}
-                rows={5}
-                className="w-full p-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner font-mono resize-none leading-relaxed"
-              />
-            ) : (
-              <div className="w-full min-h-[120px] max-h-48 p-3 bg-base-0 border border-border rounded-xs overflow-y-auto text-xs text-text-primary font-sans leading-relaxed space-y-2 select-text">
-                {description.trim() ? (
-                  <div className="whitespace-pre-wrap font-sans text-xs text-text-secondary leading-relaxed">
-                    {description}
-                  </div>
-                ) : (
-                  <div className="text-text-faint italic text-center py-6">
-                    No release notes written yet.
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Attach Binaries / Release Assets Upload Section */}
-          <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <Paperclip className="w-3.5 h-3.5 text-commito-coral" />
-                <span className="text-xs font-semibold text-text-primary">
-                  Attach Binaries & Release Assets
-                </span>
-                {attachedFiles.length > 0 && (
-                  <span className="px-1.5 py-0.2 text-[10px] font-bold bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs">
-                    {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''}
-                  </span>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handleChooseFiles}
-                disabled={isSubmitting}
-                className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs"
-              >
-                <Plus className="w-3 h-3 text-commito-coral" />
-                <span>Add Files</span>
-              </button>
-            </div>
-
-            {/* Dropzone */}
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={handleChooseFiles}
-              className={`border border-dashed rounded-xs p-3.5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 ${
-                isDraggingOver
-                  ? 'border-commito-coral bg-commito-coral/10'
-                  : 'border-border hover:border-commito-coral/60 bg-base-0/60 hover:bg-base-0'
-              }`}
-            >
-              <UploadCloud className="w-4.5 h-4.5 text-text-muted transition" />
-              <div className="text-[11.5px] text-text-secondary">
-                <span className="font-semibold text-text-primary hover:underline">Choose files</span> or drag & drop packages here
-              </div>
-              <p className="text-[10px] text-text-muted font-mono">
-                Binaries, tarballs, .zip, .exe, installers, or checksum files
-              </p>
-            </div>
-
-            {/* Attached Files List */}
-            {attachedFiles.length > 0 && (
-              <div className="space-y-1.5 pt-1">
-                {attachedFiles.map((file, idx) => (
-                  <div
-                    key={file.path + idx}
-                    className="flex items-center justify-between p-2 bg-base-0 border border-border rounded-xs text-xs gap-2 group hover:border-border-strong transition"
-                  >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      {getFileIcon(file.name)}
-                      <span className="font-mono text-[11.5px] text-text-primary truncate" title={file.path}>
-                        {file.name}
-                      </span>
-                      {file.size !== undefined && (
-                        <span className="text-[10px] text-text-muted shrink-0 font-mono">
-                          ({formatFileSize(file.size)})
-                        </span>
-                      )}
+                {tagSource === 'new' ? (
+                  /* New Tag & Branch Inputs */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="relative">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        placeholder="e.g. v1.0.0"
+                        value={tagName}
+                        onChange={(e) => setTagName(e.target.value)}
+                        disabled={isSubmitting}
+                        className="w-full h-8 px-2.5 text-xs font-mono text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                      />
+                      <Tag className="w-3.5 h-3.5 text-text-faint absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveFile(idx)}
-                      disabled={isSubmitting}
-                      className="p-1 text-text-muted hover:text-git-removed hover:bg-git-removed-bg rounded-xs transition cursor-pointer"
-                      title="Remove file"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                    <div>
+                      <Dropdown
+                        options={branchOptions}
+                        value={selectedBranch}
+                        onChange={(val) => setSelectedBranch(val)}
+                        disabled={isSubmitting}
+                        placeholder={isLoadingBranches ? 'Loading branches...' : 'Target Branch...'}
+                        size="md"
+                      />
+                    </div>
                   </div>
-                ))}
+                ) : (
+                  /* Existing Tag Selector Dropdown */
+                  <div className="space-y-2">
+                    {tagOptions.length > 0 ? (
+                      <Dropdown
+                        options={tagOptions}
+                        value={selectedExistingTag}
+                        onChange={(val) => {
+                          setSelectedExistingTag(val);
+                          const existingRel = releases.find((r) => r.tag_name === val);
+                          if (existingRel) {
+                            loadReleaseData(existingRel);
+                          } else {
+                            setReleaseName(`Release ${val}`);
+                          }
+                        }}
+                        disabled={isSubmitting || isDeleting}
+                        placeholder="Select existing tag..."
+                        size="md"
+                      />
+                    ) : (
+                      <div className="p-3 bg-base-1 border border-border/80 rounded-xs flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2 text-text-muted">
+                          <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                          <span>No tags or releases found in repository</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setTagSource('new')}
+                          className="h-6 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white text-[11px] font-semibold rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
+                        >
+                          <Plus className="w-3 h-3" />
+                          <span>Create New Tag</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Summary card if the selected tag is an existing release */}
+                    {activeExistingRelease && (
+                      <div className="p-2.5 bg-base-1 border border-amber-500/30 rounded-xs flex items-center justify-between gap-2 text-xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-5 h-5 rounded-xs bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                            <Package className="w-3 h-3" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-mono text-xs font-bold text-text-primary truncate">
+                              {activeExistingRelease.tag_name}
+                            </div>
+                            <div className="text-[10.5px] text-text-muted truncate">
+                              {activeExistingRelease.name || 'Untitled Release'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {activeExistingRelease.is_latest && (
+                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9.5px] font-bold rounded-xs border border-emerald-500/30">
+                              Latest
+                            </span>
+                          )}
+                          {activeExistingRelease.is_prerelease && (
+                            <span className="px-1.5 py-0.2 bg-purple-500/15 text-purple-300 text-[9.5px] font-bold rounded-xs border border-purple-500/30">
+                              Pre-release
+                            </span>
+                          )}
+                          {activeExistingRelease.created_at && (
+                            <span className="text-[10px] text-text-muted font-mono flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-text-faint" />
+                              {activeExistingRelease.created_at.slice(0, 10)}
+                            </span>
+                          )}
+                          {activeExistingRelease.web_url && (
+                            <a
+                              href={activeExistingRelease.web_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="p-1 text-text-muted hover:text-commito-coral transition rounded-xs hover:bg-base-2 ml-1"
+                              title="View on Cloud"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Fixed Tag Banner when opened directly from edit button */
+              <div className="p-2.5 bg-base-1 border border-border rounded-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-mono text-xs font-bold text-text-primary">
+                    {initialRelease?.tag_name}
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono text-text-muted">Target Tag</span>
               </div>
             )}
 
-            {/* Existing Release Assets in Edit Mode */}
-            {isEditMode && initialRelease?.assets && initialRelease.assets.length > 0 && (
-              <div className="pt-2 border-t border-border/40 space-y-1.5">
-                <div className="text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                  Existing Remote Assets ({initialRelease.assets.length})
+            {/* Section 2: Release Title Input */}
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-text-primary block">
+                Release Title
+              </label>
+              <input
+                type="text"
+                placeholder={`e.g. Release ${tagName || selectedExistingTag || 'v1.0.0'}`}
+                value={releaseName}
+                onChange={(e) => setReleaseName(e.target.value)}
+                disabled={isSubmitting || isDeleting}
+                className="w-full h-8 px-2.5 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+              />
+            </div>
+
+            {/* Section 3: Attach Binaries & Release Assets */}
+            <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Paperclip className="w-3.5 h-3.5 text-commito-coral" />
+                  <span className="text-xs font-semibold text-text-primary">
+                    Attach Binaries & Release Assets
+                  </span>
+                  {attachedFiles.length > 0 && (
+                    <span className="px-1.5 py-0.2 text-[10px] font-bold bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs">
+                      {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''}
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-1">
-                  {initialRelease.assets.map((asset, aIdx) => (
+
+                <button
+                  type="button"
+                  onClick={handleChooseFiles}
+                  disabled={isSubmitting || isDeleting}
+                  className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50"
+                >
+                  <Plus className="w-3 h-3 text-commito-coral" />
+                  <span>Add Files</span>
+                </button>
+              </div>
+
+              {/* Dropzone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={handleChooseFiles}
+                className={`border border-dashed rounded-xs p-3 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 ${
+                  isDraggingOver
+                    ? 'border-commito-coral bg-commito-coral/10'
+                    : 'border-border hover:border-commito-coral/60 bg-base-0/60 hover:bg-base-0'
+                }`}
+              >
+                <UploadCloud className="w-4.5 h-4.5 text-text-muted transition" />
+                <div className="text-[11.5px] text-text-secondary">
+                  <span className="font-semibold text-text-primary hover:underline">Choose files</span> or drag & drop
+                </div>
+                <p className="text-[10px] text-text-muted font-mono">
+                  Binaries, tarballs, .zip, .exe, installers, or checksum files
+                </p>
+              </div>
+
+              {/* Attached Files List */}
+              {attachedFiles.length > 0 && (
+                <div className="space-y-1.5 pt-0.5 max-h-32 overflow-y-auto">
+                  {attachedFiles.map((file, idx) => (
                     <div
-                      key={asset.name + aIdx}
-                      className="flex items-center justify-between p-1.5 bg-base-0 border border-border rounded-xs text-xs"
+                      key={file.path + idx}
+                      className="flex items-center justify-between p-2 bg-base-0 border border-border rounded-xs text-xs gap-2 group hover:border-border-strong transition"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        {getFileIcon(asset.name)}
-                        <span className="font-mono text-[11px] text-text-secondary truncate">
-                          {asset.name}
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {getFileIcon(file.name)}
+                        <span className="font-mono text-[11.5px] text-text-primary truncate" title={file.path}>
+                          {file.name}
                         </span>
-                        {asset.size && (
-                          <span className="text-[10px] text-text-muted font-mono">
-                            ({formatFileSize(asset.size)})
+                        {file.size !== undefined && (
+                          <span className="text-[10px] text-text-muted shrink-0 font-mono">
+                            ({formatFileSize(file.size)})
                           </span>
                         )}
                       </div>
-                      <span className="text-[9.5px] px-1.5 py-0.2 bg-base-2 text-text-muted border border-border rounded-xs">
-                        Synced
-                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        disabled={isSubmitting || isDeleting}
+                        className="p-1 text-text-muted hover:text-git-removed hover:bg-git-removed-bg rounded-xs transition cursor-pointer"
+                        title="Remove file"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* Interactive Option Toggle Cards with App Corners and Palette */}
-          <div className="space-y-2">
-            {/* Option 1: Remote Push */}
-            <div
-              onClick={() => !isSubmitting && setPushImmediately(!pushImmediately)}
-              className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                pushImmediately
-                  ? 'bg-base-1 border-commito-coral/40 shadow-2xs'
-                  : 'bg-base-1/50 border-border hover:bg-base-1'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div
-                  className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
-                    pushImmediately
-                      ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                      : 'bg-base-0 text-text-muted border border-border'
-                  }`}
-                >
-                  <Upload className="w-3 h-3" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-text-primary leading-none">
-                    Push release and tag to remote immediately
-                  </div>
-                  <p className="text-[10.5px] text-text-muted mt-1 leading-none">
-                    Publishes the release tag directly to your remote git platform API
-                  </p>
-                </div>
-              </div>
-
-              {/* Custom Toggle Switch */}
-              <div
-                className={`w-7.5 h-4 rounded-xs p-0.5 transition-colors shrink-0 ${
-                  pushImmediately ? 'bg-commito-coral' : 'bg-base-2 border border-border'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-xs bg-white transition-transform shadow-2xs ${
-                    pushImmediately ? 'translate-x-3.5' : 'translate-x-0'
-                  }`}
-                />
-              </div>
+              )}
             </div>
 
-            {/* Target Remote Dropdown if multi-remote */}
-            {pushImmediately && remotes.length > 1 && (
-              <div className="ml-8 p-2 bg-base-1 border border-border rounded-xs flex items-center gap-2">
-                <span className="text-[11px] text-text-muted font-medium shrink-0">Target Remote:</span>
-                <div className="flex-1">
+            {/* Section 4: Remote Target & Publish Options */}
+            <div className="space-y-2">
+              {/* Remote Selector (if multiple remotes exist) */}
+              {remotes.length > 1 && (
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-text-primary block">
+                    Target Remote
+                  </label>
                   <Dropdown
                     options={remoteOptions}
                     value={selectedRemote}
                     onChange={(val) => setSelectedRemote(val)}
-                    disabled={isSubmitting}
-                    placeholder="Select remote..."
-                    size="sm"
+                    disabled={isSubmitting || isDeleting}
+                    placeholder="Select Remote..."
+                    size="md"
+                  />
+                </div>
+              )}
+
+              {/* Option 1: Push Immediately Toggle */}
+              <div
+                onClick={() => !isSubmitting && !isDeleting && setPushImmediately(!pushImmediately)}
+                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
+                  pushImmediately
+                    ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
+                      pushImmediately
+                        ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
+                        : 'bg-base-0 text-text-muted border border-border'
+                    }`}
+                  >
+                    <Upload className="w-3 h-3" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                      <span>Push release and tag to remote immediately</span>
+                    </div>
+                    <p className="text-[10.5px] text-text-muted mt-1 leading-none">
+                      Publishes directly to remote git platform API
+                    </p>
+                  </div>
+                </div>
+
+                {/* Custom Toggle Switch */}
+                <div
+                  className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
+                    pushImmediately
+                      ? 'bg-commito-coral border-commito-coral'
+                      : 'bg-base-2 border-border'
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                      pushImmediately ? 'translate-x-3' : 'translate-x-0'
+                    }`}
                   />
                 </div>
               </div>
-            )}
 
-            {/* Option 2: Latest Release */}
-            <div
-              onClick={() => {
-                if (isSubmitting) return;
-                const next = !isLatest;
-                setIsLatest(next);
-                if (next) {
-                  setIsPrerelease(false);
-                }
-              }}
-              className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                isLatest
-                  ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
-                  : 'bg-base-1/50 border-border hover:bg-base-1'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
+              {/* Option 2: Set as Latest Release Toggle */}
+              <div
+                onClick={() => {
+                  if (isSubmitting || isDeleting) return;
+                  const next = !isLatest;
+                  setIsLatest(next);
+                  if (next) {
+                    setIsPrerelease(false);
+                  }
+                }}
+                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
+                  isLatest
+                    ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
+                      isLatest
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-base-0 text-text-muted border border-border'
+                    }`}
+                  >
+                    <Sparkles className="w-3 h-3" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                      <span>Set as latest release</span>
+                      {isLatest && (
+                        <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
+                          Latest
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-text-muted mt-1 leading-none">
+                      Marks this as the primary release version
+                    </p>
+                  </div>
+                </div>
+
+                {/* Custom Toggle Switch */}
                 <div
-                  className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
+                  className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
                     isLatest
-                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-base-0 text-text-muted border border-border'
+                      ? 'bg-emerald-500 border-emerald-500'
+                      : 'bg-base-2 border-border'
                   }`}
                 >
-                  <Sparkles className="w-3 h-3" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                    <span>Set as latest release</span>
-                    {isLatest && (
-                      <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
-                        Latest
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10.5px] text-text-muted mt-1 leading-none">
-                    Marks this version as the official primary release for the repository
-                  </p>
+                  <div
+                    className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                      isLatest ? 'translate-x-3' : 'translate-x-0'
+                    }`}
+                  />
                 </div>
               </div>
 
-              {/* Custom Toggle Switch */}
+              {/* Option 3: Pre-release Toggle */}
               <div
-                className={`w-7.5 h-4 rounded-xs p-0.5 transition-colors shrink-0 ${
-                  isLatest ? 'bg-emerald-500' : 'bg-base-2 border border-border'
+                onClick={() => {
+                  if (isSubmitting || isDeleting) return;
+                  const next = !isPrerelease;
+                  setIsPrerelease(next);
+                  if (next) {
+                    setIsLatest(false);
+                  }
+                }}
+                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
+                  isPrerelease
+                    ? 'bg-purple-500/5 border-purple-500/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
                 }`}
               >
-                <div
-                  className={`w-3 h-3 rounded-xs bg-white transition-transform shadow-2xs ${
-                    isLatest ? 'translate-x-3.5' : 'translate-x-0'
-                  }`}
-                />
-              </div>
-            </div>
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
+                      isPrerelease
+                        ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                        : 'bg-base-0 text-text-muted border border-border'
+                    }`}
+                  >
+                    <FlaskConical className="w-3 h-3" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                      <span>Mark as pre-release</span>
+                      {isPrerelease && (
+                        <span className="px-1.5 py-0.2 bg-purple-500/15 text-purple-300 text-[9px] font-bold rounded-xs border border-purple-500/30">
+                          Pre-release
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10.5px] text-text-muted mt-1 leading-none">
+                      Beta, alpha, or release candidate
+                    </p>
+                  </div>
+                </div>
 
-            {/* Option 3: Pre-release */}
-            <div
-              onClick={() => {
-                if (isSubmitting) return;
-                const next = !isPrerelease;
-                setIsPrerelease(next);
-                if (next) {
-                  setIsLatest(false);
-                }
-              }}
-              className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                isPrerelease
-                  ? 'bg-purple-500/5 border-purple-500/35 shadow-2xs'
-                  : 'bg-base-1/50 border-border hover:bg-base-1'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0">
+                {/* Custom Toggle Switch */}
                 <div
-                  className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
+                  className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
                     isPrerelease
-                      ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
-                      : 'bg-base-0 text-text-muted border border-border'
+                      ? 'bg-purple-500 border-purple-500'
+                      : 'bg-base-2 border-border'
                   }`}
                 >
-                  <FlaskConical className="w-3 h-3" />
+                  <div
+                    className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                      isPrerelease ? 'translate-x-3' : 'translate-x-0'
+                    }`}
+                  />
                 </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                    <span>Mark as pre-release</span>
-                    {isPrerelease && (
-                      <span className="px-1.5 py-0.2 bg-purple-500/15 text-purple-300 text-[9px] font-bold rounded-xs border border-purple-500/30">
-                        Pre-release
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[10.5px] text-text-muted mt-1 leading-none">
-                    Identifies this package as a beta, alpha, or experimental release candidate
-                  </p>
-                </div>
-              </div>
-
-              {/* Custom Toggle Switch */}
-              <div
-                className={`w-7.5 h-4 rounded-xs p-0.5 transition-colors shrink-0 ${
-                  isPrerelease ? 'bg-purple-500' : 'bg-base-2 border border-border'
-                }`}
-              >
-                <div
-                  className={`w-3 h-3 rounded-xs bg-white transition-transform shadow-2xs ${
-                    isPrerelease ? 'translate-x-3.5' : 'translate-x-0'
-                  }`}
-                />
               </div>
             </div>
+
+
+
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span className="truncate">{error}</span>
+              </div>
+            )}
           </div>
 
-          {/* Live Multi-Stage Progress Tracker during Publishing */}
-          {isSubmitting && (
-            <div className="p-3 bg-base-1 border border-commito-coral/40 rounded-sm space-y-2 animate-in fade-in zoom-in-95 duration-100">
-              <div className="flex items-center justify-between text-[10.5px] font-bold uppercase tracking-wider text-text-primary pb-1 border-b border-border/60">
-                <span className="flex items-center gap-1.5 text-commito-coral">
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Publishing in Progress</span>
-                </span>
-                <span className="font-mono text-[10px] text-text-muted">
-                  Stage: {currentStage.toUpperCase()}
-                </span>
+          {/* Right Column: Full-Height Markdown Editor & Preview */}
+          <div className="flex-1 p-4 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-commito-coral" />
+                  <span>Release Notes & Changelog</span>
+                </label>
+                <Tabs<'write' | 'preview'>
+                  tabs={[
+                    {
+                      id: 'write',
+                      label: 'Write',
+                    },
+                    {
+                      id: 'preview',
+                      label: 'Preview',
+                    },
+                  ]}
+                  activeTab={activeTab}
+                  onChange={setActiveTab}
+                  size="xs"
+                  ariaLabel="Release notes view"
+                />
               </div>
 
-              {/* Progress Stepper Bar */}
-              <div className="grid grid-cols-3 gap-1.5 pt-0.5">
-                {/* Stage 1: Pushing */}
-                {(() => {
-                  const status = getStageStatus('pushing');
-                  return (
-                    <div
-                      className={`flex items-center gap-1.5 p-1.5 rounded-xs border text-[11px] transition-all ${
-                        status === 'done'
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
-                          : status === 'active'
-                          ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-bold shadow-2xs'
-                          : 'bg-base-0 border-border text-text-muted'
-                      }`}
-                    >
-                      {status === 'done' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      ) : status === 'active' ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral shrink-0" />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5 text-text-faint shrink-0" />
-                      )}
-                      <span className="truncate">1. Push Tag</span>
-                    </div>
-                  );
-                })()}
+              <button
+                type="button"
+                onClick={handleGenerateNotesFromCommits}
+                disabled={isSubmitting || isDeleting || isGeneratingAi}
+                className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/35 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                title="Use AI to analyze commits between new and previous tags to compose full release notes"
+              >
+                {isGeneratingAi ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
+                    <span>Analyzing Commits...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3.5 h-3.5 text-commito-coral" />
+                    <span>Generate Notes with AI</span>
+                  </>
+                )}
+              </button>
+            </div>
 
-                {/* Stage 2: Uploading */}
-                {(() => {
-                  const status = getStageStatus('uploading');
-                  return (
-                    <div
-                      className={`flex items-center gap-1.5 p-1.5 rounded-xs border text-[11px] transition-all ${
-                        status === 'done'
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
-                          : status === 'active'
-                          ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-bold shadow-2xs'
-                          : 'bg-base-0 border-border text-text-muted'
-                      }`}
-                    >
-                      {status === 'done' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      ) : status === 'active' ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral shrink-0" />
-                      ) : (
-                        <Paperclip className="w-3.5 h-3.5 text-text-faint shrink-0" />
-                      )}
-                      <span className="truncate">
-                        2. Assets {attachedFiles.length > 0 ? `(${attachedFiles.length})` : ''}
-                      </span>
-                    </div>
-                  );
-                })()}
-
-                {/* Stage 3: Finishing */}
-                {(() => {
-                  const status = getStageStatus('finishing');
-                  return (
-                    <div
-                      className={`flex items-center gap-1.5 p-1.5 rounded-xs border text-[11px] transition-all ${
-                        status === 'done'
-                          ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 font-semibold'
-                          : status === 'active'
-                          ? 'bg-commito-coral/15 border-commito-coral text-commito-coral font-bold shadow-2xs'
-                          : 'bg-base-0 border-border text-text-muted'
-                      }`}
-                    >
-                      {status === 'done' ? (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      ) : status === 'active' ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral shrink-0" />
-                      ) : (
-                        <Sparkles className="w-3.5 h-3.5 text-text-faint shrink-0" />
-                      )}
-                      <span className="truncate">3. Finishing</span>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {/* Dynamic Status Message */}
-              {stageMessage && (
-                <div className="text-[10.5px] text-text-secondary font-mono flex items-center gap-1.5 pt-0.5 truncate">
-                  <ArrowRight className="w-3 h-3 text-commito-coral shrink-0" />
-                  <span className="truncate">{stageMessage}</span>
+            {/* Editor / Preview Body */}
+            <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
+              {activeTab === 'write' ? (
+                <textarea
+                  placeholder="Describe this release, new features, bugfixes, breaking changes, and contributor mentions... (Markdown supported)"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isSubmitting || isDeleting}
+                  className="w-full h-full p-3 bg-transparent text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono resize-none leading-relaxed overflow-y-auto"
+                />
+              ) : (
+                <div className="w-full h-full p-3.5 overflow-y-auto">
+                  <MarkdownPreview
+                    content={description}
+                    emptyText="No release notes written yet. Switch to the Write tab to draft notes."
+                  />
                 </div>
               )}
             </div>
-          )}
 
-          {/* Error Message */}
-          {error && (
-            <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span className="truncate">{error}</span>
+            {/* Footer info bar for markdown */}
+            <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
+              <span>{description.length} characters • {description.trim() ? description.trim().split(/\s+/).length : 0} words</span>
+              <span>Markdown & GFM supported</span>
             </div>
-          )}
+          </div>
+        </form>
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80 shrink-0">
+        {/* Modal Footer Actions */}
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-border/80 bg-base-1/50 shrink-0 min-h-[48px]">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            {isSubmitting ? (
+              (() => {
+                const colors = getStageColorClasses(currentStage);
+                return (
+                  <div className="flex items-center gap-2 min-w-0 text-xs animate-in fade-in duration-100">
+                    <Loader2 className={`w-3.5 h-3.5 animate-spin ${colors.spinner} shrink-0`} />
+                    <div className="flex items-center gap-1.5 min-w-0 font-mono text-[11px]">
+                      <span className={`font-bold uppercase text-[9.5px] px-1.5 py-0.2 rounded-xs border ${colors.badge} shrink-0 shadow-2xs`}>
+                        {currentStage}
+                      </span>
+                      <span className="text-text-muted truncate font-mono text-[11px]" title={stageMessage}>
+                        {stageMessage || 'Publishing release...'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })()
+            ) : isEditingExistingRelease ? (
+              <button
+                type="button"
+                onClick={handleDeleteRelease}
+                disabled={isSubmitting || isDeleting}
+                className="h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                title="Permanently delete this release and remove release tag"
+              >
+                {isDeleting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>Delete Release</span>
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isDeleting}
               className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               Cancel
             </button>
 
             <button
-              type="submit"
-              disabled={isSubmitting}
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting || isDeleting}
               className="h-7.5 px-4 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 min-w-[130px] justify-center"
             >
               {isSubmitting ? (
@@ -1102,12 +1261,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               ) : (
                 <>
                   <Check className="w-3.5 h-3.5" />
-                  <span>{isEditMode ? 'Save Changes' : 'Publish Release'}</span>
+                  <span>{getSubmitButtonLabel()}</span>
                 </>
               )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>,
     document.body

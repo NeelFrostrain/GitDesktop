@@ -240,6 +240,7 @@ pub fn run() {
             git_runtime_get_status,
             git_runtime_install_mingit,
             generate_ai_commit_message_cmd,
+            generate_ai_release_notes_cmd,
             read_file_content_cmd,
             save_file_content_cmd,
             create_directory_cmd,

@@ -1166,3 +1166,32 @@ pub async fn generate_ai_commit_message_cmd(
 
     Ok(res)
 }
+
+#[command]
+pub async fn generate_ai_release_notes_cmd(
+    repo_path: String,
+    target_tag: String,
+    previous_tag: Option<String>,
+    target_branch: Option<String>,
+    custom_api_key: Option<String>,
+    model: Option<String>,
+) -> Result<crate::git::ai::AiReleaseNotesResult, AppError> {
+    let res = crate::git::ai::generate_ai_release_notes(
+        &repo_path,
+        &target_tag,
+        previous_tag,
+        target_branch,
+        custom_api_key,
+        model,
+    )
+    .await?;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Git,
+        format!("[Release-AI] Generated release notes for {} using {} ({} commits analyzed)", target_tag, res.model_used, res.commits_analyzed);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "tag": target_tag, "model": res.model_used, "commits": res.commits_analyzed })
+    );
+
+    Ok(res)
+}

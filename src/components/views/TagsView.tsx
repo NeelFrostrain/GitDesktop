@@ -27,6 +27,7 @@ import { ReleaseService } from '../../services/git/releaseService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { CreateTagModal } from '../modals/CreateTagModal';
 import { Dropdown } from '../common/Dropdown';
+import { MarkdownPreview } from '../common/MarkdownPreview';
 import { ReleaseInfo } from '../../types/git';
 
 /**
@@ -526,10 +527,11 @@ export const TagsView: React.FC = () => {
                   </div>
 
                   {/* Release Notes / Description Body */}
-                  <div className="p-3 bg-base-0 border border-border/80 rounded-sm text-xs text-text-secondary leading-relaxed font-sans select-text whitespace-pre-wrap">
-                    {release.description || (
-                      <span className="italic text-text-faint">No description provided for this release.</span>
-                    )}
+                  <div className="p-3 bg-base-0 border border-border/80 rounded-sm">
+                    <MarkdownPreview
+                      content={release.description || ''}
+                      emptyText="No description provided for this release."
+                    />
                   </div>
 
                   {/* Attached Release Assets */}

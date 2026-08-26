@@ -1,10 +1,31 @@
 import { invoke } from '@tauri-apps/api/core';
-import { ReleaseInfo } from '../../types/git';
+import { ReleaseInfo, AiReleaseNotesResult } from '../../types/git';
 
 /**
  * Service for managing repository releases and annotated release markers.
  */
 export class ReleaseService {
+  /**
+   * Generates AI-powered release notes comparing commits between new tag and previous tag.
+   */
+  static async generateAiReleaseNotes(
+    repoPath: string,
+    targetTag: string,
+    previousTag?: string | null,
+    targetBranch?: string | null,
+    customApiKey?: string | null,
+    model?: string | null
+  ): Promise<AiReleaseNotesResult> {
+    return invoke<AiReleaseNotesResult>('generate_ai_release_notes_cmd', {
+      repoPath,
+      targetTag,
+      previousTag: previousTag || null,
+      targetBranch: targetBranch || null,
+      customApiKey: customApiKey || null,
+      model: model || null,
+    });
+  }
+
   /**
    * Lists all releases and release tags in the repository.
    */

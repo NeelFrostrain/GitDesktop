@@ -186,111 +186,120 @@ pub fn save_local_release_assets(
 
 /// Lists all releases and annotated release markers in the repository.
 pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
-    let output = silent_git_command()
-        .arg("tag")
-        .arg("-l")
-        .arg("--sort=-creatordate")
-        .arg("--format=%(refname:short)|%(objectname:short)|%(contents:subject)|%(contents:body)|%(taggername)|%(creatordate:iso-strict)")
-        .current_dir(repo_path)
-        .output()?;
+    let repo = git2::Repository::open(repo_path)
+        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!(
-            "Failed to list releases: {}",
-            stderr.trim()
-        )));
-    }
-
-    let stdout = String::from_utf8_lossy(&output.stdout);
     let mut releases = Vec::new();
+    let tag_names = repo.tag_names(None).map_err(|e| AppError::Git(e.to_string()))?;
 
-    // First pass: check if any release explicitly claimed is_latest = true
     let mut any_explicit_latest = false;
-    for line in stdout.lines() {
-        let parts: Vec<&str> = line.splitn(6, '|').collect();
-        if !parts.is_empty() && !parts[0].trim().is_empty() {
-            let tag_name = parts[0].trim();
-            if let Some(meta) = load_local_release_meta(repo_path, tag_name) {
-                if meta.is_latest == Some(true) {
-                    any_explicit_latest = true;
-                    break;
+    let mut tag_items = Vec::new();
+
+    for name_opt in tag_names.iter() {
+        if let Some(tag_name) = name_opt {
+            if let Ok(obj) = repo.revparse_single(tag_name) {
+                let sha = obj.id().to_string();
+                let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
+
+                let (subject, body, tagger_name, date_str) = if let Some(tag_obj) = obj.as_tag() {
+                    let raw_msg = tag_obj.message().unwrap_or("").trim();
+                    let (subj, b) = if let Some(idx) = raw_msg.find("\n\n") {
+                        (raw_msg[..idx].trim().to_string(), raw_msg[idx + 2..].trim().to_string())
+                    } else if let Some(idx) = raw_msg.find('\n') {
+                        (raw_msg[..idx].trim().to_string(), raw_msg[idx + 1..].trim().to_string())
+                    } else {
+                        (raw_msg.to_string(), String::new())
+                    };
+                    let tagger = tag_obj.tagger().and_then(|t| t.name().map(|s| s.to_string()));
+                    let time = tag_obj.tagger().map(|t| {
+                        chrono::DateTime::from_timestamp(t.when().seconds(), 0)
+                            .unwrap_or_else(chrono::Utc::now)
+                            .to_rfc3339()
+                    }).unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+                    (subj, b, tagger, time)
+                } else if let Ok(commit) = obj.peel_to_commit() {
+                    let subj = commit.summary().unwrap_or("").to_string();
+                    let b = commit.body().unwrap_or("").to_string();
+                    let author = commit.author().name().map(|s| s.to_string());
+                    let time = chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
+                        .unwrap_or_else(chrono::Utc::now)
+                        .to_rfc3339();
+                    (subj, b, author, time)
+                } else {
+                    (String::new(), String::new(), None, chrono::Utc::now().to_rfc3339())
+                };
+
+                let local_meta = load_local_release_meta(repo_path, tag_name);
+                if let Some(m) = &local_meta {
+                    if m.is_latest == Some(true) {
+                        any_explicit_latest = true;
+                    }
                 }
+
+                tag_items.push((tag_name.to_string(), short_sha, subject, body, tagger_name, date_str, local_meta));
             }
         }
     }
 
-    for (index, line) in stdout.lines().enumerate() {
-        let parts: Vec<&str> = line.splitn(6, '|').collect();
-        if !parts.is_empty() && !parts[0].trim().is_empty() {
-            let tag_name = parts[0].trim().to_string();
-            let sha = parts.get(1).map(|s| s.trim().to_string()).unwrap_or_default();
-            let subject = parts.get(2).map(|s| s.trim().to_string()).unwrap_or_default();
-            let body = parts.get(3).map(|s| s.trim().to_string()).unwrap_or_default();
-            let tagger = parts.get(4).filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string());
-            let date = parts.get(5).filter(|s| !s.trim().is_empty()).map(|s| s.trim().to_string()).unwrap_or_else(|| {
-                chrono::Utc::now().to_rfc3339()
-            });
+    // Sort tags descending by date
+    tag_items.sort_by(|a, b| b.5.cmp(&a.5));
 
-            let name = if !subject.is_empty() {
-                subject.clone()
-            } else {
-                format!("Release {}", tag_name)
-            };
+    for (index, (tag_name, sha, subject, body, tagger_name, date_str, local_meta)) in tag_items.into_iter().enumerate() {
+        let name = if !subject.is_empty() {
+            subject
+        } else {
+            format!("Release {}", tag_name)
+        };
 
-            let description = if !body.is_empty() {
-                body
-            } else if !subject.is_empty() && subject != format!("Release {}", tag_name) {
-                subject
-            } else {
-                format!("Release version {}", tag_name)
-            };
+        let description = if !body.is_empty() {
+            body
+        } else {
+            format!("Release version {}", tag_name)
+        };
 
-            let is_prerelease = tag_name.to_lowercase().contains("beta")
-                || tag_name.to_lowercase().contains("alpha")
-                || tag_name.to_lowercase().contains("rc");
+        let is_prerelease = tag_name.to_lowercase().contains("beta")
+            || tag_name.to_lowercase().contains("alpha")
+            || tag_name.to_lowercase().contains("rc");
 
-            let assets = load_local_release_assets(repo_path, &tag_name);
-            let local_meta = load_local_release_meta(repo_path, &tag_name);
+        let assets = load_local_release_assets(repo_path, &tag_name);
 
-            let is_latest = if let Some(meta) = &local_meta {
-                if let Some(explicit_latest) = meta.is_latest {
-                    Some(explicit_latest)
-                } else if is_prerelease {
-                    Some(false)
-                } else if !any_explicit_latest {
-                    Some(index == 0)
-                } else {
-                    Some(false)
-                }
+        let is_latest = if let Some(meta) = &local_meta {
+            if let Some(explicit_latest) = meta.is_latest {
+                Some(explicit_latest)
             } else if is_prerelease {
                 Some(false)
             } else if !any_explicit_latest {
                 Some(index == 0)
             } else {
                 Some(false)
-            };
+            }
+        } else if is_prerelease {
+            Some(false)
+        } else if !any_explicit_latest {
+            Some(index == 0)
+        } else {
+            Some(false)
+        };
 
-            let web_url = local_meta.and_then(|m| m.web_url);
+        let web_url = local_meta.and_then(|m| m.web_url);
 
-            releases.push(ReleaseInfo {
-                id: Some(tag_name.clone()),
-                tag_name,
-                name,
-                description,
-                created_at: date.clone(),
-                released_at: Some(date),
-                author_name: tagger,
-                author_avatar: None,
-                commit_sha: Some(sha),
-                is_draft: Some(false),
-                is_prerelease: Some(is_prerelease),
-                is_latest,
-                upcoming_release: Some(false),
-                web_url,
-                assets,
-            });
-        }
+        releases.push(ReleaseInfo {
+            id: Some(tag_name.clone()),
+            tag_name,
+            name,
+            description,
+            created_at: date_str.clone(),
+            released_at: Some(date_str),
+            author_name: tagger_name,
+            author_avatar: None,
+            commit_sha: Some(sha),
+            is_draft: Some(false),
+            is_prerelease: Some(is_prerelease),
+            is_latest,
+            upcoming_release: Some(false),
+            web_url,
+            assets,
+        });
     }
 
     Ok(releases)

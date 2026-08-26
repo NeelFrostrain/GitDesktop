@@ -23,6 +23,17 @@ export interface AiCommitSuggestion {
 }
 
 /**
+ * AI Generated release notes, changelog, and title comparing commit ranges.
+ */
+export interface AiReleaseNotesResult {
+  title: string;
+  notes: string;
+  model_used: string;
+  commits_analyzed: number;
+  from_tag?: string | null;
+}
+
+/**
  * Branch metadata returned by branch listing operations.
  */
 export interface BranchInfo {
