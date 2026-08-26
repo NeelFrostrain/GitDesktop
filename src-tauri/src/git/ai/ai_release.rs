@@ -69,6 +69,7 @@ struct CommitSummaryItem {
     summary: String,
     body: String,
     author: String,
+    files: String,
 }
 
 /// Formats author name into a valid markdown @username handle without spaces (e.g. "Neel Frostrain" -> "@NeelFrostrain")
@@ -124,14 +125,35 @@ fn clean_commit_message(msg: &str) -> Option<(String, String)> {
             "feature"
         } else if prefix.starts_with("fix") {
             "fix"
-        } else if prefix.starts_with("refactor") || prefix.starts_with("perf") || prefix.starts_with("style") {
+        } else if prefix.starts_with("perf") {
+            "performance"
+        } else if prefix.starts_with("refactor") || prefix.starts_with("style") || prefix.starts_with("chore") || prefix.starts_with("docs") {
             "improvement"
         } else {
-            "maintenance"
+            "improvement"
         };
         (cat, desc)
     } else {
-        ("feature", trimmed)
+        let lower = trimmed.to_lowercase();
+        let cat = if lower.starts_with("feat")
+            || lower.starts_with("add ")
+            || lower.starts_with("introduce ")
+            || lower.starts_with("implement ")
+            || lower.starts_with("create ")
+        {
+            "feature"
+        } else if lower.starts_with("fix")
+            || lower.starts_with("resolve")
+            || lower.starts_with("patch")
+            || lower.starts_with("bug")
+        {
+            "fix"
+        } else if lower.starts_with("perf") || lower.starts_with("optimi") {
+            "performance"
+        } else {
+            "improvement"
+        };
+        (cat, trimmed)
     };
 
     if rest.is_empty() {
@@ -148,6 +170,32 @@ fn clean_commit_message(msg: &str) -> Option<(String, String)> {
     Some((category.to_string(), capitalized))
 }
 
+/// Parses semver tag into numerical tuple (major, minor, patch, remaining)
+fn parse_semver_tag(s: &str) -> (u32, u32, u32, &str) {
+    let clean = s.trim_start_matches(|c: char| c == 'v' || c == 'V' || c == '@');
+    let mut parts = clean.split('.');
+    let major = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
+    let minor = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
+    let patch_part = parts.next().unwrap_or("");
+    let patch = patch_part
+        .split(|c: char| !c.is_numeric())
+        .next()
+        .and_then(|p| p.parse::<u32>().ok())
+        .unwrap_or(0);
+    (major, minor, patch, clean)
+}
+
+/// Compares two git tags in semver descending order (e.g. v2.6.8 > v2.6.7 > v2.5.1)
+fn compare_semver(a: &str, b: &str) -> std::cmp::Ordering {
+    let (a_maj, a_min, a_pat, a_raw) = parse_semver_tag(a);
+    let (b_maj, b_min, b_pat, b_raw) = parse_semver_tag(b);
+    b_maj
+        .cmp(&a_maj)
+        .then_with(|| b_min.cmp(&a_min))
+        .then_with(|| b_pat.cmp(&a_pat))
+        .then_with(|| b_raw.cmp(a_raw))
+}
+
 /// Collects commits between previous_tag and target_ref
 fn get_commits_for_release(
     repo: &Repository,
@@ -155,31 +203,36 @@ fn get_commits_for_release(
     specified_prev_tag: Option<&str>,
     target_branch: Option<&str>,
 ) -> Result<(Vec<CommitSummaryItem>, Option<String>), AppError> {
-    let mut all_tags: Vec<(String, git2::Oid)> = Vec::new();
+    let mut all_tags: Vec<String> = Vec::new();
     if let Ok(tag_names) = repo.tag_names(None) {
         for name_opt in tag_names.iter() {
             if let Some(t_name) = name_opt {
-                if t_name == target_tag {
-                    continue;
-                }
-                if let Ok(obj) = repo.revparse_single(t_name) {
-                    all_tags.push((t_name.to_string(), obj.id()));
-                }
+                all_tags.push(t_name.to_string());
             }
         }
     }
 
-    // Determine starting (base) point
+    // Sort descending by semver
+    all_tags.sort_by(|a, b| compare_semver(a, b));
+
+    // Determine starting (base) point: find immediate previous tag in semver descending order
     let from_tag: Option<String> = if let Some(prev) = specified_prev_tag {
         if !prev.trim().is_empty() {
             Some(prev.to_string())
         } else {
             None
         }
-    } else if let Some((last_tag_name, _)) = all_tags.last() {
-        Some(last_tag_name.clone())
     } else {
-        None
+        let curr_idx = all_tags.iter().position(|t| t == target_tag);
+        if let Some(idx) = curr_idx {
+            if idx + 1 < all_tags.len() {
+                Some(all_tags[idx + 1].clone())
+            } else {
+                None
+            }
+        } else {
+            all_tags.into_iter().find(|t| t != target_tag)
+        }
     };
 
     let from_oid = from_tag.as_ref().and_then(|t| {
@@ -225,12 +278,42 @@ fn get_commits_for_release(
                 let body = commit.body().unwrap_or("").to_string();
                 let author = commit.author().name().unwrap_or("Contributor").to_string();
 
+                let mut files_list = Vec::new();
+                if let Ok(parent) = commit.parent(0) {
+                    if let (Ok(p_tree), Ok(c_tree)) = (parent.tree(), commit.tree()) {
+                        if let Ok(diff) = repo.diff_tree_to_tree(Some(&p_tree), Some(&c_tree), None) {
+                            let _ = diff.foreach(
+                                &mut |delta, _| {
+                                    if let Some(path) = delta.new_file().path() {
+                                        if let Some(s) = path.to_str() {
+                                            let file_name = s.split(['/', '\\']).last().unwrap_or(s);
+                                            files_list.push(file_name.to_string());
+                                        }
+                                    }
+                                    true
+                                },
+                                None,
+                                None,
+                                None,
+                            );
+                        }
+                    }
+                }
+
+                let files = if !files_list.is_empty() {
+                    files_list.dedup();
+                    files_list[..files_list.len().min(3)].join(", ")
+                } else {
+                    String::new()
+                };
+
                 commits.push(CommitSummaryItem {
                     sha,
                     short_sha,
                     summary,
                     body,
                     author,
+                    files,
                 });
 
                 if commits.len() >= max_commits {
@@ -256,6 +339,7 @@ fn get_commits_for_release(
                                 summary: commit.summary().unwrap_or("").to_string(),
                                 body: commit.body().unwrap_or("").to_string(),
                                 author: commit.author().name().unwrap_or("Contributor").to_string(),
+                                files: String::new(),
                             });
                         }
                     }
@@ -267,25 +351,24 @@ fn get_commits_for_release(
     Ok((commits, from_tag))
 }
 
-/// Generates an impact-oriented, synthesized local changelog using clean @username syntax
+/// Generates a structured Keep-a-Changelog formatted release document
 fn build_local_heuristic_changelog(
     target_tag: &str,
-    from_tag: Option<&str>,
+    _from_tag: Option<&str>,
     commits: &[CommitSummaryItem],
 ) -> (String, String) {
-    let title = format!("Release {} - Performance & Workflow Enhancements", target_tag);
-    let mut features: Vec<String> = Vec::new();
-    let mut fixes: Vec<String> = Vec::new();
-    let mut improvements: Vec<String> = Vec::new();
-    let mut authors = HashSet::new();
+    let clean_version = target_tag.trim_start_matches(|c: char| c == 'v' || c == 'V');
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
 
-    // Map feature scopes to consolidate duplicate changes
+    let mut added: Vec<String> = Vec::new();
+    let mut fixed: Vec<String> = Vec::new();
+    let mut changed: Vec<String> = Vec::new();
+    let mut perf: Vec<String> = Vec::new();
+    let mut highlights: Vec<String> = Vec::new();
+
     let mut seen_items = HashSet::new();
 
     for c in commits {
-        let handle = format_contributor_handle(&c.author);
-        authors.insert(handle.clone());
-
         if let Some((cat, clean_msg)) = clean_commit_message(&c.summary) {
             let key = clean_msg.to_lowercase();
             if seen_items.contains(&key) {
@@ -293,67 +376,101 @@ fn build_local_heuristic_changelog(
             }
             seen_items.insert(key);
 
-            let bullet = format!("- **{}** (`{}`) by {}", clean_msg, c.short_sha, handle);
+            if highlights.len() < 4 {
+                highlights.push(clean_msg.clone());
+            }
+
+            let scope = if !c.files.trim().is_empty() {
+                c.files.clone()
+            } else {
+                c.short_sha.clone()
+            };
+
+            let detail = if !c.body.trim().is_empty() {
+                c.body.trim().lines().next().unwrap_or(&clean_msg).to_string()
+            } else {
+                let lower = clean_msg.to_lowercase();
+                if lower.starts_with("update") {
+                    let target = clean_msg.trim_start_matches("Update").trim_start_matches("update").trim();
+                    format!("Updated {} configuration with latest parameters and setup defaults.", if target.is_empty() { "configuration" } else { target })
+                } else if lower.starts_with("add") {
+                    let target = clean_msg.trim_start_matches("Add").trim_start_matches("add").trim();
+                    format!("Added {} with component integration.", if target.is_empty() { "new features" } else { target })
+                } else if lower.starts_with("fix") {
+                    let target = clean_msg.trim_start_matches("Fix").trim_start_matches("fix").trim();
+                    format!("Fixed {} to ensure stability and correct behavior.", if target.is_empty() { "issue" } else { target })
+                } else if lower.starts_with("enhance") || lower.starts_with("improve") || lower.starts_with("refactor") {
+                    format!("Enhanced {} for improved performance and workflow experience.", clean_msg)
+                } else {
+                    format!("Implemented {} updates across project codebase.", clean_msg)
+                }
+            };
 
             match cat.as_str() {
-                "feature" => features.push(bullet),
-                "fix" => fixes.push(bullet),
-                "improvement" => improvements.push(bullet),
-                _ => {}
+                "feature" => {
+                    let title = if clean_msg.to_lowercase().starts_with("add ") {
+                        clean_msg.trim_start_matches("Add ").trim_start_matches("add ").to_string()
+                    } else {
+                        clean_msg.clone()
+                    };
+                    added.push(format!("- Added **{}** (`{}`): {}", title, scope, detail));
+                }
+                "fix" => {
+                    let title = if clean_msg.to_lowercase().starts_with("fix ") {
+                        clean_msg.trim_start_matches("Fix ").trim_start_matches("fix ").to_string()
+                    } else {
+                        clean_msg.clone()
+                    };
+                    fixed.push(format!("- Fixed **{}** (`{}`): {}", title, scope, detail));
+                }
+                "performance" => {
+                    perf.push(format!("- **{}** (`{}`): {}", clean_msg, scope, detail));
+                }
+                _ => {
+                    changed.push(format!("- **{}** (`{}`): {}", clean_msg, scope, detail));
+                }
             }
         }
     }
 
-    let mut md = String::new();
-
-    md.push_str("### Executive Summary\n\n");
-    md.push_str(&format!(
-        "This release (`{}`) introduces key feature enhancements, performance optimizations, and workflow refinements across git operations, UI layouts, and developer tools.\n\n",
-        target_tag
-    ));
-
-    if !features.is_empty() {
-        md.push_str("### Features & Enhancements\n\n");
-        let count = features.len().min(14);
-        md.push_str(&features[..count].join("\n"));
-        md.push_str("\n\n");
-    }
-
-    if !fixes.is_empty() {
-        md.push_str("### Bug Fixes & Stability\n\n");
-        let count = fixes.len().min(8);
-        md.push_str(&fixes[..count].join("\n"));
-        md.push_str("\n\n");
-    }
-
-    if !improvements.is_empty() {
-        md.push_str("### Improvements & Refactoring\n\n");
-        let count = improvements.len().min(8);
-        md.push_str(&improvements[..count].join("\n"));
-        md.push_str("\n\n");
-    }
-
-    if !authors.is_empty() {
-        let mut author_list: Vec<String> = authors.into_iter().collect();
-        author_list.sort();
-        md.push_str("### Contributors\n\n");
-        md.push_str(&author_list.into_iter().map(|a| format!("- {}", a)).collect::<Vec<_>>().join("\n"));
-        md.push_str("\n\n");
-    }
-
-    if let Some(prev) = from_tag {
-        md.push_str(&format!(
-            "**Full Changelog**: https://github.com/repository/compare/{}...{}\n",
-            prev, target_tag
-        ));
+    let subtitle = if !highlights.is_empty() {
+        highlights.join(" · ")
     } else {
-        md.push_str(&format!(
-            "**Full Changelog**: https://github.com/repository/commits/{}\n",
-            target_tag
-        ));
+        format!("Release {}", target_tag)
+    };
+
+    let title = format!("Release {}", target_tag);
+    let mut md = format!("## [{}] - {} — `{}`\n\n", clean_version, today, subtitle);
+
+    if !added.is_empty() {
+        md.push_str("### Added\n\n");
+        let count = added.len().min(12);
+        md.push_str(&added[..count].join("\n"));
+        md.push_str("\n\n");
     }
 
-    (title, md)
+    if !fixed.is_empty() {
+        md.push_str("### Fixed\n\n");
+        let count = fixed.len().min(8);
+        md.push_str(&fixed[..count].join("\n"));
+        md.push_str("\n\n");
+    }
+
+    if !perf.is_empty() {
+        md.push_str("### Performance\n\n");
+        let count = perf.len().min(6);
+        md.push_str(&perf[..count].join("\n"));
+        md.push_str("\n\n");
+    }
+
+    if !changed.is_empty() {
+        md.push_str("### Changed\n\n");
+        let count = changed.len().min(8);
+        md.push_str(&changed[..count].join("\n"));
+        md.push_str("\n\n");
+    }
+
+    (title, md.trim_end().to_string())
 }
 
 /// Generates full AI release notes analyzing commits between previous tag and target tag
@@ -425,49 +542,54 @@ pub async fn generate_ai_release_notes(
         }
     }
 
+    let clean_version = target_tag.trim_start_matches(|c: char| c == 'v' || c == 'V');
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let compare_info = resolved_from_tag
+        .as_ref()
+        .map(|t| format!(" (comparing from `{}`)", t))
+        .unwrap_or_default();
+
     let prompt = format!(
-        r#"You are a Principal Product Manager and Lead Release Engineer creating professional, impact-driven Release Notes for version `{}`{}.
+        r#"You are a Lead Release Engineer creating professional, Keep-a-Changelog standard Release Notes for version `{target_tag}`{compare_info}.
+Today's Date: {today}
+Clean Version: {clean_version}
 
-Analyze the following commit activity and craft a clear, executive-quality release document explaining WHAT features were added, HOW they work, and their REAL IMPACT on users.
+Analyze the following commit activity and craft a clear, structured changelog.
 
-CRITICAL QUALITY & STYLE RULES:
-1. DO NOT dump raw git commit message lines or repetitive file update lists.
-2. DO NOT USE ANY EMOJIS (No emojis in titles, headers, or bullet points).
-3. Focus on VALUE & IMPACT: Explain the capabilities added and why they benefit developers/users (e.g. "Release Management Suite: Added comprehensive workflows for creating, editing, and publishing Git releases with binary assets and pre-release markers").
-4. CONSOLIDATE & GROUP: Synthesize related changes into 4-8 impactful, cohesive feature descriptions with bold topic headers.
-5. Format all contributor credits and mentions strictly as `@username` with NO spaces (e.g. convert "Neel Frostrain" to `@NeelFrostrain`).
-6. Structure your output EXACTLY as follows:
-
-<title>Release vX.X.X - Descriptive Title</title>
+MANDATORY OUTPUT STRUCTURE:
+<title>Release {target_tag}</title>
 <notes>
-### Executive Summary
-A 2-3 sentence overview highlighting the major milestones, capabilities, and overall value of this release.
+## [{clean_version}] - {today} — `3-5 High-Level Feature Highlights separated by ·`
 
-### Features & Enhancements
-- **Feature Name**: Clear explanation of what was added and its practical benefit to the user (`short_sha`) by @username.
-- **Another Capability**: Description of functionality and workflow improvements.
+### Added
 
-### Bug Fixes & Stability
-- **Issue Resolved**: Explanation of the fix and what issue it prevents.
+- Added **Feature Name** (`primary file/scope`): Insightful, comprehensive description of what was introduced and how it benefits developers or users.
+- Added **Another Feature** (`scope`): Concrete explanation of functionality.
 
-### Improvements & Refactoring
-- **Performance & Code Quality**: Architectural improvements, UI responsiveness, or layout polish.
+### Fixed
 
-### Contributors
-- @username
+- Fixed **Bug Name** (`primary file/scope`): Clear explanation of what was wrong, the root cause resolved, and what error it prevents.
 
-**Full Changelog**: https://github.com/repository/compare/{}...{}
+### Changed
+
+- **Refactoring or Update Name** (`primary file/scope`): Clear description of improvements, design system alignments, or architectural updates.
+
+### Performance (Include only if performance improvements exist)
+
+- **Optimization Name** (`scope`): Explanation of speedup or memory efficiency improvement.
 </notes>
 
-Commits to synthesize ({} commits):
-{}
-"#,
-        target_tag,
-        resolved_from_tag.as_ref().map(|t| format!(" (comparing from `{}`)", t)).unwrap_or_default(),
-        resolved_from_tag.as_deref().unwrap_or("main"),
-        target_tag,
-        meaningful_count,
-        commit_text
+CRITICAL FORMATTING & STYLE RULES:
+1. Header MUST follow: ## [{clean_version}] - {today} — `Highlight 1 · Highlight 2 · Highlight 3`
+2. Standard sections ONLY: '### Added', '### Fixed', '### Changed', and optionally '### Performance' or '### Removed'.
+3. DO NOT include Executive Summary or Contributors or Full Changelog links.
+4. DO NOT USE ANY EMOJIS (No emojis in headers, subtitles, or bullets).
+5. Each bullet MUST begin with bold title followed by (`file/component`) and a polished 1-2 sentence explanation.
+6. Only output sections that have relevant items.
+
+Commits to analyze ({meaningful_count} commits):
+{commit_text}
+"#
     );
 
     let raw_model = model_override

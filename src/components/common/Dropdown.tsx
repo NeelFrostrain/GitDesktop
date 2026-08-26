@@ -110,7 +110,11 @@ export function Dropdown<T extends string = string>({
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
         <div className="flex items-center gap-2 truncate min-w-0">
-          {icon || selectedOption?.icon}
+          {(icon || selectedOption?.icon) && (
+            <span className="w-4 h-4 flex items-center justify-center shrink-0">
+              {icon || selectedOption?.icon}
+            </span>
+          )}
           <span className="truncate font-mono text-xs">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
@@ -152,8 +156,12 @@ export function Dropdown<T extends string = string>({
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate min-w-0 font-mono text-xs">
-                      {opt.icon}
-                      <div className="truncate">
+                      {opt.icon && (
+                        <span className="w-4 h-4 flex items-center justify-center shrink-0">
+                          {opt.icon}
+                        </span>
+                      )}
+                      <div className="truncate min-w-0">
                         <span className="block truncate">{opt.label}</span>
                         {opt.description && (
                           <span className="block text-[10px] text-text-muted font-sans truncate">
@@ -169,7 +177,7 @@ export function Dropdown<T extends string = string>({
                           {opt.badge}
                         </span>
                       )}
-                      {isSelected && <Check className="w-3.5 h-3.5 text-commito-coral" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />}
                     </div>
                   </button>
                 );

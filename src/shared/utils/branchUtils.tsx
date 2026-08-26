@@ -27,7 +27,7 @@ export function formatBranchDropdownOptions(branches: BranchInfo[]): DropdownOpt
     return {
       value: b.name,
       label: b.name,
-      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
+      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />,
       badge: b.is_current ? 'current' : matchingRemote ? 'origin' : undefined,
       badgeVariant: b.is_current ? 'primary' : 'info',
     };
@@ -39,7 +39,7 @@ export function formatBranchDropdownOptions(branches: BranchInfo[]): DropdownOpt
     .map((b) => ({
       value: b.name,
       label: b.name,
-      icon: <Globe className="w-3.5 h-3.5 text-sky-400" />,
+      icon: <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />,
       badge: 'remote',
       badgeVariant: 'muted',
     }));

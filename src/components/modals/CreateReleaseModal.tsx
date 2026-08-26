@@ -27,6 +27,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
+import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 import { ReleaseService } from '../../services/git/releaseService';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
@@ -306,9 +307,9 @@ function compareSemverDescending(a: string, b: string): number {
         label,
         description,
         icon: release?.is_latest || release?.web_url || (release?.assets && release.assets.length > 0) ? (
-          <Package className="w-3.5 h-3.5 text-amber-400" />
+          <Package className="w-3.5 h-3.5 text-amber-400 shrink-0" />
         ) : (
-          <Tag className="w-3.5 h-3.5 text-gitlab-teal" />
+          <Tag className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
         ),
         badge,
       };
@@ -511,15 +512,45 @@ function compareSemverDescending(a: string, b: string): number {
     setIsGeneratingAi(true);
 
     try {
-      // Find latest previous tag
-      const otherTags = tags.filter((t) => t.name !== effectiveTag);
-      const prevTag = otherTags.length > 0 ? otherTags[0].name : undefined;
+      // Find previous tag in semver descending order
+      const sortedTags = [...tags].sort((a, b) => compareSemverDescending(a.name, b.name));
+      const currIdx = sortedTags.findIndex((t) => t.name === effectiveTag);
+      let prevTag: string | undefined = undefined;
+      if (currIdx !== -1 && currIdx + 1 < sortedTags.length) {
+        prevTag = sortedTags[currIdx + 1].name;
+      } else if (sortedTags.length > 0) {
+        const remaining = sortedTags.filter((t) => t.name !== effectiveTag);
+        if (remaining.length > 0) {
+          prevTag = remaining[0].name;
+        }
+      }
+
+      const { getEffectiveValue } = useSettingsStore.getState();
+      let activeApiKey = String(getEffectiveValue('ai.active_api_key') || getEffectiveValue('ai.gemini_api_key') || '').trim();
+      if (!activeApiKey) {
+        const rawKeys = getEffectiveValue('ai.gemini_api_keys') || getEffectiveValue('ai.google_api_keys') || getEffectiveValue('ai.groq_api_keys');
+        if (Array.isArray(rawKeys) && rawKeys.length > 0) {
+          activeApiKey = String(rawKeys[0]).trim();
+        } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
+          try {
+            const parsed = JSON.parse(rawKeys);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              activeApiKey = String(parsed[0]).trim();
+            }
+          } catch {
+            activeApiKey = rawKeys.trim();
+          }
+        }
+      }
+      const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
 
       const result = await ReleaseService.generateAiReleaseNotes(
         activeRepoPath,
         effectiveTag,
         prevTag,
-        tagSource === 'new' ? selectedBranch || undefined : undefined
+        tagSource === 'new' ? selectedBranch || undefined : undefined,
+        activeApiKey || undefined,
+        selectedModel || undefined
       );
 
       if (result) {
@@ -533,23 +564,46 @@ function compareSemverDescending(a: string, b: string): number {
         useToastStore.getState().showToast({
           type: 'success',
           title: 'Release Notes Generated',
-          message: `Analyzed ${result.commits_analyzed} commits using ${result.model_used}`,
+          message: `Analyzed ${result.commits_analyzed} commits (${prevTag ? `${prevTag} → ${effectiveTag}` : effectiveTag}) using ${result.model_used}`,
         });
       }
     } catch (err: unknown) {
-      // Graceful fallback to local commit log
+      // Graceful fallback to local commit log in Keep-a-Changelog format
       try {
+        const cleanVer = effectiveTag.replace(/^v/i, '');
+        const today = new Date().toISOString().slice(0, 10);
         const history = await GitService.getCommitHistory(activeRepoPath, 25, 0);
         if (history && history.length > 0) {
-          const commitBullets = history
-            .filter((c) => !c.message.startsWith('Merge branch') && !c.message.startsWith('Merge pull request'))
-            .map((c) => {
-              const handle = `@${c.author_name.replace(/\s+/g, '')}`;
-              return `- ${c.message} (\`${c.short_sha}\`) by ${handle}`;
-            })
-            .join('\n');
-          const generated = `### What's Changed in this Release\n\n${commitBullets}\n\n**Full Changelog**: https://github.com/repository/commits/${effectiveTag}`;
-          setDescription(generated);
+          const addedList: string[] = [];
+          const fixList: string[] = [];
+          const changeList: string[] = [];
+          const highlights: string[] = [];
+
+          history.forEach((c) => {
+            const msg = c.message.trim();
+            if (msg.startsWith('Merge branch') || msg.startsWith('Merge pull request')) return;
+            const summary = msg.split('\n')[0];
+            if (highlights.length < 4) highlights.push(summary);
+
+            const lower = summary.toLowerCase();
+            if (lower.startsWith('feat')) {
+              const clean = summary.replace(/^feat(\([^)]+\))?:\s*/i, '');
+              addedList.push(`- Added **${clean}** (\`${c.short_sha}\`): ${summary}`);
+            } else if (lower.startsWith('fix')) {
+              const clean = summary.replace(/^fix(\([^)]+\))?:\s*/i, '');
+              fixList.push(`- Fixed **${clean}** (\`${c.short_sha}\`): ${summary}`);
+            } else {
+              changeList.push(`- **${summary}** (\`${c.short_sha}\`)`);
+            }
+          });
+
+          const subtitle = highlights.length > 0 ? highlights.join(' · ') : `Release ${effectiveTag}`;
+          let generated = `## [${cleanVer}] - ${today} — \`${subtitle}\`\n\n`;
+          if (addedList.length > 0) generated += `### Added\n\n${addedList.slice(0, 10).join('\n')}\n\n`;
+          if (fixList.length > 0) generated += `### Fixed\n\n${fixList.slice(0, 8).join('\n')}\n\n`;
+          if (changeList.length > 0) generated += `### Changed\n\n${changeList.slice(0, 8).join('\n')}\n\n`;
+
+          setDescription(generated.trim());
           useToastStore.getState().showToast({
             type: 'info',
             title: 'Changelog Loaded',
@@ -813,7 +867,7 @@ function compareSemverDescending(a: string, b: string): number {
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
-                    <span>RELEASE TAG</span>
+                    <span>Release Tag</span>
                     <span className="text-commito-coral font-bold">*</span>
                   </label>
 
@@ -1003,14 +1057,14 @@ function compareSemverDescending(a: string, b: string): number {
 
             {/* Section 3: Attach Binaries & Release Assets */}
             <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Paperclip className="w-3.5 h-3.5 text-commito-coral" />
-                  <span className="text-xs font-semibold text-text-primary">
+              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Paperclip className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                  <span className="text-xs font-semibold text-text-primary truncate">
                     Attach Binaries & Release Assets
                   </span>
                   {attachedFiles.length > 0 && (
-                    <span className="px-1.5 py-0.2 text-[10px] font-bold bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs">
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold font-mono bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs whitespace-nowrap shrink-0 leading-none">
                       {attachedFiles.length} file{attachedFiles.length > 1 ? 's' : ''}
                     </span>
                   )}
@@ -1020,9 +1074,9 @@ function compareSemverDescending(a: string, b: string): number {
                   type="button"
                   onClick={handleChooseFiles}
                   disabled={isSubmitting || isDeleting}
-                  className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50"
+                  className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50 whitespace-nowrap shrink-0"
                 >
-                  <Plus className="w-3 h-3 text-commito-coral" />
+                  <Plus className="w-3 h-3 text-commito-coral shrink-0" />
                   <span>Add Files</span>
                 </button>
               </div>

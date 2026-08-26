@@ -241,7 +241,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       label: t.name,
       badge: t.sha ? t.sha.slice(0, 7) : undefined,
       description: t.message || (t.is_annotated ? 'Annotated tag' : 'Lightweight tag'),
-      icon: <Tag className="w-3.5 h-3.5 text-commito-coral" />,
+      icon: <Tag className="w-3.5 h-3.5 text-commito-coral shrink-0" />,
     }));
   }, [tags]);
 

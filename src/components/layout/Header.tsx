@@ -3,18 +3,20 @@ import {
   GitPullRequest,
   Tag,
   Sparkles,
+  Terminal,
   AlertCircle,
   X,
   Globe,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
+import { useTerminalStore } from '../../features/terminal/store/terminalStore';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { Dropdown } from '../common/Dropdown';
 
 /**
- * Top application header bar displaying quick creation tools (Release, Tag, PR/MR),
+ * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Terminal),
  * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
@@ -35,6 +37,11 @@ export const Header: React.FC = () => {
     setActiveRemote,
     loadRemotes,
   } = useRemoteStore();
+
+  const {
+    isOpen: isTerminalOpen,
+    toggleIsOpen: toggleTerminal,
+  } = useTerminalStore();
 
   useEffect(() => {
     if (activeRepoPath) {
@@ -81,6 +88,20 @@ export const Header: React.FC = () => {
               title="Create Merge / Pull Request"
             >
               <GitPullRequest className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Toggle Integrated Terminal */}
+            <button
+              type="button"
+              onClick={toggleTerminal}
+              className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer shadow-2xs ${
+                isTerminalOpen
+                  ? 'text-commito-coral bg-commito-coral/15 border-commito-coral/40'
+                  : 'text-text-muted bg-base-1/50 hover:text-commito-coral hover:bg-base-2 border-border'
+              }`}
+              title="Open in Integrated Terminal"
+            >
+              <Terminal className="w-3.5 h-3.5" />
             </button>
           </>
         )}
