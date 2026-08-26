@@ -227,12 +227,17 @@ export const BranchDropdown: React.FC = () => {
 
   const handleSelectBranch = (branchName: string) => {
     setIsOpen(false);
-    if (branchName === currentBranch) return;
+    // If it's a remote branch name like 'origin/feat', target the clean branch name
+    const cleanBranch = branchName.includes('/') && !localBranchNames.has(branchName)
+      ? getCleanRemoteBranchName(branchName)
+      : branchName;
+
+    if (cleanBranch === currentBranch) return;
 
     if (uncommittedFilesCount > 0) {
-      setPendingTargetBranch(branchName);
+      setPendingTargetBranch(cleanBranch);
     } else {
-      executeDirectCheckout(branchName);
+      executeDirectCheckout(cleanBranch);
     }
   };
 
@@ -276,20 +281,60 @@ export const BranchDropdown: React.FC = () => {
     }
   };
 
-  // Branch Filtering
+  // Branch Filtering & Deduplication helpers
+  const getCleanRemoteBranchName = (remoteBranchName: string): string => {
+    const slashIdx = remoteBranchName.indexOf('/');
+    return slashIdx !== -1 ? remoteBranchName.slice(slashIdx + 1) : remoteBranchName;
+  };
+
+  const getRemotePrefix = (remoteBranchName: string): string => {
+    const slashIdx = remoteBranchName.indexOf('/');
+    return slashIdx !== -1 ? remoteBranchName.slice(0, slashIdx) : 'origin';
+  };
+
   const queryLower = filterQuery.trim().toLowerCase();
 
+  // 1. All valid remote branches (excluding symbolic refs like origin/HEAD)
+  const validRemoteBranches = useMemo(() => {
+    return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD'));
+  }, [branches]);
+
+  // 2. Set of local branch names
+  const localBranchNames = useMemo(() => {
+    return new Set(
+      branches
+        .filter((b: BranchInfo) => !b.is_remote)
+        .map((b: BranchInfo) => b.name)
+    );
+  }, [branches]);
+
+  // 3. Local branches merged with remote tracking indicator
   const localBranches = useMemo(() => {
     return branches
       .filter((b: BranchInfo) => !b.is_remote)
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
-  }, [branches, queryLower]);
+      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower))
+      .map((b: BranchInfo) => {
+        const matchingRemote = validRemoteBranches.find((r: BranchInfo) => {
+          return getCleanRemoteBranchName(r.name) === b.name;
+        });
 
-  const remoteBranches = useMemo(() => {
-    return branches
-      .filter((b: BranchInfo) => b.is_remote)
+        return {
+          ...b,
+          remoteTracking: matchingRemote ? matchingRemote.name : null,
+          remotePrefix: matchingRemote ? getRemotePrefix(matchingRemote.name) : null,
+        };
+      });
+  }, [branches, validRemoteBranches, queryLower]);
+
+  // 4. Remote-only branches (remote branches that do not exist locally)
+  const remoteOnlyBranches = useMemo(() => {
+    return validRemoteBranches
+      .filter((b: BranchInfo) => {
+        const clean = getCleanRemoteBranchName(b.name);
+        return !localBranchNames.has(clean);
+      })
       .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
-  }, [branches, queryLower]);
+  }, [validRemoteBranches, localBranchNames, queryLower]);
 
   // Pull Requests Filtering
   const filteredPullRequests = useMemo(() => {
@@ -532,7 +577,7 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     ) : (
                       <div className="space-y-1">
-                        {localBranches.map((branchItem: BranchInfo) => {
+                        {localBranches.map((branchItem) => {
                           const isCurrent = branchItem.name === currentBranch;
                           return (
                             <div
@@ -554,15 +599,28 @@ export const BranchDropdown: React.FC = () => {
                                 >
                                   <GitBranch className="w-3 h-3" />
                                 </div>
-                                <span
-                                  className={`truncate text-xs font-mono transition-colors ${
-                                    isCurrent
-                                      ? 'font-bold text-commito-coral'
-                                      : 'font-medium text-text group-hover:text-text-primary'
-                                  }`}
-                                >
-                                  {branchItem.name}
-                                </span>
+
+                                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                  <span
+                                    className={`truncate text-xs font-mono transition-colors ${
+                                      isCurrent
+                                        ? 'font-bold text-commito-coral'
+                                        : 'font-medium text-text group-hover:text-text-primary'
+                                    }`}
+                                  >
+                                    {branchItem.name}
+                                  </span>
+
+                                  {branchItem.remoteTracking && (
+                                    <span
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
+                                      title={`Tracks remote '${branchItem.remoteTracking}'`}
+                                    >
+                                      <Globe className="w-2.5 h-2.5 flex-shrink-0" />
+                                      <span className="truncate max-w-[70px]">{branchItem.remotePrefix || 'origin'}</span>
+                                    </span>
+                                  )}
+                                </div>
                               </div>
 
                               {isCurrent ? (
@@ -587,31 +645,42 @@ export const BranchDropdown: React.FC = () => {
                 </div>
 
                 {/* Remote Branches Section */}
-                {remoteBranches.length > 0 && (
-                  <div className="space-y-1 pt-2 border-t border-border/50">
-                    <button
-                      type="button"
-                      onClick={toggleRemoteCollapsed}
-                      className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
-                      title={isRemoteCollapsed && !filterQuery ? 'Expand Remote Branches' : 'Collapse Remote Branches'}
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
-                        <ChevronRight
-                          className={`w-3 h-3 text-text-muted group-hover:text-gitlab-blue transition-transform duration-150 ${
-                            !isRemoteCollapsed || filterQuery ? 'rotate-90 text-gitlab-blue' : ''
-                          }`}
-                        />
-                        <Globe className="w-3 h-3 text-gitlab-blue/70" />
-                        <span>Remote Branches</span>
-                      </span>
-                      <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded-sm bg-base-2 text-text-muted border border-border/50">
-                        {remoteBranches.length}
-                      </span>
-                    </button>
+                <div className="space-y-1 pt-2 border-t border-border/50">
+                  <button
+                    type="button"
+                    onClick={toggleRemoteCollapsed}
+                    className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
+                    title={isRemoteCollapsed && !filterQuery ? 'Expand Remote Branches' : 'Collapse Remote Branches'}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
+                      <ChevronRight
+                        className={`w-3 h-3 text-text-muted group-hover:text-gitlab-blue transition-transform duration-150 ${
+                          !isRemoteCollapsed || filterQuery ? 'rotate-90 text-gitlab-blue' : ''
+                        }`}
+                      />
+                      <Globe className="w-3 h-3 text-gitlab-blue/70" />
+                      <span>Remote Branches</span>
+                    </span>
+                    <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded-sm bg-base-2 text-text-muted border border-border/50">
+                      {remoteOnlyBranches.length}
+                    </span>
+                  </button>
 
-                    {(!isRemoteCollapsed || Boolean(filterQuery.trim())) && (
+                  {(!isRemoteCollapsed || Boolean(filterQuery.trim())) && (
+                    remoteOnlyBranches.length === 0 ? (
+                      <div className="py-2.5 px-3 text-center text-text-muted text-[11px] bg-base-1/30 rounded-sm border border-border/30 flex items-center justify-center gap-1.5 font-sans select-none">
+                        {filterQuery ? (
+                          <span>No remote-only branches match "{filterQuery}"</span>
+                        ) : (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>All remote branches are tracked locally</span>
+                          </>
+                        )}
+                      </div>
+                    ) : (
                       <div className="space-y-1">
-                        {remoteBranches.map((remoteBranchItem: BranchInfo) => {
+                        {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
                           const slashIdx = remoteBranchItem.name.indexOf('/');
                           const prefix = slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
                           const nameWithoutPrefix = slashIdx !== -1 ? remoteBranchItem.name.slice(slashIdx + 1) : remoteBranchItem.name;
@@ -643,9 +712,9 @@ export const BranchDropdown: React.FC = () => {
                           );
                         })}
                       </div>
-                    )}
-                  </div>
-                )}
+                    )
+                  )}
+                </div>
               </div>
             )}
 
