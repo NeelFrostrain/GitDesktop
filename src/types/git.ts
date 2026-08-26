@@ -23,6 +23,17 @@ export interface AiCommitSuggestion {
 }
 
 /**
+ * AI Generated release notes, changelog, and title comparing commit ranges.
+ */
+export interface AiReleaseNotesResult {
+  title: string;
+  notes: string;
+  model_used: string;
+  commits_analyzed: number;
+  from_tag?: string | null;
+}
+
+/**
  * Branch metadata returned by branch listing operations.
  */
 export interface BranchInfo {
@@ -161,6 +172,17 @@ export interface WorktreeInfo {
   lock_reason?: string;
 }
 
+export interface MergeRequestLabel {
+  name: string;
+  color?: string;
+}
+
+export interface MergeRequestMember {
+  name?: string;
+  username?: string;
+  avatar_url?: string;
+}
+
 /**
  * Unified Merge Request / Pull Request representation.
  */
@@ -176,6 +198,33 @@ export interface UnifiedMergeRequest {
   author_name: string;
   author_avatar?: string;
   created_at: string;
+  assignees?: MergeRequestMember[];
+  reviewers?: MergeRequestMember[];
+  labels?: MergeRequestLabel[];
+  milestone?: string;
+  is_draft?: boolean;
+}
+
+/**
+ * Pull request / merge request comment or review item.
+ */
+export interface PullRequestComment {
+  id: number;
+  author_name: string;
+  author_username: string;
+  author_avatar?: string;
+  body: string;
+  created_at: string;
+}
+
+/**
+ * Branch comparison between base and head branches.
+ */
+export interface BranchComparisonResult {
+  commits: CommitInfo[];
+  files: CommitFileStat[];
+  total_additions: number;
+  total_deletions: number;
 }
 
 /**
@@ -365,6 +414,7 @@ export interface ReleaseInfo {
   commit_sha?: string;
   is_draft?: boolean;
   is_prerelease?: boolean;
+  is_latest?: boolean;
   upcoming_release?: boolean;
   web_url?: string;
   assets?: ReleaseAsset[];

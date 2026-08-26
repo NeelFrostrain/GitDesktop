@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import {
   Edit3,
   X,
-  Loader2,
   AlertCircle,
   CornerDownLeft,
 } from 'lucide-react';
@@ -13,6 +12,9 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore } from '../../store/repoStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Button } from '../common/Button';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface RenameItemModalProps {
   isOpen: boolean;
@@ -36,6 +38,15 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const cleanOldPath = filePath.trim();
+  const cleanNewPath = newPathInput.trim().replace(/^[/\\]+/, '');
+  const isDirty = cleanNewPath !== '' && cleanNewPath !== cleanOldPath;
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
+
   useEffect(() => {
     if (isOpen) {
       setNewPathInput(filePath);
@@ -57,9 +68,6 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
   }, [isOpen, filePath]);
 
   if (!isOpen) return null;
-
-  const cleanOldPath = filePath.trim();
-  const cleanNewPath = newPathInput.trim().replace(/^[/\\]+/, '');
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -114,7 +122,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && !isSubmitting) {
-      onClose();
+      requestClose();
     }
   };
 
@@ -122,7 +130,9 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
     <div
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-100 font-sans select-none"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) onClose();
+        if (e.target === e.currentTarget && !isSubmitting) {
+          requestClose();
+        }
       }}
       onKeyDown={handleKeyDown}
     >
@@ -130,24 +140,25 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
         className="w-full max-w-md bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral">
-              <Edit3 className="w-3.5 h-3.5" />
+        {/* Compact 1-Row Header */}
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+              <Edit3 className="w-3 h-3" />
             </div>
-            <div>
-              <h3 className="font-semibold text-xs text-text-primary leading-none">Rename File</h3>
-              <p className="text-[10px] text-text-muted mt-0.5 leading-none">
-                Update path or name in working tree
-              </p>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h3 className="font-bold text-xs text-text-primary leading-none">Rename File</h3>
+              <span className="text-border">•</span>
+              <span className="text-[10.5px] text-text-muted truncate">
+                Working tree path
+              </span>
             </div>
           </div>
 
           <button
-            onClick={onClose}
+            onClick={requestClose}
             disabled={isSubmitting}
-            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50 shrink-0"
             title="Close (Esc)"
           >
             <X className="w-3.5 h-3.5" />
@@ -155,20 +166,20 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-4 space-y-3.5">
+        <form onSubmit={handleSubmit} className="p-3.5 space-y-2.5 bg-base-0">
           {/* Current Path Info */}
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-text-muted block">
+            <label className="text-[10.5px] font-semibold text-text-muted block uppercase tracking-wider">
               Original Path
             </label>
-            <div className="px-2.5 py-1.5 bg-base-1 border border-border/70 rounded-sm font-mono text-xs text-text-secondary truncate">
+            <div className="px-2.5 py-1 bg-base-1 border border-border rounded-sm font-mono text-[11px] text-text-secondary truncate">
               {cleanOldPath}
             </div>
           </div>
 
           {/* New Path Input */}
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold text-text-primary block">
+          <div className="space-y-1">
+            <label className="text-[10.5px] font-semibold text-text-primary block uppercase tracking-wider">
               New File Path
             </label>
             <div className="relative">
@@ -182,50 +193,58 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
                 }}
                 disabled={isSubmitting}
                 placeholder="e.g. src/components/NewName.tsx"
-                className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm focus:outline-none focus:ring-1 focus:ring-commito-coral/30 transition shadow-inner placeholder:text-text-faint"
+                className="w-full h-7.5 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
               />
             </div>
           </div>
 
           {/* Error Message */}
           {error && (
-            <div className="flex items-center gap-2 p-2 rounded-sm bg-git-removed-bg border border-git-removed/30 text-git-removed text-[11px]">
+            <div className="flex items-center gap-1.5 p-1.5 rounded-sm bg-git-removed-bg border border-git-removed/30 text-git-removed text-xs">
               <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="truncate">{error}</span>
             </div>
           )}
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/60">
-            <button
+          {/* Slim Footer Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
+            <Button
               type="button"
-              onClick={onClose}
+              variant="secondary"
+              size="sm"
+              onClick={requestClose}
               disabled={isSubmitting}
-              className="h-7 px-3 rounded-sm border border-border bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary text-xs font-medium transition cursor-pointer disabled:opacity-50"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
+              variant="coral"
+              size="sm"
               disabled={isSubmitting || !cleanNewPath || cleanNewPath === cleanOldPath}
-              className="h-7 px-3.5 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+              isLoading={isSubmitting}
+              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>Renaming...</span>
-                </>
-              ) : (
-                <>
-                  <span>Rename</span>
-                  <CornerDownLeft className="w-3 h-3 opacity-75" />
-                </>
-              )}
-            </button>
+              Rename
+            </Button>
           </div>
         </form>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Unsaved Rename Target"
+        description={`You have entered an unsaved new path "${cleanNewPath}". If you discard, the file will remain named "${cleanOldPath}".`}
+        discardText="Discard Changes"
+        saveText={cleanNewPath && cleanNewPath !== cleanOldPath ? 'Rename File' : undefined}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => handleSubmit()}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );

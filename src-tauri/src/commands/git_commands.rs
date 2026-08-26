@@ -502,6 +502,13 @@ pub async fn delete_tag_cmd(repo_path: String, name: String) -> Result<(), AppEr
 }
 
 #[command]
+pub async fn fetch_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::tags::fetch_tags_from_remote(&repo_path, remote.as_deref()))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn push_tags_cmd(repo_path: String, remote: Option<String>) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || crate::git::tags::push_tags_to_remote(&repo_path, remote.as_deref()))
         .await
@@ -539,13 +546,12 @@ pub async fn delete_remote_tag_cmd(
 pub async fn list_releases_cmd(
     repo_path: String,
 ) -> Result<Vec<crate::git::remote::releases::ReleaseInfo>, AppError> {
-    tokio::task::spawn_blocking(move || crate::git::remote::releases::list_releases(&repo_path))
-        .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+    crate::git::remote::releases::list_releases(&repo_path).await
 }
 
 #[command]
 pub async fn create_release_cmd(
+    app: tauri::AppHandle,
     repo_path: String,
     tag_name: String,
     name: String,
@@ -553,45 +559,187 @@ pub async fn create_release_cmd(
     target_ref: Option<String>,
     push_immediately: Option<bool>,
     remote: Option<String>,
+    is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
+    file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    use tauri::Emitter;
+
     let pi = push_immediately.unwrap_or(true);
-    tokio::task::spawn_blocking(move || {
+    let rp = repo_path.clone();
+    let tn = tag_name.clone();
+    let nm = name.clone();
+    let ds = description.clone();
+    let tr = target_ref.clone();
+    let rm = remote.clone();
+    let fps = file_paths.clone();
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "pushing".to_string(),
+            message: if pi {
+                format!("Creating and pushing tag '{}' to remote...", tn)
+            } else {
+                format!("Creating local release tag '{}'...", tn)
+            },
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
+
+    let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::create_release(
+            &rp,
+            &tn,
+            &nm,
+            &ds,
+            tr.as_deref(),
+            pi,
+            rm.as_deref(),
+            is_latest,
+            is_prerelease,
+            fps.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    if pi {
+        if let Ok((web_url, remote_assets)) = crate::git::remote::releases::publish_release_to_remote_api(
+            Some(&app),
             &repo_path,
             &tag_name,
             &name,
             &description,
-            target_ref.as_deref(),
-            pi,
             remote.as_deref(),
+            is_latest,
+            is_prerelease,
+            file_paths.as_deref(),
         )
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+        .await
+        {
+            if let Some(url) = web_url {
+                release_info.web_url = Some(url);
+            }
+            if !remote_assets.is_empty() {
+                for ra in remote_assets {
+                    if !release_info.assets.iter().any(|a| a.name == ra.name) {
+                        release_info.assets.push(ra);
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "finishing".to_string(),
+            message: "Finishing release and updating repository tags...".to_string(),
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
+
+    Ok(release_info)
 }
 
 #[command]
 pub async fn update_release_cmd(
+    app: tauri::AppHandle,
     repo_path: String,
     tag_name: String,
     name: String,
     description: String,
     push_immediately: Option<bool>,
     remote: Option<String>,
+    is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
+    file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
+    use tauri::Emitter;
+
     let pi = push_immediately.unwrap_or(true);
-    tokio::task::spawn_blocking(move || {
+    let rp = repo_path.clone();
+    let tn = tag_name.clone();
+    let nm = name.clone();
+    let ds = description.clone();
+    let rm = remote.clone();
+    let fps = file_paths.clone();
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "pushing".to_string(),
+            message: if pi {
+                format!("Updating and pushing tag '{}' to remote...", tn)
+            } else {
+                format!("Updating local release tag '{}'...", tn)
+            },
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
+
+    let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::update_release(
+            &rp,
+            &tn,
+            &nm,
+            &ds,
+            pi,
+            rm.as_deref(),
+            is_latest,
+            is_prerelease,
+            fps.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    if pi {
+        if let Ok((web_url, remote_assets)) = crate::git::remote::releases::publish_release_to_remote_api(
+            Some(&app),
             &repo_path,
             &tag_name,
             &name,
             &description,
-            pi,
             remote.as_deref(),
+            is_latest,
+            is_prerelease,
+            file_paths.as_deref(),
         )
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+        .await
+        {
+            if let Some(url) = web_url {
+                release_info.web_url = Some(url);
+            }
+            if !remote_assets.is_empty() {
+                for ra in remote_assets {
+                    if !release_info.assets.iter().any(|a| a.name == ra.name) {
+                        release_info.assets.push(ra);
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = app.emit(
+        "release:progress",
+        &crate::git::remote::releases::ReleaseProgressPayload {
+            stage: "finishing".to_string(),
+            message: "Finishing release update and refreshing repository...".to_string(),
+            current_file: None,
+            file_index: None,
+            total_files: None,
+        },
+    );
+
+    Ok(release_info)
 }
 
 #[command]
@@ -1019,6 +1167,35 @@ pub async fn generate_ai_commit_message_cmd(
         format!("[Commit-AI] Generated commit message using {}", res.model_used);
         repo_id: Some(repo_path),
         meta: serde_json::json!({ "summary": res.summary, "model": res.model_used, "options": res.title_options })
+    );
+
+    Ok(res)
+}
+
+#[command]
+pub async fn generate_ai_release_notes_cmd(
+    repo_path: String,
+    target_tag: String,
+    previous_tag: Option<String>,
+    target_branch: Option<String>,
+    custom_api_key: Option<String>,
+    model: Option<String>,
+) -> Result<crate::git::ai::AiReleaseNotesResult, AppError> {
+    let res = crate::git::ai::generate_ai_release_notes(
+        &repo_path,
+        &target_tag,
+        previous_tag,
+        target_branch,
+        custom_api_key,
+        model,
+    )
+    .await?;
+
+    crate::log_success!(
+        crate::core::logging::LogCategory::Git,
+        format!("[Release-AI] Generated release notes for {} using {} ({} commits analyzed)", target_tag, res.model_used, res.commits_analyzed);
+        repo_id: Some(repo_path),
+        meta: serde_json::json!({ "tag": target_tag, "model": res.model_used, "commits": res.commits_analyzed })
     );
 
     Ok(res)

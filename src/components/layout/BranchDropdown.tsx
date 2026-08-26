@@ -8,12 +8,16 @@ import {
   Plus,
   Check,
   ChevronDown,
+  ChevronRight,
   X,
   Globe,
   Loader2,
   ExternalLink,
   RefreshCw,
   AlertCircle,
+  ArrowRight,
+  User,
+  GitFork,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -23,6 +27,8 @@ import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pull
 import { BranchInfo, UnifiedMergeRequest } from '../../types/git';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
+import { Tabs } from '../common/Tabs';
+import { Button } from '../common/Button';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -43,8 +49,8 @@ function formatRelativeTime(dateStr: string): string {
 }
 
 /**
- * Dropdown component displaying current branch, Branches vs. Pull Requests tabs (matching GitHub Desktop),
- * search filtering, branch checkout, and inline PR inspection.
+ * Dropdown component displaying current branch, Branches vs. Pull Requests tabs,
+ * search filtering, smooth branch checkout, and inline PR inspection.
  */
 export const BranchDropdown: React.FC = () => {
   const {
@@ -75,6 +81,43 @@ export const BranchDropdown: React.FC = () => {
 
   // Pending target branch for safe checkout with uncommitted changes
   const [pendingTargetBranch, setPendingTargetBranch] = useState<string | null>(null);
+
+  // Collapsible sections state (with persistence)
+  const [isLocalCollapsed, setIsLocalCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('branch_dropdown_local_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [isRemoteCollapsed, setIsRemoteCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('branch_dropdown_remote_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleLocalCollapsed = () => {
+    setIsLocalCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('branch_dropdown_local_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const toggleRemoteCollapsed = () => {
+    setIsRemoteCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('branch_dropdown_remote_collapsed', String(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -110,7 +153,6 @@ export const BranchDropdown: React.FC = () => {
     setIsLoadingPRs(true);
     setPrError(null);
     try {
-      // 1. Fetch remotes directly from git to guarantee up-to-date config
       let currentRemotes = useRemoteStore.getState().remotes;
       if (currentRemotes.length === 0) {
         try {
@@ -187,12 +229,17 @@ export const BranchDropdown: React.FC = () => {
 
   const handleSelectBranch = (branchName: string) => {
     setIsOpen(false);
-    if (branchName === currentBranch) return;
+    // If it's a remote branch name like 'origin/feat', target the clean branch name
+    const cleanBranch = branchName.includes('/') && !localBranchNames.has(branchName)
+      ? getCleanRemoteBranchName(branchName)
+      : branchName;
+
+    if (cleanBranch === currentBranch) return;
 
     if (uncommittedFilesCount > 0) {
-      setPendingTargetBranch(branchName);
+      setPendingTargetBranch(cleanBranch);
     } else {
-      executeDirectCheckout(branchName);
+      executeDirectCheckout(cleanBranch);
     }
   };
 
@@ -236,20 +283,60 @@ export const BranchDropdown: React.FC = () => {
     }
   };
 
-  // Branch Filtering
+  // Branch Filtering & Deduplication helpers
+  const getCleanRemoteBranchName = (remoteBranchName: string): string => {
+    const slashIdx = remoteBranchName.indexOf('/');
+    return slashIdx !== -1 ? remoteBranchName.slice(slashIdx + 1) : remoteBranchName;
+  };
+
+  const getRemotePrefix = (remoteBranchName: string): string => {
+    const slashIdx = remoteBranchName.indexOf('/');
+    return slashIdx !== -1 ? remoteBranchName.slice(0, slashIdx) : 'origin';
+  };
+
   const queryLower = filterQuery.trim().toLowerCase();
 
+  // 1. All valid remote branches (excluding symbolic refs like origin/HEAD)
+  const validRemoteBranches = useMemo(() => {
+    return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD'));
+  }, [branches]);
+
+  // 2. Set of local branch names
+  const localBranchNames = useMemo(() => {
+    return new Set(
+      branches
+        .filter((b: BranchInfo) => !b.is_remote)
+        .map((b: BranchInfo) => b.name)
+    );
+  }, [branches]);
+
+  // 3. Local branches merged with remote tracking indicator
   const localBranches = useMemo(() => {
     return branches
       .filter((b: BranchInfo) => !b.is_remote)
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
-  }, [branches, queryLower]);
+      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower))
+      .map((b: BranchInfo) => {
+        const matchingRemote = validRemoteBranches.find((r: BranchInfo) => {
+          return getCleanRemoteBranchName(r.name) === b.name;
+        });
 
-  const remoteBranches = useMemo(() => {
-    return branches
-      .filter((b: BranchInfo) => b.is_remote)
+        return {
+          ...b,
+          remoteTracking: matchingRemote ? matchingRemote.name : null,
+          remotePrefix: matchingRemote ? getRemotePrefix(matchingRemote.name) : null,
+        };
+      });
+  }, [branches, validRemoteBranches, queryLower]);
+
+  // 4. Remote-only branches (remote branches that do not exist locally)
+  const remoteOnlyBranches = useMemo(() => {
+    return validRemoteBranches
+      .filter((b: BranchInfo) => {
+        const clean = getCleanRemoteBranchName(b.name);
+        return !localBranchNames.has(clean);
+      })
       .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
-  }, [branches, queryLower]);
+  }, [validRemoteBranches, localBranchNames, queryLower]);
 
   // Pull Requests Filtering
   const filteredPullRequests = useMemo(() => {
@@ -266,7 +353,7 @@ export const BranchDropdown: React.FC = () => {
     });
   }, [pullRequests, queryLower]);
 
-  const menuWidth = 380;
+  const menuWidth = 390;
   const leftPos = triggerRect
     ? Math.min(triggerRect.right - menuWidth, window.innerWidth - menuWidth - 12)
     : 0;
@@ -276,23 +363,35 @@ export const BranchDropdown: React.FC = () => {
 
   return (
     <>
-      {/* Trigger Button (GitHub Desktop Style) */}
+      {/* Trigger Button */}
       <button
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className="h-7 px-2.5 rounded-sm bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer select-none shadow-2xs"
+        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] active:scale-95 group ${
+          isOpen
+            ? 'bg-gradient-to-b from-[#29272e] via-[#201e24] to-[#17161a] border-commito-coral/70 ring-1 ring-commito-coral/20 text-white'
+            : 'border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] text-zinc-200 hover:text-white'
+        }`}
         title={`Current branch: ${currentBranch}`}
       >
-        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-        <span className="truncate max-w-[120px] font-mono">{currentBranch}</span>
+        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0 group-hover:scale-105 transition-transform" />
+        <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
+          {currentBranch}
+        </span>
+
         {currentPR && (
-          <span className="flex items-center gap-0.5 text-[9.5px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
             <span>#{currentPR.iid || currentPR.id}</span>
-            <Check className="w-2.5 h-2.5" />
+            <Check className="w-2.5 h-2.5 text-emerald-400" />
           </span>
         )}
-        <ChevronDown className={`w-3 h-3 text-text-muted shrink-0 transition-transform duration-150 ${isOpen ? 'rotate-180' : ''}`} />
+
+        <ChevronDown
+          className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
+            isOpen ? 'rotate-180 text-commito-coral' : ''
+          }`}
+        />
       </button>
 
       {/* Dropdown Menu Portal */}
@@ -306,101 +405,93 @@ export const BranchDropdown: React.FC = () => {
               top: `${topPos}px`,
               width: `${menuWidth}px`,
             }}
-            className="fixed z-[9999] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[500px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none"
+            className="fixed z-[9999] bg-base-0 border border-border-strong/90 rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[520px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none ring-1 ring-black/40"
           >
-            {/* Header: Segmented Tabs & Action Button (GitHub Desktop Style) */}
-            <div className="p-2.5 border-b border-border bg-base-1 shrink-0 flex items-center justify-between gap-2">
+            {/* Header: Segmented Tabs & Action Button */}
+            <div className="p-2.5 border-b border-border/70 bg-base-0 flex items-center justify-between gap-2 shrink-0">
               {/* Segmented Tab Pill */}
-              <div className="flex items-center gap-0.5 bg-base-2/80 p-0.5 rounded-sm border border-border/80 flex-1">
-                {/* Branches Tab Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('branches');
+              <div className="flex-1">
+                <Tabs<'branches' | 'pull-requests'>
+                  tabs={[
+                    {
+                      id: 'branches',
+                      label: 'Branches',
+                      icon: (
+                        <GitBranch
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            activeTab === 'branches' ? 'text-commito-coral' : 'text-text-muted'
+                          }`}
+                        />
+                      ),
+                      badge: isLoadingBranches ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin text-commito-coral" />
+                      ) : (
+                        branches.filter((b) => !b.is_remote).length
+                      ),
+                      badgeVariant: 'coral',
+                    },
+                    {
+                      id: 'pull-requests',
+                      label: 'Pull requests',
+                      icon: (
+                        <GitPullRequest
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            activeTab === 'pull-requests' ? 'text-emerald-400' : 'text-text-muted'
+                          }`}
+                        />
+                      ),
+                      badge: isLoadingPRs ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
+                      ) : pullRequests.length > 0 ? (
+                        pullRequests.length
+                      ) : undefined,
+                      badgeVariant: 'emerald',
+                    },
+                  ]}
+                  activeTab={activeTab}
+                  onChange={(tab) => {
+                    setActiveTab(tab);
                     setFilterQuery('');
+                    if (tab === 'pull-requests' && pullRequests.length === 0) loadPullRequests();
                     setTimeout(() => searchInputRef.current?.focus(), 50);
                   }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-xs text-[11px] font-medium transition cursor-pointer ${
-                    activeTab === 'branches'
-                      ? 'bg-base-0 text-text-primary shadow-xs border border-border/80 font-bold'
-                      : 'text-text-muted hover:text-text-primary hover:bg-base-1/50'
-                  }`}
-                >
-                  <GitBranch
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      activeTab === 'branches' ? 'text-commito-coral' : 'text-text-muted'
-                    }`}
-                  />
-                  <span>Branches</span>
-                  {isLoadingBranches ? (
-                    <Loader2 className="w-2.5 h-2.5 animate-spin text-commito-coral ml-0.5" />
-                  ) : (
-                    <span className="text-[9.5px] font-mono text-text-muted ml-0.5">
-                      ({branches.filter((b) => !b.is_remote).length})
-                    </span>
-                  )}
-                </button>
-
-                {/* Pull Requests Tab Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('pull-requests');
-                    setFilterQuery('');
-                    if (pullRequests.length === 0) loadPullRequests();
-                    setTimeout(() => searchInputRef.current?.focus(), 50);
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-xs text-[11px] font-medium transition cursor-pointer ${
-                    activeTab === 'pull-requests'
-                      ? 'bg-base-0 text-text-primary shadow-xs border border-border/80 font-bold'
-                      : 'text-text-muted hover:text-text-primary hover:bg-base-1/50'
-                  }`}
-                >
-                  <GitPullRequest
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      activeTab === 'pull-requests' ? 'text-emerald-400' : 'text-text-muted'
-                    }`}
-                  />
-                  <span>Pull requests</span>
-                  {isLoadingPRs ? (
-                    <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400 ml-0.5" />
-                  ) : pullRequests.length > 0 ? (
-                    <span className="px-1.5 py-0.2 rounded-xs bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold">
-                      {pullRequests.length}
-                    </span>
-                  ) : null}
-                </button>
+                  fullWidth
+                  size="sm"
+                  ariaLabel="Branch and Pull Request navigation tabs"
+                />
               </div>
 
               {/* Action Button: New Branch vs. New PR */}
               {activeTab === 'branches' ? (
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => setShowCreateModal(true)}
-                  className="h-7 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer shadow-xs shrink-0 active:scale-95"
-                  title="Create new branch"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                  title="Create new branch from HEAD"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>New</span>
-                </button>
+                  New
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => {
                     setIsOpen(false);
                     setIsMergeRequestModalOpen(true);
                   }}
-                  className="h-7 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer shadow-xs shrink-0 active:scale-95"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
                   title="Create Pull Request / Merge Request"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>New PR</span>
-                </button>
+                  New PR
+                </Button>
               )}
             </div>
 
-            {/* Search Bar */}
-            <div className="p-2 border-b border-border/80 bg-base-0 shrink-0 flex items-center gap-1.5">
+            {/* Clean Filter Search Bar */}
+            <div className="p-2.5 border-b border-border/50 bg-base-0 flex items-center gap-1.5 shrink-0">
               <div className="relative flex items-center flex-1">
                 <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
                 <input
@@ -409,17 +500,18 @@ export const BranchDropdown: React.FC = () => {
                   placeholder={
                     activeTab === 'branches'
                       ? 'Filter branches...'
-                      : 'Filter'
+                      : 'Filter pull requests...'
                   }
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
-                  className="w-full h-7.5 pl-8 pr-7 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono shadow-inner"
+                  className="w-full h-8 pl-8 pr-7 bg-base-1/70 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong focus:border-commito-coral/70 focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none font-sans transition-all shadow-xs"
                 />
                 {filterQuery && (
                   <button
                     type="button"
                     onClick={() => setFilterQuery('')}
-                    className="absolute right-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
+                    className="absolute right-2 p-0.5 text-text-muted hover:text-text hover:bg-base-2 rounded-sm transition cursor-pointer"
+                    title="Clear filter"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -431,7 +523,7 @@ export const BranchDropdown: React.FC = () => {
                   type="button"
                   onClick={loadPullRequests}
                   disabled={isLoadingPRs}
-                  className="h-7.5 w-7.5 flex items-center justify-center rounded-sm bg-base-1 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary transition cursor-pointer disabled:opacity-50 shrink-0"
+                  className="h-8 w-8 flex items-center justify-center rounded-sm bg-base-1/70 hover:bg-base-2 border border-border/60 hover:border-border-strong text-text-muted hover:text-text transition shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
                   title="Refresh pull requests"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isLoadingPRs ? 'animate-spin text-emerald-400' : ''}`} />
@@ -441,111 +533,199 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Tab Body: Branches View */}
             {activeTab === 'branches' && (
-              <div className="flex-1 overflow-y-auto py-1.5 space-y-2 min-h-0">
+              <div className="flex-1 overflow-y-auto p-2 space-y-2.5 min-h-0 scrollbar-thin">
                 {/* Local Branches Section */}
-                <div>
-                  <div className="px-3 pt-1 pb-1 select-none flex items-center justify-between">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
-                      LOCAL BRANCHES
+                <div className="space-y-1">
+                  <button
+                    type="button"
+                    onClick={toggleLocalCollapsed}
+                    className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
+                    title={isLocalCollapsed && !filterQuery ? 'Expand Local Branches' : 'Collapse Local Branches'}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
+                      <ChevronRight
+                        className={`w-3 h-3 text-text-muted group-hover:text-commito-coral transition-transform duration-150 ${
+                          !isLocalCollapsed || filterQuery ? 'rotate-90 text-commito-coral' : ''
+                        }`}
+                      />
+                      <GitBranch className="w-3 h-3 text-text-faint" />
+                      <span>Local Branches</span>
                     </span>
-                    <span className="text-[9.5px] font-mono text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border">
+                    <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded-sm bg-base-2 text-text-muted border border-border/50">
                       {localBranches.length}
                     </span>
-                  </div>
+                  </button>
 
-                  {localBranches.length === 0 ? (
-                    <div className="px-3 py-2 text-text-muted text-[11px] italic">
-                      {filterQuery ? 'No local branches match search.' : 'No local branches.'}
-                    </div>
-                  ) : (
-                    <div className="space-y-0.5 px-1.5">
-                      {localBranches.map((branchItem: BranchInfo) => {
-                        const isCurrent = branchItem.name === currentBranch;
-                        return (
-                          <div
-                            key={branchItem.name}
-                            onClick={() => handleSelectBranch(branchItem.name)}
-                            className={`group flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-sm cursor-pointer transition ${
-                              isCurrent
-                                ? 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/30 shadow-2xs'
-                                : 'hover:bg-base-1 text-text-primary'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <GitBranch
-                                className={`w-3.5 h-3.5 shrink-0 ${
-                                  isCurrent ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
-                                }`}
-                              />
-                              <span className="truncate text-xs font-mono">{branchItem.name}</span>
-                            </div>
+                  {(!isLocalCollapsed || Boolean(filterQuery.trim())) && (
+                    localBranches.length === 0 ? (
+                      <div className="py-4 px-3 text-center text-text-muted text-xs italic bg-base-1/40 rounded-sm border border-border/40">
+                        {filterQuery ? `No local branches match "${filterQuery}"` : 'No local branches.'}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {localBranches.map((branchItem) => {
+                          const isCurrent = branchItem.name === currentBranch;
+                          return (
+                            <div
+                              key={branchItem.name}
+                              onClick={() => handleSelectBranch(branchItem.name)}
+                              className={`group relative flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm cursor-pointer transition-all duration-150 select-none ${
+                                isCurrent
+                                  ? 'bg-commito-coral/10 hover:bg-commito-coral/15 border border-commito-coral/30 shadow-xs'
+                                  : 'bg-base-0 hover:bg-base-1/90 border border-transparent hover:border-border/60 hover:shadow-xs'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <div
+                                  className={`w-5 h-5 rounded-sm flex items-center justify-center shrink-0 transition-colors ${
+                                    isCurrent
+                                      ? 'bg-commito-coral/20 text-commito-coral'
+                                      : 'bg-base-2 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
+                                  }`}
+                                >
+                                  <GitBranch className="w-3 h-3" />
+                                </div>
 
-                            {isCurrent && (
-                              <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-commito-coral/20 text-commito-coral border border-commito-coral/40">
-                                  CURRENT
-                                </span>
-                                <Check className="w-3.5 h-3.5 text-commito-coral" />
+                                <div className="flex items-center gap-1.5 min-w-0 truncate">
+                                  <span
+                                    className={`truncate text-xs font-mono transition-colors ${
+                                      isCurrent
+                                        ? 'font-bold text-commito-coral'
+                                        : 'font-medium text-text group-hover:text-text-primary'
+                                    }`}
+                                  >
+                                    {branchItem.name}
+                                  </span>
+
+                                  {branchItem.remoteTracking && (
+                                    <span
+                                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
+                                      title={`Tracks remote '${branchItem.remoteTracking}'`}
+                                    >
+                                      <Globe className="w-2.5 h-2.5 flex-shrink-0" />
+                                      <span className="truncate max-w-[70px]">{branchItem.remotePrefix || 'origin'}</span>
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+
+                              {isCurrent ? (
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral/20 text-commito-coral border border-commito-coral/35 tracking-wider">
+                                    CURRENT
+                                  </span>
+                                  <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                                </div>
+                              ) : (
+                                <span className="text-[10.5px] font-sans font-medium text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/10 border border-commito-coral/25 px-1.5 py-0.5 rounded-xs">
+                                  <span>Switch</span>
+                                  <ArrowRight className="w-2.5 h-2.5" />
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
                   )}
                 </div>
 
                 {/* Remote Branches Section */}
-                {remoteBranches.length > 0 && (
-                  <div className="pt-1.5 border-t border-border/60">
-                    <div className="px-3 pt-1 pb-1 select-none flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
-                        REMOTE BRANCHES
-                      </span>
-                      <span className="text-[9.5px] font-mono text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border">
-                        {remoteBranches.length}
-                      </span>
-                    </div>
+                <div className="space-y-1 pt-2 border-t border-border/50">
+                  <button
+                    type="button"
+                    onClick={toggleRemoteCollapsed}
+                    className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
+                    title={isRemoteCollapsed && !filterQuery ? 'Expand Remote Branches' : 'Collapse Remote Branches'}
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
+                      <ChevronRight
+                        className={`w-3 h-3 text-text-muted group-hover:text-gitlab-blue transition-transform duration-150 ${
+                          !isRemoteCollapsed || filterQuery ? 'rotate-90 text-gitlab-blue' : ''
+                        }`}
+                      />
+                      <Globe className="w-3 h-3 text-gitlab-blue/70" />
+                      <span>Remote Branches</span>
+                    </span>
+                    <span className="text-[9.5px] font-mono font-medium px-1.5 py-0.2 rounded-sm bg-base-2 text-text-muted border border-border/50">
+                      {remoteOnlyBranches.length}
+                    </span>
+                  </button>
 
-                    <div className="space-y-0.5 px-1.5">
-                      {remoteBranches.map((remoteBranchItem: BranchInfo) => (
-                        <div
-                          key={remoteBranchItem.name}
-                          onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                          className="group flex items-center gap-2 px-2.5 py-1.5 rounded-sm hover:bg-base-1 text-text-secondary hover:text-text-primary cursor-pointer transition font-mono"
-                        >
-                          <Globe className="w-3.5 h-3.5 text-gitlab-blue shrink-0" />
-                          <span className="truncate text-xs">{remoteBranchItem.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                  {(!isRemoteCollapsed || Boolean(filterQuery.trim())) && (
+                    remoteOnlyBranches.length === 0 ? (
+                      <div className="py-2.5 px-3 text-center text-text-muted text-[11px] bg-base-1/30 rounded-sm border border-border/30 flex items-center justify-center gap-1.5 font-sans select-none">
+                        {filterQuery ? (
+                          <span>No remote-only branches match "{filterQuery}"</span>
+                        ) : (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                            <span>All remote branches are tracked locally</span>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
+                          const slashIdx = remoteBranchItem.name.indexOf('/');
+                          const prefix = slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
+                          const nameWithoutPrefix = slashIdx !== -1 ? remoteBranchItem.name.slice(slashIdx + 1) : remoteBranchItem.name;
+
+                          return (
+                            <div
+                              key={remoteBranchItem.name}
+                              onClick={() => handleSelectBranch(remoteBranchItem.name)}
+                              className="group relative flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm bg-base-0 hover:bg-base-1/90 border border-transparent hover:border-border/60 hover:shadow-xs cursor-pointer transition-all duration-150 select-none"
+                            >
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <div className="w-5 h-5 rounded-sm bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
+                                  <Globe className="w-3 h-3" />
+                                </div>
+                                <div className="min-w-0 truncate font-mono text-xs">
+                                  {prefix && (
+                                    <span className="text-text-muted text-[11px] font-normal">{prefix}</span>
+                                  )}
+                                  <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
+                                    {nameWithoutPrefix}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <span className="text-[10px] font-sans font-medium text-gitlab-blue opacity-0 group-hover:opacity-100 transition-opacity bg-gitlab-blue/10 border border-gitlab-blue/30 px-1.5 py-0.5 rounded-xs">
+                                Checkout
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
             )}
 
-            {/* Tab Body: Pull Requests View (Matching GitHub Desktop) */}
+            {/* Tab Body: Pull Requests View */}
             {activeTab === 'pull-requests' && (
-              <div className="flex-1 overflow-y-auto py-1.5 min-h-0">
+              <div className="flex-1 overflow-y-auto p-2 min-h-0 scrollbar-thin">
                 {isLoadingPRs && pullRequests.length === 0 ? (
-                  <div className="py-8 px-4 flex flex-col items-center justify-center gap-2 text-text-muted text-xs">
-                    <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
-                    <span className="text-[11px]">Loading open pull requests...</span>
+                  <div className="py-12 px-4 flex flex-col items-center justify-center gap-2.5 text-text-muted text-xs">
+                    <Loader2 className="w-5 h-5 text-emerald-400 animate-spin" />
+                    <span className="text-[11.5px] font-medium text-text-secondary">Loading open pull requests...</span>
                   </div>
                 ) : prError ? (
-                  <div className="py-6 px-4 text-center space-y-2.5">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                      <AlertCircle className="w-4 h-4" />
+                  <div className="py-8 px-4 text-center space-y-3">
+                    <div className="w-9 h-9 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xs">
+                      <AlertCircle className="w-4.5 h-4.5" />
                     </div>
                     <div className="space-y-1">
-                      <p className="text-xs font-semibold text-text-primary">
+                      <p className="text-xs font-bold text-text-primary">
                         {prError.includes('Not Found') || prError.includes('404')
                           ? 'Private Repository Authentication'
                           : 'Unable to Load Pull Requests'}
                       </p>
-                      <p className="text-[11px] text-text-muted max-w-[280px] mx-auto leading-normal">
+                      <p className="text-[11px] text-text-muted max-w-[280px] mx-auto leading-relaxed">
                         {prError.includes('Not Found') || prError.includes('404')
-                          ? 'This repository is private. Please ensure you are logged into your GitHub account in Accounts.'
+                          ? 'This repository is private. Please ensure you are logged into your account in Accounts settings.'
                           : prError}
                       </p>
                     </div>
@@ -553,7 +733,7 @@ export const BranchDropdown: React.FC = () => {
                       <button
                         type="button"
                         onClick={loadPullRequests}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-sm text-xs font-medium transition cursor-pointer shadow-2xs active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-base-2 hover:bg-base-3 border border-border/80 text-text-primary rounded-sm text-xs font-semibold transition cursor-pointer shadow-xs active:scale-95"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Retry</span>
@@ -561,15 +741,15 @@ export const BranchDropdown: React.FC = () => {
                     </div>
                   </div>
                 ) : filteredPullRequests.length === 0 ? (
-                  <div className="py-6 px-4 text-center space-y-2.5">
-                    <div className="w-8 h-8 mx-auto rounded-full bg-base-1 border border-border flex items-center justify-center text-text-muted">
-                      <GitPullRequest className="w-4 h-4 opacity-70 text-emerald-400" />
+                  <div className="py-10 px-4 text-center space-y-3">
+                    <div className="w-9 h-9 mx-auto rounded-full bg-base-1 border border-border/70 flex items-center justify-center text-text-muted shadow-xs">
+                      <GitPullRequest className="w-4.5 h-4.5 opacity-70 text-emerald-400" />
                     </div>
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-semibold text-text-primary">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-text-primary">
                         {filterQuery ? 'No matching pull requests' : 'No Open Pull Requests'}
                       </p>
-                      <p className="text-[11px] text-text-muted max-w-[260px] mx-auto leading-normal">
+                      <p className="text-[11px] text-text-muted max-w-[270px] mx-auto leading-relaxed">
                         {filterQuery
                           ? `No open pull requests matching "${filterQuery}"`
                           : 'There are no open pull requests or merge requests found for this remote.'}
@@ -583,7 +763,7 @@ export const BranchDropdown: React.FC = () => {
                             setIsOpen(false);
                             setIsMergeRequestModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-2xs transition cursor-pointer active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Create Pull Request</span>
@@ -592,15 +772,15 @@ export const BranchDropdown: React.FC = () => {
                     )}
                   </div>
                 ) : (
-                  <div className="space-y-1.5 px-1.5">
-                    {/* Section Header: Pull requests in owner/repo */}
+                  <div className="space-y-1.5">
+                    {/* Section Header */}
                     {activeProjectPath && (
-                      <div className="px-2 pt-1 pb-0.5 text-[11px] font-semibold text-text-muted select-none truncate">
+                      <div className="px-1.5 pt-0.5 pb-1 text-[10.5px] font-semibold text-text-muted select-none truncate">
                         Pull requests in <span className="text-text-primary font-mono">{activeProjectPath}</span>
                       </div>
                     )}
 
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {filteredPullRequests.map((pr) => {
                         const isCurrent = isCurrentPR(pr.source_branch);
                         const prNumber = pr.iid || pr.id;
@@ -610,24 +790,40 @@ export const BranchDropdown: React.FC = () => {
                           <div
                             key={pr.id}
                             onClick={() => handleSelectPullRequest(pr)}
-                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm cursor-pointer transition border ${
+                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm cursor-pointer transition-all duration-150 border ${
                               isCurrent
-                                ? 'bg-commito-coral/10 border-commito-coral/30 shadow-2xs'
-                                : 'bg-base-0 hover:bg-base-1 border-transparent hover:border-border'
+                                ? 'bg-commito-coral/10 border-commito-coral/30 shadow-xs'
+                                : 'bg-base-0 hover:bg-base-1/90 border-transparent hover:border-border/60 hover:shadow-xs'
                             }`}
                             title={`Checkout branch '${pr.source_branch}' for PR ${numberPrefix}${prNumber}`}
                           >
                             <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                              <div className="mt-0.5 shrink-0 text-emerald-400">
-                                <GitPullRequest className="w-4 h-4" />
+                              <div className="w-5 h-5 rounded-sm bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
+                                <GitPullRequest className="w-3 h-3" />
                               </div>
-                              <div className="min-w-0 flex-1 space-y-0.5">
+                              <div className="min-w-0 flex-1 space-y-1">
                                 <div className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors">
                                   {pr.title}
                                 </div>
-                                <div className="text-[11px] text-text-muted font-mono flex items-center gap-1.5">
-                                  <span className="font-bold text-commito-coral">{numberPrefix}{prNumber}</span>
-                                  <span>opened {formatRelativeTime(pr.created_at)} by {pr.author_name}</span>
+
+                                <div className="flex items-center gap-2 flex-wrap text-[10.5px] text-text-muted">
+                                  <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs">
+                                    {numberPrefix}{prNumber}
+                                  </span>
+
+                                  <div className="flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
+                                    <GitFork className="w-2.5 h-2.5 text-text-faint" />
+                                    <span className="truncate max-w-[90px]">{pr.source_branch}</span>
+                                    <ArrowRight className="w-2 h-2 text-text-faint" />
+                                    <span className="truncate max-w-[90px]">{pr.target_branch}</span>
+                                  </div>
+
+                                  <span className="truncate flex items-center gap-1">
+                                    <User className="w-2.5 h-2.5 text-text-faint" />
+                                    <span>{pr.author_name}</span>
+                                  </span>
+
+                                  <span>• {formatRelativeTime(pr.created_at)}</span>
                                 </div>
                               </div>
                             </div>
@@ -635,7 +831,10 @@ export const BranchDropdown: React.FC = () => {
                             {/* Right: Checkmark if current, plus external link */}
                             <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                               {isCurrent && (
-                                <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                                <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
+                                  <span>CURRENT</span>
+                                  <Check className="w-2.5 h-2.5" />
+                                </span>
                               )}
                               {pr.web_url && pr.web_url !== '#' && (
                                 <button
@@ -644,7 +843,7 @@ export const BranchDropdown: React.FC = () => {
                                     e.stopPropagation();
                                     openUrl(pr.web_url).catch(() => {});
                                   }}
-                                  className="p-1 text-text-muted hover:text-text-primary rounded hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+                                  className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
                                   title="Open in browser"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -665,55 +864,74 @@ export const BranchDropdown: React.FC = () => {
 
       {/* Create New Branch Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans">
+        <div className="fixed inset-0 z-[10000] bg-black/75 flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
-            className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+            className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
           >
-            <div className="px-4 py-3 bg-base-1 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <GitBranch className="w-4 h-4 text-commito-coral" />
-                <h3 className="text-xs font-bold text-text-primary">Create Branch</h3>
+            {/* Compact 1-Row Header */}
+            <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+                  <GitBranch className="w-3 h-3" />
+                </div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h3 className="text-xs font-bold text-text-primary leading-none">Create Branch</h3>
+                  <span className="text-border">•</span>
+                  <span className="text-[10.5px] text-text-muted font-mono truncate">
+                    from <span className="text-commito-coral font-semibold">{currentBranch}</span>
+                  </span>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
+                className="text-text-muted hover:text-text-primary p-1 rounded-sm hover:bg-base-2 transition cursor-pointer shrink-0"
+                title="Close (Esc)"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="p-4 space-y-3">
+            {/* Compact Body */}
+            <div className="p-3.5 space-y-2">
               <div>
-                <label className="text-[11px] font-semibold text-text-primary block mb-1">Branch Name</label>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="feature/new-feature"
-                  value={newBranchName}
-                  onChange={(e) => setNewBranchName(e.target.value)}
-                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono shadow-inner"
-                />
+                <label className="text-[11px] font-semibold text-text-primary block mb-1">
+                  Branch Name
+                </label>
+                <div className="relative flex items-center">
+                  <GitBranch className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="e.g. feature/new-workflow"
+                    value={newBranchName}
+                    onChange={(e) => setNewBranchName(e.target.value)}
+                    className="w-full h-7.5 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition font-mono shadow-2xs"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-base-1 border-t border-border flex items-center justify-end gap-2">
-              <button
+            {/* Slim Footer */}
+            <div className="px-3.5 py-1.5 min-h-[38px] bg-base-1/50 border-t border-border flex items-center justify-end gap-2 shrink-0">
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowCreateModal(false)}
-                className="h-7.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="coral"
+                size="sm"
                 disabled={!newBranchName.trim() || isCreating}
-                className="h-7.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
+                isLoading={isCreating}
               >
-                {isCreating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Create & Checkout</span>
-              </button>
+                Create & Checkout
+              </Button>
             </div>
           </form>
         </div>

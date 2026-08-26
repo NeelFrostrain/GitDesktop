@@ -16,6 +16,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { SystemService } from '../../services/system/systemService';
 import { getErrorMessage } from '../../shared/utils/errorUtils';
 import { RepoCard } from './RepoCard';
+import { Button } from '../common/Button';
 
 type FilterTab = 'all' | 'pinned' | 'dirty' | 'gitlab' | 'github';
 
@@ -217,24 +218,26 @@ export const RepoList: React.FC = () => {
           </div>
 
           {/* Clone Remote */}
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="sm"
             onClick={handleCloneRepo}
-            className="h-6.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer flex-shrink-0 shadow-2xs"
+            leftIcon={<DownloadCloud className="w-3.5 h-3.5" />}
           >
-            <DownloadCloud className="w-3.5 h-3.5" />
-            <span>Clone</span>
-          </button>
+            Clone
+          </Button>
 
           {/* Open Local */}
-          <button
+          <Button
             type="button"
+            variant="coral"
+            size="sm"
             onClick={handleOpenFolderDialog}
-            className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer flex-shrink-0 shadow-xs active:scale-95"
+            leftIcon={<FolderOpen className="w-3.5 h-3.5" />}
           >
-            <FolderOpen className="w-3.5 h-3.5" />
-            <span>Open Local</span>
-          </button>
+            Open Local
+          </Button>
         </div>
       </div>
 
@@ -297,22 +300,24 @@ export const RepoList: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-2 pt-1">
-            <button
+            <Button
               type="button"
+              variant="coral"
+              size="md"
               onClick={handleOpenFolderDialog}
-              className="h-8 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              leftIcon={<FolderOpen className="w-3.5 h-3.5" />}
             >
-              <FolderOpen className="w-3.5 h-3.5" />
-              <span>Open Local Repository</span>
-            </button>
-            <button
+              Open Local Repository
+            </Button>
+            <Button
               type="button"
+              variant="secondary"
+              size="md"
               onClick={handleCloneRepo}
-              className="h-8 px-3.5 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-sm text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+              leftIcon={<DownloadCloud className="w-3.5 h-3.5" />}
             >
-              <DownloadCloud className="w-3.5 h-3.5 text-text-muted" />
-              <span>Clone from Remote</span>
-            </button>
+              Clone from Remote
+            </Button>
           </div>
         </div>
       ) : (

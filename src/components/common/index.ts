@@ -1,5 +1,6 @@
 export { Badge } from './Badge';
 export { Button } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { Input } from './Input';
 export { Checkbox } from '../common/Checkbox';
 export { Dropdown } from '../common/Dropdown';
@@ -7,3 +8,7 @@ export { EmptyState } from './EmptyState';
 export { LoadingState } from './LoadingState';
 export { UserAvatar } from '../common/UserAvatar';
 export { ErrorBoundary } from './ErrorBoundary';
+export { Tabs } from './Tabs';
+export type { TabItem, TabsProps } from './Tabs';
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';

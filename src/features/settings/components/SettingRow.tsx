@@ -19,7 +19,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
         const hex = String(value || setting.default);
         return (
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div className="relative flex-shrink-0">
               <input
                 type="color"
                 value={hex.startsWith('#') ? hex : '#ffffff'}
@@ -28,7 +28,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               />
               <div
                 style={{ backgroundColor: hex }}
-                className="w-7 h-7 rounded-sm border border-border shadow-xs cursor-pointer transition transform hover:scale-105"
+                className="w-6 h-6 rounded-xs border border-border/80 shadow-xs cursor-pointer transition hover:scale-105"
                 title={`Click to pick color: ${hex}`}
               />
             </div>
@@ -36,7 +36,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               type="text"
               value={hex}
               onChange={(e) => setSettingValue(setting.id, e.target.value)}
-              className="w-28 px-2.5 py-1 bg-base-2 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+              className="w-24 h-7 px-2 bg-base-2 border border-border/70 rounded-xs text-[11.5px] font-mono text-text-primary focus:outline-none focus:border-commito-coral/60 focus:ring-1 focus:ring-commito-coral/20 transition"
               placeholder="#000000"
             />
           </div>
@@ -54,9 +54,9 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               step={setting.step ?? 1}
               value={num}
               onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
-              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-3 rounded-sm"
+              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-2 rounded-xs"
             />
-            <div className="flex items-center gap-1 min-w-[50px] justify-end">
+            <div className="flex items-center gap-1 min-w-[48px] justify-end">
               <input
                 type="number"
                 min={setting.min}
@@ -64,10 +64,10 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
                 step={setting.step}
                 value={num}
                 onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
-                className="w-14 px-1.5 py-1 bg-base-2 border border-border rounded-sm text-xs font-mono text-text-primary text-right focus:outline-none focus:border-commito-coral"
+                className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-commito-coral/60"
               />
               {setting.unit && (
-                <span className="text-[11px] font-mono text-text-muted select-none">
+                <span className="text-[10.5px] font-mono text-text-muted select-none">
                   {setting.unit}
                 </span>
               )}
@@ -81,7 +81,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
           <select
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="px-3 py-1.5 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral cursor-pointer max-w-[220px]"
+            className="h-7 px-2.5 bg-base-2 border border-border/70 rounded-xs text-xs text-text-primary focus:outline-none focus:border-commito-coral/60 cursor-pointer max-w-[240px]"
           >
             {setting.options?.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-base-2 text-text-primary">
@@ -100,12 +100,14 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
             role="switch"
             aria-checked={checked}
             onClick={() => setSettingValue(setting.id, !checked)}
-            className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${checked ? 'bg-commito-coral' : 'bg-base-3 border border-border'
-              }`}
+            className={`w-9 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
+              checked ? 'bg-commito-coral' : 'bg-base-3 border border-border/80'
+            }`}
           >
             <div
-              className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'
-                }`}
+              className={`bg-white w-3.5 h-3.5 rounded-full shadow-sm transform transition-transform ${
+                checked ? 'translate-x-4.5' : 'translate-x-0'
+              }`}
             />
           </button>
         );
@@ -118,7 +120,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
             type="text"
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="w-64 px-2.5 py-1 bg-base-2 border border-border rounded-sm text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+            className="w-64 h-7 px-2.5 bg-base-2 border border-border/70 rounded-xs text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral/60"
           />
         );
       }
@@ -127,10 +129,11 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
   return (
     <div
-      className={`p-3.5 rounded-sm border transition flex flex-col md:flex-row md:items-center justify-between gap-4 group ${modified
-        ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
-        : 'bg-base-1/60 border-border hover:border-border-strong hover:bg-base-1/90'
-        }`}
+      className={`p-3 rounded-sm border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 group ${
+        modified
+          ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
+          : 'bg-base-1/40 border-border/50 hover:border-border/80 hover:bg-base-1/70'
+      }`}
     >
       {/* Left: Label, Description, Badges */}
       <div className="flex-1 min-w-0 pr-2">
@@ -140,38 +143,32 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
           </span>
 
           {modified && (
-            <span className="px-1.5 py-0.2 bg-commito-coral/20 text-commito-coral text-[9px] font-semibold rounded uppercase tracking-wider">
+            <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-mono font-bold rounded-xs uppercase tracking-wider">
               Modified
             </span>
           )}
 
-          {setting.scope === 'repo' && (
-            <span className="px-1.5 py-0.2 bg-base-3 text-text-muted text-[9px] font-medium rounded uppercase tracking-wider border border-border">
-              Repo
-            </span>
-          )}
-
           {setting.cssVar && (
-            <code className="text-[10px] font-mono text-text-muted/80 bg-base-2 px-1 rounded border border-border/50">
+            <code className="text-[9.5px] font-mono text-text-faint bg-base-2/60 px-1 py-0.2 rounded-xs border border-border/40">
               {setting.cssVar}
             </code>
           )}
         </div>
 
-        <p className="text-xs text-text-muted mt-1 leading-relaxed">
+        <p className="text-[11.5px] text-text-muted mt-0.5 leading-relaxed">
           {setting.description}
         </p>
       </div>
 
       {/* Right: Control Widget & Reset Button */}
-      <div className="flex items-center gap-2.5 self-start md:self-center flex-shrink-0">
+      <div className="flex items-center gap-2 self-start md:self-center flex-shrink-0">
         {renderControl()}
 
         {modified && (
           <button
             type="button"
             onClick={() => resetSettingValue(setting.id)}
-            className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
+            className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs transition cursor-pointer"
             title={`Reset "${setting.label}" to default (${setting.default})`}
           >
             <RotateCcw className="w-3.5 h-3.5" />

@@ -315,6 +315,12 @@ pub struct MergeRequestAuthor {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct MergeRequestLabel {
+    pub name: String,
+    pub color: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct MergeRequest {
     pub id: u64,
     pub iid: u64,
@@ -326,6 +332,11 @@ pub struct MergeRequest {
     pub web_url: String,
     pub created_at: String,
     pub author: Option<MergeRequestAuthor>,
+    pub assignees: Option<Vec<MergeRequestAuthor>>,
+    pub reviewers: Option<Vec<MergeRequestAuthor>>,
+    pub labels: Option<Vec<MergeRequestLabel>>,
+    pub milestone: Option<String>,
+    pub is_draft: Option<bool>,
 }
 
 pub struct GitLabClient {
@@ -530,12 +541,85 @@ impl GitLabClient {
             )));
         }
 
-        let mrs: Vec<MergeRequest> = resp
+        let raw_mrs: Vec<serde_json::Value> = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse MRs JSON: {}", e)))?;
 
-        Ok(mrs)
+        let mut results = Vec::new();
+        for item in raw_mrs {
+            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+            let iid = item.get("iid").and_then(|v| v.as_u64()).unwrap_or(id);
+            let title = item.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let description = item.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
+            let state = item.get("state").and_then(|v| v.as_str()).unwrap_or("opened").to_string();
+            let source_branch = item.get("source_branch").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let target_branch = item.get("target_branch").and_then(|v| v.as_str()).unwrap_or("main").to_string();
+            let web_url = item.get("web_url").and_then(|v| v.as_str()).unwrap_or("#").to_string();
+            let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+            let author = item.get("author").map(|u| {
+                let username = u.get("username").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let name = u.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                let avatar_url = u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                MergeRequestAuthor { name, username, avatar_url }
+            });
+
+            let mut assignees = Vec::new();
+            if let Some(arr) = item.get("assignees").and_then(|v| v.as_array()) {
+                for u in arr {
+                    let username = u.get("username").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let name = u.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let avatar_url = u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    assignees.push(MergeRequestAuthor { name, username, avatar_url });
+                }
+            }
+
+            let mut reviewers = Vec::new();
+            if let Some(arr) = item.get("reviewers").and_then(|v| v.as_array()) {
+                for u in arr {
+                    let username = u.get("username").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let name = u.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let avatar_url = u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    reviewers.push(MergeRequestAuthor { name, username, avatar_url });
+                }
+            }
+
+            let mut labels = Vec::new();
+            if let Some(arr) = item.get("labels").and_then(|v| v.as_array()) {
+                for l in arr {
+                    if let Some(name) = l.as_str() {
+                        labels.push(MergeRequestLabel { name: name.to_string(), color: None });
+                    } else if let Some(name) = l.get("name").and_then(|v| v.as_str()) {
+                        let color = l.get("color").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        labels.push(MergeRequestLabel { name: name.to_string(), color });
+                    }
+                }
+            }
+
+            let milestone = item.get("milestone").and_then(|m| m.get("title")).and_then(|v| v.as_str()).map(|s| s.to_string());
+            let is_draft = item.get("draft").and_then(|v| v.as_bool()).or_else(|| item.get("work_in_progress").and_then(|v| v.as_bool())).unwrap_or(false);
+
+            results.push(MergeRequest {
+                id: iid,
+                iid,
+                title,
+                description,
+                state,
+                source_branch,
+                target_branch,
+                web_url,
+                created_at,
+                author,
+                assignees: Some(assignees),
+                reviewers: Some(reviewers),
+                labels: Some(labels),
+                milestone,
+                is_draft: Some(is_draft),
+            });
+        }
+
+        Ok(results)
     }
 
     pub async fn create_merge_request(
@@ -561,10 +645,19 @@ impl GitLabClient {
 
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!(
-                "Failed to create MR: {}",
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else if let Some(m) = val.get("error").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
                 err_text
-            )));
+            };
+
+            return Err(AppError::Network(clean_msg));
         }
 
         let mr: MergeRequest = resp
@@ -573,6 +666,259 @@ impl GitLabClient {
             .map_err(|e| AppError::Network(format!("Failed to parse created MR JSON: {}", e)))?;
 
         Ok(mr)
+    }
+
+    pub async fn update_merge_request(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        title: Option<&str>,
+        description: Option<&str>,
+        target_branch: Option<&str>,
+        state_event: Option<&str>,
+    ) -> Result<MergeRequest, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests/{}",
+            self.server_url, encoded_id, mr_iid
+        );
+
+        let mut payload = serde_json::Map::new();
+        if let Some(t) = title {
+            payload.insert("title".to_string(), serde_json::json!(t.trim()));
+        }
+        if let Some(d) = description {
+            payload.insert("description".to_string(), serde_json::json!(d.trim()));
+        }
+        if let Some(tb) = target_branch {
+            payload.insert("target_branch".to_string(), serde_json::json!(tb.trim()));
+        }
+        if let Some(se) = state_event {
+            payload.insert("state_event".to_string(), serde_json::json!(se.trim()));
+        }
+
+        let resp = self
+            .client
+            .put(&url)
+            .json(&serde_json::Value::Object(payload))
+            .send()
+            .await?;
+
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else if let Some(m) = val.get("error").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
+                err_text
+            };
+
+            return Err(AppError::Network(clean_msg));
+        }
+
+        let mr: MergeRequest = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse updated MR JSON: {}", e)))?;
+
+        Ok(mr)
+    }
+
+    pub async fn get_merge_request_comments(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+    ) -> Result<Vec<crate::auth::github::PullRequestComment>, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!("{}/api/v4/projects/{}/merge_requests/{}/notes?sort=asc", self.server_url, encoded_id, mr_iid);
+        let resp = self.client.get(&url).send().await?;
+        if !resp.status().is_success() {
+            return Ok(Vec::new());
+        }
+
+        let arr: Vec<serde_json::Value> = resp.json().await.unwrap_or_default();
+        let mut comments = Vec::new();
+        for item in arr {
+            let is_system = item.get("system").and_then(|v| v.as_bool()).unwrap_or(false);
+            if is_system { continue; }
+            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+            let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let author = item.get("author");
+            let author_username = author
+                .and_then(|u| u.get("username"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let author_name = author
+                .and_then(|u| u.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| author_username.clone());
+            let author_avatar = author
+                .and_then(|u| u.get("avatar_url"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            comments.push(crate::auth::github::PullRequestComment {
+                id,
+                author_name,
+                author_username,
+                author_avatar,
+                body,
+                created_at,
+            });
+        }
+        Ok(comments)
+    }
+
+    pub async fn add_merge_request_comment(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        body: &str,
+    ) -> Result<crate::auth::github::PullRequestComment, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!("{}/api/v4/projects/{}/merge_requests/{}/notes", self.server_url, encoded_id, mr_iid);
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.post(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to post note: {}", err_text)));
+        }
+
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let author = item.get("author");
+        let author_username = author
+            .and_then(|u| u.get("username"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = author
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = author
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(crate::auth::github::PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+
+    pub async fn merge_merge_request(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        squash: Option<bool>,
+        should_remove_source_branch: Option<bool>,
+        commit_message: Option<&str>,
+    ) -> Result<bool, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests/{}/merge",
+            self.server_url, encoded_id, mr_iid
+        );
+        let mut payload = serde_json::Map::new();
+        if let Some(sq) = squash {
+            payload.insert("squash".to_string(), serde_json::json!(sq));
+        }
+        if let Some(rm) = should_remove_source_branch {
+            payload.insert("should_remove_source_branch".to_string(), serde_json::json!(rm));
+        }
+        if let Some(msg) = commit_message {
+            payload.insert("merge_commit_message".to_string(), serde_json::json!(msg));
+        }
+
+        let resp = self.client.put(&url).json(&serde_json::Value::Object(payload)).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to merge merge request: {}", err_text)));
+        }
+        Ok(true)
+    }
+
+    pub async fn edit_merge_request_comment(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        note_id: u64,
+        body: &str,
+    ) -> Result<crate::auth::github::PullRequestComment, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests/{}/notes/{}",
+            self.server_url, encoded_id, mr_iid, note_id
+        );
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.put(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to edit note: {}", err_text)));
+        }
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let author = item.get("author");
+        let author_username = author
+            .and_then(|u| u.get("username"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = author
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = author
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(crate::auth::github::PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+
+    pub async fn delete_merge_request_comment(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        note_id: u64,
+    ) -> Result<bool, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!(
+            "{}/api/v4/projects/{}/merge_requests/{}/notes/{}",
+            self.server_url, encoded_id, mr_iid, note_id
+        );
+        let resp = self.client.delete(&url).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to delete note: {}", err_text)));
+        }
+        Ok(true)
     }
 
     pub async fn create_project(

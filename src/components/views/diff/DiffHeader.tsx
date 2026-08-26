@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { DiffResult } from '../../../types/git';
 import { isImageFile } from './diffUtils';
+import { Tabs } from '../../common/Tabs';
 
 export interface DiffHeaderProps {
   filePath: string;
@@ -172,44 +173,30 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
           )}
 
           {/* Compact Icon-Only View Mode Switcher */}
-          <div className="h-6.5 flex items-center bg-base-0 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs">
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('unified')}
-              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
-                diffViewMode === 'unified'
-                  ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2/50'
-              }`}
-              title="Unified Diff View"
-            >
-              <AlignJustify className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('split')}
-              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
-                diffViewMode === 'split'
-                  ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2/50'
-              }`}
-              title="Split (Side-by-Side) Diff View"
-            >
-              <Columns className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeViewMode('edit')}
-              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
-                diffViewMode === 'edit'
-                  ? 'bg-commito-coral/20 text-commito-coral border border-commito-coral/40 shadow-xs font-semibold'
-                  : 'text-text-muted hover:text-text-primary hover:bg-base-2/50'
-              }`}
-              title="Edit File / Mini IDE"
-            >
-              <Code2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <Tabs<'unified' | 'split' | 'edit'>
+            tabs={[
+              {
+                id: 'unified',
+                icon: <AlignJustify className="w-3.5 h-3.5" />,
+                title: 'Unified Diff View',
+              },
+              {
+                id: 'split',
+                icon: <Columns className="w-3.5 h-3.5" />,
+                title: 'Split (Side-by-Side) Diff View',
+              },
+              {
+                id: 'edit',
+                icon: <Code2 className="w-3.5 h-3.5" />,
+                title: 'Edit File / Mini IDE',
+              },
+            ]}
+            activeTab={diffViewMode}
+            onChange={onChangeViewMode}
+            iconOnly
+            size="sm"
+            ariaLabel="Diff layout modes"
+          />
         </div>
       )}
     </div>

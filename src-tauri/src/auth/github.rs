@@ -246,7 +246,6 @@ impl GitHubClient {
 
         let mut results = Vec::new();
         for item in pr_array {
-            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
             let number = item.get("number").and_then(|v| v.as_u64()).unwrap_or(0);
             let title = item
                 .get("title")
@@ -302,8 +301,57 @@ impl GitHubClient {
                 }
             });
 
+            let mut assignees = Vec::new();
+            if let Some(arr) = item.get("assignees").and_then(|v| v.as_array()) {
+                for u in arr {
+                    let login = u.get("login").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let name = u.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let avatar = u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    assignees.push(crate::auth::gitlab::MergeRequestAuthor {
+                        name,
+                        username: login,
+                        avatar_url: avatar,
+                    });
+                }
+            }
+
+            let mut reviewers = Vec::new();
+            if let Some(arr) = item.get("requested_reviewers").and_then(|v| v.as_array()) {
+                for u in arr {
+                    let login = u.get("login").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let name = u.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    let avatar = u.get("avatar_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    reviewers.push(crate::auth::gitlab::MergeRequestAuthor {
+                        name,
+                        username: login,
+                        avatar_url: avatar,
+                    });
+                }
+            }
+
+            let mut labels = Vec::new();
+            if let Some(arr) = item.get("labels").and_then(|v| v.as_array()) {
+                for l in arr {
+                    if let Some(name) = l.get("name").and_then(|v| v.as_str()) {
+                        let color = l.get("color").and_then(|v| v.as_str()).map(|s| format!("#{}", s));
+                        labels.push(crate::auth::gitlab::MergeRequestLabel {
+                            name: name.to_string(),
+                            color,
+                        });
+                    }
+                }
+            }
+
+            let milestone = item
+                .get("milestone")
+                .and_then(|m| m.get("title"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            let is_draft = item.get("draft").and_then(|v| v.as_bool()).unwrap_or(false);
+
             results.push(crate::auth::gitlab::MergeRequest {
-                id,
+                id: number,
                 iid: number,
                 title,
                 description,
@@ -313,6 +361,11 @@ impl GitHubClient {
                 web_url: html_url,
                 created_at,
                 author,
+                assignees: Some(assignees),
+                reviewers: Some(reviewers),
+                labels: Some(labels),
+                milestone,
+                is_draft: Some(is_draft),
             });
         }
 
@@ -345,10 +398,29 @@ impl GitHubClient {
         let resp = self.client.post(&url).json(&req_body).send().await?;
         if !resp.status().is_success() {
             let err_text = resp.text().await.unwrap_or_default();
-            return Err(AppError::Network(format!(
-                "Failed to create GitHub pull request: {}",
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(errs) = val.get("errors").and_then(|e| e.as_array()) {
+                    let msgs: Vec<String> = errs
+                        .iter()
+                        .filter_map(|e| e.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+                        .collect();
+                    if !msgs.is_empty() {
+                        msgs.join("; ")
+                    } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                        m.to_string()
+                    } else {
+                        err_text
+                    }
+                } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
                 err_text
-            )));
+            };
+
+            return Err(AppError::Network(clean_msg));
         }
 
         #[derive(Deserialize)]
@@ -366,7 +438,6 @@ impl GitHubClient {
 
         #[derive(Deserialize)]
         struct RawPR {
-            id: u64,
             number: u64,
             title: String,
             body: Option<String>,
@@ -384,7 +455,7 @@ impl GitHubClient {
             .map_err(|e| AppError::Network(format!("Failed to parse created PR JSON: {}", e)))?;
 
         Ok(crate::auth::gitlab::MergeRequest {
-            id: p.id,
+            id: p.number,
             iid: p.number,
             title: p.title,
             description: p.body,
@@ -398,6 +469,330 @@ impl GitHubClient {
                 username: u.login,
                 avatar_url: u.avatar_url,
             }),
+            assignees: None,
+            reviewers: None,
+            labels: None,
+            milestone: None,
+            is_draft: None,
         })
     }
+
+    pub async fn update_pull_request(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+        title: Option<&str>,
+        body: Option<&str>,
+        target_branch: Option<&str>,
+        state: Option<&str>,
+    ) -> Result<crate::auth::gitlab::MergeRequest, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/pulls/{}", GITHUB_API_URL, clean_path, pull_number);
+        let mut req_body = serde_json::Map::new();
+        if let Some(t) = title {
+            req_body.insert("title".to_string(), serde_json::json!(t.trim()));
+        }
+        if let Some(b) = body {
+            req_body.insert("body".to_string(), serde_json::json!(b.trim()));
+        }
+        if let Some(base) = target_branch {
+            req_body.insert("base".to_string(), serde_json::json!(base.trim()));
+        }
+        if let Some(s) = state {
+            req_body.insert("state".to_string(), serde_json::json!(s.trim()));
+        }
+
+        let resp = self
+            .client
+            .patch(&url)
+            .json(&serde_json::Value::Object(req_body))
+            .send()
+            .await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            let clean_msg = if let Ok(val) = serde_json::from_str::<serde_json::Value>(&err_text) {
+                if let Some(errs) = val.get("errors").and_then(|e| e.as_array()) {
+                    let msgs: Vec<String> = errs
+                        .iter()
+                        .filter_map(|e| e.get("message").and_then(|m| m.as_str()).map(|s| s.to_string()))
+                        .collect();
+                    if !msgs.is_empty() {
+                        msgs.join("; ")
+                    } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                        m.to_string()
+                    } else {
+                        err_text
+                    }
+                } else if let Some(m) = val.get("message").and_then(|m| m.as_str()) {
+                    m.to_string()
+                } else {
+                    err_text
+                }
+            } else {
+                err_text
+            };
+
+            return Err(AppError::Network(clean_msg));
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubPRUser {
+            login: Option<String>,
+            name: Option<String>,
+            avatar_url: Option<String>,
+        }
+
+        #[derive(Deserialize)]
+        struct GitHubPRBranch {
+            #[serde(rename = "ref")]
+            branch_ref: String,
+        }
+
+        #[derive(Deserialize)]
+        struct RawPR {
+            number: u64,
+            title: String,
+            body: Option<String>,
+            state: String,
+            html_url: String,
+            head: GitHubPRBranch,
+            base: GitHubPRBranch,
+            created_at: String,
+            user: Option<GitHubPRUser>,
+        }
+
+        let p: RawPR = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Network(format!("Failed to parse updated PR JSON: {}", e)))?;
+
+        Ok(crate::auth::gitlab::MergeRequest {
+            id: p.number,
+            iid: p.number,
+            title: p.title,
+            description: p.body,
+            state: p.state,
+            source_branch: p.head.branch_ref,
+            target_branch: p.base.branch_ref,
+            web_url: p.html_url,
+            created_at: p.created_at,
+            author: p.user.map(|u| crate::auth::gitlab::MergeRequestAuthor {
+                name: u.name,
+                username: u.login,
+                avatar_url: u.avatar_url,
+            }),
+            assignees: None,
+            reviewers: None,
+            labels: None,
+            milestone: None,
+            is_draft: None,
+        })
+    }
+
+    pub async fn get_pull_request_comments(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+    ) -> Result<Vec<PullRequestComment>, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/{}/comments", GITHUB_API_URL, clean_path, pull_number);
+        let resp = self.client.get(&url).send().await?;
+        if !resp.status().is_success() {
+            return Ok(Vec::new());
+        }
+
+        let arr: Vec<serde_json::Value> = resp.json().await.unwrap_or_default();
+        let mut comments = Vec::new();
+        for item in arr {
+            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+            let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let user = item.get("user");
+            let author_username = user
+                .and_then(|u| u.get("login"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let author_name = user
+                .and_then(|u| u.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| author_username.clone());
+            let author_avatar = user
+                .and_then(|u| u.get("avatar_url"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            comments.push(PullRequestComment {
+                id,
+                author_name,
+                author_username,
+                author_avatar,
+                body,
+                created_at,
+            });
+        }
+        Ok(comments)
+    }
+
+    pub async fn add_pull_request_comment(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+        body: &str,
+    ) -> Result<PullRequestComment, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/{}/comments", GITHUB_API_URL, clean_path, pull_number);
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.post(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to post comment: {}", err_text)));
+        }
+
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let user = item.get("user");
+        let author_username = user
+            .and_then(|u| u.get("login"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = user
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = user
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+
+    pub async fn merge_pull_request(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+        merge_method: Option<&str>,
+        commit_title: Option<&str>,
+        commit_message: Option<&str>,
+    ) -> Result<bool, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/pulls/{}/merge", GITHUB_API_URL, clean_path, pull_number);
+        let mut payload = serde_json::Map::new();
+        if let Some(m) = merge_method {
+            payload.insert("merge_method".to_string(), serde_json::json!(m));
+        }
+        if let Some(t) = commit_title {
+            payload.insert("commit_title".to_string(), serde_json::json!(t));
+        }
+        if let Some(msg) = commit_message {
+            payload.insert("commit_message".to_string(), serde_json::json!(msg));
+        }
+
+        let resp = self.client.put(&url).json(&serde_json::Value::Object(payload)).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to merge pull request: {}", err_text)));
+        }
+        Ok(true)
+    }
+
+    pub async fn edit_pull_request_comment(
+        &self,
+        owner_repo: &str,
+        comment_id: u64,
+        body: &str,
+    ) -> Result<PullRequestComment, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/comments/{}", GITHUB_API_URL, clean_path, comment_id);
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.patch(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to edit comment: {}", err_text)));
+        }
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let user = item.get("user");
+        let author_username = user
+            .and_then(|u| u.get("login"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = user
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = user
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+
+    pub async fn delete_pull_request_comment(
+        &self,
+        owner_repo: &str,
+        comment_id: u64,
+    ) -> Result<bool, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/comments/{}", GITHUB_API_URL, clean_path, comment_id);
+        let resp = self.client.delete(&url).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to delete comment: {}", err_text)));
+        }
+        Ok(true)
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PullRequestComment {
+    pub id: u64,
+    pub author_name: String,
+    pub author_username: String,
+    pub author_avatar: Option<String>,
+    pub body: String,
+    pub created_at: String,
 }

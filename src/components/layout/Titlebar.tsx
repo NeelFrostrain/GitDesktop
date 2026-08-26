@@ -221,10 +221,10 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setCurrentNavView('home')}
-            className="titlebar-no-drag h-6.5 px-2 flex items-center gap-1.5 rounded-sm text-text-muted hover:text-text-primary bg-base-2 hover:bg-base-3 border border-border transition cursor-pointer text-xs font-medium shadow-xs select-none"
+            className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white transition cursor-pointer text-xs font-semibold select-none active:scale-95 group"
             title="Go to Home"
           >
-            <Home className="w-3.5 h-3.5" />
+            <Home className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
             <span>Home</span>
           </button>
         )}
@@ -234,7 +234,7 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm bg-base-2 border border-border hover:bg-base-3 hover:border-border-strong text-text-primary transition cursor-pointer shadow-xs select-none"
+            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white transition cursor-pointer select-none active:scale-95"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
@@ -245,7 +245,7 @@ export const Titlebar: React.FC = () => {
               iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
-              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''
+              className={`w-3 h-3 text-zinc-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180 text-commito-coral' : ''
                 }`}
             />
           </button>
@@ -299,10 +299,10 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={() => useSettingsStore.getState().openSettings()}
-          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm text-text-muted hover:text-text-primary bg-base-2 hover:bg-base-3 border border-border transition cursor-pointer shadow-xs"
+          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-300 hover:text-white transition-all cursor-pointer select-none active:scale-95 group"
           title="Open Settings (Ctrl+,)"
         >
-          <Settings className="w-3.5 h-3.5 text-text-secondary" />
+          <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 group-hover:rotate-45 transition-all duration-200" />
         </button>
 
         {/* Vertical Separator */}

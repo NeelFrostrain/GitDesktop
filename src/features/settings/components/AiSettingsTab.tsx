@@ -17,28 +17,40 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 const MODEL_OPTIONS = [
   {
-    id: 'llama-3.1-8b-instant',
-    name: 'Llama 3.1 8B Instant (Ultra Fast • Highest Rate Limits)',
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite (Recommended • Ultra Fast)',
     badge: 'Ultra Fast',
-    desc: 'Lightning fast execution, sub-second responses with massive 500k token/day quota.',
+    desc: 'Lightning fast execution, highly efficient token usage with free tier quotas on Google AI Studio.',
   },
   {
-    id: 'llama-3.3-70b-versatile',
-    name: 'Llama 3.3 70B Versatile (Flagship)',
-    badge: '70B Versatile',
-    desc: 'Deep semantic understanding and reasoning across large multi-file diffs.',
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash Lite (Experimental Next-Gen)',
+    badge: 'Next-Gen',
+    desc: 'High-capability next-generation lightweight reasoning model.',
   },
   {
-    id: 'openai/gpt-oss-120b',
-    name: 'GPT OSS 120B (OpenAI / Open-Source Flagship)',
-    badge: 'Flagship 120B',
-    desc: 'Exceptional commit precision and deep architectural scoping (200k TPD).',
+    id: 'gemini-3.1-flash-lite',
+    name: 'Gemini 3.1 Flash Lite (High-Speed Reasoning)',
+    badge: 'High-Speed',
+    desc: 'Balanced reasoning and rapid latency for complex multi-file diffs.',
   },
   {
-    id: 'openai/gpt-oss-20b',
-    name: 'GPT OSS 20B (OpenAI / Open-Source Fast)',
-    badge: 'Fast 20B',
-    desc: 'High-speed diff analysis with crisp conventional commit formatting.',
+    id: 'gemini-2.0-flash-lite',
+    name: 'Gemini 2.0 Flash Lite (Ultra Low Latency)',
+    badge: 'Low Latency',
+    desc: 'Sub-second generation times with concise conventional commit formatting.',
+  },
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash (Next-Gen Multimodal & Reasoning)',
+    badge: 'Flagship Flash',
+    desc: 'Deep semantic understanding across large codebases and complex commit history.',
+  },
+  {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash (Standard Flash)',
+    badge: '1.5 Flash',
+    desc: 'Proven fast reasoning with large context window for extensive diffs.',
   },
 ];
 
@@ -52,24 +64,24 @@ export const AiSettingsTab: React.FC = () => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   // Retrieve keys list from settings
-  const rawGroqKeys = getEffectiveValue('ai.groq_api_keys');
-  const activeKey = String(getEffectiveValue('ai.active_api_key') || '');
-  const selectedModel = String(getEffectiveValue('ai.model') || 'llama-3.1-8b-instant');
+  const rawGeminiKeys = getEffectiveValue('ai.gemini_api_keys') || getEffectiveValue('ai.google_api_keys') || getEffectiveValue('ai.groq_api_keys');
+  const activeKey = String(getEffectiveValue('ai.active_api_key') || getEffectiveValue('ai.gemini_api_key') || '');
+  const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
 
   const keysList: string[] = React.useMemo(() => {
     let list: string[] = [];
-    if (Array.isArray(rawGroqKeys)) {
-      list = rawGroqKeys.map(String).map((s) => s.trim()).filter(Boolean);
-    } else if (typeof rawGroqKeys === 'string' && rawGroqKeys.trim()) {
+    if (Array.isArray(rawGeminiKeys)) {
+      list = rawGeminiKeys.map(String).map((s) => s.trim()).filter(Boolean);
+    } else if (typeof rawGeminiKeys === 'string' && rawGeminiKeys.trim()) {
       try {
-        const parsed = JSON.parse(rawGroqKeys);
+        const parsed = JSON.parse(rawGeminiKeys);
         if (Array.isArray(parsed)) {
           list = parsed.map(String).map((s) => s.trim()).filter(Boolean);
         } else {
-          list = [rawGroqKeys.trim()];
+          list = [rawGeminiKeys.trim()];
         }
       } catch {
-        list = [rawGroqKeys.trim()];
+        list = [rawGeminiKeys.trim()];
       }
     }
 
@@ -78,17 +90,12 @@ export const AiSettingsTab: React.FC = () => {
     }
 
     return Array.from(new Set(list));
-  }, [rawGroqKeys, activeKey]);
+  }, [rawGeminiKeys, activeKey]);
 
   const handleAddKey = async () => {
     const trimmed = newKeyInput.trim();
     if (!trimmed) {
-      setNewKeyError('Please enter an API key');
-      return;
-    }
-
-    if (!trimmed.startsWith('gsk_')) {
-      setNewKeyError('Groq API keys start with "gsk_". Please copy your key from console.groq.com/keys.');
+      setNewKeyError('Please enter a Google Gemini API key');
       return;
     }
 
@@ -98,21 +105,21 @@ export const AiSettingsTab: React.FC = () => {
     }
 
     const updatedList = [...keysList, trimmed];
-    await setSettingValue('ai.groq_api_keys', updatedList);
-    if (!activeKey || !keysList.includes(activeKey)) {
-      await setSettingValue('ai.active_api_key', trimmed);
-    }
+    await setSettingValue('ai.gemini_api_keys', updatedList);
+    await setSettingValue('ai.active_api_key', trimmed);
 
     setNewKeyInput('');
     setNewKeyError(null);
     showToast({
       type: 'success',
-      title: 'Groq API Key Added',
+      title: 'Google Gemini Key Added',
       message: `Added key (ends in ...${trimmed.slice(-4)}) to rotation pool.`,
     });
   };
 
   const handleClearAllKeys = async () => {
+    await setSettingValue('ai.gemini_api_keys', []);
+    await setSettingValue('ai.google_api_keys', []);
     await setSettingValue('ai.groq_api_keys', []);
     await setSettingValue('ai.active_api_key', '');
 
@@ -126,7 +133,7 @@ export const AiSettingsTab: React.FC = () => {
   const handleRemoveKey = async (index: number) => {
     const targetKey = keysList[index];
     const updatedList = keysList.filter((_, i) => i !== index);
-    await setSettingValue('ai.groq_api_keys', updatedList);
+    await setSettingValue('ai.gemini_api_keys', updatedList);
 
     if (activeKey === targetKey) {
       const nextActive = updatedList[0] || '';
@@ -143,7 +150,7 @@ export const AiSettingsTab: React.FC = () => {
   const handleSetPrimary = async (key: string) => {
     const without = keysList.filter((k) => k !== key);
     const updatedList = [key, ...without];
-    await setSettingValue('ai.groq_api_keys', updatedList);
+    await setSettingValue('ai.gemini_api_keys', updatedList);
     await setSettingValue('ai.active_api_key', key);
 
     showToast({
@@ -186,31 +193,31 @@ export const AiSettingsTab: React.FC = () => {
             <Sparkles className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm font-bold text-text-primary">Groq Cloud Commit-AI Engine</h2>
+            <h2 className="text-sm font-bold text-text-primary">Google Gemini Commit-AI Engine</h2>
             <p className="text-xs text-text-muted mt-0.5 leading-relaxed max-w-xl">
               Generate intelligent conventional commit titles, scope tags, and deep technical summaries
-              powered by Groq LPUs with sub-second generation times and free tier quotas.
+              powered by Google Gemini Flash Lite models with high speed and generous free quotas.
             </p>
           </div>
         </div>
 
         <button
           type="button"
-          onClick={() => openUrl('https://console.groq.com/keys')}
-          className="h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-xs"
+          onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
+          className="h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralHover text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-xs"
         >
-          <span>Get Free Groq Key</span>
+          <span>Get Free Google API Key</span>
           <ExternalLink className="w-3 h-3 opacity-80" />
         </button>
       </div>
 
-      {/* 1. Groq API Keys Manager */}
+      {/* 1. Google Gemini API Keys Manager */}
       <div className="p-4 rounded-sm border border-border bg-base-1 space-y-3.5 shadow-xs">
         <div className="flex items-center justify-between border-b border-border pb-2.5">
           <div className="flex items-center gap-2">
             <Key className="w-4 h-4 text-commito-coral" />
             <h3 className="font-bold text-xs uppercase tracking-wider text-text-muted">
-              Groq API Keys Pool ({keysList.length})
+              Google Gemini API Keys Pool ({keysList.length})
             </h3>
           </div>
           {keysList.length > 0 && (
@@ -235,7 +242,7 @@ export const AiSettingsTab: React.FC = () => {
                 if (newKeyError) setNewKeyError(null);
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
-              placeholder="Paste Groq API Key (gsk_...)"
+              placeholder="Paste Google Gemini API Key (AIza...)"
               className="flex-1 h-8 px-3 rounded-sm bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral font-mono text-xs text-text-primary placeholder:text-text-faint focus:outline-none focus:ring-1 focus:ring-commito-coral/30 transition shadow-inner"
             />
             <button
@@ -321,15 +328,15 @@ export const AiSettingsTab: React.FC = () => {
             })
           ) : (
             <div className="p-4 rounded-sm border border-dashed border-border bg-base-0/40 text-center space-y-1">
-              <p className="font-semibold text-text-primary">No Groq API Keys Configured</p>
+              <p className="font-semibold text-text-primary">No Google Gemini API Keys Configured</p>
               <p className="text-[11px] text-text-muted">
                 Add a free API key from{' '}
                 <button
                   type="button"
-                  onClick={() => openUrl('https://console.groq.com/keys')}
+                  onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
                   className="text-commito-coral hover:underline font-mono cursor-pointer"
                 >
-                  console.groq.com/keys
+                  aistudio.google.com/app/apikey
                 </button>{' '}
                 to enable Commit-AI.
               </p>
@@ -344,11 +351,11 @@ export const AiSettingsTab: React.FC = () => {
           <div className="flex items-center gap-2">
             <Cpu className="w-4 h-4 text-commito-coral" />
             <h3 className="font-bold text-xs uppercase tracking-wider text-text-muted">
-              AI Model Selection
+              Google Gemini Model Selection
             </h3>
           </div>
           <span className="text-[11px] text-text-faint font-mono">
-            Choose Groq model for diff analysis
+            Choose Gemini model for diff analysis
           </span>
         </div>
 

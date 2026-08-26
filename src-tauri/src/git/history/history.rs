@@ -178,3 +178,110 @@ fn format_relative_date(timestamp: i64) -> String {
         format!("{} days ago", diff / 86400)
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct BranchComparison {
+    pub commits: Vec<CommitInfo>,
+    pub files: Vec<CommitFileStat>,
+    pub total_additions: usize,
+    pub total_deletions: usize,
+}
+
+pub fn get_branch_comparison(
+    repo_path: &str,
+    base_branch: &str,
+    head_branch: &str,
+) -> Result<BranchComparison, AppError> {
+    let repo = Repository::open(repo_path)
+        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
+
+    let resolve_ref = |name: &str| -> Option<git2::Commit> {
+        if let Ok(obj) = repo.revparse_single(name) {
+            if let Ok(c) = obj.peel_to_commit() {
+                return Some(c);
+            }
+        }
+        if let Ok(obj) = repo.revparse_single(&format!("origin/{}", name)) {
+            if let Ok(c) = obj.peel_to_commit() {
+                return Some(c);
+            }
+        }
+        if let Ok(obj) = repo.revparse_single(&format!("refs/heads/{}", name)) {
+            if let Ok(c) = obj.peel_to_commit() {
+                return Some(c);
+            }
+        }
+        None
+    };
+
+    let base_commit = resolve_ref(base_branch);
+    let head_commit = resolve_ref(head_branch);
+
+    let mut commits = Vec::new();
+    let mut files = Vec::new();
+    let mut total_additions = 0;
+    let mut total_deletions = 0;
+
+    if let (Some(base), Some(head)) = (base_commit, head_commit) {
+        let mut revwalk = repo.revwalk().map_err(|e| AppError::Git(e.to_string()))?;
+        revwalk.push(head.id()).ok();
+        revwalk.hide(base.id()).ok();
+
+        for oid in revwalk.take(100).flatten() {
+            if let Ok(c) = repo.find_commit(oid) {
+                let author = c.author();
+                commits.push(CommitInfo {
+                    sha: c.id().to_string(),
+                    short_sha: c.id().to_string().chars().take(7).collect(),
+                    author_name: author.name().unwrap_or("Unknown").to_string(),
+                    author_email: author.email().unwrap_or("").to_string(),
+                    message: c.message().unwrap_or("").trim().to_string(),
+                    timestamp: c.time().seconds(),
+                    relative_date: format_relative_date(c.time().seconds()),
+                    additions: None,
+                    deletions: None,
+                });
+            }
+        }
+
+        let merge_base = repo.merge_base(base.id(), head.id()).unwrap_or_else(|_| base.id());
+        if let (Ok(base_c), Ok(head_c)) = (repo.find_commit(merge_base), repo.find_commit(head.id())) {
+            if let (Ok(base_tree), Ok(head_tree)) = (base_c.tree(), head_c.tree()) {
+                if let Ok(diff) = repo.diff_tree_to_tree(Some(&base_tree), Some(&head_tree), None) {
+                    if let Ok(stats) = diff.stats() {
+                        total_additions = stats.insertions();
+                        total_deletions = stats.deletions();
+                    }
+
+                    for delta in diff.deltas() {
+                        if let Some(path) = delta.new_file().path() {
+                            let path_str = path.to_string_lossy().to_string();
+                            let status = match delta.status() {
+                                git2::Delta::Added => "added",
+                                git2::Delta::Deleted => "deleted",
+                                git2::Delta::Modified => "modified",
+                                git2::Delta::Renamed => "renamed",
+                                git2::Delta::Copied => "copied",
+                                _ => "modified",
+                            };
+
+                            files.push(CommitFileStat {
+                                path: path_str,
+                                additions: 0,
+                                deletions: 0,
+                                status: status.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(BranchComparison {
+        commits,
+        files,
+        total_additions,
+        total_deletions,
+    })
+}

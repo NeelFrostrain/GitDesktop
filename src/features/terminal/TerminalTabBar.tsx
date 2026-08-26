@@ -18,6 +18,7 @@ import { useTerminalStore } from './store/terminalStore';
 import { useGitStore } from '../../store/useGitStore';
 import { listen } from '@tauri-apps/api/event';
 import type { MinGitProgress } from '../git-runtime/useGitRuntime';
+import { Tabs } from '../../components/common/Tabs';
 
 export interface TerminalTabBarProps {
   repoName: string;
@@ -89,45 +90,34 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
   };
 
   return (
-    <div className="h-9 bg-base-1 border-b border-border px-3 flex items-center justify-between flex-shrink-0 select-none text-xs">
+    <div className="h-8 bg-base-1 border-b border-border px-2.5 flex items-center justify-between flex-shrink-0 select-none text-xs">
       {/* Left: Tabs + Repo & Branch info */}
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Sleek Segmented Switcher */}
-        <div className="h-6.5 flex items-center bg-base-0 border border-border/90 rounded-sm p-0.5 gap-0.5 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => onTabChange('shell')}
-            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'shell'
-                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
-                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
-            }`}
-          >
-            <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />
-            <span>Shell</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange('app_log')}
-            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'app_log'
-                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
-                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
-            }`}
-          >
-            <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
-            <span>App Log</span>
-            {logCount !== undefined && logCount > 0 && (
-              <span className="px-1 py-0.2 bg-base-1 text-[9px] font-mono text-text-muted rounded-xs border border-border/60 leading-none">
-                {logCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <Tabs<'shell' | 'app_log'>
+          tabs={[
+            {
+              id: 'shell',
+              label: 'Shell',
+              icon: <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />,
+            },
+            {
+              id: 'app_log',
+              label: 'App Log',
+              icon: <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />,
+              badge: logCount !== undefined && logCount > 0 ? logCount : undefined,
+              badgeVariant: 'neutral',
+            },
+          ]}
+          activeTab={activeTab}
+          onChange={onTabChange}
+          size="xs"
+          ariaLabel="Terminal panel tabs"
+        />
 
         {/* Repo Name Chip */}
         {repoName && (
-          <div className="h-6.5 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[11px] text-text-secondary font-medium truncate max-w-[140px] shadow-2xs">
+          <div className="h-6 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[10.5px] text-text-secondary font-medium truncate max-w-[130px] shadow-2xs">
             <FolderGit2 className="w-3 h-3 text-text-muted flex-shrink-0" />
             <span className="truncate">{repoName}</span>
           </div>
@@ -135,7 +125,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
 
         {/* Branch badge */}
         {branchName && (
-          <div className="h-6.5 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[11px] text-text-muted font-mono truncate max-w-[130px] shadow-2xs">
+          <div className="h-6 px-2 flex items-center gap-1.5 bg-base-0/80 border border-border rounded-sm text-[10.5px] text-text-muted font-mono truncate max-w-[120px] shadow-2xs">
             <GitBranch className="w-3 h-3 text-commito-coral flex-shrink-0" />
             <span className="truncate">{branchName}</span>
           </div>
@@ -144,7 +134,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         {/* Process status indicator for Shell */}
         {activeTab === 'shell' && (
           <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 mx-0.5 ${
+            className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mx-0.5 ${
               isAlive ? 'bg-git-added shadow-[0_0_6px_var(--git-added)]' : 'bg-text-disabled'
             }`}
             title={isAlive ? 'Process running' : 'Process stopped'}
@@ -187,7 +177,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
           <button
             type="button"
             onClick={onToggleAutoScroll}
-            className={`h-6.5 px-2 rounded-sm border text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+            className={`h-6 px-2 rounded-sm border text-[10.5px] font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
               autoScroll
                 ? 'bg-base-0 text-gitlab-teal border-border font-semibold'
                 : 'bg-base-0/80 text-text-muted hover:text-text-primary hover:bg-base-2 border border-border'
@@ -205,7 +195,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
 
         {/* Search input / toggle */}
         {isSearchOpen ? (
-          <div className="h-6.5 flex items-center gap-1.5 bg-base-0 border border-border rounded-sm px-2 animate-in fade-in duration-100 shadow-2xs">
+          <div className="h-6 flex items-center gap-1.5 bg-base-0 border border-border rounded-sm px-2 animate-in fade-in duration-100 shadow-2xs">
             <Search className="w-3 h-3 text-text-muted flex-shrink-0" />
             <input
               type="text"
@@ -214,7 +204,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
               value={searchQuery}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
-              className="bg-transparent text-xs text-text-primary placeholder:text-text-muted focus:outline-none w-32 font-mono"
+              className="bg-transparent text-[11px] text-text-primary placeholder:text-text-muted focus:outline-none w-32 font-mono"
             />
             <button
               onClick={() => {
@@ -231,11 +221,11 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
-            className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+            className="h-6 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
             title="Search (Ctrl+F)"
           >
             <Search className="w-3 h-3" />
-            <span className="text-[11px] hidden sm:inline">Find</span>
+            <span className="text-[10.5px] hidden sm:inline">Find</span>
           </button>
         )}
 
@@ -244,7 +234,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
           <button
             type="button"
             onClick={onRestart}
-            className="h-6.5 w-6.5 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
+            className="h-6 w-6 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
             title="Restart shell process"
           >
             <RotateCcw className="w-3 h-3 text-git-modified" />
@@ -258,7 +248,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             const repoPath = useGitStore.getState().activeRepoPath || 'global';
             openLogViewer(repoPath);
           }}
-          className="h-6.5 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-[11px]"
+          className="h-6 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-[10.5px]"
           title="Open full log history viewer"
         >
           <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
@@ -269,22 +259,22 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         <button
           type="button"
           onClick={onClear}
-          className="h-6.5 w-6.5 text-text-muted hover:text-git-removed bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
+          className="h-6 w-6 text-text-muted hover:text-git-removed bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
           title="Clear output"
         >
           <Trash2 className="w-3 h-3" />
         </button>
 
-        <div className="h-4 w-px bg-border mx-0.5" />
+        <div className="h-3.5 w-px bg-border mx-0.5" />
 
         {/* Collapse / Close */}
         <button
           type="button"
           onClick={toggleIsOpen}
-          className="h-6.5 w-6.5 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
+          className="h-6 w-6 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center justify-center shadow-2xs"
           title="Collapse terminal"
         >
-          <ChevronDown className="w-3.5 h-3.5" />
+          <ChevronDown className="w-3 h-3" />
         </button>
       </div>
     </div>

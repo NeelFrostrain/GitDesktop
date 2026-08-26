@@ -1,10 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X,
   RotateCcw,
   Sliders,
-  FolderGit2,
-  Laptop,
 } from 'lucide-react';
 import { useSettingsStore } from './store/useSettingsStore';
 import { CATEGORY_METADATA, SETTINGS_SCHEMA, SettingDefinition } from './lib/settingsSchema';
@@ -20,8 +18,6 @@ export const SettingsPanel: React.FC = () => {
   const {
     isOpen,
     closeSettings,
-    activeScope,
-    setActiveScope,
     selectedCategory,
     selectedSubcategory,
     searchQuery,
@@ -30,6 +26,52 @@ export const SettingsPanel: React.FC = () => {
   } = useSettingsStore();
 
   const { activeRepoPath } = useGitStore();
+
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('settings_sidebar_width');
+      return saved ? Math.max(160, Math.min(360, parseInt(saved, 10))) : 210;
+    } catch {
+      return 210;
+    }
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+
+  const startResizingSidebar = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!modalContainerRef.current) return;
+      const modalRect = modalContainerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(160, Math.min(360, e.clientX - modalRect.left));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+      try {
+        localStorage.setItem('settings_sidebar_width', sidebarWidth.toString());
+      } catch {}
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingSidebar, sidebarWidth]);
 
   // Load settings on mount / repo change
   useEffect(() => {
@@ -90,20 +132,24 @@ export const SettingsPanel: React.FC = () => {
   const currentCategoryMeta = CATEGORY_METADATA[selectedCategory];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 select-none">
-      <div className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans">
-        {/* Header bar: Title, Search, Scope Switcher, Close */}
-        <header className="h-14 bg-base-1 border-b border-border px-5 flex items-center justify-between gap-4 flex-shrink-0">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="p-2 bg-commito-coral/15 rounded-sm border border-commito-coral/30 text-commito-coral">
-              <Sliders className="w-4 h-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 select-none">
+      <div
+        ref={modalContainerRef}
+        className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans"
+      >
+        {/* Compact Single-Row Header */}
+        <header className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+              <Sliders className="w-3 h-3" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary tracking-wide">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h2 className="text-xs font-bold text-text-primary leading-none">
                 Settings
               </h2>
-              <span className="text-[11px] text-text-muted">
-                100% CSS design token & behavioral configuration
+              <span className="text-border">•</span>
+              <span className="text-[10.5px] text-text-muted truncate hidden sm:inline">
+                Preferences &amp; Configuration
               </span>
             </div>
           </div>
@@ -111,44 +157,8 @@ export const SettingsPanel: React.FC = () => {
           {/* Search bar */}
           <SettingsSearchBar matchCount={searchResults ? searchResults.length : undefined} />
 
-          {/* Scope Selector & Actions */}
-          <div className="flex items-center gap-3 flex-shrink-0">
-            {/* Scope tabs */}
-            <div className="flex items-center bg-base-2 rounded-sm p-0.5 border border-border">
-              <button
-                type="button"
-                onClick={() => setActiveScope('app')}
-                className={`px-2.5 py-1 rounded-sm text-xs font-medium transition cursor-pointer flex items-center gap-1.5 ${activeScope === 'app'
-                    ? 'bg-base-0 text-text-primary shadow-xs font-semibold'
-                    : 'text-text-muted hover:text-text-primary'
-                  }`}
-                title="Global application settings"
-              >
-                <Laptop className="w-3.5 h-3.5 text-blue-400" />
-                <span>Application</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveScope('repo')}
-                disabled={!activeRepoPath}
-                className={`px-2.5 py-1 rounded-sm text-xs font-medium transition flex items-center gap-1.5 ${!activeRepoPath
-                    ? 'opacity-40 cursor-not-allowed text-text-muted'
-                    : activeScope === 'repo'
-                      ? 'bg-base-0 text-text-primary shadow-xs font-semibold cursor-pointer'
-                      : 'text-text-muted hover:text-text-primary cursor-pointer'
-                  }`}
-                title={
-                  activeRepoPath
-                    ? 'Settings scoped to current repository workspace'
-                    : 'Open a repository to configure workspace settings'
-                }
-              >
-                <FolderGit2 className="w-3.5 h-3.5 text-commito-coral" />
-                <span>Workspace</span>
-              </button>
-            </div>
-
+          {/* Actions */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Reset all button */}
             <button
               type="button"
@@ -157,37 +167,49 @@ export const SettingsPanel: React.FC = () => {
                   resetAllSettings();
                 }
               }}
-              className="p-2 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
               title="Reset all settings to default values"
             >
-              <RotateCcw className="w-4 h-4" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
-            <div className="h-4 w-px bg-border" />
+            <div className="h-3.5 w-px bg-border" />
 
             {/* Close button */}
             <button
               type="button"
               onClick={closeSettings}
-              className="p-2 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
               title="Close Settings (Esc)"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </header>
 
-        {/* Main Body: Category Sidebar + Right-hand Settings Content */}
+        {/* Main Body: Resizable Category Sidebar + Right-hand Settings Content */}
         <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* Left Category Tree */}
-          <CategoryTree />
+          <CategoryTree style={{ width: `${sidebarWidth}px` }} />
+
+          {/* Resizable Divider Splitter Handle */}
+          <div
+            onMouseDown={startResizingSidebar}
+            onDoubleClick={() => setSidebarWidth(210)}
+            title="Drag to resize • Double-click to reset"
+            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              isResizingSidebar ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+            }`}
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
 
           {/* Right Content Area */}
-          <main className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
+          <main className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
             {/* 1. Search Results Mode */}
             {searchResults ? (
               <div className="space-y-4">
-                <div className="border-b border-border pb-3 flex items-center justify-between">
+                <div className="border-b border-border/70 pb-3 flex items-center justify-between">
                   <div>
                     <h3 className="text-sm font-bold text-text-primary">
                       Search Results
@@ -200,7 +222,7 @@ export const SettingsPanel: React.FC = () => {
 
                 {searchResults.length === 0 ? (
                   <div className="p-12 text-center text-text-muted italic">
-                    No settings found matching &quot;{searchQuery}&quot;. Try searching for &quot;font&quot;, &quot;accent&quot;, &quot;diff&quot;, or &quot;terminal&quot;.
+                    No settings found matching &quot;{searchQuery}&quot;. Try searching for &quot;font&quot;, &quot;accent&quot;, &quot;gemini&quot;, or &quot;diff&quot;.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -224,14 +246,14 @@ export const SettingsPanel: React.FC = () => {
               /* 2. Category View Mode */
               <div className="space-y-6">
                 {/* Category Header */}
-                <div className="border-b border-border pb-3">
-                  <h3 className="text-base font-bold text-text-primary">
+                <div className="border-b border-border/70 pb-3">
+                  <h3 className="text-sm font-bold text-text-primary">
                     {currentCategoryMeta?.label || selectedCategory}
                   </h3>
-                  <p className="text-xs text-text-muted mt-0.5">
+                  <p className="text-[11.5px] text-text-muted mt-0.5 leading-relaxed">
                     {selectedCategory === 'commonly_used'
                       ? 'Quickly customize the most impactful appearance and behavior settings.'
-                      : `Configure ${currentCategoryMeta?.label} preferences and CSS tokens.`}
+                      : `Configure ${currentCategoryMeta?.label} preferences and options.`}
                   </p>
                 </div>
 
@@ -251,15 +273,15 @@ export const SettingsPanel: React.FC = () => {
                   }
 
                   return (
-                    <section key={subcategory} className="space-y-3">
+                    <section key={subcategory} className="space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-xs font-bold text-text-secondary uppercase tracking-wider">
+                        <h4 className="text-[10.5px] font-bold text-text-muted/80 uppercase tracking-wider">
                           {subcategory}
                         </h4>
-                        <div className="flex-1 h-px bg-border/60" />
+                        <div className="flex-1 h-px bg-border/50" />
                       </div>
 
-                      <div className="space-y-2.5">
+                      <div className="space-y-2">
                         {settings.map((setting) => (
                           <SettingRow key={setting.id} setting={setting} />
                         ))}

@@ -276,6 +276,13 @@ export class GitService {
   }
 
   /**
+   * Fetches all tags from remote (cloud).
+   */
+  static async fetchTags(repoPath: string, remote?: string | null): Promise<void> {
+    return invoke('fetch_tags_cmd', { repoPath, remote: remote || null });
+  }
+
+  /**
    * Creates a tag.
    */
   static async createTag(repoPath: string, name: string, message?: string, targetSha?: string | null): Promise<void> {
@@ -403,7 +410,7 @@ export class GitService {
   // ── AI Commit ────────────────────────────────────────────────────────────────
 
   /**
-   * Analyzes git diff changes and generates commit message titles and report using Commit-AI / Groq API.
+   * Analyzes git diff changes and generates commit message titles and report using Commit-AI / Google Gemini API.
    */
   static async generateAiCommitMessage(
     repoPath: string,
@@ -462,5 +469,20 @@ export class GitService {
    */
   static async listRemotes(repoPath: string): Promise<RemoteInfo[]> {
     return invoke<RemoteInfo[]>('list_remotes_cmd', { repoPath });
+  }
+
+  /**
+   * Compares two branches and returns the commits and changed files.
+   */
+  static async getBranchComparison(
+    repoPath: string,
+    baseBranch: string,
+    headBranch: string
+  ): Promise<import('../../types/git').BranchComparisonResult> {
+    return invoke<import('../../types/git').BranchComparisonResult>('get_branch_comparison', {
+      repoPath,
+      baseBranch,
+      headBranch,
+    });
   }
 }

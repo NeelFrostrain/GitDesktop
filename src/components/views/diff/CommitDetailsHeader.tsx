@@ -16,6 +16,7 @@ import { CommitDetails } from '../../../types/git';
 import { useSigningStore } from '../../../store/signingStore';
 import { useGitStore } from '../../../store/useGitStore';
 import { UserAvatar } from '../../common/UserAvatar';
+import { Button } from '../../common/Button';
 
 interface CommitDetailsHeaderProps {
   commitDetails: CommitDetails;
@@ -203,27 +204,31 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           )}
 
           {/* Merged Expand / Collapse All Button */}
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="xs"
             onClick={onToggleExpandAll}
-            className="text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
           >
             {isAllOpen ? 'Collapse All' : 'Expand All'}
-          </button>
+          </Button>
 
           {commitBody && (
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="xs"
               onClick={() => setShowCommitBody(!showCommitBody)}
-              className="flex items-center gap-1 text-[11px] font-medium text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-2 py-0.5 transition cursor-pointer"
+              rightIcon={
+                <ChevronDown
+                  className={`w-3 h-3 transition-transform duration-150 ${
+                    showCommitBody ? 'rotate-180 text-commito-coral' : ''
+                  }`}
+                />
+              }
             >
-              <span>{showCommitBody ? 'Hide Details' : 'Details'}</span>
-              <ChevronDown
-                className={`w-3 h-3 transition-transform duration-150 ${
-                  showCommitBody ? 'rotate-180 text-commito-coral' : ''
-                }`}
-              />
-            </button>
+              {showCommitBody ? 'Hide Details' : 'Details'}
+            </Button>
           )}
         </div>
       </div>

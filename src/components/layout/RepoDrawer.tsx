@@ -213,15 +213,16 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             }`}
         />
 
-        {/* 1. Drawer Header */}
-        <div className="px-4 py-3 border-b border-border bg-base-0 flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center">
-              <FolderGit2 className="w-3.5 h-3.5" />
+        {/* 1. Drawer Header (Compact) */}
+        <div className="px-3.5 py-2 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+              <FolderGit2 className="w-3 h-3" />
             </div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xs font-semibold text-text-primary tracking-wide leading-tight">Switch Repository</h2>
-              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded-sm bg-base-2 text-text-muted border border-border/60">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h2 className="text-xs font-bold text-text-primary leading-none">Switch Repository</h2>
+              <span className="text-border">•</span>
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border">
                 {repos.length}
               </span>
             </div>
@@ -230,15 +231,15 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
             title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* 2. Unified Search & Action Toolbar */}
-        <div className="p-3 border-b border-border bg-base-0 space-y-2 flex-shrink-0">
+        <div className="px-3 py-2 border-b border-border bg-base-0/80 space-y-1.5 flex-shrink-0">
           {/* Search Filter Input */}
           <div className="relative flex items-center">
             <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
@@ -248,7 +249,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
               placeholder="Search repositories by name or path..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="w-full pl-8 pr-7 h-8 bg-base-1/60 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong focus:border-commito-coral/70 rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-sans transition-all shadow-xs"
+              className="w-full pl-8 pr-7 h-7 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition shadow-2xs font-sans"
             />
             {filterQuery && (
               <button
@@ -261,17 +262,17 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Sleek Horizontal Action Buttons */}
+          {/* Sleek Horizontal Action Buttons with Unified 3D Obsidian Black Background */}
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={handleAddLocalRepo}
               disabled={isAddingLocal}
-              className="h-7.5 px-2 rounded-sm bg-base-1/60 hover:bg-base-2 border border-border/60 hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group disabled:opacity-50"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 disabled:opacity-50"
               title="Add an existing local Git repository folder"
             >
               <FolderPlus className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[11px] font-medium leading-none truncate">
+              <span className="text-[11px] font-semibold truncate leading-none">
                 {isAddingLocal ? 'Adding...' : 'Add Local'}
               </span>
             </button>
@@ -279,21 +280,21 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleCreateNewRepo}
-              className="h-7.5 px-2 rounded-sm bg-base-1/60 hover:bg-base-2 border border-border/60 hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
               title="Create a brand new Git repository"
             >
-              <PlusSquare className="w-3.5 h-3.5 text-blue-400 group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[11px] font-medium leading-none truncate">Create</span>
+              <PlusSquare className="w-3.5 h-3.5 text-sky-400 group-hover:scale-105 transition-transform flex-shrink-0" />
+              <span className="text-[11px] font-semibold truncate leading-none">Create</span>
             </button>
 
             <button
               type="button"
               onClick={handleCloneRepo}
-              className="h-7.5 px-2 rounded-sm bg-base-1/60 hover:bg-base-2 border border-border/60 hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
               title="Clone repository from remote GitLab/GitHub"
             >
               <Download className="w-3.5 h-3.5 text-commito-coral group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[11px] font-medium leading-none truncate">Clone</span>
+              <span className="text-[11px] font-semibold truncate leading-none">Clone</span>
             </button>
           </div>
         </div>

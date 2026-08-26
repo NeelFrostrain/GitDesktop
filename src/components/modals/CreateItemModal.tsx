@@ -4,7 +4,6 @@ import {
   FilePlus,
   FolderPlus,
   X,
-  Loader2,
   Folder,
   AlertCircle,
   FileCode,
@@ -14,6 +13,9 @@ import { useGitStore } from '../../store/useGitStore';
 import { useAppLogStore } from '../../core/logging/logStore';
 import { GitService } from '../../services/git/gitService';
 import { SystemService } from '../../services/system/systemService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Button } from '../common/Button';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface CreateItemModalProps {
   isOpen: boolean;
@@ -38,6 +40,13 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isDirty = pathInput.trim() !== '';
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -108,37 +117,46 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-100 select-none">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) {
+          requestClose();
+        }
+      }}
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
+    >
       {/* Modal Dialog Card */}
-      <div className="w-full max-w-[400px] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100">
-        {/* Header */}
-        <div className="px-3.5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+      <div
+        className="w-full max-w-[390px] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Compact 1-Row Header */}
+        <div className="px-3.5 py-2 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
             <div
-              className={`w-6 h-6 rounded-sm flex items-center justify-center border shrink-0 ${
+              className={`w-5 h-5 rounded-sm flex items-center justify-center border shrink-0 ${
                 isFile
                   ? 'bg-commito-coral/15 border-commito-coral/30 text-commito-coral'
                   : 'bg-git-added-bg border-git-added/30 text-git-added'
               }`}
             >
-              {isFile ? <FilePlus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />}
+              {isFile ? <FilePlus className="w-3 h-3" /> : <FolderPlus className="w-3 h-3" />}
             </div>
-            <div>
-              <h2 className="text-xs font-semibold text-text-primary leading-tight">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h2 className="text-xs font-bold text-text-primary leading-none">
                 {isFile ? 'Create New File' : 'Create New Folder'}
               </h2>
-              <p className="text-[10.5px] text-text-muted">
-                {isFile
-                  ? 'Enter file path inside repository'
-                  : 'Enter folder path to create'}
-              </p>
+              <span className="text-border">•</span>
+              <span className="text-[10.5px] text-text-muted truncate">
+                {isFile ? 'Repository root' : 'New directory'}
+              </span>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={onClose}
-            className="w-5.5 h-5.5 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex items-center justify-center"
+            onClick={requestClose}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
             title="Close (Esc)"
           >
             <X className="w-3.5 h-3.5" />
@@ -146,12 +164,12 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-3.5 flex flex-col gap-3 bg-base-0">
+        <form onSubmit={handleSubmit} className="p-3.5 flex flex-col gap-2.5 bg-base-0">
           {/* Text Input */}
-          <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between text-[10px] font-semibold text-text-muted uppercase tracking-wider">
               <span>{isFile ? 'FILE PATH' : 'FOLDER PATH'}</span>
-              <span className="font-mono text-[9.5px] text-text-faint font-normal">Relative to root</span>
+              <span className="font-mono text-[9px] text-text-faint font-normal">Relative to root</span>
             </div>
             <div className="relative">
               <input
@@ -165,7 +183,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
                 placeholder={
                   isFile ? 'e.g. src/components/Header.tsx or .gitignore' : 'e.g. src/components'
                 }
-                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none focus:ring-1 focus:ring-commito-coral/30 transition shadow-inner"
+                className="w-full h-7.5 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
               />
             </div>
           </div>
@@ -191,7 +209,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
 
           {/* Destination Path Preview */}
           {cleanPath && activeRepoPath && (
-            <div className="px-2.5 py-1.5 bg-base-1 border border-border rounded-sm flex items-center gap-1.5 text-[10.5px] font-mono text-text-muted overflow-hidden">
+            <div className="px-2 py-1 bg-base-1 border border-border rounded-sm flex items-center gap-1.5 text-[10px] font-mono text-text-muted overflow-hidden">
               <Folder className="w-3 h-3 text-text-faint shrink-0" />
               <span className="truncate text-text-faint">{activeRepoPath}\</span>
               <span className="font-semibold text-commito-coral shrink-0">{cleanPath}</span>
@@ -200,54 +218,51 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
 
           {/* Error Banner */}
           {error && (
-            <div className="px-2.5 py-1.5 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-center gap-2 text-xs text-git-removed animate-in fade-in duration-100">
+            <div className="px-2 py-1 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-center gap-1.5 text-xs text-git-removed animate-in fade-in duration-100">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" />
               <span className="truncate">{error}</span>
             </div>
           )}
 
-          {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-1.5 pt-2.5 border-t border-border mt-0.5">
-            <button
+          {/* Slim Footer Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
+            <Button
               type="button"
-              onClick={onClose}
-              className="h-7 px-3 rounded-sm bg-base-1 hover:bg-base-2 text-text-subtle hover:text-text-primary border border-border text-xs font-medium transition cursor-pointer shadow-2xs"
+              variant="secondary"
+              size="sm"
+              onClick={requestClose}
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
+              variant={isFile ? 'coral' : 'emerald'}
+              size="sm"
               disabled={!cleanPath || isSubmitting}
-              className={`h-7 px-3.5 rounded-sm font-semibold text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer ${
-                cleanPath && !isSubmitting
-                  ? isFile
-                    ? 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-[0.98]'
-                    : 'bg-git-added hover:bg-git-added/90 text-white active:scale-[0.98]'
-                  : 'bg-base-1 text-text-faint border border-border opacity-50 cursor-not-allowed'
-              }`}
+              isLoading={isSubmitting}
+              leftIcon={!isSubmitting ? (isFile ? <FilePlus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />) : undefined}
+              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
             >
-              {isSubmitting ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : isFile ? (
-                <FilePlus className="w-3 h-3" />
-              ) : (
-                <FolderPlus className="w-3 h-3" />
-              )}
-              <span>
-                {isSubmitting
-                  ? isFile
-                    ? 'Creating File...'
-                    : 'Creating Folder...'
-                  : isFile
-                  ? 'Create File'
-                  : 'Create Folder'}
-              </span>
-              {!isSubmitting && <CornerDownLeft className="w-3 h-3 opacity-60" />}
-            </button>
+              {isFile ? 'Create File' : 'Create Folder'}
+            </Button>
           </div>
         </form>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={`Unsaved ${isFile ? 'File' : 'Folder'} Path`}
+        description={`You have entered an unsaved path "${cleanPath}". If you discard, this will not be created.`}
+        discardText="Discard Changes"
+        saveText={cleanPath ? `Create ${isFile ? 'File' : 'Folder'}` : undefined}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => handleSubmit()}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );
