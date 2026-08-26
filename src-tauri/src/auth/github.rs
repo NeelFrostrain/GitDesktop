@@ -527,4 +527,111 @@ impl GitHubClient {
             }),
         })
     }
+
+    pub async fn get_pull_request_comments(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+    ) -> Result<Vec<PullRequestComment>, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/{}/comments", GITHUB_API_URL, clean_path, pull_number);
+        let resp = self.client.get(&url).send().await?;
+        if !resp.status().is_success() {
+            return Ok(Vec::new());
+        }
+
+        let arr: Vec<serde_json::Value> = resp.json().await.unwrap_or_default();
+        let mut comments = Vec::new();
+        for item in arr {
+            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+            let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let user = item.get("user");
+            let author_username = user
+                .and_then(|u| u.get("login"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let author_name = user
+                .and_then(|u| u.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| author_username.clone());
+            let author_avatar = user
+                .and_then(|u| u.get("avatar_url"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            comments.push(PullRequestComment {
+                id,
+                author_name,
+                author_username,
+                author_avatar,
+                body,
+                created_at,
+            });
+        }
+        Ok(comments)
+    }
+
+    pub async fn add_pull_request_comment(
+        &self,
+        owner_repo: &str,
+        pull_number: u64,
+        body: &str,
+    ) -> Result<PullRequestComment, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+        let url = format!("{}/repos/{}/issues/{}/comments", GITHUB_API_URL, clean_path, pull_number);
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.post(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to post comment: {}", err_text)));
+        }
+
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let user = item.get("user");
+        let author_username = user
+            .and_then(|u| u.get("login"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = user
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = user
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct PullRequestComment {
+    pub id: u64,
+    pub author_name: String,
+    pub author_username: String,
+    pub author_avatar: Option<String>,
+    pub body: String,
+    pub created_at: String,
 }

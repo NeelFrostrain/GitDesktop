@@ -89,6 +89,42 @@ export class PullRequestService {
       provider: params.provider || null,
     });
   }
+
+  /**
+   * Fetches comments/discussion notes for a pull or merge request.
+   */
+  static async getComments(
+    projectIdOrPath: string,
+    mrId: number,
+    serverUrl?: string,
+    provider?: string
+  ): Promise<import('../../types/git').PullRequestComment[]> {
+    return invoke<import('../../types/git').PullRequestComment[]>('get_pull_request_comments', {
+      projectId: projectIdOrPath,
+      mrId,
+      serverUrl: serverUrl || null,
+      provider: provider || null,
+    });
+  }
+
+  /**
+   * Adds a new comment/discussion note to a pull or merge request.
+   */
+  static async addComment(
+    projectIdOrPath: string,
+    mrId: number,
+    body: string,
+    serverUrl?: string,
+    provider?: string
+  ): Promise<import('../../types/git').PullRequestComment> {
+    return invoke<import('../../types/git').PullRequestComment>('add_pull_request_comment', {
+      projectId: projectIdOrPath,
+      mrId,
+      body,
+      serverUrl: serverUrl || null,
+      provider: provider || null,
+    });
+  }
 }
 
 /**

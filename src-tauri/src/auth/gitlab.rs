@@ -645,6 +645,99 @@ impl GitLabClient {
         Ok(mr)
     }
 
+    pub async fn get_merge_request_comments(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+    ) -> Result<Vec<crate::auth::github::PullRequestComment>, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!("{}/api/v4/projects/{}/merge_requests/{}/notes?sort=asc", self.server_url, encoded_id, mr_iid);
+        let resp = self.client.get(&url).send().await?;
+        if !resp.status().is_success() {
+            return Ok(Vec::new());
+        }
+
+        let arr: Vec<serde_json::Value> = resp.json().await.unwrap_or_default();
+        let mut comments = Vec::new();
+        for item in arr {
+            let is_system = item.get("system").and_then(|v| v.as_bool()).unwrap_or(false);
+            if is_system { continue; }
+            let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+            let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+            let author = item.get("author");
+            let author_username = author
+                .and_then(|u| u.get("username"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+            let author_name = author
+                .and_then(|u| u.get("name"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .unwrap_or_else(|| author_username.clone());
+            let author_avatar = author
+                .and_then(|u| u.get("avatar_url"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            comments.push(crate::auth::github::PullRequestComment {
+                id,
+                author_name,
+                author_username,
+                author_avatar,
+                body,
+                created_at,
+            });
+        }
+        Ok(comments)
+    }
+
+    pub async fn add_merge_request_comment(
+        &self,
+        project_id: &str,
+        mr_iid: u64,
+        body: &str,
+    ) -> Result<crate::auth::github::PullRequestComment, AppError> {
+        let encoded_id = urlencoding::encode(project_id);
+        let url = format!("{}/api/v4/projects/{}/merge_requests/{}/notes", self.server_url, encoded_id, mr_iid);
+        let req_body = serde_json::json!({ "body": body.trim() });
+        let resp = self.client.post(&url).json(&req_body).send().await?;
+        if !resp.status().is_success() {
+            let err_text = resp.text().await.unwrap_or_default();
+            return Err(AppError::Network(format!("Failed to post note: {}", err_text)));
+        }
+
+        let item: serde_json::Value = resp.json().await.map_err(|e| AppError::Network(e.to_string()))?;
+        let id = item.get("id").and_then(|v| v.as_u64()).unwrap_or(0);
+        let body = item.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let created_at = item.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let author = item.get("author");
+        let author_username = author
+            .and_then(|u| u.get("username"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("unknown")
+            .to_string();
+        let author_name = author
+            .and_then(|u| u.get("name"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| author_username.clone());
+        let author_avatar = author
+            .and_then(|u| u.get("avatar_url"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
+
+        Ok(crate::auth::github::PullRequestComment {
+            id,
+            author_name,
+            author_username,
+            author_avatar,
+            body,
+            created_at,
+        })
+    }
+
     pub async fn create_project(
         &self,
         name: &str,

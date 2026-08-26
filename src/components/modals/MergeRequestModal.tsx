@@ -22,12 +22,31 @@ import {
   Edit3,
   Save,
   XCircle,
+  MessageSquare,
+  GitCommit,
+  FileCode,
+  Send,
+  Copy,
+  ChevronDown,
+  ChevronRight,
+  Tag,
+  Users,
+  Clock,
+  Columns2,
+  Rows3,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useRemoteStore } from '../../store/remoteStore';
-import { UnifiedMergeRequest, BranchInfo } from '../../types/git';
+import {
+  UnifiedMergeRequest,
+  BranchInfo,
+  PullRequestComment,
+  CommitInfo,
+  CommitFileStat,
+  DiffResult,
+} from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { ReleaseService } from '../../services/git/releaseService';
 import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
@@ -36,10 +55,14 @@ import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
+import { UnifiedDiffView } from '../views/diff/UnifiedDiffView';
+import { SplitDiffView } from '../views/diff/SplitDiffView';
+
+type InspectorTab = 'conversation' | 'commits' | 'files';
 
 /**
  * Modern 50/50 Balanced 2-Column Split Modal for Creating, Inspecting, and Editing
- * GitHub Pull Requests & GitLab Merge Requests with Markdown Editor & AI Summary.
+ * GitHub Pull Requests & GitLab Merge Requests with Markdown Editor, AI Summary, Commits, Files & Comments.
  */
 export const MergeRequestModal: React.FC = () => {
   const {
@@ -52,9 +75,12 @@ export const MergeRequestModal: React.FC = () => {
   } = useGitStore();
   const { remotes, loadRemotes } = useRemoteStore();
 
-  // Mode: 'create' | 'list' | 'edit'
+  // Main Modal Mode: 'create' | 'list' | 'edit'
   const [activeTab, setActiveTab] = useState<'create' | 'list' | 'edit'>('create');
   const [editorTab, setEditorTab] = useState<'write' | 'preview'>('write');
+
+  // Inspector Sub-Tabs
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('conversation');
 
   // Create Mode Form State
   const [sourceBranch, setSourceBranch] = useState(status?.current_branch || 'main');
@@ -79,6 +105,26 @@ export const MergeRequestModal: React.FC = () => {
   // List & Inspector State
   const [searchFilter, setSearchFilter] = useState('');
   const [selectedMrId, setSelectedMrId] = useState<string | null>(null);
+
+  // Inspector Details: Commits, Files, Comments
+  const [prComments, setPrComments] = useState<PullRequestComment[]>([]);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const [newCommentText, setNewCommentText] = useState('');
+  const [commentEditorTab, setCommentEditorTab] = useState<'write' | 'preview'>('write');
+  const [isPostingComment, setIsPostingComment] = useState(false);
+
+  const [prCommits, setPrCommits] = useState<CommitInfo[]>([]);
+  const [prFiles, setPrFiles] = useState<CommitFileStat[]>([]);
+  const [totalAdditions, setTotalAdditions] = useState(0);
+  const [totalDeletions, setTotalDeletions] = useState(0);
+  const [isLoadingBranchDiff, setIsLoadingBranchDiff] = useState(false);
+
+  // Diff View Mode (Unified vs Split) & Expanded files
+  const [diffViewMode, setDiffViewMode] = useState<'unified' | 'split'>('unified');
+  const [openFilePaths, setOpenFilePaths] = useState<Set<string>>(new Set());
+  const [fileDiffCache, setFileDiffCache] = useState<Record<string, DiffResult>>({});
+  const [loadingFilePaths, setLoadingFilePaths] = useState<Set<string>>(new Set());
+  const [copiedFilePath, setCopiedFilePath] = useState<string | null>(null);
 
   // Data & Loaders
   const [branches, setBranches] = useState<BranchInfo[]>([]);
@@ -227,6 +273,168 @@ export const MergeRequestModal: React.FC = () => {
     return filteredMergeRequests[0];
   }, [filteredMergeRequests, selectedMrId]);
 
+  // Load comments and branch diff whenever active selected PR changes
+  const loadPrDetails = useCallback(async () => {
+    if (!activeSelectedMr || !activeRepoPath) return;
+
+    const projectPath = targetRemoteInfo?.projectPath || '1';
+    const serverUrl = targetRemoteInfo?.serverUrl;
+    const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+    const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
+
+    // 1. Load Comments
+    setIsLoadingComments(true);
+    PullRequestService.getComments(projectPath, prNumber, serverUrl, provider)
+      .then((comments) => {
+        setPrComments(comments || []);
+      })
+      .catch(() => {
+        setPrComments([]);
+      })
+      .finally(() => {
+        setIsLoadingComments(false);
+      });
+
+    // 2. Load Commits & Changed Files between branches
+    setIsLoadingBranchDiff(true);
+    GitService.getBranchComparison(activeRepoPath, activeSelectedMr.target_branch, activeSelectedMr.source_branch)
+      .then((diffRes) => {
+        if (diffRes) {
+          setPrCommits(diffRes.commits || []);
+          setPrFiles(diffRes.files || []);
+          setTotalAdditions(diffRes.total_additions || 0);
+          setTotalDeletions(diffRes.total_deletions || 0);
+
+          // If there are files and none open, auto-open the first file
+          if (diffRes.files && diffRes.files.length > 0) {
+            setOpenFilePaths(new Set([diffRes.files[0].path]));
+            GitService.getFileDiff(activeRepoPath, diffRes.files[0].path, false)
+              .then((fDiff) => {
+                setFileDiffCache({ [diffRes.files[0].path]: fDiff });
+              })
+              .catch(() => {});
+          }
+        }
+      })
+      .catch(() => {
+        setPrCommits([]);
+        setPrFiles([]);
+      })
+      .finally(() => {
+        setIsLoadingBranchDiff(false);
+      });
+  }, [activeSelectedMr, activeRepoPath, targetRemoteInfo?.projectPath, targetRemoteInfo?.serverUrl, targetRemoteInfo?.provider, user?.provider]);
+
+  useEffect(() => {
+    if (activeTab === 'list' && activeSelectedMr) {
+      loadPrDetails();
+    }
+  }, [activeTab, activeSelectedMr?.id, loadPrDetails]);
+
+  // Toggle single file diff in Files Changed tab
+  const handleToggleFileDiff = async (filePath: string) => {
+    const nextOpen = new Set(openFilePaths);
+    if (nextOpen.has(filePath)) {
+      nextOpen.delete(filePath);
+      setOpenFilePaths(nextOpen);
+      return;
+    }
+
+    nextOpen.add(filePath);
+    setOpenFilePaths(nextOpen);
+
+    if (!fileDiffCache[filePath] && activeRepoPath) {
+      setLoadingFilePaths((prev) => new Set(prev).add(filePath));
+      try {
+        const res = await GitService.getFileDiff(activeRepoPath, filePath, false);
+        setFileDiffCache((prev) => ({ ...prev, [filePath]: res }));
+      } catch {
+        // fail gracefully
+      } finally {
+        setLoadingFilePaths((prev) => {
+          const next = new Set(prev);
+          next.delete(filePath);
+          return next;
+        });
+      }
+    }
+  };
+
+  // Expand / Collapse All files
+  const handleToggleExpandAll = async () => {
+    if (openFilePaths.size === prFiles.length && prFiles.length > 0) {
+      setOpenFilePaths(new Set());
+      return;
+    }
+
+    const allPaths = new Set(prFiles.map((f) => f.path));
+    setOpenFilePaths(allPaths);
+
+    const uncached = prFiles.filter((f) => !fileDiffCache[f.path]);
+    if (uncached.length > 0 && activeRepoPath) {
+      for (const f of uncached) {
+        setLoadingFilePaths((prev) => new Set(prev).add(f.path));
+        GitService.getFileDiff(activeRepoPath, f.path, false)
+          .then((res) => {
+            setFileDiffCache((prev) => ({ ...prev, [f.path]: res }));
+          })
+          .catch(() => {})
+          .finally(() => {
+            setLoadingFilePaths((prev) => {
+              const next = new Set(prev);
+              next.delete(f.path);
+              return next;
+            });
+          });
+      }
+    }
+  };
+
+  const handleCopyFilePath = (e: React.MouseEvent, path: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(path);
+    setCopiedFilePath(path);
+    setTimeout(() => setCopiedFilePath(null), 2000);
+  };
+
+  // Post a new comment to PR
+  const handlePostComment = async () => {
+    if (!activeSelectedMr || !newCommentText.trim() || isPostingComment) return;
+
+    setIsPostingComment(true);
+    try {
+      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const serverUrl = targetRemoteInfo?.serverUrl;
+      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
+
+      const added = await PullRequestService.addComment(
+        projectPath,
+        prNumber,
+        newCommentText.trim(),
+        serverUrl,
+        provider
+      );
+
+      setPrComments((prev) => [...prev, added]);
+      setNewCommentText('');
+      setCommentEditorTab('write');
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Comment Added',
+        message: 'Your comment was posted successfully.',
+      });
+    } catch (err: unknown) {
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Failed to Post Comment',
+        message: parseApiError(err),
+      });
+    } finally {
+      setIsPostingComment(false);
+    }
+  };
+
   // Switch to Full 50/50 Workspace for Editing Selected PR
   const handleOpenFullEditWorkspace = (mr: UnifiedMergeRequest) => {
     setEditingMr(mr);
@@ -267,7 +475,6 @@ export const MergeRequestModal: React.FC = () => {
         }
       );
 
-      // Update local state
       setMergeRequests((prev) =>
         prev.map((mr) => (mr.id === editingMr.id ? { ...mr, ...updated } : mr))
       );
@@ -518,7 +725,7 @@ export const MergeRequestModal: React.FC = () => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !isSubmitting && !isGeneratingAi && !isSavingEdit) {
+    if (e.key === 'Escape' && !isSubmitting && !isGeneratingAi && !isSavingEdit && !isPostingComment) {
       setIsMergeRequestModalOpen(false);
     }
   };
@@ -557,7 +764,7 @@ export const MergeRequestModal: React.FC = () => {
               <p className="text-[11px] text-text-muted mt-0.5 leading-none">
                 {activeTab === 'edit'
                   ? `Update title, base target branch, and description notes for #${editingMr?.id}`
-                  : `Create, inspect, and update branch pull & merge requests for remote repository`}
+                  : `Create, inspect, review, and discuss pull & merge requests for remote repository`}
               </p>
             </div>
           </div>
@@ -608,13 +815,12 @@ export const MergeRequestModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Modal Body: Even 50% - 50% Split */}
+        {/* Modal Body */}
         {activeTab === 'create' ? (
-          /* CREATE PULL REQUEST WORKSPACE */
+          /* CREATE PULL REQUEST WORKSPACE (Symmetrical 50/50) */
           <form onSubmit={handleCreateMergeRequest} className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 50% Column: Branch selection & Settings */}
+            {/* Left 50% Column */}
             <div className="p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
-              {/* Branch Comparison Card */}
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
@@ -634,14 +840,12 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-[1fr_32px_1fr] items-end gap-2.5 pt-0.5 w-full">
-                  {/* Left: Source Branch (Compare) */}
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
                         <span>Source</span>
                         <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">head</span>
                       </span>
-                      <span className="text-[9.5px] text-text-faint font-mono truncate">changes</span>
                     </div>
                     <Dropdown
                       options={branchOptions}
@@ -653,7 +857,6 @@ export const MergeRequestModal: React.FC = () => {
                     />
                   </div>
 
-                  {/* Center: Swap Button */}
                   <div className="flex items-center justify-center pb-0.5">
                     <button
                       type="button"
@@ -669,14 +872,12 @@ export const MergeRequestModal: React.FC = () => {
                     </button>
                   </div>
 
-                  {/* Right: Target Branch (Base) */}
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
                         <span>Target</span>
                         <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">base</span>
                       </span>
-                      <span className="text-[9.5px] text-text-faint font-mono truncate">merge into</span>
                     </div>
                     <Dropdown
                       options={branchOptions}
@@ -689,7 +890,6 @@ export const MergeRequestModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Existing PR Alert if any */}
                 {existingPrForSource && (
                   <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xs flex items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-1.5 text-amber-400 min-w-0">
@@ -712,7 +912,6 @@ export const MergeRequestModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Title Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-text-primary block">
                   {requestTypeLabel} Title <span className="text-commito-coral">*</span>
@@ -732,7 +931,6 @@ export const MergeRequestModal: React.FC = () => {
                 />
               </div>
 
-              {/* Target Remote Selection */}
               {remotes.length > 1 && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-text-primary block">Target Remote</label>
@@ -746,7 +944,6 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
               )}
 
-              {/* Pull Request Options & Toggles */}
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted block pb-1 border-b border-border/60">
                   Settings & Options
@@ -801,7 +998,6 @@ export const MergeRequestModal: React.FC = () => {
                 />
               </div>
 
-              {/* Error Message */}
               {formError && (
                 <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -810,7 +1006,7 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right 50% Column: Full-Height Markdown Editor & Live Preview */}
+            {/* Right 50% Column */}
             <div className="p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
@@ -835,7 +1031,7 @@ export const MergeRequestModal: React.FC = () => {
                   onClick={handleGenerateAiDescription}
                   disabled={isSubmitting || isGeneratingAi || !sourceBranch}
                   className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/35 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
-                  title="Analyze commits between source and target branch using AI to compose PR description"
+                  title="Analyze commits between source and target branch using AI"
                 >
                   {isGeneratingAi ? (
                     <>
@@ -851,11 +1047,10 @@ export const MergeRequestModal: React.FC = () => {
                 </button>
               </div>
 
-              {/* Editor / Preview Body */}
               <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
                 {editorTab === 'write' ? (
                   <textarea
-                    placeholder="Provide a thorough summary of changes, issue references (e.g. fixes #12), testing steps, and architectural notes... (Markdown supported)"
+                    placeholder="Provide a thorough summary of changes, issue references (e.g. fixes #12), testing steps... (Markdown supported)"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isSubmitting}
@@ -871,7 +1066,6 @@ export const MergeRequestModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Footer info bar for markdown */}
               <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
                 <span>
                   {description.length} characters • {description.trim() ? description.trim().split(/\s+/).length : 0} words
@@ -881,11 +1075,9 @@ export const MergeRequestModal: React.FC = () => {
             </div>
           </form>
         ) : activeTab === 'edit' && editingMr ? (
-          /* EDIT EXISTING PULL REQUEST WORKSPACE (Symmetrical 50/50 Workspace) */
+          /* EDIT EXISTING PULL REQUEST WORKSPACE (Symmetrical 50/50) */
           <form onSubmit={handleSaveFullEdit} className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 50% Column: Branch & Title Settings */}
             <div className="p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
-              {/* Branch Flow Box */}
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
@@ -898,27 +1090,21 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5 w-full">
-                  {/* Source Branch (Fixed) */}
                   <div className="space-y-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
-                        <span>Source Branch</span>
-                        <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">head</span>
-                      </span>
-                    </div>
+                    <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
+                      <span>Source Branch</span>
+                      <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">head</span>
+                    </span>
                     <div className="h-8.5 px-3 bg-base-0 border border-border rounded-sm text-xs font-mono text-commito-coral font-bold flex items-center truncate">
                       {editingMr.source_branch}
                     </div>
                   </div>
 
-                  {/* Target Base Branch (Editable) */}
                   <div className="space-y-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
-                        <span>Target Branch</span>
-                        <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">base</span>
-                      </span>
-                    </div>
+                    <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
+                      <span>Target Branch</span>
+                      <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">base</span>
+                    </span>
                     <Dropdown
                       options={branchOptions}
                       value={editTargetBranch}
@@ -931,7 +1117,6 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
               </div>
 
-              {/* Title Field */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-text-primary block">
                   {requestTypeLabel} Title <span className="text-commito-coral">*</span>
@@ -951,7 +1136,6 @@ export const MergeRequestModal: React.FC = () => {
                 />
               </div>
 
-              {/* Author & Request Meta */}
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-2 text-xs font-mono">
                 <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted block pb-1 border-b border-border/60">
                   Request Metadata
@@ -961,7 +1145,7 @@ export const MergeRequestModal: React.FC = () => {
                   <span className="text-text-primary font-bold">@{editingMr.author_name}</span>
                 </div>
                 <div className="flex items-center justify-between text-text-muted">
-                  <span>Request ID:</span>
+                  <span>Request Number:</span>
                   <span className="text-text-primary font-bold">#{editingMr.id}</span>
                 </div>
                 {editingMr.web_url && (
@@ -978,7 +1162,6 @@ export const MergeRequestModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Error Message */}
               {formError && (
                 <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -987,7 +1170,6 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right 50% Column: Full-Height Markdown Editor & Live Preview */}
             <div className="p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
@@ -1028,7 +1210,6 @@ export const MergeRequestModal: React.FC = () => {
                 </button>
               </div>
 
-              {/* Editor / Preview Body */}
               <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
                 {editEditorTab === 'write' ? (
                   <textarea
@@ -1048,7 +1229,6 @@ export const MergeRequestModal: React.FC = () => {
                 )}
               </div>
 
-              {/* Footer info bar for markdown */}
               <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
                 <span>
                   {editDescription.length} characters • {editDescription.trim() ? editDescription.trim().split(/\s+/).length : 0} words
@@ -1058,10 +1238,10 @@ export const MergeRequestModal: React.FC = () => {
             </div>
           </form>
         ) : (
-          /* List Open Pull Requests Mode: Master-Detail 2-Column Split */
+          /* LIST & INSPECT OPEN REQUESTS (Master-Detail with Conversation, Commits, Files & Comments) */
           <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left Column: Search & Requests List */}
-            <div className="w-full md:w-[380px] shrink-0 p-4 flex flex-col min-h-0 overflow-hidden space-y-3 bg-base-0">
+            {/* Left Column: Search & Request Cards List */}
+            <div className="w-full md:w-[360px] shrink-0 p-4 flex flex-col min-h-0 overflow-hidden space-y-3 bg-base-0">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
@@ -1145,12 +1325,12 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right Column: Request Detail Inspector */}
-            <div className="flex-1 p-5 flex flex-col min-h-0 overflow-y-auto bg-base-1/25 space-y-4">
+            {/* Right Column: Full Inspector with Sub-Tabs */}
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-base-1/25">
               {activeSelectedMr ? (
-                <div className="space-y-4">
-                  {/* PR Header Box */}
-                  <div className="p-4 bg-base-0 border border-border rounded-sm space-y-3 shadow-2xs">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                  {/* Top Inspector Header Card */}
+                  <div className="p-4 border-b border-border bg-base-0 shrink-0 space-y-3 shadow-2xs">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-2">
                         <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-xs font-mono font-bold rounded-xs uppercase">
@@ -1184,79 +1364,521 @@ export const MergeRequestModal: React.FC = () => {
 
                     <h3 className="text-sm font-bold text-text-primary leading-snug">{activeSelectedMr.title}</h3>
 
-                    {/* Flow & Metadata Chips */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-                      <div className="p-2 bg-base-1 border border-border/70 rounded-xs flex items-center gap-2">
+                    {/* Chips bar */}
+                    <div className="flex items-center gap-3 text-xs flex-wrap pt-0.5">
+                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-muted">
                         <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                        <div className="min-w-0 font-mono text-[11px]">
-                          <span className="text-text-faint text-[9.5px] block uppercase font-sans">Branch Flow</span>
-                          <span className="text-commito-coral font-bold truncate">{activeSelectedMr.source_branch}</span>
-                          <span className="text-text-muted"> → </span>
-                          <span className="text-emerald-400 font-bold truncate">{activeSelectedMr.target_branch}</span>
-                        </div>
+                        <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
+                        <span>into</span>
+                        <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
                       </div>
 
-                      <div className="p-2 bg-base-1 border border-border/70 rounded-xs flex items-center gap-2">
-                        <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                        <div className="min-w-0 font-mono text-[11px]">
-                          <span className="text-text-faint text-[9.5px] block uppercase font-sans">Author</span>
-                          <span className="text-text-primary font-semibold truncate block">
-                            @{activeSelectedMr.author_name.replace(/\s+/g, '')}
-                          </span>
-                        </div>
+                      <span className="text-border">•</span>
+
+                      <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                        <User className="w-3.5 h-3.5 text-text-faint" />
+                        <span>@{activeSelectedMr.author_name.replace(/\s+/g, '')}</span>
+                      </div>
+
+                      <span className="text-border">•</span>
+
+                      <div className="flex items-center gap-1 text-[11px] text-text-muted">
+                        <Clock className="w-3.5 h-3.5 text-text-faint" />
+                        <span>{activeSelectedMr.created_at.slice(0, 10)}</span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* PR Description Card */}
-                  <div className="p-4 bg-base-0 border border-border rounded-sm space-y-2 shadow-2xs">
-                    <div className="flex items-center justify-between pb-1 border-b border-border/60">
-                      <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted block">
-                        Description & Notes
-                      </span>
+                    {/* Inspector Sub-Tabs Navigation (GitHub/GitLab style) */}
+                    <div className="pt-2 border-t border-border/70 flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
-                        className="text-[11px] font-semibold text-commito-coral hover:text-commito-coralLight flex items-center gap-1 transition cursor-pointer"
+                        onClick={() => setInspectorTab('conversation')}
+                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                          inspectorTab === 'conversation'
+                            ? 'bg-commito-coral text-white shadow-xs'
+                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
+                        }`}
                       >
-                        <Edit3 className="w-2.5 h-2.5" />
-                        <span>Edit in Full Workspace</span>
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        <span>Conversation</span>
+                        {prComments.length > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'conversation' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
+                            {prComments.length}
+                          </span>
+                        )}
                       </button>
-                    </div>
 
-                    <div className="min-h-[140px] max-h-[360px] overflow-y-auto">
-                      <MarkdownPreview
-                        content={activeSelectedMr.description || ''}
-                        emptyText="No description provided for this request. Click 'Edit Request' to write one."
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setInspectorTab('commits')}
+                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                          inspectorTab === 'commits'
+                            ? 'bg-commito-coral text-white shadow-xs'
+                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
+                        }`}
+                      >
+                        <GitCommit className="w-3.5 h-3.5" />
+                        <span>Commits</span>
+                        <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'commits' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
+                          {isLoadingBranchDiff ? '...' : prCommits.length}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setInspectorTab('files')}
+                        className={`h-7 px-3 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                          inspectorTab === 'files'
+                            ? 'bg-commito-coral text-white shadow-xs'
+                            : 'bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border'
+                        }`}
+                      >
+                        <FileCode className="w-3.5 h-3.5" />
+                        <span>Files Changed</span>
+                        <span className={`text-[10px] px-1.5 py-0.1 rounded-full font-mono ${inspectorTab === 'files' ? 'bg-white/20 text-white' : 'bg-base-2 text-text-muted'}`}>
+                          {isLoadingBranchDiff ? '...' : prFiles.length}
+                        </span>
+                        {totalAdditions > 0 || totalDeletions > 0 ? (
+                          <span className="text-[10px] font-mono font-normal ml-1">
+                            <span className="text-emerald-400">+{totalAdditions}</span>{' '}
+                            <span className="text-red-400">-{totalDeletions}</span>
+                          </span>
+                        ) : null}
+                      </button>
                     </div>
                   </div>
 
-                  {/* Action Bar: Close PR option */}
-                  <div className="pt-2 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => handleCloseOrReopenPr(activeSelectedMr)}
-                      disabled={isClosingPr}
-                      className="h-7 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
-                    >
-                      {isClosingPr ? (
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                      ) : (
-                        <XCircle className="w-3 h-3" />
-                      )}
-                      <span>
-                        {activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened'
-                          ? `Close ${requestTypeLabel}`
-                          : `Reopen ${requestTypeLabel}`}
-                      </span>
-                    </button>
+                  {/* Inspector Body Content based on Sub-Tab */}
+                  <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+                    {inspectorTab === 'conversation' && (
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        {/* Main Conversation Stream (col 8) */}
+                        <div className="lg:col-span-8 space-y-4">
+                          {/* PR Description Post Card */}
+                          <div className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs">
+                            <div className="px-3.5 py-2 bg-base-1 border-b border-border/80 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-5 h-5 rounded-full bg-commito-coral/20 border border-commito-coral/40 flex items-center justify-center text-[10px] font-bold text-commito-coral">
+                                  {activeSelectedMr.author_name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-xs font-bold text-text-primary">
+                                  @{activeSelectedMr.author_name.replace(/\s+/g, '')}
+                                </span>
+                                <span className="text-[10.5px] text-text-muted">opened this request</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
+                                className="text-[11px] font-semibold text-commito-coral hover:text-commito-coralLight flex items-center gap-1 transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3 h-3" />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                            <div className="p-4 max-h-[320px] overflow-y-auto">
+                              <MarkdownPreview
+                                content={activeSelectedMr.description || ''}
+                                emptyText="No description provided for this request."
+                              />
+                            </div>
+                          </div>
+
+                          {/* Existing Comments Thread */}
+                          {isLoadingComments ? (
+                            <div className="p-6 text-center text-xs text-text-muted flex items-center justify-center gap-2">
+                              <Loader2 className="w-4 h-4 animate-spin text-commito-coral" />
+                              <span>Loading comments...</span>
+                            </div>
+                          ) : prComments.length > 0 ? (
+                            <div className="space-y-3">
+                              {prComments.map((comment) => (
+                                <div key={comment.id} className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs animate-in fade-in duration-100">
+                                  <div className="px-3.5 py-1.5 bg-base-1 border-b border-border/70 flex items-center justify-between text-xs">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-400">
+                                        {comment.author_name.charAt(0).toUpperCase()}
+                                      </div>
+                                      <span className="font-bold text-text-primary">@{comment.author_username}</span>
+                                      <span className="text-[10.5px] text-text-muted">
+                                        commented {comment.created_at ? comment.created_at.slice(0, 10) : ''}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="p-3.5 text-xs text-text-primary">
+                                    <MarkdownPreview content={comment.body} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          {/* Add a Comment Card (GitHub Style) */}
+                          <div className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs space-y-0">
+                            <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between">
+                              <span className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+                                <MessageSquare className="w-3.5 h-3.5 text-commito-coral" />
+                                <span>Add a comment</span>
+                              </span>
+                              <Tabs<'write' | 'preview'>
+                                tabs={[
+                                  { id: 'write', label: 'Write' },
+                                  { id: 'preview', label: 'Preview' },
+                                ]}
+                                activeTab={commentEditorTab}
+                                onChange={setCommentEditorTab}
+                                size="xs"
+                                ariaLabel="Comment mode tabs"
+                              />
+                            </div>
+
+                            <div className="p-3">
+                              {commentEditorTab === 'write' ? (
+                                <textarea
+                                  placeholder="Add your comment here... (Markdown supported)"
+                                  value={newCommentText}
+                                  onChange={(e) => setNewCommentText(e.target.value)}
+                                  disabled={isPostingComment}
+                                  className="w-full h-24 p-2.5 bg-base-1 border border-border focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition"
+                                />
+                              ) : (
+                                <div className="w-full min-h-[96px] p-2.5 bg-base-1 border border-border rounded-sm">
+                                  <MarkdownPreview
+                                    content={newCommentText}
+                                    emptyText="Nothing to preview. Type a comment in the Write tab."
+                                  />
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-between pt-2">
+                                <span className="text-[10px] text-text-muted font-mono">
+                                  Markdown is supported
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={handlePostComment}
+                                  disabled={!newCommentText.trim() || isPostingComment}
+                                  className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
+                                >
+                                  {isPostingComment ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Posting...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Send className="w-3 h-3" />
+                                      <span>Comment</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Right Sidebar Metadata Panel (col 4, GitHub style) */}
+                        <div className="lg:col-span-4 space-y-3">
+                          <div className="p-3.5 bg-base-0 border border-border rounded-sm space-y-3 shadow-2xs text-xs font-sans">
+                            {/* Reviewers */}
+                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                              <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-3.5 h-3.5 text-commito-coral" />
+                                  <span>Reviewers</span>
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-text-muted">No reviews requested</p>
+                            </div>
+
+                            {/* Assignees */}
+                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                              <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
+                                <span className="flex items-center gap-1">
+                                  <User className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span>Assignees</span>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <div className="w-4.5 h-4.5 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
+                                  @
+                                </div>
+                                <span className="font-mono text-text-primary text-[11.5px] font-semibold">
+                                  @{activeSelectedMr.author_name.replace(/\s+/g, '')}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Labels */}
+                            <div className="space-y-1 pb-2.5 border-b border-border/70">
+                              <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
+                                <span className="flex items-center gap-1">
+                                  <Tag className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>Labels</span>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                                <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[10px] font-mono font-semibold rounded-xs">
+                                  enhancement
+                                </span>
+                                <span className="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-semibold rounded-xs">
+                                  ready
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Status & Lifecycle Action */}
+                            <div className="space-y-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => handleCloseOrReopenPr(activeSelectedMr)}
+                                disabled={isClosingPr}
+                                className="w-full h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                              >
+                                {isClosingPr ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <XCircle className="w-3.5 h-3.5" />
+                                )}
+                                <span>
+                                  {activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened'
+                                    ? `Close ${requestTypeLabel}`
+                                    : `Reopen ${requestTypeLabel}`}
+                                </span>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Commits Sub-Tab */}
+                    {inspectorTab === 'commits' && (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-1 border-b border-border/70 text-xs">
+                          <span className="font-bold text-text-primary">
+                            {prCommits.length} Commits between <code className="text-commito-coral">{activeSelectedMr.source_branch}</code> and <code className="text-emerald-400">{activeSelectedMr.target_branch}</code>
+                          </span>
+                          <span className="text-text-muted font-mono text-[11px]">Git History</span>
+                        </div>
+
+                        {isLoadingBranchDiff ? (
+                          <div className="p-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-commito-coral" />
+                            <span>Comparing branch commits...</span>
+                          </div>
+                        ) : prCommits.length === 0 ? (
+                          <div className="p-8 text-center bg-base-0 border border-border rounded-sm text-xs text-text-muted space-y-1">
+                            <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
+                            <p className="font-bold text-text-primary">Branches are up to date</p>
+                            <p className="text-[11px]">No unique commits found in this branch comparison.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {prCommits.map((c) => (
+                              <div key={c.sha} className="p-3 bg-base-0 border border-border rounded-sm flex items-center justify-between gap-3 shadow-2xs hover:border-border-strong transition">
+                                <div className="space-y-1 min-w-0">
+                                  <h4 className="text-xs font-bold text-text-primary line-clamp-1">{c.message}</h4>
+                                  <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                                    <span className="font-semibold text-text-secondary">@{c.author_name}</span>
+                                    <span>•</span>
+                                    <span>{c.relative_date}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <span className="px-2 py-0.5 bg-base-1 border border-border text-commito-coral font-mono text-[10.5px] font-bold rounded-xs">
+                                    {c.short_sha}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(c.sha);
+                                      useToastStore.getState().showToast({
+                                        type: 'info',
+                                        title: 'SHA Copied',
+                                        message: `Copied ${c.short_sha} to clipboard`,
+                                      });
+                                    }}
+                                    className="p-1 text-text-muted hover:text-text-primary hover:bg-base-1 rounded transition cursor-pointer"
+                                    title="Copy full SHA"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Files Changed Sub-Tab with 2 View Modes (Unified & Split) */}
+                    {inspectorTab === 'files' && (
+                      <div className="space-y-3">
+                        {/* Header toolbar */}
+                        <div className="flex items-center justify-between pb-2 border-b border-border/70 text-xs flex-wrap gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-text-primary">
+                              Showing {prFiles.length} changed files
+                            </span>
+                            {(totalAdditions > 0 || totalDeletions > 0) && (
+                              <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-xs bg-base-0 border border-border shadow-2xs">
+                                {totalAdditions > 0 && <span className="text-emerald-400">+{totalAdditions}</span>}
+                                {totalDeletions > 0 && <span className="text-red-400">-{totalDeletions}</span>}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* 2 View Mode Switcher (Unified vs Split) */}
+                            <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5 shadow-2xs">
+                              <button
+                                type="button"
+                                onClick={() => setDiffViewMode('unified')}
+                                className={`px-2 py-1 rounded-xs text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                                  diffViewMode === 'unified'
+                                    ? 'bg-commito-coral text-white shadow-2xs'
+                                    : 'text-text-muted hover:text-text-primary'
+                                }`}
+                                title="Unified (Inline) Diff View"
+                              >
+                                <Rows3 className="w-3.5 h-3.5" />
+                                <span>Unified</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => setDiffViewMode('split')}
+                                className={`px-2 py-1 rounded-xs text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer ${
+                                  diffViewMode === 'split'
+                                    ? 'bg-commito-coral text-white shadow-2xs'
+                                    : 'text-text-muted hover:text-text-primary'
+                                }`}
+                                title="Split (Side-by-Side) Diff View"
+                              >
+                                <Columns2 className="w-3.5 h-3.5" />
+                                <span>Split</span>
+                              </button>
+                            </div>
+
+                            {/* Expand / Collapse All Button */}
+                            {prFiles.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={handleToggleExpandAll}
+                                className="h-7 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-[11px] font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
+                              >
+                                {openFilePaths.size === prFiles.length ? 'Collapse All' : 'Expand All'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {isLoadingBranchDiff ? (
+                          <div className="p-8 text-center text-xs text-text-muted flex items-center justify-center gap-2">
+                            <Loader2 className="w-4 h-4 animate-spin text-commito-coral" />
+                            <span>Computing file diffs...</span>
+                          </div>
+                        ) : prFiles.length === 0 ? (
+                          <div className="p-8 text-center bg-base-0 border border-border rounded-sm text-xs text-text-muted space-y-1">
+                            <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
+                            <p className="font-bold text-text-primary">No file changes</p>
+                            <p className="text-[11px]">No file modifications between these two branches.</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {prFiles.map((f) => {
+                              const isExpanded = openFilePaths.has(f.path);
+                              const isLoadingDiff = loadingFilePaths.has(f.path);
+                              const diffData = fileDiffCache[f.path];
+
+                              return (
+                                <div key={f.path} className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs">
+                                  {/* File Card Header */}
+                                  <div
+                                    onClick={() => handleToggleFileDiff(f.path)}
+                                    className="p-2.5 bg-base-1/80 hover:bg-base-1 border-b border-border/70 flex items-center justify-between gap-2 cursor-pointer select-none transition"
+                                  >
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      {isExpanded ? (
+                                        <ChevronDown className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                                      ) : (
+                                        <ChevronRight className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                                      )}
+                                      <FileCode className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                                      <span className="text-xs font-mono text-text-primary font-bold truncate">{f.path}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {/* Status Badge */}
+                                      <span
+                                        className={`px-1.5 py-0.2 text-[9.5px] font-mono font-bold uppercase rounded-xs border ${
+                                          f.status === 'added'
+                                            ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400'
+                                            : f.status === 'deleted'
+                                            ? 'bg-red-500/15 border-red-500/35 text-red-400'
+                                            : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                                        }`}
+                                      >
+                                        {f.status}
+                                      </span>
+
+                                      {/* Copy Path Button */}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => handleCopyFilePath(e, f.path)}
+                                        className="h-5 px-1.5 text-[10px] font-mono text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-xs flex items-center gap-1 transition cursor-pointer"
+                                        title="Copy file path"
+                                      >
+                                        {copiedFilePath === f.path ? (
+                                          <>
+                                            <Check className="w-2.5 h-2.5 text-emerald-400" />
+                                            <span className="text-emerald-400">Copied</span>
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-2.5 h-2.5" />
+                                            <span>Copy</span>
+                                          </>
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+
+                                  {/* Expanded File Diff viewer using UnifiedDiffView or SplitDiffView */}
+                                  {isExpanded && (
+                                    <div className="bg-base-0 max-h-[500px] overflow-auto">
+                                      {isLoadingDiff ? (
+                                        <div className="p-6 text-center text-text-muted flex items-center justify-center gap-2">
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
+                                          <span className="text-xs">Loading file diff...</span>
+                                        </div>
+                                      ) : diffData && diffData.lines.length > 0 ? (
+                                        diffViewMode === 'split' ? (
+                                          <SplitDiffView lines={diffData.lines} />
+                                        ) : (
+                                          <UnifiedDiffView lines={diffData.lines} />
+                                        )
+                                      ) : (
+                                        <div className="p-6 text-text-muted text-center font-mono text-xs">
+                                          No textual line changes detected.
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
                 <div className="p-12 text-center flex-1 flex flex-col items-center justify-center text-text-muted space-y-2">
                   <GitPullRequest className="w-8 h-8 text-text-faint mx-auto" />
-                  <p className="text-xs">Select a {requestTypeLabel.toLowerCase()} from the left to inspect or edit details</p>
+                  <p className="text-xs">Select a {requestTypeLabel.toLowerCase()} from the left to inspect or review details</p>
                 </div>
               )}
             </div>

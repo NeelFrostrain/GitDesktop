@@ -386,6 +386,96 @@ pub async fn update_merge_request(
     }
 }
 
+#[command]
+pub async fn get_branch_comparison(
+    repo_path: String,
+    base_branch: String,
+    head_branch: String,
+) -> Result<crate::git::history::BranchComparison, AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::history::get_branch_comparison(&repo_path, &base_branch, &head_branch)
+    })
+    .await
+    .map_err(|e| AppError::Git(e.to_string()))?
+}
+
+#[command]
+pub async fn get_pull_request_comments(
+    project_id: String,
+    mr_id: u64,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<Vec<crate::auth::github::PullRequestComment>, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.get_pull_request_comments(&clean_project_id, mr_id).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.get_merge_request_comments(&clean_project_id, mr_id).await
+    }
+}
+
+#[command]
+pub async fn add_pull_request_comment(
+    project_id: String,
+    mr_id: u64,
+    body: String,
+    server_url: Option<String>,
+    provider: Option<String>,
+) -> Result<crate::auth::github::PullRequestComment, AppError> {
+    let mut clean_project_id = project_id.trim().to_string();
+    let mut is_github = provider.as_deref() == Some("github");
+
+    if clean_project_id.starts_with("github.com/") {
+        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
+        is_github = true;
+    }
+    if server_url
+        .as_deref()
+        .map(|u| u.contains("github"))
+        .unwrap_or(false)
+    {
+        is_github = true;
+    }
+    if !is_github && provider.is_none() {
+        if let Some(a) = keyring::get_active_account() {
+            if a.provider == "github" {
+                is_github = true;
+            }
+        }
+    }
+
+    if is_github {
+        let client = get_github_client()?;
+        client.add_pull_request_comment(&clean_project_id, mr_id, &body).await
+    } else {
+        let client = get_gitlab_client(server_url)?;
+        client.add_merge_request_comment(&clean_project_id, mr_id, &body).await
+    }
+}
+
 /// Publish a local repo to GitLab or GitHub depending on active account provider.
 #[command]
 pub async fn publish_repository(

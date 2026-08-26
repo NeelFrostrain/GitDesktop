@@ -190,6 +190,28 @@ export interface UnifiedMergeRequest {
 }
 
 /**
+ * Pull request / merge request comment or review item.
+ */
+export interface PullRequestComment {
+  id: number;
+  author_name: string;
+  author_username: string;
+  author_avatar?: string;
+  body: string;
+  created_at: string;
+}
+
+/**
+ * Branch comparison between base and head branches.
+ */
+export interface BranchComparisonResult {
+  commits: CommitInfo[];
+  files: CommitFileStat[];
+  total_additions: number;
+  total_deletions: number;
+}
+
+/**
  * Action verb applied to a commit during interactive rebase.
  */
 export type RebaseCommitAction = 'pick' | 'reword' | 'edit' | 'squash' | 'fixup' | 'drop';

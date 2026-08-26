@@ -470,4 +470,19 @@ export class GitService {
   static async listRemotes(repoPath: string): Promise<RemoteInfo[]> {
     return invoke<RemoteInfo[]>('list_remotes_cmd', { repoPath });
   }
+
+  /**
+   * Compares two branches and returns the commits and changed files.
+   */
+  static async getBranchComparison(
+    repoPath: string,
+    baseBranch: string,
+    headBranch: string
+  ): Promise<import('../../types/git').BranchComparisonResult> {
+    return invoke<import('../../types/git').BranchComparisonResult>('get_branch_comparison', {
+      repoPath,
+      baseBranch,
+      headBranch,
+    });
+  }
 }
