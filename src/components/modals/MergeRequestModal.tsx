@@ -57,6 +57,7 @@ import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
+import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { UnifiedDiffView } from '../views/diff/UnifiedDiffView';
@@ -2369,13 +2370,14 @@ export const MergeRequestModal: React.FC = () => {
 
                             {/* Expand / Collapse All Button */}
                             {prFiles.length > 0 && (
-                              <button
+                              <Button
                                 type="button"
+                                variant="secondary"
+                                size="xs"
                                 onClick={handleToggleExpandAll}
-                                className="h-7 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-[11px] font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
                               >
                                 {openFilePaths.size === prFiles.length ? 'Collapse All' : 'Expand All'}
-                              </button>
+                              </Button>
                             )}
                           </div>
                         </div>
@@ -2520,53 +2522,52 @@ export const MergeRequestModal: React.FC = () => {
                   </span>
                 </button>
 
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     setActiveTab('list');
                     setEditingMr(null);
                   }}
                   disabled={isSavingEdit}
-                  className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   Cancel
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => handleSaveFullEdit()}
                   disabled={!editTitle.trim() || isSavingEdit}
-                  className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95 justify-center"
+                  isLoading={isSavingEdit}
+                  leftIcon={!isSavingEdit ? <Save className="w-3.5 h-3.5" /> : undefined}
                 >
-                  {isSavingEdit ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-3 h-3" />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-                </button>
+                  Save Changes
+                </Button>
               </>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={requestClose}
                   disabled={isSubmitting || isGeneratingAi}
-                  className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   Close
-                </button>
+                </Button>
 
                 {activeTab === 'create' && (
-                  <button
+                  <Button
                     type="button"
+                    variant="coral"
+                    size="sm"
                     onClick={handleCreateMergeRequest}
                     disabled={!title.trim() || isSubmitting || isGeneratingAi || sourceBranch === targetBranch || !!existingPrForSource}
+                    isLoading={isSubmitting}
+                    leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
                     title={
                       sourceBranch === targetBranch
                         ? 'Cannot submit pull request: Source and target branches are identical'
@@ -2574,20 +2575,9 @@ export const MergeRequestModal: React.FC = () => {
                         ? `A pull request (#${existingPrForSource.id}) already exists for '${sourceBranch}'`
                         : undefined
                     }
-                    className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 justify-center"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Publishing...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-3 h-3" />
-                        <span>Submit {requestTypeLabel}</span>
-                      </>
-                    )}
-                  </button>
+                    Submit {requestTypeLabel}
+                  </Button>
                 )}
               </>
             )}
@@ -2714,32 +2704,26 @@ export const MergeRequestModal: React.FC = () => {
 
               {/* Merge Modal Footer */}
               <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-border bg-base-1">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => !isMerging && setShowMergeModal(false)}
                   disabled={isMerging}
-                  className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="emerald"
+                  size="sm"
                   onClick={handleMergePr}
                   disabled={isMerging}
-                  className="h-7.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
+                  isLoading={isMerging}
+                  leftIcon={!isMerging ? <GitMerge className="w-3.5 h-3.5" /> : undefined}
                 >
-                  {isMerging ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Merging...</span>
-                    </>
-                  ) : (
-                    <>
-                      <GitMerge className="w-3.5 h-3.5" />
-                      <span>Confirm Merge</span>
-                    </>
-                  )}
-                </button>
+                  Confirm Merge
+                </Button>
               </div>
             </div>
           </div>

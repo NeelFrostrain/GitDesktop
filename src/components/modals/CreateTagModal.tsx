@@ -23,6 +23,7 @@ import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
+import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { TagInfo } from '../../types/git';
@@ -634,32 +635,26 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
             {/* Footer Actions */}
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={requestClose}
                 disabled={isSubmitting}
-                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
               >
                 Cancel
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="submit"
+                variant="coral"
+                size="sm"
                 disabled={isSubmitting || !tagName.trim()}
-                className="h-7.5 px-4 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95"
+                isLoading={isSubmitting}
+                leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
               >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Creating & Pushing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>Create Tag</span>
-                  </>
-                )}
-              </button>
+                Create Tag
+              </Button>
             </div>
           </form>
         ) : (
@@ -832,28 +827,27 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
                 {/* Manage Footer Actions */}
                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-border/80">
-                  <button
+                  <Button
                     type="button"
+                    variant="danger"
+                    size="sm"
                     onClick={handleDeleteTag}
                     disabled={isDeleting || isPushingExisting || !selectedExistingTag}
-                    className="h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                    isLoading={isDeleting}
+                    leftIcon={!isDeleting ? <Trash2 className="w-3.5 h-3.5" /> : undefined}
                   >
-                    {isDeleting ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-3.5 h-3.5" />
-                    )}
-                    <span>Delete Tag</span>
-                  </button>
+                    Delete Tag
+                  </Button>
 
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={onClose}
                     disabled={isDeleting || isPushingExisting}
-                    className="h-7.5 px-4 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                   >
                     Done
-                  </button>
+                  </Button>
                   </div>
                 </>
               )}

@@ -28,6 +28,7 @@ import { BranchInfo, UnifiedMergeRequest } from '../../types/git';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
 import { Tabs } from '../common/Tabs';
+import { Button } from '../common/Button';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -367,29 +368,27 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-xs group ${
+        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] active:scale-95 group ${
           isOpen
-            ? 'bg-base-2 border-commito-coral/60 ring-1 ring-commito-coral/20 text-text-primary'
-            : 'bg-base-2 hover:bg-base-2/90 border-border/70 hover:border-border-strong text-text-primary'
+            ? 'bg-gradient-to-b from-[#29272e] via-[#201e24] to-[#17161a] border-commito-coral/70 ring-1 ring-commito-coral/20 text-white'
+            : 'border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] text-zinc-200 hover:text-white'
         }`}
         title={`Current branch: ${currentBranch}`}
       >
-        <div className="w-4.5 h-4.5 rounded-xs bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-          <GitBranch className="w-3 h-3" />
-        </div>
-        <span className="truncate max-w-[130px] font-mono text-[11.5px] font-semibold text-text group-hover:text-commito-coral transition-colors">
+        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0 group-hover:scale-105 transition-transform" />
+        <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
           {currentBranch}
         </span>
 
         {currentPR && (
-          <span className="inline-flex items-center gap-0.5 text-[9.5px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
             <span>#{currentPR.iid || currentPR.id}</span>
-            <Check className="w-2.5 h-2.5" />
+            <Check className="w-2.5 h-2.5 text-emerald-400" />
           </span>
         )}
 
         <ChevronDown
-          className={`w-3 h-3 text-text-muted group-hover:text-text transition-transform duration-150 shrink-0 ${
+          className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
             isOpen ? 'rotate-180 text-commito-coral' : ''
           }`}
         />
@@ -464,28 +463,30 @@ export const BranchDropdown: React.FC = () => {
 
               {/* Action Button: New Branch vs. New PR */}
               {activeTab === 'branches' ? (
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => setShowCreateModal(true)}
-                  className="h-7.5 px-2.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-[11.5px] font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 active:scale-95 cursor-pointer"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
                   title="Create new branch from HEAD"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>New</span>
-                </button>
+                  New
+                </Button>
               ) : (
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => {
                     setIsOpen(false);
                     setIsMergeRequestModalOpen(true);
                   }}
-                  className="h-7.5 px-2.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-[11.5px] font-semibold flex items-center gap-1.5 transition-all shadow-xs shrink-0 active:scale-95 cursor-pointer"
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
                   title="Create Pull Request / Merge Request"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>New PR</span>
-                </button>
+                  New PR
+                </Button>
               )}
             </div>
 
@@ -914,21 +915,23 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Slim Footer */}
             <div className="px-3.5 py-1.5 min-h-[38px] bg-base-1/50 border-t border-border flex items-center justify-end gap-2 shrink-0">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowCreateModal(false)}
-                className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
+                variant="coral"
+                size="sm"
                 disabled={!newBranchName.trim() || isCreating}
-                className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
+                isLoading={isCreating}
               >
-                {isCreating && <Loader2 className="w-3 h-3 animate-spin" />}
-                <span>Create & Checkout</span>
-              </button>
+                Create & Checkout
+              </Button>
             </div>
           </form>
         </div>

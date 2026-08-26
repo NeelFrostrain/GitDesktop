@@ -35,18 +35,14 @@ function getButtonConfig(
   isFetching: boolean
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
-  const busyCls =
-    'px-2.5 py-1 rounded-sm bg-base-2 border border-border text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed select-none shadow-xs';
   const primaryCls =
-    'px-2.5 py-1 rounded-sm bg-commito-coral hover:bg-commito-coralLight text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
+    'h-7.5 px-2.5 rounded-sm bg-gradient-to-b from-[#ff5733] via-[#ff3b14] to-[#e62a04] hover:from-[#ff6e4d] hover:via-[#ff5733] hover:to-[#ff3b14] active:from-[#e62a04] active:to-[#bf2000] text-white text-xs font-bold flex items-center gap-1.5 transition border border-[#cc2500] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)] cursor-pointer active:scale-95';
   const secondaryCls =
-    'px-2.5 py-1 rounded-sm bg-gitlab-blue/90 hover:bg-gitlab-blue text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95';
-  const upToDateCls =
-    'px-2.5 py-1 rounded-sm border border-border bg-base-2 hover:bg-base-3 text-text-primary text-xs font-semibold flex items-center gap-1.5 cursor-pointer shadow-xs transition select-none active:scale-95';
+    'h-7.5 px-2.5 rounded-sm bg-gradient-to-b from-[#0091ff] via-[#0077ff] to-[#005be0] hover:from-[#38a9ff] hover:via-[#0091ff] hover:to-[#0077ff] active:from-[#005be0] active:to-[#0047b3] text-white text-xs font-bold flex items-center gap-1.5 transition border border-[#0052cc] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)] cursor-pointer active:scale-95';
   const mutedCls =
-    'px-2.5 py-1 rounded-sm border border-border bg-base-2 text-text-muted text-xs font-semibold flex items-center gap-1.5 cursor-default select-none shadow-xs';
+    'h-7.5 px-2.5 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] text-text-muted text-xs font-medium flex items-center gap-1.5 cursor-default select-none shadow-2xs';
   const warnCls =
-    'px-2.5 py-1 rounded-sm border border-git-conflict/40 bg-git-conflict-bg text-git-conflict text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-xs';
+    'h-7.5 px-2.5 rounded-sm border border-[#b45309] bg-gradient-to-b from-[#ffb300] via-[#f59e0b] to-[#d97706] text-white text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)]';
 
   if (!hasRepo) {
     return {
@@ -66,11 +62,15 @@ function getButtonConfig(
       : isFetching
       ? 'Fetching...'
       : 'Working...';
+    const busyVariantCls = isPulling
+      ? `${secondaryCls} opacity-90 cursor-wait active:scale-100`
+      : `${primaryCls} opacity-90 cursor-wait active:scale-100`;
+
     return {
-      icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />,
+      icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />,
       label: opLabel,
       tooltip: 'Git operation in progress',
-      className: busyCls,
+      className: busyVariantCls,
       disabled: true,
     };
   }
@@ -106,14 +106,14 @@ function getButtonConfig(
       return {
         icon: (
           <RefreshCw
-            className={`w-3.5 h-3.5 text-commito-coral ${
+            className={`w-3.5 h-3.5 text-white ${
               isFetching ? 'animate-spin' : ''
             }`}
           />
         ),
         label: isFetching ? 'Fetching...' : 'Up to date',
         tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
-        className: upToDateCls,
+        className: primaryCls,
         disabled: false,
       };
     case 'no-upstream':
@@ -161,18 +161,16 @@ function DirtyWarningBanner() {
 /**
  * Animated bottom sweep progress line during active network operations.
  */
-function ProgressBar({ isPushing, isPulling }: { isPushing: boolean; isPulling: boolean }) {
-  const barColor = isPushing
-    ? 'bg-commito-coral'
-    : isPulling
-    ? 'bg-gitlab-blue'
-    : 'bg-commito-coral';
+function ProgressBar({ isPulling }: { isPulling: boolean }) {
+  const barColor = isPulling
+    ? 'bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.9)]'
+    : 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]';
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-[2px] overflow-hidden rounded-b-md bg-white/10">
+    <div className="absolute bottom-0 left-0 right-0 h-[2.5px] overflow-hidden rounded-b-sm bg-black/35">
       <div
         style={{ animation: 'progress-sweep 1.2s ease-in-out infinite' }}
-        className={`h-full w-2/5 ${barColor} rounded-full`}
+        className={`h-full w-1/2 ${barColor} rounded-full`}
       />
     </div>
   );
@@ -236,7 +234,7 @@ export const SmartGitActionButton: React.FC = () => {
           <span>{config.label}</span>
         </button>
 
-        {isBusy && <ProgressBar isPushing={isPushing} isPulling={isPulling} />}
+        {isBusy && <ProgressBar isPulling={isPulling} />}
       </div>
     </div>
   );

@@ -4,7 +4,6 @@ import {
   FilePlus,
   FolderPlus,
   X,
-  Loader2,
   Folder,
   AlertCircle,
   FileCode,
@@ -15,6 +14,7 @@ import { useAppLogStore } from '../../core/logging/logStore';
 import { GitService } from '../../services/git/gitService';
 import { SystemService } from '../../services/system/systemService';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Button } from '../common/Button';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface CreateItemModalProps {
@@ -226,43 +226,26 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
 
           {/* Slim Footer Actions */}
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={requestClose}
-              className="h-6.5 px-3 rounded-sm bg-base-0 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border text-xs font-medium transition cursor-pointer shadow-2xs"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
+              variant={isFile ? 'coral' : 'emerald'}
+              size="sm"
               disabled={!cleanPath || isSubmitting}
-              className={`h-6.5 px-3.5 rounded-sm font-semibold text-xs transition flex items-center gap-1.5 shadow-2xs cursor-pointer ${
-                cleanPath && !isSubmitting
-                  ? isFile
-                    ? 'bg-commito-coral hover:bg-commito-coralHover text-white active:scale-[0.98]'
-                    : 'bg-git-added hover:bg-git-added/90 text-white active:scale-[0.98]'
-                  : 'bg-base-1 text-text-faint border border-border opacity-50 cursor-not-allowed'
-              }`}
+              isLoading={isSubmitting}
+              leftIcon={!isSubmitting ? (isFile ? <FilePlus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />) : undefined}
+              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
             >
-              {isSubmitting ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : isFile ? (
-                <FilePlus className="w-3 h-3" />
-              ) : (
-                <FolderPlus className="w-3 h-3" />
-              )}
-              <span>
-                {isSubmitting
-                  ? isFile
-                    ? 'Creating...'
-                    : 'Creating...'
-                  : isFile
-                  ? 'Create File'
-                  : 'Create Folder'}
-              </span>
-              {!isSubmitting && <CornerDownLeft className="w-3 h-3 opacity-60" />}
-            </button>
+              {isFile ? 'Create File' : 'Create Folder'}
+            </Button>
           </div>
         </form>
       </div>

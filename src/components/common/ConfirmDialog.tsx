@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { AlertTriangle, Info, AlertCircle, Loader2, X, Check, Trash2 } from 'lucide-react';
+import { AlertTriangle, Info, AlertCircle, X, Check, Trash2 } from 'lucide-react';
+import { Button } from './Button';
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -137,42 +138,42 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
           </p>
         </div>
 
-        {/* Slim Footer Actions */}
-        <div className="px-3.5 py-2 bg-base-1 border-t border-border flex items-center justify-between gap-2 shrink-0 min-h-[38px]">
-          <button
+        {/* Slim Footer Actions with 3D Glossy Buttons */}
+        <div className="px-3.5 py-2.5 bg-base-1 border-t border-border flex items-center justify-between gap-2 shrink-0 min-h-[42px]">
+          <Button
             type="button"
+            variant="danger"
+            size="sm"
             onClick={onDiscard}
             disabled={isSaving}
-            className="h-6.5 px-3 rounded-sm bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs active:scale-95"
+            leftIcon={<Trash2 className="w-3.5 h-3.5" />}
           >
-            <Trash2 className="w-3 h-3" />
-            <span>{discardText}</span>
-          </button>
+            {discardText}
+          </Button>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={onCancel}
               disabled={isSaving}
-              className="h-6.5 px-3 rounded-sm bg-base-0 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border text-xs font-medium transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               {cancelText}
-            </button>
+            </Button>
 
             {onSave && saveText && (
-              <button
+              <Button
                 type="button"
+                variant="coral"
+                size="sm"
                 onClick={onSave}
                 disabled={isSaving}
-                className="h-6.5 px-3.5 rounded-sm bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs active:scale-95"
+                isLoading={isSaving}
+                leftIcon={!isSaving ? <Check className="w-3.5 h-3.5" /> : undefined}
               >
-                {isSaving ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Check className="w-3 h-3" />
-                )}
-                <span>{saveText}</span>
-              </button>
+                {saveText}
+              </Button>
             )}
           </div>
         </div>

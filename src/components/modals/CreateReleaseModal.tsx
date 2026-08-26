@@ -35,6 +35,7 @@ import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
+import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { ReleaseInfo } from '../../types/git';
@@ -1483,51 +1484,44 @@ function compareSemverDescending(a: string, b: string): number {
                 );
               })()
             ) : isEditingExistingRelease ? (
-              <button
+              <Button
                 type="button"
+                variant="danger"
+                size="sm"
                 onClick={handleDeleteRelease}
                 disabled={isSubmitting || isDeleting}
-                className="h-6.5 px-2.5 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                isLoading={isDeleting}
+                leftIcon={!isDeleting ? <Trash2 className="w-3.5 h-3.5" /> : undefined}
                 title="Permanently delete this release and remove release tag"
               >
-                {isDeleting ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <Trash2 className="w-3 h-3" />
-                )}
-                <span>Delete Release</span>
-              </button>
+                Delete Release
+              </Button>
             ) : null}
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={requestClose}
               disabled={isSubmitting || isDeleting}
-              className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="button"
+              variant="coral"
+              size="sm"
               onClick={handleSubmit}
               disabled={isSubmitting || isDeleting}
-              className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 min-w-[130px] justify-center"
+              isLoading={isSubmitting}
+              leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
+              className="min-w-[130px]"
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>{getSubmitButtonLabel()}</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-3 h-3" />
-                  <span>{getSubmitButtonLabel()}</span>
-                </>
-              )}
-            </button>
+              {getSubmitButtonLabel()}
+            </Button>
           </div>
         </div>
       </div>

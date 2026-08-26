@@ -12,7 +12,6 @@ import {
   Key,
   HelpCircle,
   ExternalLink,
-  Loader2,
 } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useCommitForm } from '../../../hooks/useCommitForm';
@@ -21,6 +20,7 @@ import { useLogStore } from '../../../store/useLogStore';
 import { useSettingsStore } from '../../../features/settings/store/useSettingsStore';
 import { GitService } from '../../../services/git/gitService';
 import { UserAvatar } from '../../common/UserAvatar';
+import { Button } from '../../common/Button';
 import { AiGenerateButton } from './AiGenerateButton';
 import { CoAuthorButton } from './CoAuthorButton';
 import { CommitActions } from './CommitActions';
@@ -382,24 +382,16 @@ export const CommitPanel: React.FC = () => {
                       <ExternalLink className="w-2.5 h-2.5" />
                     </button>
                   </div>
-
-                  <button
+                  <Button
                     type="submit"
+                    variant="coral"
+                    size="sm"
                     disabled={!newApiKeyInput.trim() || isInlineGenerating}
-                    className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                    isLoading={isInlineGenerating}
+                    leftIcon={!isInlineGenerating ? <Check className="w-3.5 h-3.5" /> : undefined}
                   >
-                    {isInlineGenerating ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Generating...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Save &amp; Generate</span>
-                      </>
-                    )}
-                  </button>
+                    Save &amp; Generate
+                  </Button>
                 </div>
               </form>
             </div>
@@ -448,7 +440,8 @@ export const CommitPanel: React.FC = () => {
                         : 'Summary Only'}
                   </span>
                 </div>
-                <div className="flex rounded-sm border border-border bg-base-0 p-0.5 select-none gap-0.5">
+
+                <div className="flex items-center gap-1 bg-base-0 p-0.5 rounded border border-border">
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('report')}
@@ -456,7 +449,7 @@ export const CommitPanel: React.FC = () => {
                       ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
                       : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
                       }`}
-                    title="Include full technical report in commit description"
+                    title="Include rich technical report in commit description"
                   >
                     <FileText className="w-3 h-3 flex-shrink-0" />
                     <span>Report</span>
@@ -492,23 +485,25 @@ export const CommitPanel: React.FC = () => {
 
               {/* Action Toolbar */}
               <div className="flex items-center justify-between pt-1 border-t border-border/60 text-xs">
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => setIsSelectingAi(false)}
-                  className="px-2 py-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm flex items-center gap-1 cursor-pointer transition text-[11px]"
+                  leftIcon={<ArrowLeft className="w-3 h-3" />}
                 >
-                  <ArrowLeft className="w-3 h-3" />
-                  <span>Cancel</span>
-                </button>
+                  Cancel
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="coral"
+                  size="sm"
                   onClick={() => handleApplyAiSelection()}
-                  className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold shadow-xs flex items-center gap-1.5 cursor-pointer active:scale-95 transition"
+                  leftIcon={<Check className="w-3.5 h-3.5" />}
                 >
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Apply to Commit</span>
-                </button>
+                  Apply to Commit
+                </Button>
               </div>
             </div>
           ) : (
@@ -532,21 +527,24 @@ export const CommitPanel: React.FC = () => {
                     iconClassName="w-3 h-3"
                   />
                 </button>
-                <input
-                  type="text"
-                  autoFocus
-                  placeholder="Summary (required)"
-                  value={commitSummary}
-                  onChange={(e) => setCommitSummary(e.target.value)}
-                  onKeyDown={handleFormKeyDown}
-                  className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none font-sans font-medium transition"
-                />
+
+                <div className="flex-1 min-w-0 relative">
+                  <input
+                    type="text"
+                    placeholder="Commit summary (e.g. feat: add payment flow)"
+                    value={commitSummary}
+                    onChange={(e) => setCommitSummary(e.target.value)}
+                    onKeyDown={handleFormKeyDown}
+                    className="w-full px-2.5 py-1.5 bg-base-0 border border-border focus:border-border-strong rounded-sm text-xs font-medium text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs font-sans"
+                    autoFocus
+                  />
+                </div>
               </div>
 
-              {/* Row 2: Description Textarea */}
+              {/* Row 2: Commit Description (Optional) */}
               <textarea
-                placeholder="Description (optional)"
                 rows={4}
+                placeholder="Add an optional extended description / technical report..."
                 value={commitDescription}
                 onChange={(e) => setCommitDescription(e.target.value)}
                 onKeyDown={handleFormKeyDown}
@@ -575,15 +573,16 @@ export const CommitPanel: React.FC = () => {
           )}
 
           {/* Primary Commit Action Button */}
-          <button
+          <Button
+            type="button"
+            variant={canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0 ? 'coral' : 'secondary'}
+            size="md"
             onClick={onExecuteCommit}
             disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt || count === 0}
-            className={`w-full py-2 rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-xs ${canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0
-              ? 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer active:scale-[0.99]'
-              : 'bg-base-2 text-text-faint border border-border cursor-not-allowed'
-              }`}
+            isLoading={isCommitting}
+            leftIcon={!isCommitting ? <GitCommit className="w-3.5 h-3.5 flex-shrink-0" /> : undefined}
+            className="w-full justify-center"
           >
-            <GitCommit className="w-3.5 h-3.5 flex-shrink-0" />
             <span>
               {isCommitting
                 ? 'Committing...'
@@ -591,7 +590,7 @@ export const CommitPanel: React.FC = () => {
                   ? `Commit ${count} file${count > 1 ? 's' : ''} to ${currentBranch}`
                   : 'No staged files to commit'}
             </span>
-          </button>
+          </Button>
         </div>
       )}
 

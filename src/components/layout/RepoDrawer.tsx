@@ -262,17 +262,17 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Sleek Horizontal Action Buttons */}
+          {/* Sleek Horizontal Action Buttons with Unified 3D Obsidian Black Background */}
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={handleAddLocalRepo}
               disabled={isAddingLocal}
-              className="h-6.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs group disabled:opacity-50"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 disabled:opacity-50"
               title="Add an existing local Git repository folder"
             >
-              <FolderPlus className="w-3 h-3 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[10.5px] font-medium leading-none truncate">
+              <FolderPlus className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0" />
+              <span className="text-[11px] font-semibold truncate leading-none">
                 {isAddingLocal ? 'Adding...' : 'Add Local'}
               </span>
             </button>
@@ -280,21 +280,21 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleCreateNewRepo}
-              className="h-6.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs group"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
               title="Create a brand new Git repository"
             >
-              <PlusSquare className="w-3 h-3 text-blue-400 group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[10.5px] font-medium leading-none truncate">Create</span>
+              <PlusSquare className="w-3.5 h-3.5 text-sky-400 group-hover:scale-105 transition-transform flex-shrink-0" />
+              <span className="text-[11px] font-semibold truncate leading-none">Create</span>
             </button>
 
             <button
               type="button"
               onClick={handleCloneRepo}
-              className="h-6.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-2xs group"
+              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
               title="Clone repository from remote GitLab/GitHub"
             >
-              <Download className="w-3 h-3 text-commito-coral group-hover:scale-105 transition-transform flex-shrink-0" />
-              <span className="text-[10.5px] font-medium leading-none truncate">Clone</span>
+              <Download className="w-3.5 h-3.5 text-commito-coral group-hover:scale-105 transition-transform flex-shrink-0" />
+              <span className="text-[11px] font-semibold truncate leading-none">Clone</span>
             </button>
           </div>
         </div>

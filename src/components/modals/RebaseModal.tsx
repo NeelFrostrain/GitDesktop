@@ -16,6 +16,7 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
+import { Button } from '../common/Button';
 
 /**
  * Modal dialogue for executing interactive rebase plans with custom commit action ordering
@@ -245,21 +246,24 @@ export const RebaseModal: React.FC = () => {
 
           {/* Modal Footer Controls */}
           <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setIsRebaseModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="coral"
+              size="sm"
               disabled={isSubmitting}
-              className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50"
+              isLoading={isSubmitting}
+              leftIcon={!isSubmitting ? <Play className="w-3.5 h-3.5 fill-current" /> : undefined}
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isSubmitting ? 'Rebasing...' : 'Execute Rebase Plan'}</span>
-            </button>
+              Execute Rebase Plan
+            </Button>
           </div>
         </form>
       </div>

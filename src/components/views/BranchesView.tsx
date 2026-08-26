@@ -16,6 +16,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
+import { Button } from '../common/Button';
 
 /**
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
@@ -180,14 +181,15 @@ export const BranchesView: React.FC = () => {
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-commito-coral' : ''}`} />
           </button>
 
-          <button
+          <Button
             type="button"
+            variant="coral"
+            size="sm"
             onClick={() => setShowCreateModal(true)}
-            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-95"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>New Branch</span>
-          </button>
+            New Branch
+          </Button>
         </div>
       </div>
 
@@ -198,18 +200,21 @@ export const BranchesView: React.FC = () => {
           className="p-4 bg-base-2 border border-border/80 rounded-md space-y-3 shadow-md animate-in fade-in duration-100 ring-1 ring-black/20"
         >
           <div className="flex items-center gap-2">
-            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center">
-              <GitBranch className="w-3.5 h-3.5" />
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+              <Plus className="w-3.5 h-3.5" />
             </div>
-            <h3 className="text-xs font-bold text-text-primary">
-              Create Branch from Current HEAD
-            </h3>
+            <div>
+              <h3 className="text-xs font-bold text-text-primary">Create New Branch</h3>
+              <p className="text-[11px] text-text-muted">
+                Branch will be created from HEAD ({branches.find((b) => b.is_current)?.name || 'active branch'})
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <input
               type="text"
-              placeholder="e.g. feature/user-profile-v2"
+              placeholder="e.g. feature/awesome-thing"
               value={newBranchName}
               onChange={(e) => setNewBranchName(e.target.value)}
               className="flex-1 px-3 py-1.5 bg-base-1 border border-border/80 hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-mono shadow-inner"
@@ -217,21 +222,23 @@ export const BranchesView: React.FC = () => {
               required
             />
 
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={() => setShowCreateModal(false)}
-              className="px-3 py-1.5 bg-base-3 text-text-secondary rounded-sm text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
+              variant="coral"
+              size="sm"
               disabled={!newBranchName.trim()}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer active:scale-95 disabled:opacity-50"
             >
               Create & Checkout
-            </button>
+            </Button>
           </div>
         </form>
       )}

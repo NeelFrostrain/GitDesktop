@@ -25,6 +25,7 @@ import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { ReleaseService } from '../../services/git/releaseService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { Button } from '../common/Button';
 import { CreateTagModal } from '../modals/CreateTagModal';
 import { Dropdown } from '../common/Dropdown';
 import { MarkdownPreview } from '../common/MarkdownPreview';
@@ -286,24 +287,28 @@ export const TagsView: React.FC = () => {
 
           {/* New Release / New Tag Buttons */}
           {activeTab === 'releases' ? (
-            <button
+            <Button
+              type="button"
+              variant="coral"
+              size="sm"
               onClick={() => {
                 setEditingRelease(null);
                 setIsCreateReleaseModalOpen(true);
               }}
-              className="h-8 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Draft Release</span>
-            </button>
+              Draft Release
+            </Button>
           ) : (
-            <button
+            <Button
+              type="button"
+              variant="coral"
+              size="sm"
               onClick={() => setIsCreateTagModalOpen(true)}
-              className="h-8 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
             >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Create Tag</span>
-            </button>
+              Create Tag
+            </Button>
           )}
         </div>
       </div>
@@ -394,16 +399,18 @@ export const TagsView: React.FC = () => {
               </p>
             </div>
             {!filter && (
-              <button
+              <Button
+                type="button"
+                variant="coral"
+                size="sm"
                 onClick={() => {
                   setEditingRelease(null);
                   setIsCreateReleaseModalOpen(true);
                 }}
-                className="h-7.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Draft First Release</span>
-              </button>
+                Draft First Release
+              </Button>
             )}
           </div>
         ) : (
@@ -601,13 +608,15 @@ export const TagsView: React.FC = () => {
               </p>
             </div>
             {!filter && (
-              <button
+              <Button
+                type="button"
+                variant="coral"
+                size="sm"
                 onClick={() => setIsCreateTagModalOpen(true)}
-                className="h-7.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create First Tag</span>
-              </button>
+                Create First Tag
+              </Button>
             )}
           </div>
         ) : (

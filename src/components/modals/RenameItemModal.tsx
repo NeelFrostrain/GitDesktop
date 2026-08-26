@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import {
   Edit3,
   X,
-  Loader2,
   AlertCircle,
   CornerDownLeft,
 } from 'lucide-react';
@@ -14,6 +13,7 @@ import { useRepoStore } from '../../store/repoStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { Button } from '../common/Button';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface RenameItemModalProps {
@@ -208,32 +208,26 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
 
           {/* Slim Footer Actions */}
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={requestClose}
               disabled={isSubmitting}
-              className="h-6.5 px-3 rounded-sm border border-border bg-base-0 hover:bg-base-2 text-text-secondary hover:text-text-primary text-xs font-medium transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               Cancel
-            </button>
+            </Button>
 
-            <button
+            <Button
               type="submit"
+              variant="coral"
+              size="sm"
               disabled={isSubmitting || !cleanNewPath || cleanNewPath === cleanOldPath}
-              className="h-6.5 px-3.5 rounded-sm bg-commito-coral hover:bg-commito-coralHover text-white text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-2xs active:scale-95"
+              isLoading={isSubmitting}
+              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>Renaming...</span>
-                </>
-              ) : (
-                <>
-                  <span>Rename</span>
-                  <CornerDownLeft className="w-3 h-3 opacity-75" />
-                </>
-              )}
-            </button>
+              Rename
+            </Button>
           </div>
         </form>
       </div>

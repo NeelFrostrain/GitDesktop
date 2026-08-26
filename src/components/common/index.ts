@@ -1,5 +1,6 @@
 export { Badge } from './Badge';
 export { Button } from './Button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './Button';
 export { Input } from './Input';
 export { Checkbox } from '../common/Checkbox';
 export { Dropdown } from '../common/Dropdown';

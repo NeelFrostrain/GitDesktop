@@ -10,6 +10,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
 import { Checkbox } from '../common/Checkbox';
+import { Button } from '../common/Button';
 
 /**
  * Main view for inspecting, creating, applying, popping, and dropping Git stashes with live diff preview.
@@ -146,13 +147,15 @@ export const StashManagerView: React.FC = () => {
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
 
-          <button
+          <Button
+            type="button"
+            variant="coral"
+            size="sm"
             onClick={() => setShowCreateModal(true)}
-            className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+            leftIcon={<Plus className="w-3.5 h-3.5" />}
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Stash Changes</span>
-          </button>
+            Stash Changes
+          </Button>
         </div>
       </div>
 
@@ -181,19 +184,21 @@ export const StashManagerView: React.FC = () => {
             />
 
             <div className="flex items-center gap-2">
-              <button
+              <Button
                 type="button"
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowCreateModal(false)}
-                className="px-3 py-1 bg-base-3 text-text-secondary rounded-sm text-xs font-semibold hover:bg-base-1 transition cursor-pointer"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="submit"
-                className="px-4 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs cursor-pointer"
+                variant="coral"
+                size="sm"
               >
                 Save Stash
-              </button>
+              </Button>
             </div>
           </div>
         </form>
@@ -234,26 +239,30 @@ export const StashManagerView: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-1 flex-shrink-0">
-                    <button
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleApplyStash(s.index);
                       }}
-                      className="px-2 py-1 bg-base-3 hover:bg-base-0 border border-border rounded text-[11px] font-semibold text-text-secondary transition cursor-pointer"
                       title="Apply stash without removing from stack"
                     >
                       Apply
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="coral"
+                      size="xs"
                       onClick={(e) => {
                         e.stopPropagation();
                         handlePopStash(s.index);
                       }}
-                      className="px-2 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded text-[11px] font-bold transition shadow-xs cursor-pointer"
                       title="Pop stash (apply & drop)"
                     >
                       Pop
-                    </button>
+                    </Button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
