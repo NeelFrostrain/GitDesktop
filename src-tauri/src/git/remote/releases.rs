@@ -61,12 +61,37 @@ pub fn save_local_release_meta(
 
     let existing = load_local_release_meta(repo_path, tag_name);
     let meta = ReleaseMeta {
-        is_latest: is_latest.or_else(|| existing.as_ref().and_then(|e| e.is_latest)),
+        is_latest: if is_latest.is_some() { is_latest } else { existing.as_ref().and_then(|e| e.is_latest) },
         web_url: web_url.or_else(|| existing.as_ref().and_then(|e| e.web_url.clone())),
     };
 
     if let Ok(json) = serde_json::to_string_pretty(&meta) {
         let _ = std::fs::write(meta_path, json);
+    }
+
+    // If this release was explicitly marked as latest, ensure other releases are demoted
+    if is_latest == Some(true) {
+        let all_releases_dir = std::path::Path::new(repo_path).join(".git").join("releases");
+        if let Ok(entries) = std::fs::read_dir(all_releases_dir) {
+            for entry in entries.flatten() {
+                if let Ok(ft) = entry.file_type() {
+                    if ft.is_dir() {
+                        let other_tag = entry.file_name().to_string_lossy().to_string();
+                        if other_tag != tag_name {
+                            if let Some(mut other_meta) = load_local_release_meta(repo_path, &other_tag) {
+                                if other_meta.is_latest == Some(true) {
+                                    other_meta.is_latest = Some(false);
+                                    let other_meta_path = entry.path().join("meta.json");
+                                    if let Ok(json) = serde_json::to_string_pretty(&other_meta) {
+                                        let _ = std::fs::write(other_meta_path, json);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -281,6 +306,7 @@ pub fn create_release(
     push_immediately: bool,
     remote: Option<&str>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     file_paths: Option<&[String]>,
 ) -> Result<ReleaseInfo, AppError> {
     let mut cmd = silent_git_command();
@@ -317,9 +343,11 @@ pub fn create_release(
         super::tags::push_specific_tag(repo_path, remote, tag_name.trim())?;
     }
 
-    let is_prerelease = tag_name.to_lowercase().contains("beta")
-        || tag_name.to_lowercase().contains("alpha")
-        || tag_name.to_lowercase().contains("rc");
+    let is_pre = is_prerelease.unwrap_or_else(|| {
+        tag_name.to_lowercase().contains("beta")
+            || tag_name.to_lowercase().contains("alpha")
+            || tag_name.to_lowercase().contains("rc")
+    });
 
     let assets = if let Some(files) = file_paths {
         save_local_release_assets(repo_path, tag_name.trim(), files)
@@ -340,7 +368,7 @@ pub fn create_release(
         author_avatar: None,
         commit_sha: None,
         is_draft: Some(false),
-        is_prerelease: Some(is_prerelease),
+        is_prerelease: Some(is_pre),
         is_latest,
         upcoming_release: Some(false),
         web_url: None,
@@ -357,6 +385,7 @@ pub fn update_release(
     push_immediately: bool,
     remote: Option<&str>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     file_paths: Option<&[String]>,
 ) -> Result<ReleaseInfo, AppError> {
     let full_message = if !name.trim().is_empty() && !description.trim().is_empty() {
@@ -396,7 +425,9 @@ pub fn update_release(
 
     save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
 
-    let is_prerelease = tag_name.to_lowercase().contains("beta") || tag_name.to_lowercase().contains("rc");
+    let is_pre = is_prerelease.unwrap_or_else(|| {
+        tag_name.to_lowercase().contains("beta") || tag_name.to_lowercase().contains("rc")
+    });
 
     Ok(ReleaseInfo {
         id: Some(tag_name.to_string()),
@@ -409,7 +440,7 @@ pub fn update_release(
         author_avatar: None,
         commit_sha: None,
         is_draft: Some(false),
-        is_prerelease: Some(is_prerelease),
+        is_prerelease: Some(is_pre),
         is_latest,
         upcoming_release: Some(false),
         web_url: None,
@@ -545,6 +576,7 @@ pub async fn publish_release_to_remote_api(
     description: &str,
     remote: Option<&str>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     file_paths: Option<&[String]>,
 ) -> Result<(Option<String>, Vec<ReleaseAsset>), AppError> {
     let remote_name = remote.unwrap_or("origin");
@@ -570,9 +602,11 @@ pub async fn publish_release_to_remote_api(
         None => return Ok((None, Vec::new())),
     };
 
-    let is_prerelease = tag_name.to_lowercase().contains("beta")
-        || tag_name.to_lowercase().contains("alpha")
-        || tag_name.to_lowercase().contains("rc");
+    let is_pre = is_prerelease.unwrap_or_else(|| {
+        tag_name.to_lowercase().contains("beta")
+            || tag_name.to_lowercase().contains("alpha")
+            || tag_name.to_lowercase().contains("rc")
+    });
 
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(60))
@@ -604,7 +638,7 @@ pub async fn publish_release_to_remote_api(
                 let make_latest_val = match is_latest {
                     Some(true) => "true",
                     Some(false) => "false",
-                    None => if is_prerelease { "false" } else { "legacy" },
+                    None => if is_pre { "false" } else { "legacy" },
                 };
 
                 let create_url = format!("https://api.github.com/repos/{}/{}/releases", owner, repo_name);
@@ -613,7 +647,7 @@ pub async fn publish_release_to_remote_api(
                     "name": name,
                     "body": description,
                     "draft": false,
-                    "prerelease": is_prerelease,
+                    "prerelease": is_pre,
                     "make_latest": make_latest_val
                 });
 
@@ -623,6 +657,7 @@ pub async fn publish_release_to_remote_api(
                     .post(&create_url)
                     .header("User-Agent", "GitDesktop")
                     .header("Accept", "application/vnd.github+json")
+                    .header("X-GitHub-Api-Version", "2022-11-28")
                     .bearer_auth(token)
                     .json(&body)
                     .send()
@@ -641,6 +676,7 @@ pub async fn publish_release_to_remote_api(
                             .get(&tag_release_url)
                             .header("User-Agent", "GitDesktop")
                             .header("Accept", "application/vnd.github+json")
+                            .header("X-GitHub-Api-Version", "2022-11-28")
                             .bearer_auth(token)
                             .send()
                             .await;
@@ -661,6 +697,7 @@ pub async fn publish_release_to_remote_api(
                                         .patch(&update_url)
                                         .header("User-Agent", "GitDesktop")
                                         .header("Accept", "application/vnd.github+json")
+                                        .header("X-GitHub-Api-Version", "2022-11-28")
                                         .bearer_auth(token)
                                         .json(&update_body)
                                         .send()
@@ -711,6 +748,7 @@ pub async fn publish_release_to_remote_api(
                                 .post(&upload_url)
                                 .header("User-Agent", "GitDesktop")
                                 .header("Accept", "application/vnd.github+json")
+                                .header("X-GitHub-Api-Version", "2022-11-28")
                                 .header("Content-Type", "application/octet-stream")
                                 .bearer_auth(token)
                                 .body(data)
@@ -775,7 +813,7 @@ pub async fn publish_release_to_remote_api(
 
                 let released_at_val = match is_latest {
                     Some(true) => Some(chrono::Utc::now().to_rfc3339()),
-                    Some(false) => Some((chrono::Utc::now() - chrono::Duration::days(365)).to_rfc3339()),
+                    Some(false) => Some("1970-01-01T00:00:00Z".to_string()),
                     None => None,
                 };
 

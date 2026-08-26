@@ -33,27 +33,29 @@ export function Tabs<T extends string = string>({
   iconOnly = false,
   ariaLabel,
 }: TabsProps<T>) {
+  const isFullHeight = className.includes('h-full');
+
   const sizeClasses = {
-    xs: iconOnly ? 'w-6 h-5.5 px-0' : 'h-5.5 px-2 text-[10.5px]',
-    sm: iconOnly ? 'w-6.5 h-6.5 px-0' : 'h-6.5 px-2.5 text-[11px]',
-    md: iconOnly ? 'w-7.5 h-7.5 px-0' : 'h-7.5 px-3 text-xs',
+    xs: iconOnly ? 'w-6 h-5.5 px-0' : `${isFullHeight ? 'h-full' : 'h-5.5'} px-2 text-[10.5px]`,
+    sm: iconOnly ? 'w-6.5 h-6.5 px-0' : `${isFullHeight ? 'h-full' : 'h-6.5'} px-2.5 text-[11px]`,
+    md: iconOnly ? 'w-7.5 h-7.5 px-0' : `${isFullHeight ? 'h-full' : 'h-7.5'} px-3 text-xs`,
   };
 
   const getBadgeClasses = (item: TabItem<T>, isActive: boolean) => {
     const v = item.badgeVariant || (item.id === 'changes' || item.id === 'branches' ? 'coral' : 'emerald');
     if (v === 'coral') {
       return isActive
-        ? 'bg-commito-coral text-white font-bold'
-        : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/25 font-bold';
+        ? 'bg-commito-coral text-white border border-commito-coral'
+        : 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30';
     }
     if (v === 'emerald') {
-      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-bold';
+      return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30';
     }
     if (v === 'purple') {
-      return 'bg-purple-500/15 text-purple-300 border border-purple-500/30 font-bold';
+      return 'bg-purple-500/15 text-purple-300 border border-purple-500/30';
     }
     if (v === 'amber') {
-      return 'bg-amber-500/15 text-amber-400 border border-amber-500/30 font-bold';
+      return 'bg-amber-500/15 text-amber-400 border border-amber-500/30';
     }
     return isActive
       ? 'bg-base-3 text-text-primary border border-border'
@@ -110,16 +112,22 @@ export function Tabs<T extends string = string>({
               </span>
             )}
 
-            {!iconOnly && tab.label && <span className="truncate">{tab.label}</span>}
+            {!iconOnly && tab.label && (
+              <span className="truncate flex items-center justify-center leading-none">
+                {tab.label}
+              </span>
+            )}
 
             {!iconOnly && tab.badge !== undefined && tab.badge !== null && (
               <span
-                className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-xs text-[9.5px] font-mono leading-none text-center transition-colors ${getBadgeClasses(
+                className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-xs text-[9.5px] font-mono font-bold leading-none text-center select-none box-border ${getBadgeClasses(
                   tab,
                   isActive
                 )}`}
               >
-                {tab.badge}
+                <span className="flex items-center justify-center leading-none text-center">
+                  {tab.badge}
+                </span>
               </span>
             )}
           </button>

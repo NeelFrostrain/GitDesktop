@@ -24,6 +24,7 @@ export class ReleaseService {
     pushImmediately = true,
     remote?: string | null,
     isLatest?: boolean,
+    isPrerelease?: boolean,
     filePaths?: string[]
   ): Promise<ReleaseInfo> {
     return invoke<ReleaseInfo>('create_release_cmd', {
@@ -35,6 +36,7 @@ export class ReleaseService {
       pushImmediately,
       remote: remote || null,
       isLatest: isLatest ?? null,
+      isPrerelease: isPrerelease ?? null,
       filePaths: filePaths && filePaths.length > 0 ? filePaths : null,
     });
   }
@@ -50,6 +52,7 @@ export class ReleaseService {
     pushImmediately = true,
     remote?: string | null,
     isLatest?: boolean,
+    isPrerelease?: boolean,
     filePaths?: string[]
   ): Promise<ReleaseInfo> {
     return invoke<ReleaseInfo>('update_release_cmd', {
@@ -60,6 +63,7 @@ export class ReleaseService {
       pushImmediately,
       remote: remote || null,
       isLatest: isLatest ?? null,
+      isPrerelease: isPrerelease ?? null,
       filePaths: filePaths && filePaths.length > 0 ? filePaths : null,
     });
   }

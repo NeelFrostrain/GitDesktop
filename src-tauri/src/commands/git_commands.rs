@@ -555,6 +555,7 @@ pub async fn create_release_cmd(
     push_immediately: Option<bool>,
     remote: Option<String>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
     use tauri::Emitter;
@@ -593,6 +594,7 @@ pub async fn create_release_cmd(
             pi,
             rm.as_deref(),
             is_latest,
+            is_prerelease,
             fps.as_deref(),
         )
     })
@@ -608,6 +610,7 @@ pub async fn create_release_cmd(
             &description,
             remote.as_deref(),
             is_latest,
+            is_prerelease,
             file_paths.as_deref(),
         )
         .await
@@ -649,6 +652,7 @@ pub async fn update_release_cmd(
     push_immediately: Option<bool>,
     remote: Option<String>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     file_paths: Option<Vec<String>>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
     use tauri::Emitter;
@@ -685,6 +689,7 @@ pub async fn update_release_cmd(
             pi,
             rm.as_deref(),
             is_latest,
+            is_prerelease,
             fps.as_deref(),
         )
     })
@@ -700,6 +705,7 @@ pub async fn update_release_cmd(
             &description,
             remote.as_deref(),
             is_latest,
+            is_prerelease,
             file_paths.as_deref(),
         )
         .await

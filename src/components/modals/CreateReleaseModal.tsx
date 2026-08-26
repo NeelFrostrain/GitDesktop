@@ -395,6 +395,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           pushImmediately,
           selectedRemote || null,
           isLatest,
+          isPrerelease,
           filePaths
         );
 
@@ -414,6 +415,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           pushImmediately,
           selectedRemote || null,
           isLatest,
+          isPrerelease,
           filePaths
         );
 
