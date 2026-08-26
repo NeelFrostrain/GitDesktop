@@ -13,6 +13,8 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore } from '../../store/repoStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface RenameItemModalProps {
   isOpen: boolean;
@@ -36,6 +38,15 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const cleanOldPath = filePath.trim();
+  const cleanNewPath = newPathInput.trim().replace(/^[/\\]+/, '');
+  const isDirty = cleanNewPath !== '' && cleanNewPath !== cleanOldPath;
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
+
   useEffect(() => {
     if (isOpen) {
       setNewPathInput(filePath);
@@ -57,9 +68,6 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
   }, [isOpen, filePath]);
 
   if (!isOpen) return null;
-
-  const cleanOldPath = filePath.trim();
-  const cleanNewPath = newPathInput.trim().replace(/^[/\\]+/, '');
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -114,7 +122,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && !isSubmitting) {
-      onClose();
+      requestClose();
     }
   };
 
@@ -122,7 +130,9 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
     <div
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-100 font-sans select-none"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting) onClose();
+        if (e.target === e.currentTarget && !isSubmitting) {
+          requestClose();
+        }
       }}
       onKeyDown={handleKeyDown}
     >
@@ -146,7 +156,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
           </div>
 
           <button
-            onClick={onClose}
+            onClick={requestClose}
             disabled={isSubmitting}
             className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50 shrink-0"
             title="Close (Esc)"
@@ -200,7 +210,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               disabled={isSubmitting}
               className="h-6.5 px-3 rounded-sm border border-border bg-base-0 hover:bg-base-2 text-text-secondary hover:text-text-primary text-xs font-medium transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
@@ -227,6 +237,20 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Unsaved Rename Target"
+        description={`You have entered an unsaved new path "${cleanNewPath}". If you discard, the file will remain named "${cleanOldPath}".`}
+        discardText="Discard Changes"
+        saveText={cleanNewPath && cleanNewPath !== cleanOldPath ? 'Rename File' : undefined}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => handleSubmit()}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );

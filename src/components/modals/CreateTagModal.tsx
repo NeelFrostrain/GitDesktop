@@ -23,6 +23,8 @@ import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { TagInfo } from '../../types/git';
 
 export interface CreateTagModalProps {
@@ -72,6 +74,19 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Track unsaved form edits
+  const isDirty = useMemo(() => {
+    if (tagMode === 'new') {
+      return tagName.trim() !== '' || tagMessage.trim() !== '' || customCommitSha.trim() !== '';
+    }
+    return false;
+  }, [tagMode, tagName, tagMessage, customCommitSha]);
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
 
   const fetchRemoteTags = async () => {
     if (!activeRepoPath || isFetchingRemote) return;
@@ -409,7 +424,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && !isSubmitting && !isDeleting && !isPushingExisting) {
-      onClose();
+      requestClose();
     }
   };
 
@@ -417,7 +432,9 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     <div
       className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none font-sans animate-in fade-in duration-100"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting && !isDeleting && !isPushingExisting) onClose();
+        if (e.target === e.currentTarget && !isSubmitting && !isDeleting && !isPushingExisting) {
+          requestClose();
+        }
       }}
       onKeyDown={handleKeyDown}
     >
@@ -467,7 +484,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
             />
 
             <button
-              onClick={onClose}
+              onClick={requestClose}
               disabled={isSubmitting || isDeleting || isPushingExisting}
               className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
               title="Close (Esc)"
@@ -619,7 +636,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/80">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 disabled={isSubmitting}
                 className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
               >
@@ -837,12 +854,28 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                   >
                     Done
                   </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Unsaved Tag Changes"
+        description="You have unsaved changes in this tag. If you leave now, your tag name and message will be discarded."
+        discardText="Discard Changes"
+        saveText={tagName.trim() ? 'Create Tag' : undefined}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => {
+          handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+        }}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );

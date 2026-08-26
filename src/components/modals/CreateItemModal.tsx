@@ -14,6 +14,8 @@ import { useGitStore } from '../../store/useGitStore';
 import { useAppLogStore } from '../../core/logging/logStore';
 import { GitService } from '../../services/git/gitService';
 import { SystemService } from '../../services/system/systemService';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 export interface CreateItemModalProps {
   isOpen: boolean;
@@ -38,6 +40,13 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const isDirty = pathInput.trim() !== '';
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -108,9 +117,19 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none">
+    <div
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting) {
+          requestClose();
+        }
+      }}
+      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
+    >
       {/* Modal Dialog Card */}
-      <div className="w-full max-w-[390px] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100">
+      <div
+        className="w-full max-w-[390px] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Compact 1-Row Header */}
         <div className="px-3.5 py-2 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 min-w-0">
@@ -136,7 +155,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
             title="Close (Esc)"
           >
@@ -209,7 +228,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
           <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               className="h-6.5 px-3 rounded-sm bg-base-0 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border text-xs font-medium transition cursor-pointer shadow-2xs"
             >
               Cancel
@@ -247,6 +266,20 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={`Unsaved ${isFile ? 'File' : 'Folder'} Path`}
+        description={`You have entered an unsaved path "${cleanPath}". If you discard, this will not be created.`}
+        discardText="Discard Changes"
+        saveText={cleanPath ? `Create ${isFile ? 'File' : 'Folder'}` : undefined}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => handleSubmit()}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );

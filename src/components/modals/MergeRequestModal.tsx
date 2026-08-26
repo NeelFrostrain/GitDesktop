@@ -57,6 +57,8 @@ import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { UnifiedDiffView } from '../views/diff/UnifiedDiffView';
 import { SplitDiffView } from '../views/diff/SplitDiffView';
 
@@ -151,6 +153,26 @@ export const MergeRequestModal: React.FC = () => {
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Track unsaved form edits
+  const isDirty = useMemo(() => {
+    if (activeTab === 'create') {
+      return title.trim() !== '' || description.trim() !== '';
+    }
+    if (activeTab === 'edit' && editingMr) {
+      return (
+        editTitle !== (editingMr.title || '') ||
+        editDescription !== (editingMr.description || '') ||
+        editTargetBranch !== (editingMr.target_branch || '')
+      );
+    }
+    return false;
+  }, [activeTab, title, description, editingMr, editTitle, editDescription, editTargetBranch]);
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose: () => setIsMergeRequestModalOpen(false),
+  });
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -985,7 +1007,7 @@ export const MergeRequestModal: React.FC = () => {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && !isSubmitting && !isGeneratingAi && !isSavingEdit && !isPostingComment) {
-      setIsMergeRequestModalOpen(false);
+      requestClose();
     }
   };
 
@@ -997,6 +1019,11 @@ export const MergeRequestModal: React.FC = () => {
       aria-modal="true"
       aria-labelledby="merge-request-modal-title"
       onKeyDown={handleKeyDown}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting && !isGeneratingAi && !isSavingEdit && !isPostingComment) {
+          requestClose();
+        }
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
@@ -1063,7 +1090,7 @@ export const MergeRequestModal: React.FC = () => {
             )}
 
             <button
-              onClick={() => setIsMergeRequestModalOpen(false)}
+              onClick={requestClose}
               disabled={isSubmitting || isSavingEdit}
               className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
               title="Close (Esc)"
@@ -2528,7 +2555,7 @@ export const MergeRequestModal: React.FC = () => {
               <>
                 <button
                   type="button"
-                  onClick={() => setIsMergeRequestModalOpen(false)}
+                  onClick={requestClose}
                   disabled={isSubmitting || isGeneratingAi}
                   className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
@@ -2718,6 +2745,26 @@ export const MergeRequestModal: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title={`Unsaved ${requestTypeLabel} Changes`}
+        description={`You have unsaved changes in this ${requestTypeLabel.toLowerCase()} draft. If you leave now, your title, description, and settings will be discarded.`}
+        discardText="Discard Changes"
+        saveText={activeTab === 'create' ? (title.trim() ? `Create ${requestTypeLabel}` : undefined) : 'Save Changes'}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting || isSavingEdit}
+        onDiscard={confirmDiscard}
+        onSave={() => {
+          if (activeTab === 'create') {
+            handleCreateMergeRequest({ preventDefault: () => {} } as React.FormEvent);
+          } else if (activeTab === 'edit') {
+            handleSaveFullEdit();
+          }
+        }}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );

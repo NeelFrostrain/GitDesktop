@@ -35,6 +35,8 @@ import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { ReleaseInfo } from '../../types/git';
 
 export interface CreateReleaseModalProps {
@@ -142,6 +144,47 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   }, [initialRelease, tagSource, selectedExistingTag, releases]);
 
   const isEditingExistingRelease = Boolean(activeExistingRelease);
+
+  // Track unsaved dirty form changes
+  const isDirty = useMemo(() => {
+    if (tagSource === 'new') {
+      return (
+        tagName.trim() !== '' ||
+        releaseName.trim() !== '' ||
+        description.trim() !== '' ||
+        attachedFiles.length > 0
+      );
+    } else {
+      if (activeExistingRelease) {
+        return (
+          releaseName !== (activeExistingRelease.name || '') ||
+          description !== (activeExistingRelease.description || '') ||
+          isPrerelease !== Boolean(activeExistingRelease.is_prerelease) ||
+          isLatest !== Boolean(activeExistingRelease.is_latest) ||
+          attachedFiles.length !== (activeExistingRelease.assets?.length || 0)
+        );
+      }
+      return (
+        releaseName.trim() !== '' ||
+        description.trim() !== '' ||
+        attachedFiles.length > 0
+      );
+    }
+  }, [
+    tagSource,
+    tagName,
+    releaseName,
+    description,
+    attachedFiles,
+    isPrerelease,
+    isLatest,
+    activeExistingRelease,
+  ]);
+
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
 
   // Listen to Tauri release progress events
   useEffect(() => {
@@ -752,7 +795,7 @@ function compareSemverDescending(a: string, b: string): number {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape' && !isSubmitting && !isDeleting) {
-      onClose();
+      requestClose();
     }
   };
 
@@ -801,6 +844,11 @@ function compareSemverDescending(a: string, b: string): number {
       aria-modal="true"
       aria-labelledby="create-release-title"
       onKeyDown={handleKeyDown}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isSubmitting && !isDeleting) {
+          requestClose();
+        }
+      }}
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
@@ -837,7 +885,7 @@ function compareSemverDescending(a: string, b: string): number {
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             disabled={isSubmitting || isDeleting}
             className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
             title="Close (Esc)"
@@ -1455,7 +1503,7 @@ function compareSemverDescending(a: string, b: string): number {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={requestClose}
               disabled={isSubmitting || isDeleting}
               className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
@@ -1483,6 +1531,22 @@ function compareSemverDescending(a: string, b: string): number {
           </div>
         </div>
       </div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirm}
+        title="Unsaved Release Changes"
+        description="You have unsaved changes in this release. If you leave now, your notes, files, and tag configurations will be lost."
+        discardText="Discard Changes"
+        saveText={tagSource === 'new' ? (tagName.trim() ? 'Save & Push' : undefined) : 'Save Changes'}
+        cancelText="Keep Editing"
+        isSaving={isSubmitting}
+        onDiscard={confirmDiscard}
+        onSave={() => {
+          handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+        }}
+        onCancel={cancelDiscard}
+      />
     </div>,
     document.body
   );
