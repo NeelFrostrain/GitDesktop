@@ -153,14 +153,16 @@ pub fn push_specific_tag(
     apply_git_auth_args_pub(&mut cmd, &auth_info);
 
     let remote_name = remote.unwrap_or("origin");
-    cmd.arg("push").arg(remote_name).arg(tag_name);
+    let tag = tag_name.trim();
+    let refspec = format!("refs/tags/{}:refs/tags/{}", tag, tag);
+    cmd.arg("push").arg(remote_name).arg("--force").arg(&refspec);
 
     let output = cmd.output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(AppError::Git(format!(
             "Failed to push tag '{}' to '{}': {}",
-            tag_name,
+            tag,
             remote_name,
             stderr.trim()
         )));

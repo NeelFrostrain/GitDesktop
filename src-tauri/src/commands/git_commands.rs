@@ -555,19 +555,42 @@ pub async fn create_release_cmd(
     remote: Option<String>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
     let pi = push_immediately.unwrap_or(true);
-    tokio::task::spawn_blocking(move || {
+    let rp = repo_path.clone();
+    let tn = tag_name.clone();
+    let nm = name.clone();
+    let ds = description.clone();
+    let tr = target_ref.clone();
+    let rm = remote.clone();
+
+    let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::create_release(
+            &rp,
+            &tn,
+            &nm,
+            &ds,
+            tr.as_deref(),
+            pi,
+            rm.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    if pi {
+        if let Ok(Some(web_url)) = crate::git::remote::releases::publish_release_to_remote_api(
             &repo_path,
             &tag_name,
             &name,
             &description,
-            target_ref.as_deref(),
-            pi,
             remote.as_deref(),
         )
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+        .await
+        {
+            release_info.web_url = Some(web_url);
+        }
+    }
+
+    Ok(release_info)
 }
 
 #[command]
@@ -580,18 +603,40 @@ pub async fn update_release_cmd(
     remote: Option<String>,
 ) -> Result<crate::git::remote::releases::ReleaseInfo, AppError> {
     let pi = push_immediately.unwrap_or(true);
-    tokio::task::spawn_blocking(move || {
+    let rp = repo_path.clone();
+    let tn = tag_name.clone();
+    let nm = name.clone();
+    let ds = description.clone();
+    let rm = remote.clone();
+
+    let mut release_info = tokio::task::spawn_blocking(move || {
         crate::git::remote::releases::update_release(
+            &rp,
+            &tn,
+            &nm,
+            &ds,
+            pi,
+            rm.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))??;
+
+    if pi {
+        if let Ok(Some(web_url)) = crate::git::remote::releases::publish_release_to_remote_api(
             &repo_path,
             &tag_name,
             &name,
             &description,
-            pi,
             remote.as_deref(),
         )
-    })
-    .await
-    .map_err(|e| AppError::Unknown(e.to_string()))?
+        .await
+        {
+            release_info.web_url = Some(web_url);
+        }
+    }
+
+    Ok(release_info)
 }
 
 #[command]

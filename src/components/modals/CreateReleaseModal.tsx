@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Sparkles,
   X,
   Loader2,
   GitBranch,
@@ -217,7 +216,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     setError(null);
 
     try {
-      if (isEditMode) {
+      if (isEditMode || tagSource === 'existing') {
         await ReleaseService.updateRelease(
           activeRepoPath,
           finalTag,
@@ -227,11 +226,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           selectedRemote || null
         );
 
-        useLogStore.getState().addLog('success', 'Git', `Updated release '${finalTitle}' (${finalTag})`);
+        useLogStore.getState().addLog('success', 'Git', `Saved release '${finalTitle}' (${finalTag})`);
         useToastStore.getState().showToast({
           type: 'success',
-          title: 'Release Updated',
-          message: `Successfully updated release '${finalTitle}'`,
+          title: isEditMode ? 'Release Updated' : 'Release Published',
+          message: `Successfully published release '${finalTitle}' for tag ${finalTag}`,
         });
       } else {
         await ReleaseService.createRelease(
@@ -290,9 +289,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
-            </div>
             <div>
               <h3 className="font-bold text-xs text-text-primary leading-tight">
                 {isEditMode ? 'Edit Release' : 'Draft New Release'}
