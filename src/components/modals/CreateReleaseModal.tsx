@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
   Loader2,
-  GitBranch,
   Tag,
   Upload,
   AlertCircle,
@@ -31,6 +30,7 @@ import { useRemoteStore } from '../../store/remoteStore';
 import { ReleaseService } from '../../services/git/releaseService';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
@@ -193,7 +193,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
       ReleaseService.listReleases(activeRepoPath)
         .then((rList) => {
-          if (rList) setReleases(rList);
+          if (rList && rList.length > 0) {
+            setReleases(rList);
+            const targetTag = initialRelease?.tag_name || selectedExistingTag || rList[0]?.tag_name;
+            const updatedRel = rList.find((r) => r.tag_name === targetTag);
+            if (updatedRel && (tagSource === 'existing' || initialRelease)) {
+              loadReleaseData(updatedRel);
+            }
+          }
         })
         .catch(() => {});
 
@@ -201,10 +208,117 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     }
   }, [isOpen, activeRepoPath, setBranches, setTags, setReleases, loadRemotes]);
 
+/**
+ * Natural & Semantic version comparator in descending order (e.g. v2.6.0 > v2.5.8 > v2.5.1 > v1.0.0).
+ */
+function compareSemverDescending(a: string, b: string): number {
+  const parseSegments = (v: string) => {
+    const clean = v.trim().replace(/^[vV](\.|\-)?/, '');
+    return clean.split(/[-+.]/).map((s) => {
+      const num = Number(s);
+      return isNaN(num) ? s.toLowerCase() : num;
+    });
+  };
+
+  const aParts = parseSegments(a);
+  const bParts = parseSegments(b);
+  const maxLen = Math.max(aParts.length, bParts.length);
+
+  for (let i = 0; i < maxLen; i++) {
+    const pA = aParts[i];
+    const pB = bParts[i];
+
+    if (pA === undefined) return 1;
+    if (pB === undefined) return -1;
+
+    if (typeof pA === 'number' && typeof pB === 'number') {
+      if (pA !== pB) return pB - pA; // Descending
+    } else {
+      const strA = String(pA);
+      const strB = String(pB);
+      if (strA !== strB) return strB.localeCompare(strA);
+    }
+  }
+
+  return b.localeCompare(a);
+}
+
+  // Branch options for dropdown
+  const branchOptions = useMemo(() => {
+    return formatBranchDropdownOptions(branches);
+  }, [branches]);
+
+  // Tag options for existing tags dropdown with rich release metadata and SEMVER DESCENDING SORT
+  const tagOptions = useMemo(() => {
+    const tagMap = new Map<string, { name: string; sha?: string; message?: string; is_annotated?: boolean; release?: ReleaseInfo }>();
+    tags.forEach((t) => {
+      tagMap.set(t.name, { name: t.name, sha: t.sha, message: t.message, is_annotated: t.is_annotated });
+    });
+    releases.forEach((r) => {
+      const existing = tagMap.get(r.tag_name);
+      if (existing) {
+        existing.release = r;
+      } else {
+        tagMap.set(r.tag_name, { name: r.tag_name, release: r });
+      }
+    });
+
+    const items = Array.from(tagMap.values());
+
+    // Sort items:
+    // 1. Release with is_latest === true comes FIRST.
+    // 2. Then all releases & tags sorted in SEMVER / Version descending order (newest/highest version first).
+    items.sort((a, b) => {
+      if (a.release?.is_latest && !b.release?.is_latest) return -1;
+      if (!a.release?.is_latest && b.release?.is_latest) return 1;
+
+      // If both have releases with dates, sort by date descending
+      if (a.release?.created_at && b.release?.created_at && a.release.created_at !== b.release.created_at) {
+        return b.release.created_at.localeCompare(a.release.created_at);
+      }
+
+      // Semantic version / natural descending sort
+      return compareSemverDescending(a.name, b.name);
+    });
+
+    return items.map(({ name, sha, message, release }) => {
+      let badge: string | undefined = undefined;
+      if (release?.is_latest) {
+        badge = 'Latest';
+      } else if (release?.is_prerelease) {
+        badge = 'Pre-release';
+      } else if (release?.web_url || (release?.assets && release.assets.length > 0)) {
+        badge = 'Release';
+      } else if (sha) {
+        badge = sha.slice(0, 7);
+      }
+
+      const hasCustomName = release?.name && release.name !== name && !release.name.startsWith(`Release ${name}`);
+      const label = hasCustomName ? `${name} — ${release!.name}` : name;
+      const description = release?.description
+        ? release.description.split('\n')[0].slice(0, 55)
+        : message
+        ? message.split('\n')[0].slice(0, 55)
+        : undefined;
+
+      return {
+        value: name,
+        label,
+        description,
+        icon: release?.is_latest || release?.web_url || (release?.assets && release.assets.length > 0) ? (
+          <Package className="w-3.5 h-3.5 text-amber-400" />
+        ) : (
+          <Tag className="w-3.5 h-3.5 text-gitlab-teal" />
+        ),
+        badge,
+      };
+    });
+  }, [tags, releases]);
+
   // Load a release into form state
-  const loadReleaseData = (rel: ReleaseInfo) => {
+  const loadReleaseData = useCallback((rel: ReleaseInfo) => {
     setTagName(rel.tag_name);
-    setReleaseName(rel.name);
+    setReleaseName(rel.name || `Release ${rel.tag_name}`);
     setDescription(rel.description || '');
     setIsPrerelease(Boolean(rel.is_prerelease));
     setIsLatest(rel.is_latest ?? !rel.is_prerelease);
@@ -221,7 +335,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     } else {
       setAttachedFiles([]);
     }
-  };
+  }, []);
 
   // Reset form when modal opens or initialRelease changes
   useEffect(() => {
@@ -245,8 +359,9 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         setIsPrerelease(false);
         setIsLatest(true);
 
-        if (tags.length > 0) {
-          setSelectedExistingTag(tags[0].name);
+        const defaultTag = tagOptions[0]?.value || tags[0]?.name || '';
+        if (defaultTag) {
+          setSelectedExistingTag(defaultTag);
         }
 
         const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
@@ -263,58 +378,34 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         inputRef.current?.focus();
       }, 50);
     }
-  }, [isOpen, initialRelease, status?.current_branch, activeRemote, remotes]);
+  }, [isOpen, initialRelease, status?.current_branch, activeRemote, remotes, loadReleaseData, tagOptions, tags]);
 
-  // Branch options for dropdown
-  const branchOptions = useMemo(() => {
-    return branches.map((b) => ({
-      value: b.name,
-      label: b.name,
-      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
-      badge: b.is_current ? 'current' : undefined,
-    }));
-  }, [branches]);
-
-  // Tag options for existing tags dropdown with rich release metadata
-  const tagOptions = useMemo(() => {
-    const tagMap = new Map<string, { name: string; sha?: string; release?: ReleaseInfo }>();
-    tags.forEach((t) => {
-      tagMap.set(t.name, { name: t.name, sha: t.sha });
-    });
-    releases.forEach((r) => {
-      const existing = tagMap.get(r.tag_name);
-      if (existing) {
-        existing.release = r;
-      } else {
-        tagMap.set(r.tag_name, { name: r.tag_name, release: r });
+  // When in existing mode, automatically sync active release notes and assets when releases or selectedExistingTag updates
+  useEffect(() => {
+    if (!isOpen || tagSource !== 'existing') return;
+    const targetTag = selectedExistingTag || (tagOptions.length > 0 ? tagOptions[0].value : null);
+    if (targetTag) {
+      const matched = releases.find((r) => r.tag_name === targetTag);
+      if (matched) {
+        setTagName(matched.tag_name);
+        setReleaseName(matched.name || `Release ${matched.tag_name}`);
+        setDescription(matched.description || '');
+        setIsPrerelease(Boolean(matched.is_prerelease));
+        setIsLatest(matched.is_latest ?? !matched.is_prerelease);
+        if (matched.assets && matched.assets.length > 0) {
+          setAttachedFiles(
+            matched.assets.map((a) => ({
+              name: a.name,
+              path: a.url || a.direct_asset_url || a.name,
+              size: a.size,
+            }))
+          );
+        } else {
+          setAttachedFiles([]);
+        }
       }
-    });
-
-    return Array.from(tagMap.values()).map(({ name, sha, release }) => {
-      let badge: string | undefined = undefined;
-      if (release?.is_latest) {
-        badge = 'Latest';
-      } else if (release?.is_prerelease) {
-        badge = 'Pre-release';
-      } else if (release) {
-        badge = 'Release';
-      } else if (sha) {
-        badge = sha.slice(0, 7);
-      }
-
-      return {
-        value: name,
-        label: release ? `${name} — ${release.name || 'Release'}` : name,
-        description: release?.description ? release.description.slice(0, 48) : undefined,
-        icon: release ? (
-          <Package className="w-3.5 h-3.5 text-amber-400" />
-        ) : (
-          <Tag className="w-3.5 h-3.5 text-gitlab-teal" />
-        ),
-        badge,
-      };
-    });
-  }, [tags, releases]);
+    }
+  }, [isOpen, tagSource, selectedExistingTag, releases, tagOptions]);
 
   // Remote options for dropdown
   const remoteOptions = useMemo(() => {
@@ -740,15 +831,17 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     onChange={(t) => {
                       setTagSource(t);
                       setError(null);
-                      if (t === 'existing' && tags.length > 0) {
-                        const tagToSelect = selectedExistingTag || tags[0].name;
-                        setSelectedExistingTag(tagToSelect);
-                        const existingRel = releases.find((r) => r.tag_name === tagToSelect);
-                        if (existingRel) {
-                          loadReleaseData(existingRel);
-                        } else {
-                          setReleaseName(`Release ${tagToSelect}`);
-                          setAttachedFiles([]);
+                      if (t === 'existing') {
+                        const tagToSelect = selectedExistingTag || tagOptions[0]?.value || tags[0]?.name || '';
+                        if (tagToSelect) {
+                          setSelectedExistingTag(tagToSelect);
+                          const existingRel = releases.find((r) => r.tag_name === tagToSelect);
+                          if (existingRel) {
+                            loadReleaseData(existingRel);
+                          } else {
+                            setReleaseName(`Release ${tagToSelect}`);
+                            setAttachedFiles([]);
+                          }
                         }
                       } else if (t === 'new') {
                         setTagName('');

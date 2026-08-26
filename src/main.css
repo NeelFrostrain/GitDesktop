@@ -34,6 +34,11 @@
   --border-subtle: #201e22;           /* Subtle inner border / divider */
   --border-strong: #3d3a42;           /* Emphasized border / active focus */
 
+  /* --- Unified Scrollbars --- */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #3d3a42;
+  --scrollbar-thumb-hover: #5c5863;
+
   /* Legacy border aliases */
   --app-border: var(--border);
   --app-border-subtle: var(--border-subtle);
@@ -526,8 +531,13 @@
 }
 
 /* ==========================================================================
-   6. Scrollbars
+   6. Scrollbars (Universal Custom Styling & Windows Override)
    ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #3d3a42) var(--scrollbar-track, transparent);
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -536,16 +546,22 @@
 ::-webkit-scrollbar-track {
   width: 6px;
   height: 6px;
-  background: var(--scrollbar-track);
+  background: var(--scrollbar-track, transparent);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
-  border-radius: 2px;
+  background: var(--scrollbar-thumb, #3d3a42);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+  background: var(--scrollbar-thumb-hover, #5c5863);
+}
+
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 ::-webkit-scrollbar-corner {

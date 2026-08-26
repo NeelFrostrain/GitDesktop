@@ -12,6 +12,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { CommitInfo, BranchInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Checkbox } from '../common/Checkbox';
 import { Dropdown } from '../common/Dropdown';
 
@@ -136,7 +137,7 @@ export const CherryPickModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <GitBranch className="w-4 h-4 text-commito-coral flex-shrink-0" />
               <Dropdown
-                options={branches.map((b) => ({ value: b.name, label: b.name }))}
+                options={formatBranchDropdownOptions(branches)}
                 value={sourceBranch}
                 onChange={(val) => {
                   setSourceBranch(val);

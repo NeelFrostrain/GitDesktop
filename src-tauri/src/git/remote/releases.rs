@@ -40,7 +40,10 @@ pub struct ReleaseInfo {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ReleaseMeta {
+    pub name: Option<String>,
+    pub description: Option<String>,
     pub is_latest: Option<bool>,
+    pub is_prerelease: Option<bool>,
     pub web_url: Option<String>,
 }
 
@@ -48,7 +51,10 @@ pub struct ReleaseMeta {
 pub fn save_local_release_meta(
     repo_path: &str,
     tag_name: &str,
+    name: Option<String>,
+    description: Option<String>,
     is_latest: Option<bool>,
+    is_prerelease: Option<bool>,
     web_url: Option<String>,
 ) {
     let local_dir = std::path::Path::new(repo_path)
@@ -61,7 +67,10 @@ pub fn save_local_release_meta(
 
     let existing = load_local_release_meta(repo_path, tag_name);
     let meta = ReleaseMeta {
+        name: name.or_else(|| existing.as_ref().and_then(|e| e.name.clone())),
+        description: description.or_else(|| existing.as_ref().and_then(|e| e.description.clone())),
         is_latest: if is_latest.is_some() { is_latest } else { existing.as_ref().and_then(|e| e.is_latest) },
+        is_prerelease: if is_prerelease.is_some() { is_prerelease } else { existing.as_ref().and_then(|e| e.is_prerelease) },
         web_url: web_url.or_else(|| existing.as_ref().and_then(|e| e.web_url.clone())),
     };
 
@@ -200,16 +209,224 @@ pub fn save_local_release_assets(
     assets
 }
 
+/// Fetches releases from GitHub / GitLab remote if configured
+pub async fn fetch_remote_releases(repo_path: &str) -> Vec<ReleaseInfo> {
+    let remote_url_str = {
+        if let Ok(repo) = git2::Repository::open(repo_path) {
+            if let Ok(remote_obj) = repo.find_remote("origin") {
+                remote_obj.url().map(|u| u.to_string())
+            } else if let Ok(remotes) = repo.remotes() {
+                remotes.get(0).and_then(|name| repo.find_remote(name).ok()).and_then(|r| r.url().map(|u| u.to_string()))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    };
+
+    let remote_url_str = match remote_url_str {
+        Some(u) => u,
+        None => return Vec::new(),
+    };
+
+    let (host, owner, repo_name) = match parse_remote_url_parts(&remote_url_str) {
+        Some(parts) => parts,
+        None => return Vec::new(),
+    };
+
+    let token = find_token_for_host(repo_path, &host);
+
+    let client = match reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+    {
+        Ok(c) => c,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut remote_releases = Vec::new();
+
+    if host.contains("github.com") {
+        let url = format!("https://api.github.com/repos/{}/{}/releases?per_page=100", owner, repo_name);
+        let mut req = client.get(&url)
+            .header("User-Agent", "GitDesktop")
+            .header("Accept", "application/vnd.github+json");
+
+        if let Some(t) = &token {
+            req = req.header("Authorization", format!("Bearer {}", t));
+        }
+
+        if let Ok(resp) = req.send().await {
+            if resp.status().is_success() {
+                if let Ok(json_arr) = resp.json::<Vec<serde_json::Value>>().await {
+                    for (idx, rel) in json_arr.iter().enumerate() {
+                        let tag_name = rel.get("tag_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        if tag_name.is_empty() {
+                            continue;
+                        }
+
+                        let name = rel.get("name").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+                        let name = if !name.is_empty() { name } else { format!("Release {}", tag_name) };
+
+                        let body = rel.get("body").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        let description = if !body.is_empty() { body } else { format!("Release version {}", tag_name) };
+
+                        let is_draft = rel.get("draft").and_then(|v| v.as_bool());
+                        let is_prerelease = rel.get("prerelease").and_then(|v| v.as_bool());
+                        let is_latest = if let Some(latest_val) = rel.get("is_latest").and_then(|v| v.as_bool()) {
+                            Some(latest_val)
+                        } else if is_prerelease == Some(true) {
+                            Some(false)
+                        } else {
+                            Some(idx == 0)
+                        };
+
+                        let created_at = rel.get("published_at").and_then(|v| v.as_str())
+                            .or_else(|| rel.get("created_at").and_then(|v| v.as_str()))
+                            .unwrap_or("")
+                            .to_string();
+
+                        let author_name = rel.get("author").and_then(|a| a.get("login")).and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let author_avatar = rel.get("author").and_then(|a| a.get("avatar_url")).and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let commit_sha = rel.get("target_commitish").and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let web_url = rel.get("html_url").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+                        let mut assets = Vec::new();
+                        if let Some(assets_arr) = rel.get("assets").and_then(|v| v.as_array()) {
+                            for a in assets_arr {
+                                let aname = a.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                                let aurl = a.get("browser_download_url").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                                let size = a.get("size").and_then(|v| v.as_u64());
+                                if !aname.is_empty() {
+                                    assets.push(ReleaseAsset {
+                                        name: aname,
+                                        url: aurl.clone(),
+                                        size,
+                                        direct_asset_url: Some(aurl),
+                                    });
+                                }
+                            }
+                        }
+
+                        // Also save into local meta cache so it's always fast and cached
+                        save_local_release_meta(
+                            repo_path,
+                            &tag_name,
+                            Some(name.clone()),
+                            Some(description.clone()),
+                            is_latest,
+                            is_prerelease,
+                            web_url.clone(),
+                        );
+
+                        remote_releases.push(ReleaseInfo {
+                            id: Some(tag_name.clone()),
+                            tag_name,
+                            name,
+                            description,
+                            created_at: created_at.clone(),
+                            released_at: Some(created_at),
+                            author_name,
+                            author_avatar,
+                            commit_sha,
+                            is_draft,
+                            is_prerelease,
+                            is_latest,
+                            upcoming_release: Some(false),
+                            web_url,
+                            assets,
+                        });
+                    }
+                }
+            }
+        }
+    } else if host.contains("gitlab") {
+        let base_server = if host.starts_with("http://") || host.starts_with("https://") {
+            host.clone()
+        } else {
+            format!("https://{}", host)
+        };
+        let project_path = format!("{}/{}", owner, repo_name);
+        let encoded_project = urlencoding::encode(&project_path);
+        let url = format!("{}/api/v4/projects/{}/releases?per_page=100", base_server, encoded_project);
+
+        let mut req = client.get(&url);
+        if let Some(t) = &token {
+            req = req.header("PRIVATE-TOKEN", t);
+        }
+
+        if let Ok(resp) = req.send().await {
+            if resp.status().is_success() {
+                if let Ok(json_arr) = resp.json::<Vec<serde_json::Value>>().await {
+                    for (idx, rel) in json_arr.iter().enumerate() {
+                        let tag_name = rel.get("tag_name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        if tag_name.is_empty() {
+                            continue;
+                        }
+
+                        let name = rel.get("name").and_then(|v| v.as_str()).unwrap_or("").trim().to_string();
+                        let name = if !name.is_empty() { name } else { format!("Release {}", tag_name) };
+
+                        let desc = rel.get("description").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        let is_latest = Some(idx == 0);
+                        let created_at = rel.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+                        let author_name = rel.get("author").and_then(|a| a.get("name")).and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let author_avatar = rel.get("author").and_then(|a| a.get("avatar_url")).and_then(|v| v.as_str()).map(|s| s.to_string());
+                        let web_url = rel.get("_links").and_then(|l| l.get("self")).and_then(|v| v.as_str()).map(|s| s.to_string());
+
+                        save_local_release_meta(
+                            repo_path,
+                            &tag_name,
+                            Some(name.clone()),
+                            Some(desc.clone()),
+                            is_latest,
+                            Some(false),
+                            web_url.clone(),
+                        );
+
+                        remote_releases.push(ReleaseInfo {
+                            id: Some(tag_name.clone()),
+                            tag_name,
+                            name,
+                            description: desc,
+                            created_at: created_at.clone(),
+                            released_at: Some(created_at),
+                            author_name,
+                            author_avatar,
+                            commit_sha: None,
+                            is_draft: Some(false),
+                            is_prerelease: Some(false),
+                            is_latest,
+                            upcoming_release: Some(false),
+                            web_url,
+                            assets: Vec::new(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    remote_releases
+}
+
 /// Lists all releases and annotated release markers in the repository.
-pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
+pub async fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
+    // 1. Fetch remote releases from GitHub/GitLab API if remote is configured
+    let remote_releases = fetch_remote_releases(repo_path).await;
+
     let repo = git2::Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
-    let mut releases = Vec::new();
     let tag_names = repo.tag_names(None).map_err(|e| AppError::Git(e.to_string()))?;
 
-    let mut any_explicit_latest = false;
-    let mut tag_items = Vec::new();
+    let mut release_map: std::collections::HashMap<String, ReleaseInfo> = std::collections::HashMap::new();
+
+    // Insert remote releases into map first
+    for r in remote_releases {
+        release_map.insert(r.tag_name.clone(), r);
+    }
 
     for name_opt in tag_names.iter() {
         if let Some(tag_name) = name_opt {
@@ -246,77 +463,97 @@ pub fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError> {
                 };
 
                 let local_meta = load_local_release_meta(repo_path, tag_name);
-                if let Some(m) = &local_meta {
-                    if m.is_latest == Some(true) {
-                        any_explicit_latest = true;
-                    }
-                }
+                let assets = load_local_release_assets(repo_path, tag_name);
 
-                tag_items.push((tag_name.to_string(), short_sha, subject, body, tagger_name, date_str, local_meta));
+                if let Some(existing) = release_map.get_mut(tag_name) {
+                    if existing.commit_sha.is_none() {
+                        existing.commit_sha = Some(short_sha);
+                    }
+                    if existing.author_name.is_none() {
+                        existing.author_name = tagger_name;
+                    }
+                    if !assets.is_empty() && existing.assets.is_empty() {
+                        existing.assets = assets;
+                    }
+                } else {
+                    let name = if let Some(meta) = &local_meta {
+                        meta.name
+                            .as_ref()
+                            .filter(|s| !s.trim().is_empty())
+                            .cloned()
+                            .unwrap_or_else(|| if !subject.is_empty() { subject } else { format!("Release {}", tag_name) })
+                    } else if !subject.is_empty() {
+                        subject
+                    } else {
+                        format!("Release {}", tag_name)
+                    };
+
+                    let description = if let Some(meta) = &local_meta {
+                        meta.description
+                            .as_ref()
+                            .filter(|s| !s.trim().is_empty())
+                            .cloned()
+                            .unwrap_or_else(|| if !body.is_empty() { body } else { format!("Release version {}", tag_name) })
+                    } else if !body.is_empty() {
+                        body
+                    } else {
+                        format!("Release version {}", tag_name)
+                    };
+
+                    let is_prerelease = if let Some(meta) = &local_meta {
+                        meta.is_prerelease.unwrap_or_else(|| {
+                            tag_name.to_lowercase().contains("beta")
+                                || tag_name.to_lowercase().contains("alpha")
+                                || tag_name.to_lowercase().contains("rc")
+                        })
+                    } else {
+                        tag_name.to_lowercase().contains("beta")
+                            || tag_name.to_lowercase().contains("alpha")
+                            || tag_name.to_lowercase().contains("rc")
+                    };
+
+                    let is_latest = local_meta.as_ref().and_then(|m| m.is_latest);
+                    let web_url = local_meta.and_then(|m| m.web_url);
+
+                    release_map.insert(tag_name.to_string(), ReleaseInfo {
+                        id: Some(tag_name.to_string()),
+                        tag_name: tag_name.to_string(),
+                        name,
+                        description,
+                        created_at: date_str.clone(),
+                        released_at: Some(date_str),
+                        author_name: tagger_name,
+                        author_avatar: None,
+                        commit_sha: Some(short_sha),
+                        is_draft: Some(false),
+                        is_prerelease: Some(is_prerelease),
+                        is_latest,
+                        upcoming_release: Some(false),
+                        web_url,
+                        assets,
+                    });
+                }
             }
         }
     }
 
-    // Sort tags descending by date
-    tag_items.sort_by(|a, b| b.5.cmp(&a.5));
+    let mut releases: Vec<ReleaseInfo> = release_map.into_values().collect();
 
-    for (index, (tag_name, sha, subject, body, tagger_name, date_str, local_meta)) in tag_items.into_iter().enumerate() {
-        let name = if !subject.is_empty() {
-            subject
-        } else {
-            format!("Release {}", tag_name)
-        };
-
-        let description = if !body.is_empty() {
-            body
-        } else {
-            format!("Release version {}", tag_name)
-        };
-
-        let is_prerelease = tag_name.to_lowercase().contains("beta")
-            || tag_name.to_lowercase().contains("alpha")
-            || tag_name.to_lowercase().contains("rc");
-
-        let assets = load_local_release_assets(repo_path, &tag_name);
-
-        let is_latest = if let Some(meta) = &local_meta {
-            if let Some(explicit_latest) = meta.is_latest {
-                Some(explicit_latest)
-            } else if is_prerelease {
-                Some(false)
-            } else if !any_explicit_latest {
-                Some(index == 0)
-            } else {
-                Some(false)
-            }
-        } else if is_prerelease {
-            Some(false)
-        } else if !any_explicit_latest {
-            Some(index == 0)
-        } else {
-            Some(false)
-        };
-
-        let web_url = local_meta.and_then(|m| m.web_url);
-
-        releases.push(ReleaseInfo {
-            id: Some(tag_name.clone()),
-            tag_name,
-            name,
-            description,
-            created_at: date_str.clone(),
-            released_at: Some(date_str),
-            author_name: tagger_name,
-            author_avatar: None,
-            commit_sha: Some(sha),
-            is_draft: Some(false),
-            is_prerelease: Some(is_prerelease),
-            is_latest,
-            upcoming_release: Some(false),
-            web_url,
-            assets,
-        });
-    }
+    // Sort releases:
+    // 1. is_latest == Some(true) first
+    // 2. date descending / semver descending
+    releases.sort_by(|a, b| {
+        if a.is_latest == Some(true) && b.is_latest != Some(true) {
+            return std::cmp::Ordering::Less;
+        }
+        if a.is_latest != Some(true) && b.is_latest == Some(true) {
+            return std::cmp::Ordering::Greater;
+        }
+        if !a.created_at.is_empty() && !b.created_at.is_empty() && a.created_at != b.created_at {
+            return b.created_at.cmp(&a.created_at);
+        }
+        b.tag_name.cmp(&a.tag_name)
+    });
 
     Ok(releases)
 }
@@ -380,7 +617,15 @@ pub fn create_release(
         Vec::new()
     };
 
-    save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
+    save_local_release_meta(
+        repo_path,
+        tag_name.trim(),
+        Some(name.to_string()),
+        Some(description.to_string()),
+        is_latest,
+        Some(is_pre),
+        None,
+    );
 
     Ok(ReleaseInfo {
         id: Some(tag_name.to_string()),
@@ -444,11 +689,19 @@ pub fn update_release(
         save_local_release_assets(repo_path, tag_name.trim(), &[])
     };
 
-    save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
-
     let is_pre = is_prerelease.unwrap_or_else(|| {
         tag_name.to_lowercase().contains("beta") || tag_name.to_lowercase().contains("rc")
     });
+
+    save_local_release_meta(
+        repo_path,
+        tag_name.trim(),
+        Some(name.to_string()),
+        Some(description.to_string()),
+        is_latest,
+        Some(is_pre),
+        None,
+    );
 
     Ok(ReleaseInfo {
         id: Some(tag_name.to_string()),
@@ -964,13 +1217,29 @@ pub async fn publish_release_to_remote_api(
                     }
                 }
 
-                save_local_release_meta(repo_path, tag_name, is_latest, release_web_url.clone());
+                save_local_release_meta(
+                    repo_path,
+                    tag_name,
+                    Some(name.to_string()),
+                    Some(description.to_string()),
+                    is_latest,
+                    Some(is_pre),
+                    release_web_url.clone(),
+                );
                 return Ok((release_web_url, uploaded_assets));
             }
         }
     }
 
-    save_local_release_meta(repo_path, tag_name, is_latest, release_web_url.clone());
+    save_local_release_meta(
+        repo_path,
+        tag_name,
+        Some(name.to_string()),
+        Some(description.to_string()),
+        is_latest,
+        Some(is_pre),
+        release_web_url.clone(),
+    );
     Ok((release_web_url, uploaded_assets))
 }
 

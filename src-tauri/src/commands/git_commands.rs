@@ -546,9 +546,7 @@ pub async fn delete_remote_tag_cmd(
 pub async fn list_releases_cmd(
     repo_path: String,
 ) -> Result<Vec<crate::git::remote::releases::ReleaseInfo>, AppError> {
-    tokio::task::spawn_blocking(move || crate::git::remote::releases::list_releases(&repo_path))
-        .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+    crate::git::remote::releases::list_releases(&repo_path).await
 }
 
 #[command]

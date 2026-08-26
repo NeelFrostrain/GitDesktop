@@ -52,6 +52,7 @@ import { GitService } from '../../services/git/gitService';
 import { ReleaseService } from '../../services/git/releaseService';
 import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
 import { toAppError, parseApiError } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
@@ -298,12 +299,7 @@ export const MergeRequestModal: React.FC = () => {
 
   // Branch dropdown options
   const branchOptions = useMemo(() => {
-    return branches.map((b) => ({
-      value: b.name,
-      label: b.name,
-      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
-      badge: b.is_current ? 'current' : undefined,
-    }));
+    return formatBranchDropdownOptions(branches);
   }, [branches]);
 
   // Global click listener to dismiss comment context menu
@@ -1581,7 +1577,7 @@ export const MergeRequestModal: React.FC = () => {
                   <p className="text-xs font-medium text-text-muted">Loading open {requestTypeLabel.toLowerCase()}s...</p>
                 </div>
               ) : filteredMergeRequests.length === 0 ? (
-                <div className="p-6 text-center bg-base-1 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
+                <div className="p-6 text-center bg-base-0 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
                   <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
                   <h4 className="text-xs font-bold text-text-primary">No open {requestTypeLabel.toLowerCase()}s</h4>
                   <p className="text-[11px] text-text-muted max-w-xs mx-auto">

@@ -3,10 +3,6 @@ import {
   GitPullRequest,
   Tag,
   Sparkles,
-  FolderGit2,
-  FileCode,
-  RotateCcw,
-  History,
   AlertCircle,
   X,
   Globe,
@@ -18,7 +14,7 @@ import { BranchDropdown } from './BranchDropdown';
 import { Dropdown } from '../common/Dropdown';
 
 /**
- * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Worktree, Patch, Rebase, Reflog),
+ * Top application header bar displaying quick creation tools (Release, Tag, PR/MR),
  * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
@@ -31,10 +27,6 @@ export const Header: React.FC = () => {
     setIsCreateTagModalOpen,
     setIsCreateReleaseModalOpen,
     setEditingRelease,
-    setIsWorktreeModalOpen,
-    setIsPatchModalOpen,
-    setIsRebaseModalOpen,
-    setIsReflogModalOpen,
   } = useGitStore();
 
   const {
@@ -54,7 +46,7 @@ export const Header: React.FC = () => {
 
   return (
     <header className="h-10 bg-base-0 border-b border-border px-2 flex items-center justify-between flex-shrink-0 select-none">
-      {/* Left: Quick Create & Inspection Tools */}
+      {/* Left: Quick Create Tools */}
       <div className="flex items-center gap-1.5">
         {!isHome && (
           <>
@@ -89,46 +81,6 @@ export const Header: React.FC = () => {
               title="Create Merge / Pull Request"
             >
               <GitPullRequest className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Worktrees Tool */}
-            <button
-              type="button"
-              onClick={() => setIsWorktreeModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-emerald-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
-              title="Manage Worktrees"
-            >
-              <FolderGit2 className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Patch Studio */}
-            <button
-              type="button"
-              onClick={() => setIsPatchModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-cyan-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
-              title="Export / Apply Patch"
-            >
-              <FileCode className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Interactive Rebase */}
-            <button
-              type="button"
-              onClick={() => setIsRebaseModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-text-primary bg-base-1/50 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
-              title="Interactive Rebase"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-
-            {/* Reflog History */}
-            <button
-              type="button"
-              onClick={() => setIsReflogModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-gitlab-teal bg-base-1/50 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
-              title="Reflog History"
-            >
-              <History className="w-3.5 h-3.5" />
             </button>
           </>
         )}

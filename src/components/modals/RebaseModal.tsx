@@ -14,6 +14,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { RebaseCommitPlanItem, RebaseCommitAction, BranchInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 
 /**
@@ -115,9 +116,7 @@ export const RebaseModal: React.FC = () => {
 
   if (!isRebaseModalOpen) return null;
 
-  const branchOptions = branches
-    .filter((b) => !b.is_current)
-    .map((b) => ({ value: b.name, label: b.name }));
+  const branchOptions = formatBranchDropdownOptions(branches.filter((b) => !b.is_current));
 
   const actionOptions = [
     { value: 'pick', label: 'pick (use commit)' },

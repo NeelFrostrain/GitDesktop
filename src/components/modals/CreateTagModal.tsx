@@ -19,6 +19,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
 import { Tabs } from '../common/Tabs';
@@ -221,12 +222,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
   // Transform branches for Custom Dropdown
   const branchOptions = useMemo(() => {
-    return branches.map((b) => ({
-      value: b.name,
-      label: b.name,
-      icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
-      badge: b.is_current ? 'current' : undefined,
-    }));
+    return formatBranchDropdownOptions(branches);
   }, [branches]);
 
   // Transform remotes for Custom Dropdown

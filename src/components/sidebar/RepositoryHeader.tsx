@@ -45,7 +45,7 @@ export const RepositoryHeader: React.FC = () => {
       >
         {layoutMode === 'side-by-side' ? (
           /* Mode 1: Side-by-Side (Single Row with Matching h-8 Height) */
-          <div className="p-1.5 flex items-center justify-between gap-1.5 w-full">
+          <div className="py-[3.5px] px-1.5 flex items-center justify-between gap-1.5 w-full">
             {/* Left: Repo Switcher (h-8) */}
             {activeRepoPath ? (
               <button

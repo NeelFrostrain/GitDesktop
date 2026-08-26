@@ -131,7 +131,7 @@ export function Dropdown<T extends string = string>({
               top: `${menuCoords.top}px`,
               width: `${menuCoords.width}px`,
             }}
-            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto space-y-0.5"
+            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto space-y-0.5 scrollbar-thin"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
