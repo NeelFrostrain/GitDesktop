@@ -429,54 +429,56 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         className="w-full max-w-lg bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+        {/* Header (Compact Single-Row with Tabs) */}
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Tag className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h3 className="font-bold text-xs text-text-primary leading-tight">
-                {tagMode === 'new' ? 'Create Git Tag' : 'Manage Git Tags'}
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="font-bold text-xs text-text-primary leading-none">
+                {tagMode === 'new' ? 'New Tag' : 'Manage Tags'}
               </h3>
-              <p className="text-[10.5px] text-text-muted mt-0.5 leading-none">
-                {tagMode === 'new'
-                  ? 'Create a release tag or annotated marker on branch or commit'
-                  : 'Inspect, push, or delete existing tags in this repository'}
-              </p>
+              {selectedRemote && (
+                <>
+                  <span className="text-border hidden sm:inline">•</span>
+                  <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                    {selectedRemote}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={onClose}
-            disabled={isSubmitting || isDeleting || isPushingExisting}
-            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
-            title="Close (Esc)"
-          >
-            <X className="w-3.5 h-3.5" />
-          </button>
-        </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Tabs<'new' | 'existing'>
+              tabs={[
+                { id: 'new', label: 'Create', icon: <Tag className="w-3 h-3" /> },
+                {
+                  id: 'existing',
+                  label: `Tags (${tags.length})`,
+                  icon: <Bookmark className="w-3 h-3" />,
+                },
+              ]}
+              activeTab={tagMode}
+              onChange={(mode) => {
+                setTagMode(mode);
+                setError(null);
+              }}
+              size="xs"
+              variant="segmented"
+              ariaLabel="Tag management mode"
+            />
 
-        {/* Mode Switcher Tabs: New Tag vs Manage Existing */}
-        <div className="px-4 pt-3 pb-1 border-b border-border/60 bg-base-1/40">
-          <Tabs<'new' | 'existing'>
-            tabs={[
-              { id: 'new', label: 'Create New Tag', icon: <Tag className="w-3.5 h-3.5" /> },
-              {
-                id: 'existing',
-                label: `Manage Existing Tags ${tags.length > 0 ? `(${tags.length})` : ''}`,
-                icon: <Bookmark className="w-3.5 h-3.5" />,
-              },
-            ]}
-            activeTab={tagMode}
-            onChange={(mode) => {
-              setTagMode(mode);
-              setError(null);
-            }}
-            fullWidth
-            size="md"
-            ariaLabel="Tag management mode"
-          />
+            <button
+              onClick={onClose}
+              disabled={isSubmitting || isDeleting || isPushingExisting}
+              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+              title="Close (Esc)"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Body */}

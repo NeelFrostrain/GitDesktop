@@ -65,7 +65,7 @@ export const Header: React.FC = () => {
                 setEditingRelease(null);
                 setIsCreateReleaseModalOpen(true);
               }}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Draft Release..."
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -75,7 +75,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateTagModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-amber-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-amber-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Create Git Tag..."
             >
               <Tag className="w-3.5 h-3.5" />
@@ -85,7 +85,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMergeRequestModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-commito-coral hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Create Merge / Pull Request"
             >
               <GitPullRequest className="w-3.5 h-3.5" />
@@ -95,7 +95,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsWorktreeModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-emerald-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-emerald-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Manage Worktrees"
             >
               <FolderGit2 className="w-3.5 h-3.5" />
@@ -105,7 +105,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsPatchModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-cyan-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted bg-base-1/50 hover:text-cyan-400 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Export / Apply Patch"
             >
               <FileCode className="w-3.5 h-3.5" />
@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsRebaseModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-text-primary bg-base-1/50 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Interactive Rebase"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -125,7 +125,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsReflogModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-gitlab-teal hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
+              className="h-7 w-7 flex items-center justify-center text-text-muted hover:text-gitlab-teal bg-base-1/50 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer shadow-2xs"
               title="Reflog History"
             >
               <History className="w-3.5 h-3.5" />

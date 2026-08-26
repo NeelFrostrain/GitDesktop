@@ -83,6 +83,53 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+
+  // Resizable panel width state
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('release_modal_left_width');
+      return saved ? Math.max(300, Math.min(650, parseInt(saved, 10))) : 420;
+    } catch {
+      return 420;
+    }
+  });
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+
+  const startResizingLeft = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingLeft) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!modalContainerRef.current) return;
+      const modalRect = modalContainerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(300, Math.min(modalRect.width - 340, e.clientX - modalRect.left));
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      try {
+        localStorage.setItem('release_modal_left_width', leftPanelWidth.toString());
+      } catch {}
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, leftPanelWidth]);
 
   // Check if current selection is an existing release
   const activeExistingRelease = useMemo(() => {
@@ -612,17 +659,18 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
+        ref={modalContainerRef}
         className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/80 bg-base-1/50 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
-              <Package className="w-4 h-4" />
+        {/* Header (Compact Single-Row) */}
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <Package className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h3 id="create-release-title" className="text-sm font-semibold text-text-primary leading-tight">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 id="create-release-title" className="text-xs font-bold text-text-primary leading-none">
                 {isEditingExistingRelease ? (
                   <span>
                     Manage Release <span className="font-mono text-commito-coral font-bold">{activeExistingRelease?.tag_name}</span>
@@ -631,11 +679,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   <span>Draft New Release</span>
                 )}
               </h3>
-              <p className="text-[11px] text-text-muted leading-tight mt-0.5">
-                {isEditingExistingRelease
-                  ? 'Edit release notes, binaries, titles, and publish updates to your git remote'
-                  : 'Publish a versioned release package with release notes, assets, and git tag'}
-              </p>
+              {selectedRemote && (
+                <>
+                  <span className="text-border hidden sm:inline">•</span>
+                  <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                    {selectedRemote}
+                  </span>
+                </>
+              )}
             </div>
           </div>
 
@@ -643,10 +694,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isSubmitting || isDeleting}
-            className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
             title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -659,10 +710,13 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           className="hidden"
         />
 
-        {/* Split 2-Column Form Body */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden divide-y md:divide-y-0 md:divide-x divide-border/80">
-          {/* Left Column: Metadata, Tag, Assets, Toggles */}
-          <div className="w-full md:w-1/2 lg:w-[48%] flex flex-col min-h-0 overflow-y-auto p-4 space-y-3.5 shrink-0">
+        {/* Split 2-Column Form Body (Resizable) */}
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          {/* Left Resizable Column: Metadata, Tag, Assets, Toggles */}
+          <div
+            style={{ width: `${leftPanelWidth}px` }}
+            className="shrink-0 flex flex-col min-h-0 overflow-y-auto p-4 space-y-3.5 bg-base-0"
+          >
             {/* Section 1: Tag Source Selector (New Tag vs Existing Tag) */}
             {!initialRelease ? (
               <div className="space-y-1.5">
@@ -694,6 +748,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                           loadReleaseData(existingRel);
                         } else {
                           setReleaseName(`Release ${tagToSelect}`);
+                          setAttachedFiles([]);
                         }
                       } else if (t === 'new') {
                         setTagName('');
@@ -750,6 +805,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                             loadReleaseData(existingRel);
                           } else {
                             setReleaseName(`Release ${val}`);
+                            setAttachedFiles([]);
                           }
                         }}
                         disabled={isSubmitting || isDeleting}
@@ -1124,8 +1180,20 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             )}
           </div>
 
+          {/* Resizable Divider Splitter Handle */}
+          <div
+            onMouseDown={startResizingLeft}
+            onDoubleClick={() => setLeftPanelWidth(420)}
+            title="Drag to resize • Double-click to reset"
+            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+            }`}
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
+
           {/* Right Column: Full-Height Markdown Editor & Preview */}
-          <div className="flex-1 p-4 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+          <div className="flex-1 min-w-0 p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
             <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
               <div className="flex items-center gap-2">
                 <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -1199,8 +1267,8 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           </div>
         </form>
 
-        {/* Modal Footer Actions */}
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-border/80 bg-base-1/50 shrink-0 min-h-[48px]">
+        {/* Modal Footer Actions (Slim & Space-saving) */}
+        <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 border-t border-border bg-base-1/70 shrink-0 min-h-[38px]">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {isSubmitting ? (
               (() => {
@@ -1224,13 +1292,13 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 type="button"
                 onClick={handleDeleteRelease}
                 disabled={isSubmitting || isDeleting}
-                className="h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                className="h-6.5 px-2.5 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 title="Permanently delete this release and remove release tag"
               >
                 {isDeleting ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3 h-3" />
                 )}
                 <span>Delete Release</span>
               </button>
@@ -1242,7 +1310,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting || isDeleting}
-              className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
+              className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
             >
               Cancel
             </button>
@@ -1251,16 +1319,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting || isDeleting}
-              className="h-7.5 px-4 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 min-w-[130px] justify-center"
+              className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 min-w-[130px] justify-center"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                   <span>{getSubmitButtonLabel()}</span>
                 </>
               ) : (
                 <>
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-3 h-3" />
                   <span>{getSubmitButtonLabel()}</span>
                 </>
               )}

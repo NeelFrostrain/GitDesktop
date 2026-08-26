@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   X,
   RotateCcw,
+  Sliders,
 } from 'lucide-react';
 import { useSettingsStore } from './store/useSettingsStore';
 import { CATEGORY_METADATA, SETTINGS_SCHEMA, SettingDefinition } from './lib/settingsSchema';
@@ -25,6 +26,52 @@ export const SettingsPanel: React.FC = () => {
   } = useSettingsStore();
 
   const { activeRepoPath } = useGitStore();
+
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('settings_sidebar_width');
+      return saved ? Math.max(160, Math.min(360, parseInt(saved, 10))) : 210;
+    } catch {
+      return 210;
+    }
+  });
+  const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+
+  const startResizingSidebar = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingSidebar(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingSidebar) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!modalContainerRef.current) return;
+      const modalRect = modalContainerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(160, Math.min(360, e.clientX - modalRect.left));
+      setSidebarWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingSidebar(false);
+      try {
+        localStorage.setItem('settings_sidebar_width', sidebarWidth.toString());
+      } catch {}
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingSidebar, sidebarWidth]);
 
   // Load settings on mount / repo change
   useEffect(() => {
@@ -85,25 +132,33 @@ export const SettingsPanel: React.FC = () => {
   const currentCategoryMeta = CATEGORY_METADATA[selectedCategory];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150 select-none">
-      <div className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans">
-        {/* Header bar: Title, Search, Actions */}
-        <header className="h-13 bg-base-1 border-b border-border/80 px-5 flex items-center justify-between gap-4 flex-shrink-0">
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <h2 className="text-sm font-bold text-text-primary tracking-wide">
-              Settings
-            </h2>
-            <span className="text-text-muted/40 text-xs">•</span>
-            <span className="text-[11.5px] text-text-muted">
-              Preferences &amp; Configuration
-            </span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 select-none">
+      <div
+        ref={modalContainerRef}
+        className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans"
+      >
+        {/* Compact Single-Row Header */}
+        <header className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
+          <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
+            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+              <Sliders className="w-3 h-3" />
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <h2 className="text-xs font-bold text-text-primary leading-none">
+                Settings
+              </h2>
+              <span className="text-border">•</span>
+              <span className="text-[10.5px] text-text-muted truncate hidden sm:inline">
+                Preferences &amp; Configuration
+              </span>
+            </div>
           </div>
 
           {/* Search bar */}
           <SettingsSearchBar matchCount={searchResults ? searchResults.length : undefined} />
 
           {/* Actions */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
             {/* Reset all button */}
             <button
               type="button"
@@ -112,33 +167,45 @@ export const SettingsPanel: React.FC = () => {
                   resetAllSettings();
                 }
               }}
-              className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
               title="Reset all settings to default values"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
-            <div className="h-4 w-px bg-border/60" />
+            <div className="h-3.5 w-px bg-border" />
 
             {/* Close button */}
             <button
               type="button"
               onClick={closeSettings}
-              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
               title="Close Settings (Esc)"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </header>
 
-        {/* Main Body: Category Sidebar + Right-hand Settings Content */}
+        {/* Main Body: Resizable Category Sidebar + Right-hand Settings Content */}
         <div className="flex-1 min-h-0 flex overflow-hidden">
           {/* Left Category Tree */}
-          <CategoryTree />
+          <CategoryTree style={{ width: `${sidebarWidth}px` }} />
+
+          {/* Resizable Divider Splitter Handle */}
+          <div
+            onMouseDown={startResizingSidebar}
+            onDoubleClick={() => setSidebarWidth(210)}
+            title="Drag to resize • Double-click to reset"
+            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              isResizingSidebar ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+            }`}
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
 
           {/* Right Content Area */}
-          <main className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
+          <main className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
             {/* 1. Search Results Mode */}
             {searchResults ? (
               <div className="space-y-4">

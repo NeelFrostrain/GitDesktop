@@ -31,7 +31,6 @@ import {
   ChevronRight,
   Tag,
   Users,
-  Clock,
   AlignJustify,
   Columns,
   GitMerge,
@@ -156,6 +155,53 @@ export const MergeRequestModal: React.FC = () => {
 
   const titleInputRef = useRef<HTMLInputElement>(null);
   const editTitleInputRef = useRef<HTMLInputElement>(null);
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+
+  // Resizable panel width state
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('pr_modal_left_width');
+      return saved ? Math.max(260, Math.min(650, parseInt(saved, 10))) : 360;
+    } catch {
+      return 360;
+    }
+  });
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+
+  const startResizingLeft = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingLeft) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!modalContainerRef.current) return;
+      const modalRect = modalContainerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(260, Math.min(modalRect.width - 340, e.clientX - modalRect.left));
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      try {
+        localStorage.setItem('pr_modal_left_width', leftPanelWidth.toString());
+      } catch {}
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, leftPanelWidth]);
 
   // Initialize & Load branches/remotes on open
   useEffect(() => {
@@ -958,36 +1004,34 @@ export const MergeRequestModal: React.FC = () => {
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
+        ref={modalContainerRef}
         className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
-              <GitPullRequest className="w-4 h-4" />
+        {/* Top Header (Compact & Space-saving) */}
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+              <GitPullRequest className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 id="merge-request-modal-title" className="text-sm font-bold text-text-primary leading-tight">
-                  {activeTab === 'edit' && editingMr
-                    ? `Edit ${requestTypeLabel} #${editingMr.id}`
-                    : `${requestTypeLabel}s`}
-                </h2>
-                <span className="text-[10.5px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded text-text-muted">
-                  {providerName}
-                </span>
-              </div>
-              <p className="text-[11px] text-text-muted mt-0.5 leading-none">
-                {activeTab === 'edit'
-                  ? `Update title, base target branch, and description notes for #${editingMr?.id}`
-                  : `Create, inspect, review, and discuss pull & merge requests for remote repository`}
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 id="merge-request-modal-title" className="text-xs font-bold text-text-primary leading-none">
+                {activeTab === 'edit' && editingMr
+                  ? `Edit ${requestTypeLabel} #${editingMr.id}`
+                  : `${requestTypeLabel}s`}
+              </h2>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded text-text-muted">
+                {providerName}
+              </span>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline">
+                {targetRemoteInfo?.projectPath || selectedRemote}
+              </span>
             </div>
           </div>
 
           {/* Mode Switcher Tabs */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             {activeTab === 'edit' ? (
               <button
                 type="button"
@@ -995,19 +1039,19 @@ export const MergeRequestModal: React.FC = () => {
                   setActiveTab('list');
                   setEditingMr(null);
                 }}
-                className="h-7 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                className="h-6.5 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Back to Open Requests</span>
+                <span>Back</span>
               </button>
             ) : (
               <Tabs<'create' | 'list'>
                 tabs={[
-                  { id: 'create', label: `Create ${requestTypeLabel}`, icon: <Plus className="w-3.5 h-3.5" /> },
+                  { id: 'create', label: `New ${requestTypeLabel}`, icon: <Plus className="w-3 h-3" /> },
                   {
                     id: 'list',
-                    label: `Open Requests ${mergeRequests.length > 0 ? `(${mergeRequests.length})` : ''}`,
-                    icon: <GitPullRequest className="w-3.5 h-3.5" />,
+                    label: `Open (${mergeRequests.length})`,
+                    icon: <GitPullRequest className="w-3 h-3" />,
                   },
                 ]}
                 activeTab={activeTab}
@@ -1016,7 +1060,8 @@ export const MergeRequestModal: React.FC = () => {
                   setFormError(null);
                   setEditingMr(null);
                 }}
-                size="sm"
+                size="xs"
+                variant="segmented"
                 ariaLabel="Request view tabs"
               />
             )}
@@ -1027,15 +1072,20 @@ export const MergeRequestModal: React.FC = () => {
               className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
               title="Close (Esc)"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
-        </div>        {/* Modal Body */}
+        </div>
+
+        {/* Modal Body */}
         {activeTab === 'create' ? (
-          /* CREATE PULL REQUEST WORKSPACE (30% Left / 70% Right) */
-          <form onSubmit={handleCreateMergeRequest} className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 30% Column */}
-            <div className="w-full md:w-[30%] shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
+          /* CREATE PULL REQUEST WORKSPACE (Resizable Left / Right) */
+          <form onSubmit={handleCreateMergeRequest} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+            {/* Resizable Left Column */}
+            <div
+              style={{ width: `${leftPanelWidth}px` }}
+              className="shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
+            >
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
@@ -1233,8 +1283,20 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right 70% Column */}
-            <div className="flex-1 min-w-0 w-full md:w-[70%] p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            {/* Resizable Divider Splitter Handle */}
+            <div
+              onMouseDown={startResizingLeft}
+              onDoubleClick={() => setLeftPanelWidth(360)}
+              title="Drag to resize • Double-click to reset"
+              className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+              }`}
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1" />
+            </div>
+
+            {/* Right Column */}
+            <div className="flex-1 min-w-0 p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -1303,10 +1365,13 @@ export const MergeRequestModal: React.FC = () => {
             </div>
           </form>
         ) : activeTab === 'edit' && editingMr ? (
-          /* EDIT EXISTING PULL REQUEST WORKSPACE (30% Left / 70% Right) */
-          <form onSubmit={handleSaveFullEdit} className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 30% Column */}
-            <div className="w-full md:w-[30%] shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0">
+          /* EDIT EXISTING PULL REQUEST WORKSPACE (Resizable Left / Right) */
+          <form onSubmit={handleSaveFullEdit} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+            {/* Resizable Left Column */}
+            <div
+              style={{ width: `${leftPanelWidth}px` }}
+              className="shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
+            >
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
@@ -1399,8 +1464,20 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
-            {/* Right 70% Column */}
-            <div className="flex-1 min-w-0 w-full md:w-[70%] p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            {/* Resizable Divider Splitter Handle */}
+            <div
+              onMouseDown={startResizingLeft}
+              onDoubleClick={() => setLeftPanelWidth(360)}
+              title="Drag to resize • Double-click to reset"
+              className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+              }`}
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1" />
+            </div>
+
+            {/* Right Column */}
+            <div className="flex-1 min-w-0 p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -1469,18 +1546,21 @@ export const MergeRequestModal: React.FC = () => {
           </form>
         ) : (
           /* LIST & INSPECT OPEN REQUESTS (Master-Detail with Conversation, Commits, Files & Comments) */
-          <div className="flex-1 flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-border min-h-0 overflow-hidden">
-            {/* Left 30% Column: Search & Request Cards List */}
-            <div className="w-full md:w-[30%] shrink-0 p-4 flex flex-col min-h-0 overflow-hidden space-y-3 bg-base-0">
-              <div className="flex items-center gap-2">
+          <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+            {/* Left Resizable Column: Search & Request Cards List */}
+            <div
+              style={{ width: `${leftPanelWidth}px` }}
+              className="shrink-0 p-3 flex flex-col min-h-0 overflow-hidden space-y-2.5 bg-base-0"
+            >
+              <div className="flex items-center gap-1.5">
                 <div className="relative flex-1">
-                  <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2 pointer-events-none" />
                   <input
                     type="text"
                     placeholder={`Search ${requestTypeLabel.toLowerCase()}s...`}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-full h-8 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans"
+                    className="w-full h-7.5 pl-7.5 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans"
                   />
                 </div>
 
@@ -1488,21 +1568,21 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={loadMergeRequests}
                   disabled={isLoadingList}
-                  className="h-8 px-2.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs shrink-0"
+                  className="h-7.5 px-2 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition cursor-pointer disabled:opacity-50 shadow-2xs shrink-0"
                   title="Refresh open requests from remote"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingList ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 ${isLoadingList ? 'animate-spin' : ''}`} />
                 </button>
               </div>
 
               {isLoadingList ? (
                 <div className="p-8 text-center space-y-2 flex-1 flex flex-col items-center justify-center">
-                  <Loader2 className="w-6 h-6 animate-spin text-commito-coral mx-auto" />
+                  <Loader2 className="w-5 h-5 animate-spin text-commito-coral mx-auto" />
                   <p className="text-xs font-medium text-text-muted">Loading open {requestTypeLabel.toLowerCase()}s...</p>
                 </div>
               ) : filteredMergeRequests.length === 0 ? (
-                <div className="p-8 text-center bg-base-1 border border-border rounded-sm space-y-2.5 flex-1 flex flex-col items-center justify-center">
-                  <CheckCircle2 className="w-7 h-7 text-emerald-400 mx-auto" />
+                <div className="p-6 text-center bg-base-1 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
                   <h4 className="text-xs font-bold text-text-primary">No open {requestTypeLabel.toLowerCase()}s</h4>
                   <p className="text-[11px] text-text-muted max-w-xs mx-auto">
                     No active {requestTypeLabel.toLowerCase()}s pending on remote{' '}
@@ -1511,21 +1591,21 @@ export const MergeRequestModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setActiveTab('create')}
-                    className="h-7 px-3 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+                    className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" />
+                    <Plus className="w-3 h-3" />
                     <span>Create {requestTypeLabel}</span>
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto space-y-2 pr-0.5">
+                <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5">
                   {filteredMergeRequests.map((mr) => {
                     const isSelected = String(mr.id) === String(activeSelectedMr?.id);
                     return (
                       <div
                         key={mr.id}
                         onClick={() => setSelectedMrId(String(mr.id))}
-                        className={`p-3 rounded-sm border transition cursor-pointer space-y-1.5 select-none ${
+                        className={`p-2.5 rounded-sm border transition cursor-pointer space-y-1 select-none ${
                           isSelected
                             ? 'bg-commito-coral/10 border-commito-coral/50 shadow-2xs ring-1 ring-commito-coral/20'
                             : 'bg-base-1 border-border hover:border-border-strong hover:bg-base-1/80'
@@ -1560,26 +1640,40 @@ export const MergeRequestModal: React.FC = () => {
               )}
             </div>
 
+            {/* Resizable Divider Splitter Handle */}
+            <div
+              onMouseDown={startResizingLeft}
+              onDoubleClick={() => setLeftPanelWidth(360)}
+              title="Drag to resize • Double-click to reset"
+              className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+              }`}
+            >
+              <div className="absolute inset-y-0 -left-1 -right-1" />
+            </div>
+
             {/* Right Column: Full Inspector with Sub-Tabs */}
-            <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-base-1/25">
+            <div className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden bg-base-1/25">
               {activeSelectedMr ? (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                  {/* Top Inspector Header Card */}
-                  <div className="p-4 border-b border-border bg-base-0 shrink-0 space-y-3 shadow-2xs">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-xs font-mono font-bold rounded-xs uppercase">
+                  {/* Top Inspector Header Card (Ultra-compact 2-row layout) */}
+                  <div className="px-3.5 py-2 border-b border-border bg-base-0 shrink-0 space-y-1.5 shadow-2xs">
+                    {/* Row 1: Status Pill + #ID + Title + Action Buttons */}
+                    <div className="flex items-center justify-between gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="px-1.5 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[10px] font-mono font-bold rounded-xs uppercase shrink-0">
                           {activeSelectedMr.state || 'OPEN'}
                         </span>
-                        <span className="text-xs font-mono text-text-muted">#{activeSelectedMr.id}</span>
+                        <span className="text-xs font-mono text-text-muted font-bold shrink-0">#{activeSelectedMr.id}</span>
+                        <h3 className="text-xs font-bold text-text-primary truncate">{activeSelectedMr.title}</h3>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         {(activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened') && (
                           <button
                             type="button"
                             onClick={handleOpenMergeModal}
-                            className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+                            className="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-xs active:scale-95"
                           >
                             <GitMerge className="w-3.5 h-3.5" />
                             <span>Merge</span>
@@ -1589,9 +1683,9 @@ export const MergeRequestModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
-                          className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95"
+                          className="h-6.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs active:scale-95"
                         >
-                          <Edit3 className="w-3.5 h-3.5 text-text-muted" />
+                          <Edit3 className="w-3 h-3 text-text-muted" />
                           <span>Edit</span>
                         </button>
 
@@ -1599,88 +1693,82 @@ export const MergeRequestModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openUrl(activeSelectedMr.web_url!)}
-                            className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                            className="h-6.5 px-2 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            title={`Open on ${providerName}`}
                           >
-                            <span>Open on {providerName}</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-text-muted" />
+                            <span>{providerName}</span>
+                            <ExternalLink className="w-3 h-3 text-text-muted" />
                           </button>
                         )}
                       </div>
                     </div>
 
-                    <h3 className="text-sm font-bold text-text-primary leading-snug">{activeSelectedMr.title}</h3>
-
-                    {/* Chips bar */}
-                    <div className="flex items-center gap-3 text-xs flex-wrap pt-0.5">
-                      <div className="flex items-center gap-1.5 font-mono text-[11px] text-text-muted">
-                        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                        <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
-                        <span>into</span>
-                        <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
-                      </div>
-
-                      <span className="text-border">•</span>
-
-                      <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
-                        {activeSelectedMr.author_avatar ? (
-                          <img
-                            src={activeSelectedMr.author_avatar}
-                            alt=""
-                            className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0"
-                          />
-                        ) : (
-                          <User className="w-3.5 h-3.5 text-text-faint shrink-0" />
-                        )}
-                        <span>@{activeSelectedMr.author_name.replace(/\s+/g, '')}</span>
-                      </div>
-
-                      <span className="text-border">•</span>
-
-                      <div className="flex items-center gap-1 text-[11px] text-text-muted">
-                        <Clock className="w-3.5 h-3.5 text-text-faint" />
-                        <span>{activeSelectedMr.created_at.slice(0, 10)}</span>
-                      </div>
-                    </div>
-
-                    {/* Inspector Sub-Tabs Navigation (GitHub/GitLab style) */}
-                    <div className="pt-2 border-t border-border/70 flex items-center justify-between">
+                    {/* Row 2: Sub-Tabs on Left + Metadata Route and Additions/Deletions on Right */}
+                    <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/60">
                       <Tabs<InspectorTab>
                         tabs={[
                           {
                             id: 'conversation',
                             label: 'Conversation',
-                            icon: <MessageSquare className="w-3.5 h-3.5" />,
+                            icon: <MessageSquare className="w-3 h-3" />,
                             badge: prComments.length > 0 ? prComments.length : undefined,
                             badgeVariant: 'neutral',
                           },
                           {
                             id: 'commits',
                             label: 'Commits',
-                            icon: <GitCommit className="w-3.5 h-3.5" />,
+                            icon: <GitCommit className="w-3 h-3" />,
                             badge: isLoadingBranchDiff ? undefined : prCommits.length,
                             badgeVariant: 'neutral',
                           },
                           {
                             id: 'files',
                             label: 'Files Changed',
-                            icon: <FileCode className="w-3.5 h-3.5" />,
+                            icon: <FileCode className="w-3 h-3" />,
                             badge: isLoadingBranchDiff ? undefined : prFiles.length,
                             badgeVariant: 'neutral',
                           },
                         ]}
                         activeTab={inspectorTab}
                         onChange={setInspectorTab}
-                        size="sm"
+                        size="xs"
                         variant="segmented"
                         ariaLabel="Pull request sub tabs"
                       />
 
-                      {(totalAdditions > 0 || totalDeletions > 0) && (
-                        <div className="hidden sm:flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-1 border border-border text-text-muted">
-                          <span className="text-emerald-400">+{totalAdditions}</span>
-                          <span className="text-red-400">-{totalDeletions}</span>
+                      <div className="flex items-center gap-2 text-[11px] font-mono text-text-muted flex-wrap">
+                        <div className="flex items-center gap-1">
+                          <GitBranch className="w-3 h-3 text-commito-coral shrink-0" />
+                          <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
+                          <span className="text-text-faint">→</span>
+                          <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
                         </div>
-                      )}
+
+                        <span className="text-border">•</span>
+
+                        <div className="flex items-center gap-1">
+                          {activeSelectedMr.author_avatar ? (
+                            <img
+                              src={activeSelectedMr.author_avatar}
+                              alt=""
+                              className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0"
+                            />
+                          ) : (
+                            <User className="w-3 h-3 text-text-faint shrink-0" />
+                          )}
+                          <span>@{activeSelectedMr.author_name.replace(/\s+/g, '')}</span>
+                        </div>
+
+                        {(totalAdditions > 0 || totalDeletions > 0) && (
+                          <>
+                            <span className="text-border">•</span>
+                            <div className="flex items-center gap-1 font-mono text-[10.5px] font-bold px-1.5 py-0.2 rounded-xs bg-base-1 border border-border">
+                              <span className="text-emerald-400">+{totalAdditions}</span>
+                              <span className="text-red-400">-{totalDeletions}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -2380,10 +2468,10 @@ export const MergeRequestModal: React.FC = () => {
           </div>
         )}
 
-        {/* Modal Footer Actions */}
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-base-1/60 shrink-0 min-h-[48px]">
+        {/* Modal Footer Actions (Slim & Space-saving) */}
+        <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 border-t border-border bg-base-1/70 shrink-0 min-h-[38px]">
           <div className="flex items-center gap-2 text-xs text-text-muted font-mono">
-            <span className="truncate">
+            <span className="truncate text-[11px]">
               Target: <span className="text-text-primary font-semibold">{targetRemoteInfo?.projectPath || selectedRemote}</span>
             </span>
           </div>
@@ -2395,12 +2483,12 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={() => handleCloseOrReopenPr(editingMr)}
                   disabled={isClosingPr || isSavingEdit}
-                  className="h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  className="h-6.5 px-2.5 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
                 >
                   {isClosingPr ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <XCircle className="w-3.5 h-3.5" />
+                    <XCircle className="w-3 h-3" />
                   )}
                   <span>
                     {editingMr.state?.toLowerCase() === 'open' || editingMr.state?.toLowerCase() === 'opened'
@@ -2416,7 +2504,7 @@ export const MergeRequestModal: React.FC = () => {
                     setEditingMr(null);
                   }}
                   disabled={isSavingEdit}
-                  className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                  className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   Cancel
                 </button>
@@ -2425,16 +2513,16 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={() => handleSaveFullEdit()}
                   disabled={!editTitle.trim() || isSavingEdit}
-                  className="h-7.5 px-4 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95 min-w-[140px] justify-center"
+                  className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95 justify-center"
                 >
                   {isSavingEdit ? (
                     <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Saving Changes...</span>
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Saving...</span>
                     </>
                   ) : (
                     <>
-                      <Save className="w-3.5 h-3.5" />
+                      <Save className="w-3 h-3" />
                       <span>Save Changes</span>
                     </>
                   )}
@@ -2446,7 +2534,7 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={() => setIsMergeRequestModalOpen(false)}
                   disabled={isSubmitting || isGeneratingAi}
-                  className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                  className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer disabled:opacity-50 shadow-2xs"
                 >
                   Close
                 </button>
@@ -2463,16 +2551,16 @@ export const MergeRequestModal: React.FC = () => {
                         ? `A pull request (#${existingPrForSource.id}) already exists for '${sourceBranch}'`
                         : undefined
                     }
-                    className="h-7.5 px-4 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 min-w-[140px] justify-center"
+                    className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs active:scale-95 justify-center"
                   >
                     {isSubmitting ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <Loader2 className="w-3 h-3 animate-spin" />
                         <span>Publishing...</span>
                       </>
                     ) : (
                       <>
-                        <Check className="w-3.5 h-3.5" />
+                        <Check className="w-3 h-3" />
                         <span>Submit {requestTypeLabel}</span>
                       </>
                     )}

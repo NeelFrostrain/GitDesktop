@@ -868,30 +868,34 @@ export const BranchDropdown: React.FC = () => {
             onSubmit={handleCreateBranchSubmit}
             className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
           >
-            <div className="px-4 py-3 bg-base-1 border-b border-border/70 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center">
-                  <GitBranch className="w-3.5 h-3.5" />
+            {/* Compact 1-Row Header */}
+            <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+                  <GitBranch className="w-3 h-3" />
                 </div>
-                <div>
+                <div className="flex items-center gap-1.5 min-w-0">
                   <h3 className="text-xs font-bold text-text-primary leading-none">Create Branch</h3>
-                  <p className="text-[10px] text-text-muted font-mono mt-0.5">
-                    from <span className="text-commito-coral">{currentBranch}</span>
-                  </p>
+                  <span className="text-border">•</span>
+                  <span className="text-[10.5px] text-text-muted font-mono truncate">
+                    from <span className="text-commito-coral font-semibold">{currentBranch}</span>
+                  </span>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="text-text-muted hover:text-text-primary p-1 rounded-sm hover:bg-base-2 transition cursor-pointer"
+                className="text-text-muted hover:text-text-primary p-1 rounded-sm hover:bg-base-2 transition cursor-pointer shrink-0"
+                title="Close (Esc)"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            <div className="p-4 space-y-3">
+            {/* Compact Body */}
+            <div className="p-3.5 space-y-2">
               <div>
-                <label className="text-[11px] font-semibold text-text-primary block mb-1.5">
+                <label className="text-[11px] font-semibold text-text-primary block mb-1">
                   Branch Name
                 </label>
                 <div className="relative flex items-center">
@@ -902,26 +906,27 @@ export const BranchDropdown: React.FC = () => {
                     placeholder="e.g. feature/new-workflow"
                     value={newBranchName}
                     onChange={(e) => setNewBranchName(e.target.value)}
-                    className="w-full h-8 pl-8 pr-2.5 bg-base-1/70 hover:bg-base-1 focus:bg-base-1 border border-border/70 hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-commito-coral/20 transition font-mono shadow-inner"
+                    className="w-full h-7.5 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition font-mono shadow-2xs"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="px-4 py-3 bg-base-1/50 border-t border-border/70 flex items-center justify-end gap-2">
+            {/* Slim Footer */}
+            <div className="px-3.5 py-1.5 min-h-[38px] bg-base-1/50 border-t border-border flex items-center justify-end gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowCreateModal(false)}
-                className="h-7.5 px-3 bg-base-0 hover:bg-base-2 border border-border/70 rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-xs"
+                className="h-6.5 px-3 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!newBranchName.trim() || isCreating}
-                className="h-7.5 px-3.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs active:scale-95"
+                className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 text-white rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-2xs active:scale-95"
               >
-                {isCreating && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isCreating && <Loader2 className="w-3 h-3 animate-spin" />}
                 <span>Create & Checkout</span>
               </button>
             </div>

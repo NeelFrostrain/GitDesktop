@@ -11,13 +11,13 @@ export const SettingsSearchBar: React.FC<SettingsSearchBarProps> = ({ matchCount
 
   return (
     <div className="relative flex-1 max-w-md">
-      <Search className="w-3.5 h-3.5 text-text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+      <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
       <input
         type="text"
         placeholder="Search settings..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
-        className="w-full h-8 pl-8.5 pr-16 bg-base-2/80 hover:bg-base-2 focus:bg-base-2 border border-border/70 focus:border-commito-coral/50 focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition-all shadow-inner"
+        className="w-full h-7 pl-8 pr-16 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
       />
 
       {searchQuery && (

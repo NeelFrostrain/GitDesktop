@@ -145,7 +145,7 @@ pub fn load_local_release_assets(repo_path: &str, tag_name: &str) -> Vec<Release
     assets
 }
 
-/// Helper to copy local asset files into .git/releases/<tag_name>
+/// Helper to copy local asset files into .git/releases/<tag_name> and prune removed files
 pub fn save_local_release_assets(
     repo_path: &str,
     tag_name: &str,
@@ -158,6 +158,7 @@ pub fn save_local_release_assets(
 
     let _ = std::fs::create_dir_all(&local_dir);
     let mut assets = Vec::new();
+    let mut kept_filenames = std::collections::HashSet::new();
 
     for fp in file_paths {
         let src_path = std::path::Path::new(fp);
@@ -165,12 +166,15 @@ pub fn save_local_release_assets(
             if fname == "meta.json" {
                 continue;
             }
+            kept_filenames.insert(fname.to_string());
             let dest_path = local_dir.join(fname);
-            let size = if let Ok(meta) = std::fs::metadata(fp) {
+            let size = if src_path == dest_path {
+                std::fs::metadata(&dest_path).ok().map(|m| m.len())
+            } else if let Ok(meta) = std::fs::metadata(fp) {
                 let _ = std::fs::copy(fp, &dest_path);
                 Some(meta.len())
             } else {
-                None
+                std::fs::metadata(&dest_path).ok().map(|m| m.len())
             };
             let path_str = dest_path.to_string_lossy().to_string();
             assets.push(ReleaseAsset {
@@ -181,6 +185,18 @@ pub fn save_local_release_assets(
             });
         }
     }
+
+    // Clean up any files in local_dir that were deleted/removed by user
+    if let Ok(read_dir) = std::fs::read_dir(&local_dir) {
+        for entry in read_dir.flatten() {
+            if let Ok(file_name) = entry.file_name().into_string() {
+                if file_name != "meta.json" && !kept_filenames.contains(&file_name) {
+                    let _ = std::fs::remove_file(entry.path());
+                }
+            }
+        }
+    }
+
     assets
 }
 
@@ -422,15 +438,11 @@ pub fn update_release(
         super::tags::push_specific_tag(repo_path, remote, tag_name.trim())?;
     }
 
-    let mut assets = load_local_release_assets(repo_path, tag_name.trim());
-    if let Some(files) = file_paths {
-        let new_saved = save_local_release_assets(repo_path, tag_name.trim(), files);
-        for a in new_saved {
-            if !assets.iter().any(|existing| existing.name == a.name) {
-                assets.push(a);
-            }
-        }
-    }
+    let assets = if let Some(files) = file_paths {
+        save_local_release_assets(repo_path, tag_name.trim(), files)
+    } else {
+        save_local_release_assets(repo_path, tag_name.trim(), &[])
+    };
 
     save_local_release_meta(repo_path, tag_name.trim(), is_latest, None);
 
@@ -969,6 +981,12 @@ pub fn delete_release(
     delete_tag: bool,
     remote: Option<&str>,
 ) -> Result<(), AppError> {
+    let local_dir = std::path::Path::new(repo_path)
+        .join(".git")
+        .join("releases")
+        .join(tag_name);
+    let _ = std::fs::remove_dir_all(local_dir);
+
     if delete_tag {
         super::tags::delete_tag(repo_path, tag_name)?;
         let _ = super::tags::delete_remote_tag(repo_path, remote, tag_name);

@@ -6,7 +6,12 @@ import {
 } from '../lib/settingsSchema';
 import { useSettingsStore } from '../store/useSettingsStore';
 
-export const CategoryTree: React.FC = () => {
+export interface CategoryTreeProps {
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', style }) => {
   const {
     selectedCategory,
     selectedSubcategory,
@@ -29,8 +34,11 @@ export const CategoryTree: React.FC = () => {
   }, [isModified]);
 
   return (
-    <nav className="w-56 bg-base-1/40 border-r border-border/70 p-2 space-y-0.5 select-none overflow-y-auto scrollbar-thin flex-shrink-0">
-      <div className="px-2.5 py-2 text-[10px] font-bold text-text-muted/70 uppercase tracking-widest">
+    <nav
+      style={style}
+      className={`bg-base-1/40 p-2 space-y-0.5 select-none overflow-y-auto scrollbar-thin shrink-0 ${className}`}
+    >
+      <div className="px-2 py-1.5 text-[10px] font-bold text-text-muted/70 uppercase tracking-widest">
         Categories
       </div>
 

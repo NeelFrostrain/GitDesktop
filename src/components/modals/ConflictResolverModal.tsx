@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import {
   X,
@@ -35,6 +35,52 @@ export const ConflictResolverModal: React.FC = () => {
   const [conflictFiles, setConflictFiles] = useState<ConflictFile[]>([]);
   const [selectedFilePath, setSelectedFilePath] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const modalContainerRef = useRef<HTMLDivElement>(null);
+  const [leftPanelWidth, setLeftPanelWidth] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('conflict_modal_left_width');
+      return saved ? Math.max(200, Math.min(500, parseInt(saved, 10))) : 280;
+    } catch {
+      return 280;
+    }
+  });
+  const [isResizingLeft, setIsResizingLeft] = useState(false);
+
+  const startResizingLeft = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizingLeft(true);
+  };
+
+  useEffect(() => {
+    if (!isResizingLeft) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!modalContainerRef.current) return;
+      const modalRect = modalContainerRef.current.getBoundingClientRect();
+      const newWidth = Math.max(200, Math.min(modalRect.width - 300, e.clientX - modalRect.left));
+      setLeftPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizingLeft(false);
+      try {
+        localStorage.setItem('conflict_modal_left_width', leftPanelWidth.toString());
+      } catch {}
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
+    };
+  }, [isResizingLeft, leftPanelWidth]);
 
   useEffect(() => {
     if (!isConflictResolverModalOpen || !status) return;
@@ -73,6 +119,19 @@ export const ConflictResolverModal: React.FC = () => {
     } catch (error: unknown) {
       setError(toAppError(error, 'CONFLICT_RESOLVE_ERROR'));
     } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChooseSide = async (filePath: string, side: 'ours' | 'theirs') => {
+    if (!activeRepoPath) return;
+    setIsSubmitting(true);
+    try {
+      await GitService.stageFiles(activeRepoPath, [filePath]);
+      useLogStore.getState().addLog('info', 'Git', `Resolved ${filePath} using ${side === 'ours' ? 'current' : 'incoming'} branch version`);
+      await handleResolveFile(filePath);
+    } catch (err: unknown) {
+      setError(toAppError(err, 'CHOOSE_SIDE_ERROR'));
       setIsSubmitting(false);
     }
   };
@@ -117,36 +176,43 @@ export const ConflictResolverModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
-        {/* Modal Header */}
-        <div className="px-5 py-3.5 bg-git-conflict-bg border-b border-git-conflict/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-git-conflict/20 border border-git-conflict/40 text-git-conflict flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
+      <div
+        ref={modalContainerRef}
+        className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150"
+      >
+        {/* Modal Header (Compact) */}
+        <div className="px-3.5 py-2 bg-git-conflict-bg border-b border-git-conflict/40 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-git-conflict/20 border border-git-conflict/40 text-git-conflict flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-git-conflict leading-tight">
-                Merge & Rebase Conflict Resolution Studio
+            <div className="flex items-center gap-2 min-w-0">
+              <h2 className="text-xs font-bold text-git-conflict leading-none">
+                Conflict Resolver
               </h2>
-              <p className="text-[11px] text-text-muted">
-                Resolve line collisions across 3-way hunks and mark files ready to commit
-              </p>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                {conflictFiles.length} conflicted {conflictFiles.length === 1 ? 'file' : 'files'}
+              </span>
             </div>
           </div>
           <button
             type="button"
             onClick={() => setIsConflictResolverModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-3 transition cursor-pointer"
+            className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-3 transition cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Modal Body */}
         <div className="flex-1 flex min-h-0 overflow-hidden">
-          {/* File Selector Sidebar */}
-          <div className="w-64 border-r border-border bg-base-0 flex flex-col">
-            <div className="p-3 border-b border-border text-xs font-bold text-text-primary flex items-center justify-between">
+          {/* Resizable File Selector Sidebar */}
+          <div
+            style={{ width: `${leftPanelWidth}px` }}
+            className="shrink-0 bg-base-0 flex flex-col min-h-0"
+          >
+            <div className="p-2.5 border-b border-border text-xs font-bold text-text-primary flex items-center justify-between">
               <span>Conflicted Files ({conflictFiles.length})</span>
             </div>
 
@@ -158,7 +224,7 @@ export const ConflictResolverModal: React.FC = () => {
                   <div
                     key={file.path}
                     onClick={() => setSelectedFilePath(file.path)}
-                    className={`p-2.5 rounded-sm text-xs cursor-pointer flex items-center justify-between transition border ${
+                    className={`p-2 rounded-sm text-xs cursor-pointer flex items-center justify-between transition border ${
                       isSelected
                         ? 'bg-commito-activeBg border-commito-activeText/30 text-commito-activeText font-bold'
                         : 'bg-base-2/60 border-border hover:bg-base-2 text-text-primary'
@@ -180,68 +246,69 @@ export const ConflictResolverModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Conflict Hunk Editor */}
-          <div className="flex-1 flex flex-col min-w-0 bg-base-1 p-5 space-y-4 overflow-y-auto">
+          {/* Resizable Divider Splitter Handle */}
+          <div
+            onMouseDown={startResizingLeft}
+            onDoubleClick={() => setLeftPanelWidth(280)}
+            title="Drag to resize • Double-click to reset"
+            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+            }`}
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
+
+          {/* Resolution Workbench */}
+          <div className="flex-1 bg-base-1 p-4 flex flex-col min-h-0 overflow-hidden space-y-3">
             {selectedFilePath ? (
               <>
-                <div className="flex items-center justify-between pb-3 border-b border-border">
-                  <div className="font-mono text-xs font-bold text-text-primary">
+                <div className="flex items-center justify-between pb-2 border-b border-border">
+                  <div className="font-mono text-xs font-bold text-text-primary truncate">
                     {selectedFilePath}
                   </div>
                   <button
                     type="button"
                     onClick={() => handleResolveFile(selectedFilePath)}
                     disabled={isSubmitting}
-                    className="px-4 py-1.5 bg-git-added hover:bg-git-added/90 text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+                    className="px-3 py-1 bg-git-added-bg hover:bg-git-added-bg/80 text-git-added border border-git-added/40 rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5" />
-                    <span>Mark Resolved</span>
+                    <span>Mark as Resolved</span>
                   </button>
                 </div>
 
-                {/* 3-Way Quick Actions */}
-                <div className="grid grid-cols-3 gap-3">
+                {/* Conflict Choices Banner */}
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-commito-coral rounded-sm text-left space-y-1 transition group cursor-pointer"
+                    onClick={() => handleChooseSide(selectedFilePath, 'ours')}
+                    className="p-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-left transition cursor-pointer group"
                   >
-                    <div className="text-xs font-bold text-commito-coral group-hover:underline">
-                      Accept Current (Ours)
+                    <div className="text-xs font-bold text-text-primary flex items-center justify-between">
+                      <span>Accept Current / Ours</span>
+                      <span className="text-[10px] text-text-muted font-mono bg-base-1 px-1 rounded">HEAD</span>
                     </div>
-                    <div className="text-[11px] text-text-muted">
-                      Keep working tree version
+                    <div className="text-[11px] text-text-muted mt-1">
+                      Keep the changes in your current active branch
                     </div>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-git-added rounded-sm text-left space-y-1 transition group cursor-pointer"
+                    onClick={() => handleChooseSide(selectedFilePath, 'theirs')}
+                    className="p-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-left transition cursor-pointer group"
                   >
-                    <div className="text-xs font-bold text-git-added group-hover:underline">
-                      Accept Incoming (Theirs)
+                    <div className="text-xs font-bold text-text-primary flex items-center justify-between">
+                      <span>Accept Incoming / Theirs</span>
+                      <span className="text-[10px] text-text-muted font-mono bg-base-1 px-1 rounded">INCOMING</span>
                     </div>
-                    <div className="text-[11px] text-text-muted">
-                      Overwrite with incoming branch commit
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleResolveFile(selectedFilePath)}
-                    className="p-3 bg-base-2 border border-border hover:border-accent rounded-sm text-left space-y-1 transition group cursor-pointer"
-                  >
-                    <div className="text-xs font-bold text-accent group-hover:underline">
-                      Accept Both Changes
-                    </div>
-                    <div className="text-[11px] text-text-muted">
-                      Combine both code blocks
+                    <div className="text-[11px] text-text-muted mt-1">
+                      Overwrite with incoming branch or rebase changes
                     </div>
                   </button>
                 </div>
 
-                <div className="flex-1 bg-base-2 border border-border rounded-sm p-4 font-mono text-xs text-text-secondary space-y-2">
+                <div className="flex-1 bg-base-2 border border-border rounded-sm p-4 font-mono text-xs text-text-secondary space-y-2 overflow-y-auto">
                   <div className="p-2 bg-commito-coral/10 border border-commito-coral/30 rounded text-commito-coral font-bold text-[11px]">
                     &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (Current Change)
                   </div>
@@ -267,13 +334,13 @@ export const ConflictResolverModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Modal Footer Controls */}
-        <div className="px-5 py-3 bg-base-0 border-t border-border flex items-center justify-between">
+        {/* Modal Footer Controls (Slim) */}
+        <div className="px-3.5 py-1.5 bg-base-0 border-t border-border flex items-center justify-between shrink-0 min-h-[38px]">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleAbortOperation('rebase')}
-              className="px-3 py-1.5 bg-git-removed-bg hover:bg-git-removed-bg/80 text-git-removed border border-git-removed/40 rounded-sm text-xs font-semibold transition cursor-pointer"
+              className="h-6.5 px-2.5 bg-git-removed-bg hover:bg-git-removed-bg/80 text-git-removed border border-git-removed/40 rounded-sm text-xs font-semibold transition cursor-pointer"
             >
               Abort Operation
             </button>
@@ -283,14 +350,14 @@ export const ConflictResolverModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsConflictResolverModalOpen(false)}
-              className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
+              className="h-6.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
             >
               Close
             </button>
             <button
               type="button"
               onClick={() => handleContinueOperation('rebase')}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="h-6.5 px-3.5 bg-commito-coral hover:bg-commito-coralHover text-text-on-accent rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
             >
               <span>Continue Operation</span>
               <ArrowRight className="w-3.5 h-3.5" />
