@@ -19,6 +19,7 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
+import { Tabs } from '../common/Tabs';
 
 export interface CreateTagModalProps {
   isOpen: boolean;
@@ -272,46 +273,19 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
               Target Reference
             </label>
 
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setTargetType('branch')}
-                className={`h-8 px-2.5 rounded-sm border text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  targetType === 'branch'
-                    ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-semibold'
-                    : 'bg-base-1 border-border text-text-secondary hover:text-text-primary hover:bg-base-2'
-                }`}
-              >
-                <GitBranch className="w-3.5 h-3.5" />
-                <span>On Branch</span>
-              </button>
+            <Tabs<'branch' | 'head' | 'commit'>
+              tabs={[
+                { id: 'branch', label: 'On Branch', icon: <GitBranch className="w-3.5 h-3.5" /> },
+                { id: 'head', label: 'HEAD', icon: <Bookmark className="w-3.5 h-3.5" /> },
+                { id: 'commit', label: 'Commit SHA', icon: <GitCommit className="w-3.5 h-3.5" /> },
+              ]}
+              activeTab={targetType}
+              onChange={setTargetType}
+              fullWidth
+              size="md"
+              ariaLabel="Tag target reference"
+            />
 
-              <button
-                type="button"
-                onClick={() => setTargetType('head')}
-                className={`h-8 px-2.5 rounded-sm border text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  targetType === 'head'
-                    ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-semibold'
-                    : 'bg-base-1 border-border text-text-secondary hover:text-text-primary hover:bg-base-2'
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>HEAD</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setTargetType('commit')}
-                className={`h-8 px-2.5 rounded-sm border text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  targetType === 'commit'
-                    ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-semibold'
-                    : 'bg-base-1 border-border text-text-secondary hover:text-text-primary hover:bg-base-2'
-                }`}
-              >
-                <GitCommit className="w-3.5 h-3.5" />
-                <span>Commit SHA</span>
-              </button>
-            </div>
 
             {/* Custom Branch Dropdown */}
             {targetType === 'branch' && (

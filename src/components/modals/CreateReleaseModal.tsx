@@ -34,6 +34,7 @@ import { ReleaseService } from '../../services/git/releaseService';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Dropdown } from '../common/Dropdown';
+import { Tabs } from '../common/Tabs';
 import { ReleaseInfo } from '../../types/git';
 
 export interface CreateReleaseModalProps {
@@ -538,30 +539,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   Release Tag <span className="text-commito-coral">*</span>
                 </label>
                 {tags.length > 0 && (
-                  <div className="inline-flex p-0.5 bg-base-0 border border-border rounded-xs">
-                    <button
-                      type="button"
-                      onClick={() => setTagSource('new')}
-                      className={`px-2.5 py-0.5 rounded-xs text-[10.5px] font-semibold transition cursor-pointer ${
-                        tagSource === 'new'
-                          ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/40 shadow-2xs'
-                          : 'text-text-muted hover:text-text-primary border border-transparent'
-                      }`}
-                    >
-                      New Tag
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTagSource('existing')}
-                      className={`px-2.5 py-0.5 rounded-xs text-[10.5px] font-semibold transition cursor-pointer ${
-                        tagSource === 'existing'
-                          ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/40 shadow-2xs'
-                          : 'text-text-muted hover:text-text-primary border border-transparent'
-                      }`}
-                    >
-                      Existing Tag
-                    </button>
-                  </div>
+                  <Tabs<'new' | 'existing'>
+                    tabs={[
+                      { id: 'new', label: 'New Tag' },
+                      { id: 'existing', label: 'Existing Tag' },
+                    ]}
+                    activeTab={tagSource}
+                    onChange={setTagSource}
+                    size="xs"
+                    ariaLabel="Tag source selection"
+                  />
                 )}
               </div>
 
@@ -637,33 +624,24 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           {/* Release Notes / Description with Markdown Tabs & Helper */}
           <div className="space-y-1.5 p-3 bg-base-1 border border-border rounded-sm">
             <div className="flex items-center justify-between flex-wrap gap-2 pb-1 border-b border-border/60">
-              <div className="inline-flex p-0.5 bg-base-0 border border-border rounded-xs">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('write')}
-                  className={`px-2.5 py-1 rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                    activeTab === 'write'
-                      ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/40 shadow-2xs'
-                      : 'text-text-muted hover:text-text-primary border border-transparent'
-                  }`}
-                >
-                  <Edit3 className="w-3 h-3 text-commito-coral" />
-                  <span>Write Markdown</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('preview')}
-                  className={`px-2.5 py-1 rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                    activeTab === 'preview'
-                      ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/40 shadow-2xs'
-                      : 'text-text-muted hover:text-text-primary border border-transparent'
-                  }`}
-                >
-                  <Eye className="w-3 h-3 text-gitlab-teal" />
-                  <span>Preview</span>
-                </button>
-              </div>
+              <Tabs<'write' | 'preview'>
+                tabs={[
+                  {
+                    id: 'write',
+                    label: 'Write Markdown',
+                    icon: <Edit3 className="w-3 h-3 text-commito-coral" />,
+                  },
+                  {
+                    id: 'preview',
+                    label: 'Preview',
+                    icon: <Eye className="w-3 h-3 text-gitlab-teal" />,
+                  },
+                ]}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+                size="sm"
+                ariaLabel="Release notes view"
+              />
 
               <button
                 type="button"

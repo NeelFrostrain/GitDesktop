@@ -27,6 +27,7 @@ import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pull
 import { BranchInfo, UnifiedMergeRequest } from '../../types/git';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
+import { Tabs } from '../common/Tabs';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -410,71 +411,55 @@ export const BranchDropdown: React.FC = () => {
             {/* Header: Segmented Tabs & Action Button */}
             <div className="p-2.5 border-b border-border/70 bg-base-0 flex items-center justify-between gap-2 shrink-0">
               {/* Segmented Tab Pill */}
-              <div className="flex items-center gap-0.5 bg-base-1 border border-border/70 p-0.5 rounded-sm flex-1 shadow-xs">
-                {/* Branches Tab Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('branches');
+              <div className="flex-1">
+                <Tabs<'branches' | 'pull-requests'>
+                  tabs={[
+                    {
+                      id: 'branches',
+                      label: 'Branches',
+                      icon: (
+                        <GitBranch
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            activeTab === 'branches' ? 'text-commito-coral' : 'text-text-muted'
+                          }`}
+                        />
+                      ),
+                      badge: isLoadingBranches ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin text-commito-coral" />
+                      ) : (
+                        branches.filter((b) => !b.is_remote).length
+                      ),
+                      badgeVariant: 'coral',
+                    },
+                    {
+                      id: 'pull-requests',
+                      label: 'Pull requests',
+                      icon: (
+                        <GitPullRequest
+                          className={`w-3.5 h-3.5 shrink-0 ${
+                            activeTab === 'pull-requests' ? 'text-emerald-400' : 'text-text-muted'
+                          }`}
+                        />
+                      ),
+                      badge: isLoadingPRs ? (
+                        <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
+                      ) : pullRequests.length > 0 ? (
+                        pullRequests.length
+                      ) : undefined,
+                      badgeVariant: 'emerald',
+                    },
+                  ]}
+                  activeTab={activeTab}
+                  onChange={(tab) => {
+                    setActiveTab(tab);
                     setFilterQuery('');
+                    if (tab === 'pull-requests' && pullRequests.length === 0) loadPullRequests();
                     setTimeout(() => searchInputRef.current?.focus(), 50);
                   }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-xs text-[11px] font-medium transition-all duration-75 cursor-pointer ${
-                    activeTab === 'branches'
-                      ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/70'
-                      : 'text-text-muted hover:text-text hover:bg-base-2/50 border border-transparent font-medium'
-                  }`}
-                >
-                  <GitBranch
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      activeTab === 'branches' ? 'text-commito-coral' : 'text-text-muted'
-                    }`}
-                  />
-                  <span>Branches</span>
-                  {isLoadingBranches ? (
-                    <Loader2 className="w-2.5 h-2.5 animate-spin text-commito-coral ml-0.5" />
-                  ) : (
-                    <span
-                      className={`min-w-4 h-4 px-1 rounded-sm text-[9.5px] font-mono font-medium flex items-center justify-center leading-none ${
-                        activeTab === 'branches'
-                          ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                          : 'bg-base-2 text-text-muted border border-border/40'
-                      }`}
-                    >
-                      {branches.filter((b) => !b.is_remote).length}
-                    </span>
-                  )}
-                </button>
-
-                {/* Pull Requests Tab Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveTab('pull-requests');
-                    setFilterQuery('');
-                    if (pullRequests.length === 0) loadPullRequests();
-                    setTimeout(() => searchInputRef.current?.focus(), 50);
-                  }}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-1 px-2 rounded-xs text-[11px] font-medium transition-all duration-75 cursor-pointer ${
-                    activeTab === 'pull-requests'
-                      ? 'bg-base-2 text-text font-semibold shadow-xs border border-border-strong/70'
-                      : 'text-text-muted hover:text-text hover:bg-base-2/50 border border-transparent font-medium'
-                  }`}
-                >
-                  <GitPullRequest
-                    className={`w-3.5 h-3.5 shrink-0 ${
-                      activeTab === 'pull-requests' ? 'text-emerald-400' : 'text-text-muted'
-                    }`}
-                  />
-                  <span>Pull requests</span>
-                  {isLoadingPRs ? (
-                    <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400 ml-0.5" />
-                  ) : pullRequests.length > 0 ? (
-                    <span className="px-1.5 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9.5px] font-mono font-bold">
-                      {pullRequests.length}
-                    </span>
-                  ) : null}
-                </button>
+                  fullWidth
+                  size="sm"
+                  ariaLabel="Branch and Pull Request navigation tabs"
+                />
               </div>
 
               {/* Action Button: New Branch vs. New PR */}

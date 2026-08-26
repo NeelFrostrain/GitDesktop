@@ -18,6 +18,7 @@ import { useTerminalStore } from './store/terminalStore';
 import { useGitStore } from '../../store/useGitStore';
 import { listen } from '@tauri-apps/api/event';
 import type { MinGitProgress } from '../git-runtime/useGitRuntime';
+import { Tabs } from '../../components/common/Tabs';
 
 export interface TerminalTabBarProps {
   repoName: string;
@@ -93,37 +94,27 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
       {/* Left: Tabs + Repo & Branch info */}
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Sleek Segmented Switcher */}
-        <div className="h-6.5 flex items-center bg-base-0 border border-border/90 rounded-sm p-0.5 gap-0.5 shadow-2xs">
-          <button
-            type="button"
-            onClick={() => onTabChange('shell')}
-            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'shell'
-                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
-                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
-            }`}
-          >
-            <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />
-            <span>Shell</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onTabChange('app_log')}
-            className={`h-full px-2 rounded-xs text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'app_log'
-                ? 'bg-base-2 text-text-primary shadow-xs font-semibold border border-border/80'
-                : 'text-text-muted hover:text-text-primary hover:bg-base-2/50 border border-transparent'
-            }`}
-          >
-            <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
-            <span>App Log</span>
-            {logCount !== undefined && logCount > 0 && (
-              <span className="px-1 py-0.2 bg-base-1 text-[9px] font-mono text-text-muted rounded-xs border border-border/60 leading-none">
-                {logCount}
-              </span>
-            )}
-          </button>
-        </div>
+        <Tabs<'shell' | 'app_log'>
+          tabs={[
+            {
+              id: 'shell',
+              label: 'Shell',
+              icon: <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />,
+            },
+            {
+              id: 'app_log',
+              label: 'App Log',
+              icon: <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />,
+              badge: logCount !== undefined && logCount > 0 ? logCount : undefined,
+              badgeVariant: 'neutral',
+            },
+          ]}
+          activeTab={activeTab}
+          onChange={onTabChange}
+          size="sm"
+          ariaLabel="Terminal panel tabs"
+        />
+
 
         {/* Repo Name Chip */}
         {repoName && (
