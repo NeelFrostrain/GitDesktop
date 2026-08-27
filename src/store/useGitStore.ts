@@ -113,6 +113,11 @@ export interface GitState {
   isRepoModalOpen: boolean;
   isCreateRepoModalOpen: boolean;
   isMergeRequestModalOpen: boolean;
+  selectedMergeRequestId: string | null;
+  mergeRequestModalTab: 'create' | 'list' | 'edit';
+  setSelectedMergeRequestId: (id: string | null) => void;
+  setMergeRequestModalTab: (tab: 'create' | 'list' | 'edit') => void;
+  openMergeRequestModal: (tab?: 'create' | 'list' | 'edit', prId?: string | null) => void;
   isWorktreeModalOpen: boolean;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
@@ -249,6 +254,8 @@ export const useGitStore = create<GitState>((set, get) => ({
   isCloneRepoModalOpen: false,
   cloneModalInitialUrl: '',
   isMergeRequestModalOpen: false,
+  selectedMergeRequestId: null,
+  mergeRequestModalTab: 'create',
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
@@ -580,6 +587,14 @@ export const useGitStore = create<GitState>((set, get) => ({
       cloneModalInitialUrl: initialUrl !== undefined ? initialUrl : get().cloneModalInitialUrl,
     }),
   setIsMergeRequestModalOpen: (isMergeRequestModalOpen) => set({ isMergeRequestModalOpen }),
+  setSelectedMergeRequestId: (selectedMergeRequestId) => set({ selectedMergeRequestId }),
+  setMergeRequestModalTab: (mergeRequestModalTab) => set({ mergeRequestModalTab }),
+  openMergeRequestModal: (tab = 'create', prId = null) =>
+    set({
+      isMergeRequestModalOpen: true,
+      mergeRequestModalTab: tab,
+      selectedMergeRequestId: prId,
+    }),
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),

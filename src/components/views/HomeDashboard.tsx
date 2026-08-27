@@ -13,7 +13,6 @@ import {
   DownloadCloud,
   FolderOpen,
   Users,
-  Settings2,
 } from 'lucide-react';
 
 export const HomeDashboard: React.FC = () => {

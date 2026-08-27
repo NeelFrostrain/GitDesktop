@@ -61,6 +61,7 @@ export const BranchDropdown: React.FC = () => {
     setBranches,
     setError,
     setIsMergeRequestModalOpen,
+    openMergeRequestModal,
     user,
   } = useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
@@ -244,8 +245,8 @@ export const BranchDropdown: React.FC = () => {
   };
 
   const handleSelectPullRequest = (pr: UnifiedMergeRequest) => {
-    if (!pr.source_branch) return;
-    handleSelectBranch(pr.source_branch);
+    setIsOpen(false);
+    openMergeRequestModal('list', String(pr.id));
   };
 
   const executeDirectCheckout = async (branchName: string) => {
@@ -795,7 +796,7 @@ export const BranchDropdown: React.FC = () => {
                                 ? 'bg-commito-coral/10 border-commito-coral/30 shadow-xs'
                                 : 'bg-base-0 hover:bg-base-1/90 border-transparent hover:border-border/60 hover:shadow-xs'
                             }`}
-                            title={`Checkout branch '${pr.source_branch}' for PR ${numberPrefix}${prNumber}`}
+                            title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
                           >
                             <div className="flex items-start gap-2.5 min-w-0 flex-1">
                               <div className="w-5 h-5 rounded-sm bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">

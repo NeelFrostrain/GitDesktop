@@ -41,9 +41,22 @@ const LICENSE_TEMPLATES = [
   { value: 'MIT', label: 'MIT License (Permissive & Common)' },
   { value: 'Apache-2.0', label: 'Apache License 2.0 (Patents & Trademarks)' },
   { value: 'GPL-3.0', label: 'GNU General Public License v3.0 (Copyleft)' },
+  { value: 'GPL-2.0', label: 'GNU General Public License v2.0 (Legacy Copyleft)' },
+  { value: 'AGPL-3.0', label: 'GNU Affero General Public License v3.0 (Network Copyleft)' },
+  { value: 'LGPL-3.0', label: 'GNU Lesser General Public License v3.0 (Weak Copyleft)' },
+  { value: 'BSD-2-Clause', label: 'BSD 2-Clause "Simplified" License' },
+  { value: 'BSD-3-Clause', label: 'BSD 3-Clause "New" / "Revised" License' },
+  { value: '0BSD', label: 'BSD Zero Clause License (Public Domain Equivalent)' },
+  { value: 'ISC', label: 'ISC License (Permissive & Minimal)' },
+  { value: 'MPL-2.0', label: 'Mozilla Public License 2.0 (File-based Copyleft)' },
+  { value: 'Unlicense', label: 'The Unlicense (Public Domain Dedication)' },
+  { value: 'CC0-1.0', label: 'Creative Commons Zero v1.0 Universal (Public Domain)' },
+  { value: 'BSL-1.0', label: 'Boost Software License 1.0' },
+  { value: 'EPL-2.0', label: 'Eclipse Public License 2.0' },
+  { value: 'WTFPL', label: 'WTFPL (Do What The F*ck You Want To)' },
 ];
 
-const LICENSE_QUICK_CHIPS = ['None', 'MIT', 'Apache-2.0', 'GPL-3.0'];
+const LICENSE_QUICK_CHIPS = ['None', 'MIT', 'Apache-2.0', 'GPL-3.0', 'BSD-3-Clause', 'ISC', 'Unlicense'];
 
 /**
  * Modern modal dialog for initializing a new local Git repository with customizable

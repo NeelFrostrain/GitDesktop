@@ -74,6 +74,8 @@ export const MergeRequestModal: React.FC = () => {
     activeRepoPath,
     isMergeRequestModalOpen,
     setIsMergeRequestModalOpen,
+    selectedMergeRequestId,
+    mergeRequestModalTab,
     user,
     status,
     setError,
@@ -234,6 +236,13 @@ export const MergeRequestModal: React.FC = () => {
       return;
     }
 
+    if (mergeRequestModalTab) {
+      setActiveTab(mergeRequestModalTab);
+    }
+    if (selectedMergeRequestId) {
+      setSelectedMrId(selectedMergeRequestId);
+    }
+
     setIsLoadingBranches(true);
     setFormError(null);
 
@@ -269,7 +278,7 @@ export const MergeRequestModal: React.FC = () => {
     setTimeout(() => {
       titleInputRef.current?.focus();
     }, 80);
-  }, [isMergeRequestModalOpen, activeRepoPath]);
+  }, [isMergeRequestModalOpen, activeRepoPath, mergeRequestModalTab, selectedMergeRequestId]);
 
   const targetRemoteInfo = useMemo(() => {
     const remote = remotes.find((r) => r.name === selectedRemote) || remotes[0];
@@ -296,7 +305,18 @@ export const MergeRequestModal: React.FC = () => {
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
       setMergeRequests(res || []);
       if (res && res.length > 0) {
-        setSelectedMrId((prev) => (prev && res.some((m) => String(m.id) === prev) ? prev : String(res[0].id)));
+        setSelectedMrId((prev) => {
+          if (
+            selectedMergeRequestId &&
+            res.some((m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId)
+          ) {
+            const found = res.find(
+              (m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId
+            );
+            return found ? String(found.id) : selectedMergeRequestId;
+          }
+          return prev && res.some((m) => String(m.id) === prev) ? prev : String(res[0].id);
+        });
       }
     } catch (err: unknown) {
       setMergeRequests([]);
@@ -304,7 +324,14 @@ export const MergeRequestModal: React.FC = () => {
     } finally {
       setIsLoadingList(false);
     }
-  }, [activeRepoPath, targetRemoteInfo?.projectPath, targetRemoteInfo?.serverUrl, targetRemoteInfo?.provider, user?.provider]);
+  }, [
+    activeRepoPath,
+    targetRemoteInfo?.projectPath,
+    targetRemoteInfo?.serverUrl,
+    targetRemoteInfo?.provider,
+    user?.provider,
+    selectedMergeRequestId,
+  ]);
 
   // Load Open Requests once when modal opens or active repository changes
   useEffect(() => {
