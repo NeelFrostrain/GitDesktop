@@ -156,6 +156,7 @@ export const RewriteHistoryModal: React.FC = () => {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
+
         {/* Body */}
         <form id="rewrite-history-form" onSubmit={handleConfirm} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Uncommitted changes blocking alert */}
@@ -197,7 +198,7 @@ export const RewriteHistoryModal: React.FC = () => {
               </div>
 
               <p className="text-xs text-text-secondary">
-                {pendingHistoryOp.direction === 'above'
+                {pendingHistoryOp.position === 'before'
                   ? 'To immediately before commit:'
                   : 'To immediately after commit:'}
               </p>
@@ -213,38 +214,7 @@ export const RewriteHistoryModal: React.FC = () => {
             </div>
           )}
 
-          {/* Squash Details */}
-          {pendingHistoryOp.type === 'squash' && (
-            <div className="space-y-3">
-              <p className="text-xs text-text-secondary">
-                You are squashing commit:
-              </p>
-
-              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.sourceCommit.message}</h4>
-                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
-                  <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
-                  <span>•</span>
-                  <span>{pendingHistoryOp.sourceCommit.author_name}</span>
-                </div>
-              </div>
-
-              <p className="text-xs text-text-secondary">
-                Into the previous commit:
-              </p>
-
-              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.targetCommit.message}</h4>
-                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
-                  <span>{pendingHistoryOp.targetCommit.short_sha}</span>
-                  <span>•</span>
-                  <span>{pendingHistoryOp.targetCommit.author_name}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Merge / Combine Details */}
+          {/* Merge Details */}
           {pendingHistoryOp.type === 'merge' && (
             <div className="space-y-3">
               <p className="text-xs text-text-secondary">

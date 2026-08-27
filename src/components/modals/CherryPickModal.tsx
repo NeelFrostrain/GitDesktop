@@ -69,6 +69,14 @@ export const CherryPickModal: React.FC = () => {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedShas.length === filteredCommits.length) {
+      setSelectedShas([]);
+    } else {
+      setSelectedShas(filteredCommits.map((c) => c.sha));
+    }
+  };
+
   const handleExecuteCherryPick = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeRepoPath || selectedShas.length === 0) return;
@@ -138,6 +146,7 @@ export const CherryPickModal: React.FC = () => {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
+
         {/* Modal Body */}
         <form id="cherry-pick-form" onSubmit={handleExecuteCherryPick} className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden">
           {/* Branch Selector & Search */}
@@ -149,7 +158,7 @@ export const CherryPickModal: React.FC = () => {
                 value={sourceBranch}
                 onChange={(val) => {
                   setSourceBranch(val);
-                  loadBranchCommits(val);
+                  loadBranchCommits();
                 }}
                 className="flex-1 font-mono"
               />
@@ -182,12 +191,7 @@ export const CherryPickModal: React.FC = () => {
               )}
             </div>
 
-            {isLoading ? (
-              <div className="p-8 text-center bg-base-2 border border-border rounded-sm flex items-center justify-center gap-2 text-xs text-text-muted">
-                <Loader2 className="w-4 h-4 animate-spin text-commito-coral" />
-                <span>Loading commits from {sourceBranch}...</span>
-              </div>
-            ) : filteredCommits.length === 0 ? (
+            {filteredCommits.length === 0 ? (
               <div className="p-8 text-center bg-base-2 border border-border rounded-sm text-xs text-text-muted italic">
                 {commits.length === 0 ? 'No cherry-pickable commits found on this branch' : 'No commits matched your search'}
               </div>
@@ -228,6 +232,7 @@ export const CherryPickModal: React.FC = () => {
               })
             )}
           </div>
+
           <div className="pt-2 border-t border-border">
             <Checkbox
               checked={noCommit}

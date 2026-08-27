@@ -130,8 +130,8 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans animate-in fade-in duration-100">
+      <div className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-100">
         {/* Header */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -144,7 +144,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
               </h3>
               <span className="text-border hidden sm:inline">•</span>
               <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
-                {currentBranch} → {targetBranch}
+                <span className="text-text-secondary">{currentBranch}</span> <span className="text-text-muted">→</span> <span className="text-commito-coral font-bold">{targetBranch}</span>
               </span>
             </div>
           </div>
@@ -160,8 +160,8 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
         </div>
 
         {/* Content Body with 3 Action Choices */}
-        <div className="p-4 space-y-3 overflow-y-auto">
-          <p className="text-xs text-text-secondary">
+        <div className="p-4 sm:p-5 space-y-3 bg-base-0 overflow-y-auto">
+          <p className="text-xs text-text-secondary leading-relaxed">
             You have <span className="font-bold text-text-primary">{uncommittedCount}</span> uncommitted file change
             {uncommittedCount === 1 ? '' : 's'}. Choose how to handle them:
           </p>
@@ -171,20 +171,20 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
-            className="w-full p-3 bg-base-2 hover:bg-base-3 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
-            <div className="w-6 h-6 rounded bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <ArrowRightLeft className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <div className="text-xs font-bold text-text-primary flex items-center gap-1.5">
+            <div className="min-w-0 flex-1">
+              <div className="text-xs font-bold text-text-primary flex items-center gap-2">
                 <span>Bring Changes Along</span>
-                <span className="text-[9px] font-bold px-1 py-0.2 rounded bg-commito-coral/20 text-commito-coral border border-commito-coral/30">
+                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-xs bg-commito-coral/15 text-commito-coral border border-commito-coral/30 leading-none">
                   Recommended
                 </span>
               </div>
-              <p className="text-[11px] text-text-muted mt-0.5">
-                Stashes your modifications, checks out <span className="font-mono text-text-secondary">{targetBranch}</span>, and reapplies them immediately.
+              <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
+                Stashes your modifications, checks out <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{targetBranch}</span>, and reapplies them immediately.
               </p>
             </div>
           </button>
@@ -194,17 +194,17 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleLeaveChanges}
             disabled={isProcessing}
-            className="w-full p-3 bg-base-2 hover:bg-base-3 border border-border hover:border-text-muted rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-gitlab-blue/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
-            <div className="w-6 h-6 rounded bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-sm bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Archive className="w-3.5 h-3.5" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-text-primary">
                 Leave Changes on {currentBranch}
               </div>
-              <p className="text-[11px] text-text-muted mt-0.5">
-                Saves your changes in a stash associated with <span className="font-mono text-text-secondary">{currentBranch}</span> so you can resume later.
+              <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
+                Saves your changes in a stash associated with <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{currentBranch}</span> so you can resume later.
               </p>
             </div>
           </button>
@@ -214,17 +214,17 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleForceCheckout}
             disabled={isProcessing}
-            className="w-full p-3 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-git-removed-bg/25 border border-border hover:border-git-removed/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
-            <div className="w-6 h-6 rounded bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-sm bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Trash2 className="w-3.5 h-3.5" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-git-removed">
                 Discard Changes & Force Checkout
               </div>
-              <p className="text-[11px] text-text-muted mt-0.5">
-                Permanently overwrites and discards local modifications when switching to <span className="font-mono text-text-secondary">{targetBranch}</span>.
+              <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
+                Permanently overwrites and discards local modifications when switching to <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{targetBranch}</span>.
               </p>
             </div>
           </button>

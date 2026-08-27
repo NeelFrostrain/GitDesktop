@@ -188,9 +188,9 @@ export const GitConfigModal: React.FC = () => {
         </div>
 
         {/* Body Content */}
-        <div className="flex-1 overflow-y-auto p-5">
-          {activeTab === 'gitignore' ? (
-            <form onSubmit={handleSaveGitignore} className="space-y-4 flex flex-col h-full">
+        {activeTab === 'gitignore' ? (
+          <>
+            <form id="gitignore-form" onSubmit={handleSaveGitignore} className="p-4 sm:p-5 space-y-4 flex flex-col flex-1 overflow-y-auto min-h-0">
               {/* Template Preset Buttons */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-bold text-text-muted">Append Template:</span>
@@ -207,7 +207,7 @@ export const GitConfigModal: React.FC = () => {
               </div>
 
               {/* Textarea */}
-              <div className="flex-1 min-h-[300px]">
+              <div className="flex-1 min-h-[250px]">
                 <textarea
                   value={gitignoreContent}
                   onChange={(e) => setGitignoreContent(e.target.value)}
@@ -215,32 +215,36 @@ export const GitConfigModal: React.FC = () => {
                   placeholder="# Add patterns to ignore..."
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border select-none">
-                <button
-                  type="button"
-                  onClick={() => setIsConfigModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
-                >
-                  {isSubmitting ? (
-                    <Save className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Save className="w-3.5 h-3.5" />
-                  )}
-                  <span>{isSubmitting ? 'Saving...' : 'Save .gitignore'}</span>
-                </button>
-              </div>
             </form>
-          ) : (
-            <div className="space-y-4">
+
+            {/* Pinned Bottom Footer */}
+            <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(false)}
+                disabled={isSubmitting}
+                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="gitignore-form"
+                disabled={isSubmitting}
+                className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
+              >
+                {isSubmitting ? (
+                  <Save className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Save className="w-3.5 h-3.5" />
+                )}
+                <span>{isSubmitting ? 'Saving...' : 'Save .gitignore'}</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0">
               {/* Add New Config Property */}
               <div className="p-3.5 bg-base-2 border border-border rounded-sm space-y-2">
                 <h4 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
@@ -295,8 +299,19 @@ export const GitConfigModal: React.FC = () => {
                 )}
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Pinned Bottom Footer for Config Tab */}
+            <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+              <button
+                type="button"
+                onClick={() => setIsConfigModalOpen(false)}
+                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
+              >
+                Close
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
