@@ -26,8 +26,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const {
     activeRepoPath,
     setIsCreateRepoModalOpen,
-    setIsRepoModalOpen,
-    setActiveModalTab,
+    setIsCloneRepoModalOpen,
   } = useGitStore();
 
   const [filterQuery, setFilterQuery] = useState('');
@@ -155,8 +154,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
   const handleCloneRepo = () => {
     onClose();
-    setActiveModalTab('repos');
-    setIsRepoModalOpen(true);
+    setIsCloneRepoModalOpen(true);
   };
 
   const handleRemoveRepo = async (e: React.MouseEvent, id: string) => {

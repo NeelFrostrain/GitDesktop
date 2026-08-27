@@ -8,6 +8,7 @@ export { ConflictResolverModal } from './ConflictResolverModal';
 export { RewriteHistoryModal } from './RewriteHistoryModal';
 export { BranchCheckoutModal } from './BranchCheckoutModal';
 export { CreateRepoModal } from './CreateRepoModal';
+export { CloneRepoModal } from './CloneRepoModal';
 export { RepoModal } from './RepoModal';
 export { MergeRequestModal } from './MergeRequestModal';
 export { SigningSettings } from './SigningSettings';

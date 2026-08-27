@@ -202,8 +202,8 @@ export const CreateRepoModal: React.FC = () => {
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleCreateRepository} className="flex-1 overflow-y-auto flex flex-col">
-          <div className="p-4 space-y-3.5 text-xs font-sans text-text-primary bg-base-0 flex-1">
+        <form onSubmit={handleCreateRepository} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-3.5 text-xs font-sans text-text-primary bg-base-0">
             {/* Error Message */}
             {localError && (
               <div className="flex items-start gap-2 p-2.5 rounded-sm bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
@@ -216,11 +216,14 @@ export const CreateRepoModal: React.FC = () => {
             )}
 
             {/* 1. Repository Name */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10.5px] font-semibold text-text-muted uppercase tracking-wider">
-                <span>Repository Name <span className="text-commito-coral">*</span></span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                  <span>Repository Name</span>
+                  <span className="text-commito-coral">*</span>
+                </label>
                 {hasInvalidChars && (
-                  <span className="text-[10px] text-git-removed font-normal lowercase">
+                  <span className="text-[11px] text-git-removed font-normal">
                     Cannot contain / \ : * ? &quot; &lt; &gt; |
                   </span>
                 )}
@@ -235,7 +238,7 @@ export const CreateRepoModal: React.FC = () => {
                   if (localError) setLocalError(null);
                 }}
                 placeholder="e.g. my-awesome-app"
-                className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary placeholder:text-text-faint font-sans focus:outline-none transition shadow-2xs ${
+                className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 font-sans focus:outline-none transition shadow-2xs ${
                   hasInvalidChars
                     ? 'border-git-removed focus:border-git-removed'
                     : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20'
@@ -245,8 +248,11 @@ export const CreateRepoModal: React.FC = () => {
 
             {/* 2. Local Path Selector & Destination Preview */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[10.5px] font-semibold text-text-muted uppercase tracking-wider">
-                <span>Local Destination Path <span className="text-commito-coral">*</span></span>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                  <span>Local Destination Path</span>
+                  <span className="text-commito-coral">*</span>
+                </label>
               </div>
               <div className="flex gap-1.5">
                 <input
@@ -254,7 +260,7 @@ export const CreateRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <button
                   type="button"
@@ -269,8 +275,8 @@ export const CreateRepoModal: React.FC = () => {
 
               {/* Destination Path Preview Card */}
               <div className="px-2.5 py-1.5 bg-base-1/60 border border-border/60 rounded-sm flex items-center gap-2 text-[11px] text-text-muted font-mono truncate">
-                <Folder className="w-3.5 h-3.5 text-text-faint shrink-0" />
-                <span className="text-text-faint shrink-0">Will be created at:</span>
+                <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                <span className="text-text-muted shrink-0">Will be created at:</span>
                 <span className="text-text-primary font-semibold truncate" title={fullDestinationPath}>
                   {fullDestinationPath}
                 </span>
@@ -278,22 +284,25 @@ export const CreateRepoModal: React.FC = () => {
             </div>
 
             {/* 3. Description */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10.5px] font-semibold text-text-muted uppercase tracking-wider">
-                <span>Description <span className="text-text-faint font-normal lowercase">(optional)</span></span>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                  <span>Description</span>
+                  <span className="text-text-muted font-normal text-[11px]">(optional)</span>
+                </label>
               </div>
               <input
                 type="text"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief summary of your repository or project"
-                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
               />
             </div>
 
             {/* 4. Initialization Options */}
             <div className="pt-2 border-t border-border/60 space-y-3">
-              <div className="text-[10.5px] font-semibold text-text-muted uppercase tracking-wider">
+              <div className="text-xs font-semibold text-text-primary">
                 Initialization Options
               </div>
 
@@ -303,7 +312,7 @@ export const CreateRepoModal: React.FC = () => {
                   <FileText className="w-4 h-4 text-sky-400 shrink-0" />
                   <div>
                     <p className="text-xs font-medium text-text-primary">Initialize with README.md</p>
-                    <p className="text-[10.5px] text-text-muted leading-tight">
+                    <p className="text-[11px] text-text-muted leading-tight mt-0.5">
                       Creates an initial README file with your repository title and description.
                     </p>
                   </div>

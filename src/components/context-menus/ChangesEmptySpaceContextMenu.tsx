@@ -121,7 +121,7 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
             <FolderOpen className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary flex-shrink-0" />
             <span>Reveal in File Explorer</span>
           </div>
-          <span className="text-[10px] font-mono text-text-faint">Shift+Alt+R</span>
+          {/* <span className="text-[10px] font-mono text-text-faint">Shift+Alt+R</span> */}
         </button>
 
         {/* Open in Integrated Terminal */}

@@ -31,6 +31,7 @@ const BlameViewer = lazy(() => import('./components/views/BlameViewer').then(m =
 // Lazy-loaded Modals & Panels (loaded only when triggered by user actions)
 const RepoModal = lazy(() => import('./components/modals/RepoModal').then(m => ({ default: m.RepoModal })));
 const CreateRepoModal = lazy(() => import('./components/modals/CreateRepoModal').then(m => ({ default: m.CreateRepoModal })));
+const CloneRepoModal = lazy(() => import('./components/modals/CloneRepoModal').then(m => ({ default: m.CloneRepoModal })));
 const MergeRequestModal = lazy(() => import('./components/modals/MergeRequestModal').then(m => ({ default: m.MergeRequestModal })));
 const WorktreeModal = lazy(() => import('./components/modals/WorktreeModal').then(m => ({ default: m.WorktreeModal })));
 const ConflictResolverModal = lazy(() => import('./components/modals/ConflictResolverModal').then(m => ({ default: m.ConflictResolverModal })));
@@ -307,6 +308,7 @@ export const App: React.FC = () => {
             <RepoModal />
           </ErrorBoundary>
           <CreateRepoModal />
+          <CloneRepoModal />
           <MergeRequestModal />
           <WorktreeModal />
           <ConflictResolverModal />

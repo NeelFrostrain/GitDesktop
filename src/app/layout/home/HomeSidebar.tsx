@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, X, Plus, FolderGit2 } from 'lucide-react';
+import { Search, X, Plus, FolderGit2, Download } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useRepoStore, openRepo } from '../../../features/repos';
 import { useGitStore } from '../../../store/useGitStore';
@@ -9,6 +9,7 @@ import { HomeSidebarAccountFooter } from './HomeSidebarAccountFooter';
 export const HomeSidebar: React.FC = () => {
   const { repos, statuses, addRepo } = useRepoStore();
   const activeRepoPath = useGitStore((s) => s.activeRepoPath);
+  const setIsCloneRepoModalOpen = useGitStore((s) => s.setIsCloneRepoModalOpen);
   const [filterQuery, setFilterQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
 
@@ -101,16 +102,28 @@ export const HomeSidebar: React.FC = () => {
           ))
         )}
 
-        {/* Add repo */}
-        <button
-          type="button"
-          onClick={handleAddRepo}
-          disabled={isAdding}
-          className="w-full mt-1 py-1.5 rounded-sm border border-dashed border-border/60 hover:border-border text-text-faint hover:text-text-muted flex items-center justify-center gap-1.5 transition cursor-pointer text-[11px]"
-        >
-          <Plus className="w-3 h-3" />
-          <span>{isAdding ? 'Selecting...' : 'Add Repository'}</span>
-        </button>
+        {/* Add / Clone Actions */}
+        <div className="grid grid-cols-2 gap-1.5 mt-1 pt-1">
+          <button
+            type="button"
+            onClick={handleAddRepo}
+            disabled={isAdding}
+            className="py-1.5 px-2 rounded-sm border border-dashed border-border/60 hover:border-border text-text-faint hover:text-text-muted flex items-center justify-center gap-1.5 transition cursor-pointer text-[11px]"
+            title="Open existing local repository"
+          >
+            <Plus className="w-3 h-3" />
+            <span>{isAdding ? 'Selecting...' : 'Open Local'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCloneRepoModalOpen(true)}
+            className="py-1.5 px-2 rounded-sm border border-dashed border-border/60 hover:border-commito-coral/40 hover:text-commito-coral text-text-faint flex items-center justify-center gap-1.5 transition cursor-pointer text-[11px]"
+            title="Clone repository from remote URL"
+          >
+            <Download className="w-3 h-3" />
+            <span>Clone Repo</span>
+          </button>
+        </div>
       </div>
 
       {/* Account footer */}

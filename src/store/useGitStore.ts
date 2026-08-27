@@ -173,6 +173,9 @@ export interface GitState {
 
   setIsRepoModalOpen: (open: boolean) => void;
   setIsCreateRepoModalOpen: (open: boolean) => void;
+  isCloneRepoModalOpen: boolean;
+  cloneModalInitialUrl: string;
+  setIsCloneRepoModalOpen: (open: boolean, initialUrl?: string) => void;
   setIsMergeRequestModalOpen: (open: boolean) => void;
   setIsWorktreeModalOpen: (open: boolean) => void;
   setIsRebaseModalOpen: (open: boolean) => void;
@@ -237,6 +240,8 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
+  isCloneRepoModalOpen: false,
+  cloneModalInitialUrl: '',
   isMergeRequestModalOpen: false,
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
@@ -561,6 +566,11 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
   setIsCreateRepoModalOpen: (isCreateRepoModalOpen) => set({ isCreateRepoModalOpen }),
+  setIsCloneRepoModalOpen: (isCloneRepoModalOpen, initialUrl) =>
+    set({
+      isCloneRepoModalOpen,
+      cloneModalInitialUrl: initialUrl !== undefined ? initialUrl : get().cloneModalInitialUrl,
+    }),
   setIsMergeRequestModalOpen: (isMergeRequestModalOpen) => set({ isMergeRequestModalOpen }),
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),

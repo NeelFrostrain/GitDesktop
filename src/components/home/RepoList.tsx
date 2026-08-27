@@ -25,7 +25,7 @@ type FilterTab = 'all' | 'pinned' | 'dirty' | 'gitlab' | 'github';
  */
 export const RepoList: React.FC = () => {
   const { repos, statuses, addRepo } = useRepoStore();
-  const { setIsRepoModalOpen, setActiveModalTab } = useGitStore();
+  const { setIsCloneRepoModalOpen } = useGitStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -40,7 +40,9 @@ export const RepoList: React.FC = () => {
     setViewMode(mode);
     try {
       localStorage.setItem('repo_view_mode', mode);
-    } catch {}
+    } catch {
+      // ignore
+    }
   };
 
   const handleOpenFolderDialog = async () => {
@@ -53,8 +55,7 @@ export const RepoList: React.FC = () => {
   };
 
   const handleCloneRepo = () => {
-    setActiveModalTab('repos');
-    setIsRepoModalOpen(true);
+    setIsCloneRepoModalOpen(true);
   };
 
   // Filter repos by search query and category tab
