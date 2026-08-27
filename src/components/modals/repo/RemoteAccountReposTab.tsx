@@ -319,19 +319,14 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
           filteredRepos.map((repo) => {
             const isCloning = cloningRepoId === repo.id;
             const isPrivate = repo.visibility === 'private';
-            const initial = (repo.name.charAt(0) || 'R').toUpperCase();
 
             return (
               <div
                 key={repo.id}
                 className="px-4 py-3 hover:bg-base-1/80 transition-colors flex items-center justify-between gap-3 group"
               >
-                {/* Left: Avatar initial + Repo metadata */}
+                {/* Left: Repo metadata */}
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
-                  {/* <div className="w-7 h-7 rounded-full bg-base-2 border border-border/80 flex items-center justify-center text-[11px] font-bold text-text-primary shrink-0 group-hover:border-commito-coral/40 group-hover:text-commito-coral transition">
-                    {initial}
-                  </div> */}
-
                   <div className="min-w-0 truncate">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="font-bold text-xs text-text-primary truncate group-hover:text-commito-coral transition">
