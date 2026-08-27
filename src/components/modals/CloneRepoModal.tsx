@@ -17,7 +17,6 @@ import {
   Folder,
   Globe,
   Lock,
-  SlidersHorizontal,
   Check,
   FolderGit2,
   ShieldCheck,
@@ -25,7 +24,6 @@ import {
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore, openRepo } from '../../features/repos';
-import { Checkbox } from '../common/Checkbox';
 import { Dropdown } from '../common/Dropdown';
 import { Tabs, TabItem } from '../common/Tabs';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -491,10 +489,57 @@ export const CloneRepoModal: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Save Credentials Checkbox */}
-                  <div className="pt-0.5 flex items-center justify-between">
-                    <span className="text-xs text-text-secondary">Remember credentials in system keyring</span>
-                    <Checkbox checked={saveCredentials} onChange={setSaveCredentials} />
+                  {/* Save Credentials Toggle Card */}
+                  <div
+                    onClick={() => {
+                      if (isCloning) return;
+                      setSaveCredentials(!saveCredentials);
+                    }}
+                    className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
+                      saveCredentials
+                        ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
+                        : 'bg-base-1/50 border-border hover:bg-base-1'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
+                          saveCredentials
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-base-0 text-text-muted border border-border'
+                        }`}
+                      >
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                          <span>Remember credentials in system keyring</span>
+                          {saveCredentials && (
+                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
+                              Saved
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-text-muted mt-1 leading-none">
+                          Securely persist username and token in OS credential vault
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <div
+                      className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
+                        saveCredentials
+                          ? 'bg-emerald-500 border-emerald-500'
+                          : 'bg-base-2 border-border'
+                      }`}
+                    >
+                      <div
+                        className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                          saveCredentials ? 'translate-x-3' : 'translate-x-0'
+                        }`}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
