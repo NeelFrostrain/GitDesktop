@@ -12,3 +12,5 @@ export { Tabs } from './Tabs';
 export type { TabItem, TabsProps } from './Tabs';
 export { ConfirmDialog } from './ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog';
+export { Radio } from './Radio';
+export type { RadioProps, RadioVariant, RadioSize } from './Radio';

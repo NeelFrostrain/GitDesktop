@@ -55,6 +55,7 @@ import { toAppError, parseApiError } from '../../shared/utils/errorUtils';
 import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 import { Dropdown } from '../common/Dropdown';
 import { Checkbox } from '../common/Checkbox';
+import { Radio } from '../common/Radio';
 import { Tabs } from '../common/Tabs';
 import { MarkdownPreview } from '../common/MarkdownPreview';
 import { Button } from '../common/Button';
@@ -2658,32 +2659,56 @@ export const MergeRequestModal: React.FC = () => {
                     </label>
                     <div className="space-y-1.5">
                       {[
-                        { id: 'merge' as const, label: 'Create a merge commit', desc: 'All commits from this branch will be added to the base branch via a merge commit.' },
-                        { id: 'squash' as const, label: 'Squash and merge', desc: 'The commits from this branch will be combined into one commit in the base branch.' },
-                        { id: 'rebase' as const, label: 'Rebase and merge', desc: 'The commits from this branch will be rebased and added to the base branch.' },
-                      ].map((strat) => (
-                        <div
-                          key={strat.id}
-                          onClick={() => setMergeMethod(strat.id)}
-                          className={`p-2.5 rounded-sm border transition cursor-pointer flex items-start gap-2.5 ${
-                            mergeMethod === strat.id
-                              ? 'bg-emerald-500/10 border-emerald-500/50 ring-1 ring-emerald-500/20'
-                              : 'bg-base-1 border-border hover:bg-base-2'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="merge_strategy"
-                            checked={mergeMethod === strat.id}
-                            onChange={() => setMergeMethod(strat.id)}
-                            className="mt-0.5 accent-emerald-500 cursor-pointer"
-                          />
-                          <div className="space-y-0.5">
-                            <div className="font-bold text-text-primary">{strat.label}</div>
-                            <div className="text-[11px] text-text-muted">{strat.desc}</div>
+                        {
+                          id: 'merge' as const,
+                          label: 'Create a merge commit',
+                          desc: 'All commits from this branch will be added to the base branch via a merge commit.',
+                        },
+                        {
+                          id: 'squash' as const,
+                          label: 'Squash and merge',
+                          desc: 'The commits from this branch will be combined into one commit in the base branch.',
+                        },
+                        {
+                          id: 'rebase' as const,
+                          label: 'Rebase and merge',
+                          desc: 'The commits from this branch will be rebased and added to the base branch.',
+                        },
+                      ].map((strat) => {
+                        const isSelected = mergeMethod === strat.id;
+                        return (
+                          <div
+                            key={strat.id}
+                            onClick={() => setMergeMethod(strat.id)}
+                            className={`p-2.5 rounded-sm border transition cursor-pointer flex items-start gap-2.5 select-none ${
+                              isSelected
+                                ? 'bg-emerald-500/10 border-emerald-500/50 shadow-2xs'
+                                : 'bg-base-1 border-border hover:bg-base-2 hover:border-border-strong'
+                            }`}
+                          >
+                            <Radio
+                              checked={isSelected}
+                              onChange={() => setMergeMethod(strat.id)}
+                              name="merge_strategy"
+                              value={strat.id}
+                              variant="emerald"
+                              size="md"
+                            />
+                            <div className="space-y-0.5 min-w-0 flex-1">
+                              <div
+                                className={`text-xs font-semibold leading-tight transition-colors ${
+                                  isSelected ? 'text-emerald-400 font-bold' : 'text-text-primary'
+                                }`}
+                              >
+                                {strat.label}
+                              </div>
+                              <div className="text-[11px] text-text-muted leading-relaxed">
+                                {strat.desc}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ) : (
