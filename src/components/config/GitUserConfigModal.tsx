@@ -39,13 +39,14 @@ export const GitUserConfigModal: React.FC = () => {
 
   const isManualMode = selectedSyncAccount === 'custom';
 
-  const selectedItem =
-    allAvailableAccounts.find(
-      (a) =>
-        a.id === selectedSyncAccount ||
-        a.id === selectedSyncAccount?.replace(/^active:/, '') ||
-        `active:${a.id}` === selectedSyncAccount
-    ) || (selectedSyncAccount !== 'custom' ? allAvailableAccounts[0] : undefined);
+  const selectedItem = isManualMode
+    ? undefined
+    : allAvailableAccounts.find(
+        (a) =>
+          a.id === selectedSyncAccount ||
+          a.id === selectedSyncAccount?.replace(/^active:/, '') ||
+          `active:${a.id}` === selectedSyncAccount
+      );
 
   return createPortal(
     <div

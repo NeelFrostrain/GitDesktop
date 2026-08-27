@@ -24,12 +24,14 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
   const { openModalWithTab } = useAccountServicesStore();
 
   const selectedItem =
-    accounts.find(
-      (a) =>
-        a.id === selectedSyncAccount ||
-        a.id === selectedSyncAccount?.replace(/^active:/, '') ||
-        `active:${a.id}` === selectedSyncAccount
-    ) || (selectedSyncAccount !== 'custom' ? accounts[0] : undefined);
+    selectedSyncAccount === 'custom'
+      ? undefined
+      : accounts.find(
+          (a) =>
+            a.id === selectedSyncAccount ||
+            a.id === selectedSyncAccount?.replace(/^active:/, '') ||
+            `active:${a.id}` === selectedSyncAccount
+        );
 
   const isLinked = selectedSyncAccount !== 'custom' && selectedItem !== undefined;
 
