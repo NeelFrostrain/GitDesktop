@@ -1,8 +1,9 @@
 import React from 'react';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, Users } from 'lucide-react';
 import { useAccounts, ProviderAccount } from '../../features/account-services';
 import { useGitStore } from '../../store/useGitStore';
 import { UserAvatar } from '../common/UserAvatar';
+import { Button } from '../common/Button';
 
 export const AccountsWidget: React.FC = () => {
   const { accounts } = useAccounts();
@@ -10,25 +11,27 @@ export const AccountsWidget: React.FC = () => {
 
   const getStatusDot = (account: ProviderAccount) => {
     if (account.token_status === 'expired')
-      return <span className="w-1.5 h-1.5 rounded-full bg-git-removed flex-shrink-0" title="Token expired" />;
+      return <span className="w-2 h-2 rounded-full bg-git-removed ring-1 ring-base-1 flex-shrink-0" title="Token expired" />;
     if (account.token_status === 'expiring_soon')
-      return <span className="w-1.5 h-1.5 rounded-full bg-git-modified flex-shrink-0" title="Expiring soon" />;
-    return <span className="w-1.5 h-1.5 rounded-full bg-git-added flex-shrink-0" title="Active" />;
+      return <span className="w-2 h-2 rounded-full bg-git-modified ring-1 ring-base-1 flex-shrink-0" title="Expiring soon" />;
+    return <span className="w-2 h-2 rounded-full bg-emerald-500 ring-1 ring-base-1 flex-shrink-0" title="Active" />;
   };
 
   const getCleanHost = (url: string) =>
     url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
-    <div className="space-y-2 select-none">
+    <div className="space-y-3 select-none font-sans">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-[10px] font-semibold text-text-faint uppercase tracking-widest">
-          Connected Accounts
-        </p>
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
+          <Users className="w-3.5 h-3.5 text-commito-coral" />
+          <span>Connected Accounts</span>
+        </div>
         <button
+          type="button"
           onClick={() => setIsUserConfigModalOpen(true)}
-          className="flex items-center gap-1 text-[11px] text-text-faint hover:text-text-primary transition cursor-pointer"
+          className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary transition cursor-pointer font-medium"
           title="Configure Git Identity & Accounts"
         >
           <Plus className="w-3 h-3" />
@@ -37,20 +40,20 @@ export const AccountsWidget: React.FC = () => {
       </div>
 
       {accounts.length > 0 ? (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {accounts.map((acc) => (
             <div
               key={acc.id}
               onClick={() => setIsUserConfigModalOpen(true)}
-              className="flex items-center gap-2.5 px-2.5 py-2 rounded-sm bg-base-1 border border-border hover:border-border-strong transition cursor-pointer group"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-sm bg-base-1 border border-border hover:border-commito-coral/40 transition cursor-pointer group shadow-2xs"
             >
               <div className="relative flex-shrink-0">
                 <UserAvatar
                   url={acc.avatar_url}
                   name={acc.display_name || acc.handle}
                   provider={acc.provider}
-                  className="w-6 h-6"
-                  iconClassName="w-3 h-3"
+                  className="w-7 h-7 rounded-sm ring-1 ring-border"
+                  iconClassName="w-3.5 h-3.5"
                 />
                 <div className="absolute -bottom-0.5 -right-0.5">
                   {getStatusDot(acc)}
@@ -59,30 +62,37 @@ export const AccountsWidget: React.FC = () => {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-medium text-text-primary truncate">{acc.display_name}</span>
-                  <span className="text-[9px] font-mono font-bold uppercase text-text-faint bg-base-2 border border-border px-1 py-0.5 rounded-sm flex-shrink-0">
+                  <span className="text-xs font-medium text-text-primary/90 truncate">{acc.display_name}</span>
+                  <span
+                    className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border flex-shrink-0 ${
+                      acc.provider === 'github'
+                        ? 'text-purple-400 bg-purple-950/40 border-purple-800/40'
+                        : 'text-commito-coral bg-commito-coral/10 border-commito-coral/30'
+                    }`}
+                  >
                     {acc.provider}
                   </span>
                 </div>
-                <p className="text-[10px] text-text-faint font-mono truncate mt-0.5">
-                  {acc.handle} · {getCleanHost(acc.instance_url)}
+                <p className="text-[10.5px] text-text-muted font-mono truncate mt-0.5">
+                  @{acc.handle} · {getCleanHost(acc.instance_url)}
                 </p>
               </div>
 
-              <ChevronRight className="w-3 h-3 text-text-faint opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-text-muted opacity-0 group-hover:opacity-100 transition flex-shrink-0" />
             </div>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 py-5 bg-base-1 border border-border rounded-sm text-center">
-          <p className="text-[11px] text-text-muted">No accounts connected</p>
-          <button
+        <div className="flex flex-col items-center justify-center gap-2.5 py-6 rounded-sm text-center">
+          <p className="text-xs text-text-muted">No accounts connected</p>
+          <Button
             type="button"
+            variant="coral"
+            size="sm"
             onClick={() => setIsUserConfigModalOpen(true)}
-            className="px-3 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-semibold transition cursor-pointer"
           >
             Connect Account
-          </button>
+          </Button>
         </div>
       )}
     </div>
