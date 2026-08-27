@@ -82,6 +82,14 @@ export interface PublishResult {
   branch: string;
 }
 
+export interface RemoteValidationResult {
+  has_remote: boolean;
+  remote_url: string | null;
+  is_valid: boolean;
+  is_deleted_or_missing: boolean;
+  error_message: string | null;
+}
+
 /**
  * Line item in a diff output with line numbering and modification category.
  */

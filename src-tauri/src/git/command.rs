@@ -27,7 +27,11 @@ pub fn silent_command<S: AsRef<std::ffi::OsStr>>(program: S) -> Command {
     cmd
 }
 
-/// Creates a new `git` Command configured with `CREATE_NO_WINDOW` on Windows
+/// Creates a new `git` Command configured with `CREATE_NO_WINDOW` on Windows and non-interactive flags
 pub fn silent_git_command() -> Command {
-    silent_command("git")
+    let mut cmd = silent_command("git");
+    cmd.env("GIT_TERMINAL_PROMPT", "0");
+    cmd.env("GCM_INTERACTIVE", "never");
+    cmd.env("GIT_ASKPASS", "echo");
+    cmd
 }

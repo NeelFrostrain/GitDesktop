@@ -170,6 +170,39 @@ pub async fn accounts_list_namespaces(account_id: String) -> Result<Vec<Namespac
             }
 
             if namespaces.is_empty() {
+                if let Ok(perm_res) = client
+                    .get("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=100")
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await
+                {
+                    if perm_res.status().is_success() {
+                        if let Ok(val) = perm_res.json::<serde_json::Value>().await {
+                            if let Some(values) = val["values"].as_array() {
+                                for item in values {
+                                    let ws = &item["workspace"];
+                                    if let Some(slug) = ws["slug"].as_str() {
+                                        let name = ws["name"].as_str().unwrap_or(slug).to_string();
+                                        let avatar = ws["links"]["avatar"]["href"]
+                                            .as_str()
+                                            .map(|s| s.to_string());
+
+                                        namespaces.push(NamespaceOption {
+                                            id: slug.to_string(),
+                                            name: format!("{} ({})", name, slug),
+                                            description: None,
+                                            kind: "workspace".to_string(),
+                                            avatar_url: avatar,
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if namespaces.is_empty() {
                 namespaces.push(NamespaceOption {
                     id: clean_handle.clone(),
                     name: format!("Personal ({})", clean_handle),
@@ -329,11 +362,59 @@ pub async fn repo_publish(
         }
 
         ProviderKind::Bitbucket => {
-            let workspace = namespace_id
+            let mut resolved_workspace = namespace_id
                 .as_deref()
-                .filter(|n| *n != "personal")
-                .unwrap_or(&clean_handle);
+                .filter(|n| *n != "personal" && !n.is_empty())
+                .map(|s| s.to_string());
 
+            // If not provided or personal, query Bitbucket workspaces API to get user's valid workspace slug
+            if resolved_workspace.is_none() {
+                if let Ok(ws_res) = client
+                    .get("https://api.bitbucket.org/2.0/workspaces?pagelen=10")
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await
+                {
+                    if ws_res.status().is_success() {
+                        if let Ok(data) = ws_res.json::<serde_json::Value>().await {
+                            if let Some(values) = data["values"].as_array() {
+                                if let Some(first_ws) = values.first() {
+                                    if let Some(slug) = first_ws["slug"].as_str() {
+                                        resolved_workspace = Some(slug.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Also try permissions endpoint if still not resolved
+            if resolved_workspace.is_none() {
+                if let Ok(perm_res) = client
+                    .get("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=10")
+                    .header("Authorization", format!("Bearer {}", token))
+                    .send()
+                    .await
+                {
+                    if perm_res.status().is_success() {
+                        if let Ok(data) = perm_res.json::<serde_json::Value>().await {
+                            if let Some(values) = data["values"].as_array() {
+                                if let Some(first_ws) = values.first() {
+                                    if let Some(slug) = first_ws["workspace"]["slug"]
+                                        .as_str()
+                                        .or_else(|| first_ws["slug"].as_str())
+                                    {
+                                        resolved_workspace = Some(slug.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let mut workspace = resolved_workspace.unwrap_or_else(|| clean_handle.clone());
             let slug = clean_name.to_lowercase().replace(' ', "-");
             let url = format!(
                 "https://api.bitbucket.org/2.0/repositories/{}/{}",
@@ -347,7 +428,7 @@ pub async fn repo_publish(
                 "is_private": is_private
             });
 
-            let res = client
+            let first_res = client
                 .post(&url)
                 .header("Authorization", format!("Bearer {}", token))
                 .json(&payload)
@@ -355,24 +436,73 @@ pub async fn repo_publish(
                 .await
                 .map_err(|e| AppError::Network(format!("Failed to connect to Bitbucket: {}", e)))?;
 
-            if !res.status().is_success() {
-                let err_text = res.text().await.unwrap_or_default();
-                let msg = serde_json::from_str::<serde_json::Value>(&err_text)
-                    .ok()
-                    .and_then(|v| {
-                        v["error"]["message"]
-                            .as_str()
-                            .map(|s| s.to_string())
-                            .or_else(|| v["message"].as_str().map(|s| s.to_string()))
-                    })
-                    .unwrap_or(err_text);
-                return Err(AppError::Git(format!("Bitbucket repository creation failed: {}", msg)));
-            }
+            let data: serde_json::Value = if first_res.status().is_success() {
+                first_res
+                    .json()
+                    .await
+                    .map_err(|e| AppError::Unknown(format!("Invalid Bitbucket response: {}", e)))?
+            } else {
+                let err_text = first_res.text().await.unwrap_or_default();
+                let mut retry_succeeded = false;
+                let mut retry_data: Option<serde_json::Value> = None;
 
-            let data: serde_json::Value = res
-                .json()
-                .await
-                .map_err(|e| AppError::Unknown(format!("Invalid Bitbucket response: {}", e)))?;
+                if err_text.contains("No workspace") || err_text.contains("workspace") {
+                    if let Ok(perm_res) = client
+                        .get("https://api.bitbucket.org/2.0/user/permissions/workspaces?pagelen=10")
+                        .header("Authorization", format!("Bearer {}", token))
+                        .send()
+                        .await
+                    {
+                        if perm_res.status().is_success() {
+                            if let Ok(data_val) = perm_res.json::<serde_json::Value>().await {
+                                if let Some(values) = data_val["values"].as_array() {
+                                    if let Some(first_ws) = values.first() {
+                                        if let Some(f_slug) = first_ws["workspace"]["slug"]
+                                            .as_str()
+                                            .or_else(|| first_ws["slug"].as_str())
+                                        {
+                                            workspace = f_slug.to_string();
+                                            let retry_url = format!(
+                                                "https://api.bitbucket.org/2.0/repositories/{}/{}",
+                                                workspace, slug
+                                            );
+                                            if let Ok(retry_res) = client
+                                                .post(&retry_url)
+                                                .header("Authorization", format!("Bearer {}", token))
+                                                .json(&payload)
+                                                .send()
+                                                .await
+                                            {
+                                                if retry_res.status().is_success() {
+                                                    if let Ok(json_body) = retry_res.json::<serde_json::Value>().await {
+                                                        retry_data = Some(json_body);
+                                                        retry_succeeded = true;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if retry_succeeded {
+                    retry_data.unwrap_or_default()
+                } else {
+                    let msg = serde_json::from_str::<serde_json::Value>(&err_text)
+                        .ok()
+                        .and_then(|v| {
+                            v["error"]["message"]
+                                .as_str()
+                                .map(|s| s.to_string())
+                                .or_else(|| v["message"].as_str().map(|s| s.to_string()))
+                        })
+                        .unwrap_or(err_text);
+                    return Err(AppError::Git(format!("Bitbucket repository creation failed: {}", msg)));
+                }
+            };
 
             let mut clone_url = format!("https://bitbucket.org/{}/{}.git", workspace, slug);
             if let Some(links) = data["links"]["clone"].as_array() {

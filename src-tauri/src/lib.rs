@@ -114,6 +114,7 @@ pub fn run() {
             push_to_remote,
             pull_from_remote,
             fetch_remote,
+            validate_remote_origin_cmd,
             get_commit_history,
             get_commit_details,
             list_branches,

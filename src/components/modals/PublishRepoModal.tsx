@@ -22,6 +22,7 @@ import { GitService } from '../../services/git/gitService';
 import { AccountService } from '../../services/accounts/accountService';
 import { NamespaceOption } from '../../types/git';
 import { UserAvatar } from '../common/UserAvatar';
+import { Checkbox } from '../common/Checkbox';
 import { getErrorMessage } from '../../shared/utils/errorUtils';
 
 export const PublishRepoModal: React.FC = () => {
@@ -582,20 +583,22 @@ export const PublishRepoModal: React.FC = () => {
             </div>
 
             {/* 4. Keep this code private Checkbox */}
-            <div className="p-3 bg-base-1 border border-border rounded-sm flex items-start gap-2.5 cursor-pointer shadow-2xs select-none">
-              <input
-                type="checkbox"
-                id="publish-is-private"
-                checked={isPrivate}
-                onChange={(e) => setIsPrivate(e.target.checked)}
-                disabled={isPublishing}
-                className="mt-0.5 accent-commito-coral rounded-xs cursor-pointer"
-              />
-              <label
-                htmlFor="publish-is-private"
-                className="text-xs text-text-primary cursor-pointer leading-tight"
-              >
-                <div className="font-semibold flex items-center gap-1.5">
+            <div
+              onClick={() => {
+                if (!isPublishing) setIsPrivate(!isPrivate);
+              }}
+              className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-start gap-2.5 cursor-pointer shadow-2xs select-none transition group"
+            >
+              <div className="mt-0.5 pointer-events-none">
+                <Checkbox
+                  checked={isPrivate}
+                  onChange={(val) => setIsPrivate(val)}
+                  disabled={isPublishing}
+                  size="md"
+                />
+              </div>
+              <div className="text-xs text-text-primary cursor-pointer leading-tight flex-1">
+                <div className="font-semibold flex items-center gap-1.5 group-hover:text-text-primary">
                   <Lock className="w-3 h-3 text-text-secondary" />
                   <span>Keep this code private</span>
                 </div>
@@ -604,7 +607,7 @@ export const PublishRepoModal: React.FC = () => {
                     ? 'Only you and authorized collaborators will have access.'
                     : 'Anyone on the internet can see and clone public repositories.'}
                 </div>
-              </label>
+              </div>
             </div>
 
             {/* 5. Custom Organization / Group / Workspace Dropdown */}

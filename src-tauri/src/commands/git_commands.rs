@@ -149,6 +149,16 @@ pub async fn fetch_remote(repo_path: String) -> Result<(), AppError> {
 }
 
 #[command]
+pub async fn validate_remote_origin_cmd(
+    repo_path: String,
+) -> Result<remote_mod::RemoteValidationResult, AppError> {
+    let rp = repo_path.clone();
+    tokio::task::spawn_blocking(move || remote_mod::validate_remote_origin(&rp))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn get_commit_history(
     repo_path: String,
     limit: Option<usize>,

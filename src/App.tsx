@@ -54,6 +54,7 @@ const TerminalPanel = lazy(() => import('./features/terminal').then(m => ({ defa
 const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => ({ default: m.MinGitSetupModal })));
 const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 const PublishRepoModal = lazy(() => import('./components/modals/PublishRepoModal').then(m => ({ default: m.PublishRepoModal })));
+const RemoteNotFoundModal = lazy(() => import('./components/modals/RemoteNotFoundModal').then(m => ({ default: m.RemoteNotFoundModal })));
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -393,6 +394,7 @@ export const App: React.FC = () => {
           <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
           <AccountServicesModal />
           <PublishRepoModal />
+          <RemoteNotFoundModal />
         </Suspense>
 
         {/* Global Toast Notifications */}

@@ -17,6 +17,7 @@ import {
   SubmoduleInfo,
   GitConfigItem,
   AiCommitSuggestion,
+  RemoteValidationResult,
 } from '../../types/git';
 
 /**
@@ -104,6 +105,13 @@ export class GitService {
    */
   static async fetchRemote(repoPath: string): Promise<void> {
     return invoke('fetch_remote', { repoPath });
+  }
+
+  /**
+   * Validates whether origin remote exists and is accessible on the server.
+   */
+  static async validateRemoteOrigin(repoPath: string): Promise<RemoteValidationResult> {
+    return invoke<RemoteValidationResult>('validate_remote_origin_cmd', { repoPath });
   }
 
   /**

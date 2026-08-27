@@ -445,6 +445,12 @@ pub fn fetch_specific_remote(repo_path: &str, remote_name: &str) -> Result<(), A
             || stderr_lower.contains("the project you were looking for could not be found")
             || stderr_lower.contains("remote: not found")
         {
+            // Auto-clean dead remote from local git config
+            let _ = silent_git_command()
+                .args(["remote", "remove", clean_remote])
+                .current_dir(repo_path)
+                .output();
+
             return Err(AppError::NotFound(format!(
                 "Remote repository not found on server for '{}'. It may have been deleted or renamed on the provider: {}",
                 clean_remote,
@@ -755,3 +761,91 @@ fn fs_is_not_empty(path: &Path) -> bool {
         false
     }
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct RemoteValidationResult {
+    pub has_remote: bool,
+    pub remote_url: Option<String>,
+    pub is_valid: bool,
+    pub is_deleted_or_missing: bool,
+    pub error_message: Option<String>,
+}
+
+/// Validates whether the configured 'origin' remote repository still exists and is accessible on the server.
+pub fn validate_remote_origin(repo_path: &str) -> Result<RemoteValidationResult, AppError> {
+    let output = silent_git_command()
+        .args(["remote", "get-url", "origin"])
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        return Ok(RemoteValidationResult {
+            has_remote: false,
+            remote_url: None,
+            is_valid: false,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let remote_url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if remote_url.is_empty() {
+        return Ok(RemoteValidationResult {
+            has_remote: false,
+            remote_url: None,
+            is_valid: false,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let auth_info = get_git_auth_info_for_url(repo_path, Some(&remote_url));
+    let mut cmd = silent_git_command();
+    cmd.current_dir(repo_path);
+    apply_git_auth_args(&mut cmd, &auth_info);
+    cmd.args(["ls-remote", "--exit-code", "origin", "HEAD"]);
+
+    let probe_out = cmd.output()?;
+    if probe_out.status.success() {
+        return Ok(RemoteValidationResult {
+            has_remote: true,
+            remote_url: Some(remote_url),
+            is_valid: true,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let stderr = String::from_utf8_lossy(&probe_out.stderr).to_string();
+    let lower = stderr.to_lowercase();
+
+    let is_missing = lower.contains("repository not found")
+        || lower.contains("fatal: repository")
+        || lower.contains("not found")
+        || lower.contains("does not appear to be a git repository")
+        || lower.contains("the project you were looking for could not be found")
+        || lower.contains("could not read from remote repository")
+        || lower.contains("remote: not found")
+        || !probe_out.status.success();
+
+    if is_missing {
+        // Automatically remove the dead remote from local git config
+        let _ = silent_git_command()
+            .args(["remote", "remove", "origin"])
+            .current_dir(repo_path)
+            .output();
+    }
+
+    Ok(RemoteValidationResult {
+        has_remote: false,
+        remote_url: None,
+        is_valid: false,
+        is_deleted_or_missing: true,
+        error_message: if stderr.trim().is_empty() {
+            None
+        } else {
+            Some(stderr.trim().to_string())
+        },
+    })
+}
+

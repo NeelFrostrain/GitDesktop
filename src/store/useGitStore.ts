@@ -175,6 +175,8 @@ export interface GitState {
   setIsCreateRepoModalOpen: (open: boolean) => void;
   isPublishRepoModalOpen: boolean;
   setIsPublishRepoModalOpen: (open: boolean) => void;
+  isRemoteNotFoundModalOpen: boolean;
+  setIsRemoteNotFoundModalOpen: (open: boolean) => void;
   isCloneRepoModalOpen: boolean;
   cloneModalInitialUrl: string;
   setIsCloneRepoModalOpen: (open: boolean, initialUrl?: string) => void;
@@ -243,6 +245,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
   isPublishRepoModalOpen: false,
+  isRemoteNotFoundModalOpen: false,
   isCloneRepoModalOpen: false,
   cloneModalInitialUrl: '',
   isMergeRequestModalOpen: false,
@@ -570,6 +573,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
   setIsCreateRepoModalOpen: (isCreateRepoModalOpen) => set({ isCreateRepoModalOpen }),
   setIsPublishRepoModalOpen: (isPublishRepoModalOpen) => set({ isPublishRepoModalOpen }),
+  setIsRemoteNotFoundModalOpen: (isRemoteNotFoundModalOpen) => set({ isRemoteNotFoundModalOpen }),
   setIsCloneRepoModalOpen: (isCloneRepoModalOpen, initialUrl) =>
     set({
       isCloneRepoModalOpen,

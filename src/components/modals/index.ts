@@ -17,3 +17,5 @@ export { CreateItemModal } from './CreateItemModal';
 export { RenameItemModal } from './RenameItemModal';
 export { CreateTagModal } from './CreateTagModal';
 export { CreateReleaseModal } from './CreateReleaseModal';
+export { PublishRepoModal } from './PublishRepoModal';
+export { RemoteNotFoundModal } from './RemoteNotFoundModal';
