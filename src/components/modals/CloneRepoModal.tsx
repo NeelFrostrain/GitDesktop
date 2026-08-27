@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
   Check,
   FolderGit2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -370,7 +371,7 @@ export const CloneRepoModal: React.FC = () => {
             </div>
 
             {/* 3. Authentication & Security Card */}
-            <div className="p-3 bg-base-1/40 border border-border/70 rounded-sm space-y-3">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-commito-coral" />
@@ -508,11 +509,11 @@ export const CloneRepoModal: React.FC = () => {
             </div>
 
             {/* 4. Clone Settings Section */}
-            <div className="p-3.5 bg-base-1/40 border border-border/70 rounded-sm space-y-3">
-              <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+            <div className="space-y-3">
+              {/* <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5 text-text-muted" />
                 <span>Clone Settings</span>
-              </div>
+              </div> */}
 
               {/* Branch / Tag Input */}
               <div className="space-y-1">

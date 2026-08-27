@@ -368,10 +368,10 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] active:scale-95 group ${
+        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-2xs active:scale-95 group ${
           isOpen
-            ? 'bg-gradient-to-b from-[#29272e] via-[#201e24] to-[#17161a] border-commito-coral/70 ring-1 ring-commito-coral/20 text-white'
-            : 'border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] text-zinc-200 hover:text-white'
+            ? 'bg-base-2 border-commito-coral text-text-primary ring-1 ring-commito-coral/20'
+            : 'bg-base-1 hover:bg-base-2 active:bg-base-3 border-border hover:border-border-strong text-text-primary'
         }`}
         title={`Current branch: ${currentBranch}`}
       >
