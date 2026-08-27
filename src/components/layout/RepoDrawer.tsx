@@ -11,10 +11,12 @@ import {
   FileEdit,
   Pin,
   Trash2,
+  FolderOpen,
 } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useRepoStore, openRepo } from '../../features/repos';
 import { useGitStore } from '../../store/useGitStore';
+import { SystemService } from '../../services/system/systemService';
 
 interface RepoDrawerProps {
   isOpen: boolean;
@@ -164,6 +166,13 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
     } catch (err) {
       console.warn('Failed to remove repository:', err);
     }
+  };
+
+  const handleOpenFolder = (e: React.MouseEvent, path: string) => {
+    e.stopPropagation();
+    SystemService.showInExplorer(path).catch((err) => {
+      console.warn('Failed to reveal in explorer:', err);
+    });
   };
 
   const handlePinToggle = (e: React.MouseEvent, id: string, currentPinned: boolean) => {
@@ -396,6 +405,14 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                     className={`absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex items-center justify-center gap-0.5 px-1 py-0.5 rounded-sm border border-border/50 shadow-xs ${isActive ? 'bg-base-2' : repo.pinned ? 'bg-base-1' : 'bg-base-2'
                       }`}
                   >
+                    <button
+                      type="button"
+                      onClick={(e) => handleOpenFolder(e, repo.path)}
+                      className="w-5 h-5 flex items-center justify-center rounded-sm text-text-faint hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
+                      title="Open in Folder"
+                    >
+                      <FolderOpen className="w-3 h-3" />
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => handlePinToggle(e, repo.id, repo.pinned)}
