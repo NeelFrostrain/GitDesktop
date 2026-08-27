@@ -159,6 +159,7 @@ export interface GitState {
   setBlameLines: (lines: BlameLine[]) => void;
   setSelectedFile: (file: string | null) => void;
   toggleStageFile: (file: string) => Promise<void>;
+  toggleStageFiles: (files: string[], stage?: boolean) => Promise<void>;
   setAllStaged: (staged: boolean) => Promise<void>;
   setSelectedCommitSha: (sha: string | null) => void;
   setCommitSummary: (summary: string) => void;
@@ -456,6 +457,42 @@ export const useGitStore = create<GitState>((set, get) => ({
           setStatus(newStatus);
         } catch (error: unknown) {
           useLogStore.getState().addLog('error', 'Git', `Failed to stage file '${file}': ${getErrorMessage(error)}`);
+        }
+      }
+    }
+  },
+
+  toggleStageFiles: async (files, stage) => {
+    if (!files || files.length === 0) return;
+    const { activeRepoPath, stagedFiles, setStatus } = get();
+    const shouldStage = stage !== undefined ? stage : !files.every((f) => stagedFiles.includes(f));
+
+    let nextStaged: string[];
+    if (shouldStage) {
+      nextStaged = Array.from(new Set([...stagedFiles, ...files]));
+      useLogStore.getState().addLog('info', 'Git', `Staged ${files.length} file(s)`);
+      set({ stagedFiles: nextStaged, hasInitializedStaging: true });
+      if (activeRepoPath) {
+        try {
+          await GitService.stageFiles(activeRepoPath, files);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
+          setStatus(newStatus);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage files: ${getErrorMessage(error)}`);
+        }
+      }
+    } else {
+      const filesSet = new Set(files);
+      nextStaged = stagedFiles.filter((f) => !filesSet.has(f));
+      useLogStore.getState().addLog('info', 'Git', `Unstaged ${files.length} file(s)`);
+      set({ stagedFiles: nextStaged, hasInitializedStaging: true });
+      if (activeRepoPath) {
+        try {
+          await GitService.unstageFiles(activeRepoPath, files);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
+          setStatus(newStatus);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage files: ${getErrorMessage(error)}`);
         }
       }
     }
