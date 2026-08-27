@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -86,9 +86,33 @@ pub async fn listen_for_oauth_callback(
             AppError::Auth("Authorization code missing from callback request".to_string())
         })?;
 
-    let html_response = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nConnection: close\r\n\r\n<!DOCTYPE html><html><body style='font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#0d0d14;color:#f0f0f3;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;'><div><h2 style='color:#fc6d26;margin-bottom:8px;'>Git Desktop Authorized!</h2><p style='color:#c8c8ce;'>Authentication was successful. You can close this tab and return to the app.</p></div></body></html>";
+    let html_response = concat!(
+        "HTTP/1.1 200 OK\r\n",
+        "Content-Type: text/html; charset=utf-8\r\n",
+        "Connection: close\r\n\r\n",
+        "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Git Desktop - Authorization Successful</title><style>",
+        "* { box-sizing: border-box; margin: 0; padding: 0; }",
+        "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0b0a0e; background-image: radial-gradient(circle at 50% 0%, rgba(224, 86, 56, 0.12) 0%, transparent 60%), radial-gradient(circle at 80% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%); color: #e6e4e8; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; user-select: none; }",
+        ".auth-card { background: #111013; border: 1px solid #29272b; border-radius: 12px; box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04); width: 100%; max-width: 440px; padding: 36px 32px 28px; text-align: center; }",
+        ".icon-wrapper { width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; align-items: center; justify-content: center; }",
+        ".icon-svg { width: 30px; height: 30px; color: #10b981; }",
+        "h1 { font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 8px; }",
+        "p.subtitle { font-size: 13.5px; color: #b3b0b8; line-height: 1.5; margin-bottom: 24px; }",
+        ".detail-box { background: #070708; border: 1px solid #201e22; border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; text-align: left; }",
+        ".detail-label { font-size: 12px; color: #85818c; }",
+        ".detail-val { font-size: 12px; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: 5px; font-family: monospace; }",
+        ".progress-bar-wrap { width: 100%; height: 3px; background: #201e22; border-radius: 2px; overflow: hidden; margin-bottom: 12px; }",
+        ".progress-bar { height: 100%; background: #e05638; width: 100%; animation: shrinkProgress 1.6s linear forwards; }",
+        "@keyframes shrinkProgress { from { width: 100%; } to { width: 0%; } }",
+        ".hint-text { font-size: 11px; color: #85818c; margin-bottom: 18px; }",
+        ".btn-return { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 10px 16px; background: #e05638; color: #ffffff; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }",
+        ".btn-return:hover { background: #f06344; }",
+        "</style></head><body><div class=\"auth-card\"><div class=\"icon-wrapper\"><svg class=\"icon-svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M20 6L9 17l-5-5\"/></svg></div><h1>Authentication Successful</h1><p class=\"subtitle\">Your account has been connected and security credentials have been stored in your OS keyring.</p><div class=\"detail-box\"><span class=\"detail-label\">Session Status</span><span class=\"detail-val\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"20 6 9 17 4 12\"></polyline></svg>Verified</span></div><div class=\"progress-bar-wrap\"><div class=\"progress-bar\"></div></div><p class=\"hint-text\">This window will close automatically in a moment.</p><button class=\"btn-return\" onclick=\"window.close()\"><span>Close Window</span></button></div><script>setTimeout(function(){window.close()},1600);</script></body></html>"
+    );
     let _ = stream.write_all(html_response.as_bytes()).await;
     let _ = stream.flush().await;
+
+
 
     let token_resp = exchange_code_for_token_response(
         &server_url,
@@ -364,12 +388,17 @@ impl GitLabClient {
         }
 
         let mut headers = HeaderMap::new();
+        if let Ok(val) = HeaderValue::from_str(&token) {
+            headers.insert(HeaderName::from_static("private-token"), val);
+        }
         let auth_val = format!("Bearer {}", token);
+        if let Ok(val) = HeaderValue::from_str(&auth_val) {
+            headers.insert(AUTHORIZATION, val);
+        }
+        headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop/1.0"));
         headers.insert(
-            AUTHORIZATION,
-            HeaderValue::from_str(&auth_val).map_err(|_| {
-                AppError::Validation("Invalid authorization token format".to_string())
-            })?,
+            reqwest::header::ACCEPT,
+            HeaderValue::from_static("application/json"),
         );
 
         let client = builder
@@ -454,11 +483,11 @@ impl GitLabClient {
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse token info JSON: {}", e)))?;
 
-        let scope = raw.scope.or(raw.scopes).unwrap_or_default();
-        let expires_in_seconds = raw.expires_in_seconds.or(raw.expires_in);
+        let scopes_list = raw.scopes.or(raw.scope).unwrap_or_default();
+        let expires_in_seconds = raw.expires_in.or(raw.expires_in_seconds);
 
         Ok(TokenInfo {
-            scope,
+            scope: scopes_list,
             created_at: raw.created_at,
             expires_in_seconds,
             resource_owner_id: raw.resource_owner_id,
@@ -467,17 +496,25 @@ impl GitLabClient {
 
     pub async fn fetch_projects(&self, page: u32) -> Result<PagedResult<GitLabProject>, AppError> {
         let url = format!(
-            "{}/api/v4/projects?membership=true&order_by=updated_at&per_page=20&page={}",
+            "{}/api/v4/projects?membership=true&order_by=updated_at&per_page=30&page={}",
             self.server_url, page
         );
         let mut resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
             let fallback_url = format!(
-                "{}/api/v4/projects?order_by=updated_at&per_page=20&page={}",
+                "{}/api/v4/projects?min_access_level=10&order_by=updated_at&per_page=30&page={}",
                 self.server_url, page
             );
             resp = self.client.get(&fallback_url).send().await?;
+        }
+
+        if !resp.status().is_success() {
+            let fallback_url2 = format!(
+                "{}/api/v4/projects?owned=true&order_by=updated_at&per_page=30&page={}",
+                self.server_url, page
+            );
+            resp = self.client.get(&fallback_url2).send().await?;
         }
 
         if !resp.status().is_success() {
@@ -495,26 +532,10 @@ impl GitLabClient {
             .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(1);
 
-        let mut projects: Vec<GitLabProject> = resp
+        let projects: Vec<GitLabProject> = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse projects JSON: {}", e)))?;
-
-        if projects.is_empty() {
-            let fallback_url = format!(
-                "{}/api/v4/projects?min_access_level=10&order_by=updated_at&per_page=20&page={}",
-                self.server_url, page
-            );
-            if let Ok(fb_resp) = self.client.get(&fallback_url).send().await {
-                if fb_resp.status().is_success() {
-                    if let Ok(fb_projects) = fb_resp.json::<Vec<GitLabProject>>().await {
-                        if !fb_projects.is_empty() {
-                            projects = fb_projects;
-                        }
-                    }
-                }
-            }
-        }
 
         Ok(PagedResult {
             items: projects,

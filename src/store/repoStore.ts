@@ -110,6 +110,32 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       if (res.files.length > 0) {
         gitStore.setSelectedFile(res.files[0].path);
       }
+
+      // Background remote existence verification
+      if (res.has_remote) {
+        GitService.fetchRemote(path).catch((fetchErr: unknown) => {
+          const msg = getErrorMessage(fetchErr).toLowerCase();
+          if (
+            msg.includes('not found') ||
+            msg.includes('deleted') ||
+            msg.includes('could not read from remote') ||
+            msg.includes('does not appear to be a git repository')
+          ) {
+            gitStore.setStatus({
+              ...res,
+              has_remote: false,
+              remote_url: null,
+            });
+            useLogStore
+              .getState()
+              .addLog(
+                'warning',
+                'Remote',
+                'Remote repository was not found on server (it may have been deleted). You can now Publish this repository to link a new remote.'
+              );
+          }
+        });
+      }
     } catch (error: unknown) {
       useLogStore.getState().addLog('warning', 'Git', `Could not inspect repo on open: ${getErrorMessage(error)}`);
     }

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { RepoStatus } from '../types/git';
@@ -10,6 +10,7 @@ import { getErrorMessage } from '../shared/utils/errorUtils';
  */
 export type GitSyncStatus =
   | 'loading'
+  | 'no-remote'    // No remote origin configured -> Publish Repository
   | 'up-to-date'
   | 'ahead'       // Local has commits remote doesn't
   | 'behind'      // Remote has commits local doesn't
@@ -39,6 +40,9 @@ export function deriveSyncStatus(status: RepoStatus): GitSyncStatus {
   const branch = status.current_branch;
   if (branch === 'HEAD' || branch.startsWith('(HEAD detached')) {
     return 'detached';
+  }
+  if (status.has_remote === false) {
+    return 'no-remote';
   }
   const { ahead, behind } = status;
   if (ahead > 0 && behind > 0) return 'diverged';
@@ -88,6 +92,37 @@ export function useRepositorySync() {
         hasConflicts: false,
       };
 
+  // ── Auto-validate remote origin existence when active repo changes ──────
+  useEffect(() => {
+    if (!activeRepoPath) return;
+
+    let isMounted = true;
+    GitService.validateRemoteOrigin(activeRepoPath)
+      .then((validation) => {
+        if (!isMounted) return;
+        if (!validation.has_remote || !validation.is_valid) {
+          const current = useGitStore.getState().status;
+          if (current) {
+            setStatus({
+              ...current,
+              has_remote: false,
+              remote_url: null,
+            });
+            log().addLog(
+              'warning',
+              'Remote',
+              "Remote repository was not found or is inaccessible on the server. Click 'Publish repository' to reconnect or re-publish."
+            );
+          }
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeRepoPath, setStatus, log]);
+
   // ── Light local refresh — fast, no network ────────────────────────────────
   const refreshLocal = useCallback(async () => {
     if (!activeRepoPath || refreshingRef.current) return;
@@ -109,6 +144,26 @@ export function useRepositorySync() {
     setIsFetching(true);
     log().addLog('info', 'Git', 'Refreshing repository state');
     try {
+      // 1. Probe remote validity first
+      const validation = await GitService.validateRemoteOrigin(activeRepoPath).catch(() => null);
+      if (validation && (!validation.has_remote || !validation.is_valid)) {
+        const current = useGitStore.getState().status;
+        if (current) {
+          setStatus({
+            ...current,
+            has_remote: false,
+            remote_url: null,
+          });
+        }
+        useGitStore.getState().setIsRemoteNotFoundModalOpen(true);
+        log().addLog(
+          'warning',
+          'Remote',
+          'Remote repository does not exist on the server (it may have been deleted). Remote unlinked — click Publish to re-link.'
+        );
+        return;
+      }
+
       await GitService.fetchRemote(activeRepoPath);
       log().addLog('info', 'Git', 'Fetched origin');
 
@@ -122,13 +177,35 @@ export function useRepositorySync() {
         'diverged': `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
         'up-to-date': 'Branch is up to date with remote',
         'no-upstream': 'Branch has no upstream — Publish to push',
+        'no-remote': 'No remote configured — Publish to share',
         'detached': 'HEAD is detached',
         'loading': '',
       };
       log().addLog('info', 'Git', labelMap[derived] || 'Repository state updated');
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      if (message.includes('Authentication') || message.includes('Access Denied')) {
+      const isRemoteNotFound =
+        message.toLowerCase().includes('not found') ||
+        message.toLowerCase().includes('deleted') ||
+        message.toLowerCase().includes('could not read from remote') ||
+        message.toLowerCase().includes('does not appear to be a git repository');
+
+      if (isRemoteNotFound) {
+        const current = useGitStore.getState().status;
+        if (current) {
+          setStatus({
+            ...current,
+            has_remote: false,
+            remote_url: null,
+          });
+        }
+        useGitStore.getState().setIsRemoteNotFoundModalOpen(true);
+        log().addLog(
+          'warning',
+          'Remote',
+          'Remote repository was not found on server (it may have been deleted). Remote unlinked — you can now Publish to link a new remote.'
+        );
+      } else if (message.includes('Authentication') || message.includes('Access Denied')) {
         setError({ code: 'AUTH_ERROR', message });
       } else {
         log().addLog('warning', 'Git', `Unable to refresh remote state: ${message}`);
@@ -227,6 +304,9 @@ export function useRepositorySync() {
   // ── Main action dispatcher ─────────────────────────────────────────────────
   const executeAction = useCallback(async () => {
     switch (syncInfo.syncStatus) {
+      case 'no-remote':
+        useGitStore.getState().setIsPublishRepoModalOpen(true);
+        break;
       case 'ahead':
       case 'no-upstream':
         await executePush();

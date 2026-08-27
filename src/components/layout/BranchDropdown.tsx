@@ -61,6 +61,7 @@ export const BranchDropdown: React.FC = () => {
     setBranches,
     setError,
     setIsMergeRequestModalOpen,
+    openMergeRequestModal,
     user,
   } = useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
@@ -244,8 +245,8 @@ export const BranchDropdown: React.FC = () => {
   };
 
   const handleSelectPullRequest = (pr: UnifiedMergeRequest) => {
-    if (!pr.source_branch) return;
-    handleSelectBranch(pr.source_branch);
+    setIsOpen(false);
+    openMergeRequestModal('list', String(pr.id));
   };
 
   const executeDirectCheckout = async (branchName: string) => {
@@ -368,10 +369,10 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] active:scale-95 group ${
+        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-2xs active:scale-95 group ${
           isOpen
-            ? 'bg-gradient-to-b from-[#29272e] via-[#201e24] to-[#17161a] border-commito-coral/70 ring-1 ring-commito-coral/20 text-white'
-            : 'border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] text-zinc-200 hover:text-white'
+            ? 'bg-base-2 border-commito-coral text-text-primary ring-1 ring-commito-coral/20'
+            : 'bg-base-1 hover:bg-base-2 active:bg-base-3 border-border hover:border-border-strong text-text-primary'
         }`}
         title={`Current branch: ${currentBranch}`}
       >
@@ -405,7 +406,7 @@ export const BranchDropdown: React.FC = () => {
               top: `${topPos}px`,
               width: `${menuWidth}px`,
             }}
-            className="fixed z-[9999] bg-base-0 border border-border-strong/90 rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[520px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none ring-1 ring-black/40"
+            className="fixed z-[9999] bg-base-0 border border-border-strong/90 rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[520px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none ring-1 ring-black/40"
           >
             {/* Header: Segmented Tabs & Action Button */}
             <div className="p-2.5 border-b border-border/70 bg-base-0 flex items-center justify-between gap-2 shrink-0">
@@ -795,7 +796,7 @@ export const BranchDropdown: React.FC = () => {
                                 ? 'bg-commito-coral/10 border-commito-coral/30 shadow-xs'
                                 : 'bg-base-0 hover:bg-base-1/90 border-transparent hover:border-border/60 hover:shadow-xs'
                             }`}
-                            title={`Checkout branch '${pr.source_branch}' for PR ${numberPrefix}${prNumber}`}
+                            title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
                           >
                             <div className="flex items-start gap-2.5 min-w-0 flex-1">
                               <div className="w-5 h-5 rounded-sm bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
@@ -864,10 +865,10 @@ export const BranchDropdown: React.FC = () => {
 
       {/* Create New Branch Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/75 flex items-center justify-center p-4 select-none font-sans">
+        <div className="fixed inset-0 z-10000 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
-            className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
+            className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
           >
             {/* Compact 1-Row Header */}
             <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between shrink-0">

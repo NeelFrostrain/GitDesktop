@@ -17,6 +17,7 @@ import {
   SubmoduleInfo,
   GitConfigItem,
   AiCommitSuggestion,
+  RemoteValidationResult,
 } from '../../types/git';
 
 /**
@@ -107,6 +108,13 @@ export class GitService {
   }
 
   /**
+   * Validates whether origin remote exists and is accessible on the server.
+   */
+  static async validateRemoteOrigin(repoPath: string): Promise<RemoteValidationResult> {
+    return invoke<RemoteValidationResult>('validate_remote_origin_cmd', { repoPath });
+  }
+
+  /**
    * Pushes the given local branch to its upstream remote.
    */
   static async pushToRemote(repoPath: string, branch: string): Promise<void> {
@@ -192,6 +200,27 @@ export class GitService {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Stages selected lines or hunks as a unified patch into the Git index.
+   */
+  static async stagePatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('stage_patch_cmd', { repoPath, patchContent });
+  }
+
+  /**
+   * Unstages selected lines or hunks as a unified patch from the Git index.
+   */
+  static async unstagePatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('unstage_patch_cmd', { repoPath, patchContent });
+  }
+
+  /**
+   * Discards selected lines or hunks directly from working copy.
+   */
+  static async discardPatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('discard_patch_cmd', { repoPath, patchContent });
   }
 
   /**
@@ -483,6 +512,34 @@ export class GitService {
       repoPath,
       baseBranch,
       headBranch,
+    });
+  }
+
+  /**
+   * Lists available namespaces/organizations/groups for a provider account.
+   */
+  static async listNamespaces(accountId: string): Promise<import('../../types/git').NamespaceOption[]> {
+    return invoke<import('../../types/git').NamespaceOption[]>('accounts_list_namespaces', { accountId });
+  }
+
+  /**
+   * Publishes a local repository to a remote provider (GitHub, GitLab, or Bitbucket).
+   */
+  static async publishRepository(params: {
+    repoPath: string;
+    accountId: string;
+    name: string;
+    description?: string | null;
+    isPrivate: boolean;
+    namespaceId?: string | null;
+  }): Promise<import('../../types/git').PublishResult> {
+    return invoke<import('../../types/git').PublishResult>('repo_publish', {
+      repoPath: params.repoPath,
+      accountId: params.accountId,
+      name: params.name,
+      description: params.description || null,
+      isPrivate: params.isPrivate,
+      namespaceId: params.namespaceId || null,
     });
   }
 }

@@ -27,7 +27,7 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
           return (
             <div
               key={idx}
-              className="bg-base-2 text-diff-highlight font-semibold px-4 py-0.5 border-y border-border/50 text-[11px] font-mono"
+              className="bg-base-2 text-diff-highlight font-semibold px-4 py-0.5 border-y border-border/50 text-[11px] font-mono sticky top-0 z-10 select-none shadow-2xs backdrop-blur-xs"
             >
               {row.headerText}
             </div>
@@ -45,19 +45,17 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
             {/* Left Side (Old/Deleted) */}
             <div
               className={`w-1/2 min-w-0 flex border-r border-border/40 ${
-                isDel
-                  ? 'bg-diff-remove-bg text-diff-remove-text'
-                  : isModified
+                isDel || isModified
                   ? 'bg-diff-remove-bg text-diff-remove-text'
                   : isOldEmpty
                   ? 'bg-base-1/20'
                   : 'bg-base-0 text-text-primary'
               }`}
             >
-              <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
+              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">
                 {row.oldNum ?? ''}
               </div>
-              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-remove-text flex-shrink-0">
+              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-remove-text shrink-0">
                 {!isOldEmpty && (isDel || isModified) ? '-' : ''}
               </div>
               <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">
@@ -68,19 +66,17 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
             {/* Right Side (New/Added) */}
             <div
               className={`w-1/2 min-w-0 flex ${
-                isAdd
-                  ? 'bg-diff-add-bg text-diff-add-text'
-                  : isModified
+                isAdd || isModified
                   ? 'bg-diff-add-bg text-diff-add-text'
                   : isNewEmpty
                   ? 'bg-base-1/20'
                   : 'bg-base-0 text-text-primary'
               }`}
             >
-              <div className="w-12 px-2 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 flex-shrink-0 min-h-[24px]">
+              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">
                 {row.newNum ?? ''}
               </div>
-              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-add-text flex-shrink-0">
+              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-add-text shrink-0">
                 {!isNewEmpty && (isAdd || isModified) ? '+' : ''}
               </div>
               <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">

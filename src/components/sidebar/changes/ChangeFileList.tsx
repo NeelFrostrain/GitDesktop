@@ -1,57 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Check } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';
+import { FolderContextMenu } from '../../context-menus/FolderContextMenu';
 import { ChangesEmptySpaceContextMenu } from '../../context-menus/ChangesEmptySpaceContextMenu';
 import { CreateItemModal } from '../../modals/CreateItemModal';
 import { SystemService } from '../../../services/system/systemService';
+import {
+  buildFileTree,
+  FileTreeNode,
+  getStatusBadge,
+  TreeItem,
+} from './FileTreeItem';
+
+export type ChangesViewMode = 'tree' | 'list';
 
 interface ChangeFileListProps {
   filter: string;
+  viewMode?: ChangesViewMode;
+  expandAllTrigger?: number;
+  collapseAllTrigger?: number;
 }
 
 /**
- * Renders a visual git status badge character (+, -, R, M) corresponding to the modification state.
+ * List or Tree of modified, staged, and untracked files in the working directory with filter,
+ * hierarchical folder expansion, item context menus, and empty-space context menu actions.
  */
-const getStatusBadge = (statusStr?: string) => {
-  const statusUpper = (statusStr || '').toUpperCase();
-  if (statusUpper.includes('NEW') || statusUpper.includes('ADD') || statusUpper.includes('UNTRACKED')) {
-    return (
-      <span className="w-4 h-4 rounded-sm bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
-        +
-      </span>
-    );
-  }
-  if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
-    return (
-      <span className="w-4 h-4 rounded-sm bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
-        -
-      </span>
-    );
-  }
-  if (statusUpper.includes('RENAME')) {
-    return (
-      <span className="w-4 h-4 rounded-sm bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
-        R
-      </span>
-    );
-  }
-  return (
-    <span className="w-4 h-4 rounded-sm bg-git-modified/15 text-git-modified text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-modified/25">
-      M
-    </span>
-  );
-};
+export const ChangeFileList: React.FC<ChangeFileListProps> = ({
+  filter,
+  viewMode = 'tree',
+  expandAllTrigger = 0,
+  collapseAllTrigger = 0,
+}) => {
+  const {
+    activeRepoPath,
+    status,
+    selectedFile,
+    setSelectedFile,
+    stagedFiles,
+    toggleStageFile,
+  } = useGitStore();
 
-/**
- * List of modified, staged, and untracked files in the working directory with filter,
- * item context menus, and empty-space context menu actions.
- */
-export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
-  const { activeRepoPath, status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } = useGitStore();
   const [fileContextMenu, setFileContextMenu] = useState<{
     filePath: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const [folderContextMenu, setFolderContextMenu] = useState<{
+    folderPath: string;
+    childFiles: string[];
     x: number;
     y: number;
   } | null>(null);
@@ -62,6 +61,9 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
   } | null>(null);
 
   const [createModal, setCreateModal] = useState<'file' | 'folder' | null>(null);
+
+  // Expanded folders record for tree mode
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
 
   // Keyboard shortcut: Shift+Alt+R to Reveal in File Explorer
   useEffect(() => {
@@ -77,18 +79,84 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeRepoPath]);
 
+  // Unique list of all changed files
   const allFiles = status?.files || [];
-  const uniqueFilesMap = new Map<string, (typeof allFiles)[0]>();
-  allFiles.forEach((file) => {
-    if (!uniqueFilesMap.has(file.path)) {
-      uniqueFilesMap.set(file.path, file);
-    }
-  });
-  const uniqueFiles = Array.from(uniqueFilesMap.values());
+  const uniqueFiles = useMemo(() => {
+    const map = new Map<string, (typeof allFiles)[0]>();
+    allFiles.forEach((file) => {
+      if (!map.has(file.path)) {
+        map.set(file.path, file);
+      }
+    });
+    return Array.from(map.values());
+  }, [allFiles]);
 
-  const filteredFiles = uniqueFiles.filter((file) =>
-    file.path.toLowerCase().includes(filter.toLowerCase())
-  );
+  // Filtered files according to search filter
+  const filteredFiles = useMemo(() => {
+    if (!filter) return uniqueFiles;
+    const lowerFilter = filter.toLowerCase();
+    return uniqueFiles.filter((file) => file.path.toLowerCase().includes(lowerFilter));
+  }, [uniqueFiles, filter]);
+
+  // Build tree structure
+  const fileTree = useMemo(() => {
+    return buildFileTree(filteredFiles);
+  }, [filteredFiles]);
+
+  // Collect all folder paths in current tree
+  const allFolderPaths = useMemo(() => {
+    const paths: string[] = [];
+    const collect = (nodes: TreeItem[]) => {
+      for (const node of nodes) {
+        if (node.isFolder) {
+          paths.push(node.path);
+          collect(node.children);
+        }
+      }
+    };
+    collect(fileTree);
+    return paths;
+  }, [fileTree]);
+
+  // Expand all when triggered
+  useEffect(() => {
+    if (expandAllTrigger > 0) {
+      const next: Record<string, boolean> = {};
+      allFolderPaths.forEach((p) => {
+        next[p] = true;
+      });
+      setExpandedFolders(next);
+    }
+  }, [expandAllTrigger, allFolderPaths]);
+
+  // Collapse all when triggered
+  useEffect(() => {
+    if (collapseAllTrigger > 0) {
+      const next: Record<string, boolean> = {};
+      allFolderPaths.forEach((p) => {
+        next[p] = false;
+      });
+      setExpandedFolders(next);
+    }
+  }, [collapseAllTrigger, allFolderPaths]);
+
+  // When filtering, automatically expand all folders containing matching files
+  useEffect(() => {
+    if (filter) {
+      const next: Record<string, boolean> = {};
+      allFolderPaths.forEach((p) => {
+        next[p] = true;
+      });
+      setExpandedFolders((prev) => ({ ...prev, ...next }));
+    }
+  }, [filter, allFolderPaths]);
+
+  const toggleFolder = (folderPath: string) => {
+    setExpandedFolders((prev) => {
+      const current = prev[folderPath] ?? true;
+      return { ...prev, [folderPath]: !current };
+    });
+  };
 
   if (filteredFiles.length === 0) {
     return (
@@ -134,34 +202,63 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
           e.preventDefault();
           setEmptySpaceContextMenu({ x: e.clientX, y: e.clientY });
         }}
-        className="flex-1 overflow-y-auto p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3 min-w-0"
       >
-        {filteredFiles.map((file) => {
-          const isStaged = stagedFiles.includes(file.path);
-          const isSelected = selectedFile === file.path;
+        {viewMode === 'tree' ? (
+          /* Tree View */
+          <div className="flex flex-col space-y-0.5 font-sans min-w-0">
+            {fileTree.map((node) => (
+              <FileTreeNode
+                key={node.id}
+                node={node}
+                expandedFolders={expandedFolders}
+                onToggleFolder={toggleFolder}
+                onOpenFolderContext={(folderPath, childFiles, x, y) => {
+                  setFolderContextMenu({ folderPath, childFiles, x, y });
+                }}
+                onOpenFileContext={(filePath, x, y) => {
+                  setFileContextMenu({ filePath, x, y });
+                }}
+              />
+            ))}
+          </div>
+        ) : (
+          /* Flat List View */
+          <div className="flex flex-col space-y-0.5 font-sans min-w-0">
+            {filteredFiles.map((file) => {
+              const isStaged = stagedFiles.includes(file.path);
+              const isSelected = selectedFile === file.path;
 
-          return (
-            <div
-              key={file.path}
-              onClick={() => setSelectedFile(file.path)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedFile(file.path);
-                setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
-              }}
-              className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 ${
-                isSelected
-                  ? 'bg-base-2 text-text font-medium border border-border-strong/70 shadow-xs'
-                  : 'hover:bg-base-2/60 text-text-subtle border border-transparent'
-              }`}
-            >
-              <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
-              {getStatusBadge(file.status)}
-              <span className="truncate flex-1 font-mono text-[11px] text-text">{file.path}</span>
-            </div>
-          );
-        })}
+              return (
+                <div
+                  key={file.path}
+                  onClick={() => setSelectedFile(file.path)}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedFile(file.path);
+                    setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
+                  }}
+                  className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 min-w-0 ${
+                    isSelected
+                      ? 'bg-base-2 text-text font-medium border border-border-strong/70 shadow-xs'
+                      : 'hover:bg-base-2/60 text-text-subtle border border-transparent'
+                  }`}
+                >
+                  <div className="shrink-0 flex items-center">
+                    <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
+                  </div>
+                  <div className="shrink-0 flex items-center">
+                    {getStatusBadge(file.status)}
+                  </div>
+                  <span className="truncate flex-1 font-mono text-[11px] text-text" title={file.path}>
+                    {file.path}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {fileContextMenu && (
@@ -170,6 +267,16 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
           x={fileContextMenu.x}
           y={fileContextMenu.y}
           onClose={() => setFileContextMenu(null)}
+        />
+      )}
+
+      {folderContextMenu && (
+        <FolderContextMenu
+          folderPath={folderContextMenu.folderPath}
+          childFiles={folderContextMenu.childFiles}
+          x={folderContextMenu.x}
+          y={folderContextMenu.y}
+          onClose={() => setFolderContextMenu(null)}
         />
       )}
 
@@ -191,3 +298,4 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({ filter }) => {
     </>
   );
 };
+

@@ -12,9 +12,12 @@ import {
   FolderGit2,
   GitBranch,
   Settings,
+  Users,
+  Plus,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useSettingsStore } from '../../features/settings';
+import { useAccountServicesStore } from '../../features/account-services';
 import { UserAvatar } from '../common/UserAvatar';
 import { SystemService } from '../../services/system/systemService';
 import { AccountService } from '../../services/accounts/accountService';
@@ -37,6 +40,8 @@ export const Titlebar: React.FC = () => {
     currentNavView,
     setCurrentNavView,
   } = useGitStore();
+  const accountServicesAccounts = useAccountServicesStore((s) => s.accounts);
+  const totalAccountsCount = accountServicesAccounts.length || accounts?.length || 0;
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -221,10 +226,10 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setCurrentNavView('home')}
-            className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white transition cursor-pointer text-xs font-semibold select-none active:scale-95 group"
+            className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer text-xs font-semibold select-none active:scale-95 group shadow-2xs"
             title="Go to Home"
           >
-            <Home className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 transition-colors" />
+            <Home className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors" />
             <span>Home</span>
           </button>
         )}
@@ -234,7 +239,7 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white transition cursor-pointer select-none active:scale-95"
+            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer select-none active:scale-95 shadow-2xs"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
@@ -245,7 +250,7 @@ export const Titlebar: React.FC = () => {
               iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
-              className={`w-3 h-3 text-zinc-400 transition-transform duration-200 ${isProfileOpen ? 'rotate-180 text-commito-coral' : ''
+              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180 text-commito-coral' : ''
                 }`}
             />
           </button>
@@ -260,31 +265,57 @@ export const Titlebar: React.FC = () => {
                 {user?.username && user.name && (
                   <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
                 )}
-                {accounts.length > 0 && (
+                {totalAccountsCount > 0 && (
                   <div className="text-[10px] text-text-faint mt-0.5">
-                    {accounts.length} account{accounts.length > 1 ? 's' : ''} saved
+                    {totalAccountsCount} account{totalAccountsCount > 1 ? 's' : ''} saved
                   </div>
                 )}
               </div>
 
               {/* Menu Actions */}
               <button
+                type="button"
+                onClick={() => {
+                  useAccountServicesStore.getState().openModalWithTab('accounts');
+                  setIsProfileOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
+              >
+                <Users className="w-3.5 h-3.5 text-commito-coral" />
+                Manage Accounts ({totalAccountsCount})
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  useAccountServicesStore.getState().openModalWithTab('add');
+                  setIsProfileOpen(false);
+                }}
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
+              >
+                <Plus className="w-3.5 h-3.5 text-git-added" />
+                Add Another Account
+              </button>
+
+              <button
+                type="button"
                 onClick={() => {
                   useGitStore.getState().setIsUserConfigModalOpen(true);
                   setIsProfileOpen(false);
                 }}
-                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer"
+                className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
               >
-                <User className="w-3.5 h-3.5 text-commito-coral" />
-                Git User Configuration
+                <User className="w-3.5 h-3.5 text-text-muted" />
+                Git Commit Identity
               </button>
 
               {user && (
                 <>
                   <div className="h-px bg-border mx-2 my-1" />
                   <button
+                    type="button"
                     onClick={handleSignOut}
-                    className="w-full text-left px-3 py-2 text-git-removed hover:bg-git-removed-bg hover:text-danger transition flex items-center gap-2 cursor-pointer"
+                    className="w-full text-left px-3 py-2 text-git-removed hover:bg-git-removed-bg hover:text-danger transition flex items-center gap-2 cursor-pointer font-medium"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     Sign Out
@@ -299,10 +330,10 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={() => useSettingsStore.getState().openSettings()}
-          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-300 hover:text-white transition-all cursor-pointer select-none active:scale-95 group"
+          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer select-none active:scale-95 group shadow-2xs"
           title="Open Settings (Ctrl+,)"
         >
-          <Settings className="w-3.5 h-3.5 text-zinc-400 group-hover:text-zinc-200 group-hover:rotate-45 transition-all duration-200" />
+          <Settings className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary group-hover:rotate-45 transition-all duration-200" />
         </button>
 
         {/* Vertical Separator */}

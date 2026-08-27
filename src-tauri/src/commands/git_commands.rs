@@ -149,6 +149,16 @@ pub async fn fetch_remote(repo_path: String) -> Result<(), AppError> {
 }
 
 #[command]
+pub async fn validate_remote_origin_cmd(
+    repo_path: String,
+) -> Result<remote_mod::RemoteValidationResult, AppError> {
+    let rp = repo_path.clone();
+    tokio::task::spawn_blocking(move || remote_mod::validate_remote_origin(&rp))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn get_commit_history(
     repo_path: String,
     limit: Option<usize>,
@@ -830,6 +840,33 @@ pub async fn export_patch_cmd(
 pub async fn apply_patch_cmd(repo_path: String, patch_file_path: String) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || {
         crate::git::patch::apply_patch(&repo_path, &patch_file_path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn stage_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::stage_patch(&repo_path, &patch_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn unstage_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::unstage_patch(&repo_path, &patch_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn discard_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::discard_patch(&repo_path, &patch_content)
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?

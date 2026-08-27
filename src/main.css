@@ -15,11 +15,11 @@
    ========================================================================== */
 :root {
   /* --- Unified Surfaces & Backgrounds --- */
-  --surface: #171619;                 /* Main workspace background */
-  --surface-subtle: #121113;          /* Deep frame / Sidebar background */
-  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
-  --surface-hover: #2b292f;           /* Hover state on rows and cards */
-  --surface-active: #382221;          /* Pressed/selected active background */
+  --surface: #0b0a0e;                 /* Main workspace background */
+  --surface-subtle: #070708;          /* Deep frame / Sidebar background */
+  --surface-elevated: #111013;        /* Elevated cards, panels & modals */
+  --surface-hover: #1c1b1f;           /* Hover state on rows and cards */
+  --surface-active: #281d1c;          /* Pressed/selected active background */
 
   /* Legacy surface aliases */
   --app-bg-primary: var(--surface);
@@ -179,7 +179,7 @@
   --log-error: #f87171;
 
   /* --- Typography Tokens --- */
-  --app-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --app-font-size: 13px;
   --app-font-size-sm: 11px;
   --app-font-size-lg: 15px;
@@ -187,7 +187,7 @@
   --app-font-weight-medium: 500;
   --app-font-weight-bold: 600;
   --app-line-height: 1.5;
-  --terminal-font-family: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+  --terminal-font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
   --terminal-font-size: 13px;
 
   /* --- Spacing, Radii & Dimensions --- */

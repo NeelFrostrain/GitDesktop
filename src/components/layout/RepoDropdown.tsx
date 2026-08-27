@@ -219,6 +219,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     setError,
     setIsRepoModalOpen,
     setIsCreateRepoModalOpen,
+    setIsCloneRepoModalOpen,
     setActiveModalTab,
     user,
     status,
@@ -317,11 +318,10 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     }
   };
 
-  const handleCloneRepo = () => {
+  const handleCloneRepo = (url?: string) => {
     setShowAddMenu(false);
     onClose();
-    setActiveModalTab('repos');
-    setIsRepoModalOpen(true);
+    setIsCloneRepoModalOpen(true, url);
   };
 
   const handleCreateNewRepo = () => {
@@ -401,7 +401,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
 
           <button
             type="button"
-            onClick={handleCloneRepo}
+            onClick={() => handleCloneRepo()}
             className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-commito-coral/40 group"
           >
             <Download className="w-4 h-4 text-commito-coral group-hover:scale-110 transition-transform" />
@@ -492,7 +492,11 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
             ) : (
               <div className="space-y-0.5">
                 {filteredUserRepos.map((repo) => (
-                  <CloudRepoRow key={repo.id} repo={repo} onClone={handleCloneRepo} />
+                  <CloudRepoRow
+                    key={repo.id}
+                    repo={repo}
+                    onClone={() => handleCloneRepo(repo.http_url_to_repo || repo.ssh_url_to_repo)}
+                  />
                 ))}
               </div>
             )}

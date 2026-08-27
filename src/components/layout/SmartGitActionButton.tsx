@@ -36,13 +36,13 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const primaryCls =
-    'h-7.5 px-2.5 rounded-sm bg-gradient-to-b from-[#ff5733] via-[#ff3b14] to-[#e62a04] hover:from-[#ff6e4d] hover:via-[#ff5733] hover:to-[#ff3b14] active:from-[#e62a04] active:to-[#bf2000] text-white text-xs font-bold flex items-center gap-1.5 transition border border-[#cc2500] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)] cursor-pointer active:scale-95';
+    'h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98';
   const secondaryCls =
-    'h-7.5 px-2.5 rounded-sm bg-gradient-to-b from-[#0091ff] via-[#0077ff] to-[#005be0] hover:from-[#38a9ff] hover:via-[#0091ff] hover:to-[#0077ff] active:from-[#005be0] active:to-[#0047b3] text-white text-xs font-bold flex items-center gap-1.5 transition border border-[#0052cc] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)] cursor-pointer active:scale-95';
+    'h-7.5 px-3 rounded-sm bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98';
   const mutedCls =
-    'h-7.5 px-2.5 rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] text-text-muted text-xs font-medium flex items-center gap-1.5 cursor-default select-none shadow-2xs';
+    'h-7.5 px-3 rounded-sm border border-border bg-base-1 text-text-muted text-xs font-medium flex items-center gap-1.5 cursor-default select-none shadow-2xs';
   const warnCls =
-    'h-7.5 px-2.5 rounded-sm border border-[#b45309] bg-gradient-to-b from-[#ffb300] via-[#f59e0b] to-[#d97706] text-white text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.45),0_1px_3px_rgba(0,0,0,0.35)]';
+    'h-7.5 px-3 rounded-sm border border-warning/80 bg-warning text-black text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-xs';
 
   if (!hasRepo) {
     return {
@@ -113,6 +113,14 @@ function getButtonConfig(
         ),
         label: isFetching ? 'Fetching...' : 'Up to date',
         tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
+        className: primaryCls,
+        disabled: false,
+      };
+    case 'no-remote':
+      return {
+        icon: <Upload className="w-3.5 h-3.5" />,
+        label: 'Publish repository',
+        tooltip: 'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
         className: primaryCls,
         disabled: false,
       };

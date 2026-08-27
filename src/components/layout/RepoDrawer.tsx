@@ -26,8 +26,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const {
     activeRepoPath,
     setIsCreateRepoModalOpen,
-    setIsRepoModalOpen,
-    setActiveModalTab,
+    setIsCloneRepoModalOpen,
   } = useGitStore();
 
   const [filterQuery, setFilterQuery] = useState('');
@@ -155,8 +154,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
   const handleCloneRepo = () => {
     onClose();
-    setActiveModalTab('repos');
-    setIsRepoModalOpen(true);
+    setIsCloneRepoModalOpen(true);
   };
 
   const handleRemoveRepo = async (e: React.MouseEvent, id: string) => {
@@ -262,13 +260,13 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Sleek Horizontal Action Buttons with Unified 3D Obsidian Black Background */}
+          {/* Sleek Horizontal Action Buttons with Unified Theme Background */}
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               onClick={handleAddLocalRepo}
               disabled={isAddingLocal}
-              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 disabled:opacity-50"
+              className="h-7.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 active:bg-base-3 border border-border hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 disabled:opacity-50 shadow-2xs"
               title="Add an existing local Git repository folder"
             >
               <FolderPlus className="w-3.5 h-3.5 text-emerald-400 group-hover:scale-105 transition-transform flex-shrink-0" />
@@ -280,7 +278,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleCreateNewRepo}
-              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
+              className="h-7.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 active:bg-base-3 border border-border hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 shadow-2xs"
               title="Create a brand new Git repository"
             >
               <PlusSquare className="w-3.5 h-3.5 text-sky-400 group-hover:scale-105 transition-transform flex-shrink-0" />
@@ -290,7 +288,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             <button
               type="button"
               onClick={handleCloneRepo}
-              className="h-7.5 px-2 rounded-sm bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] active:from-[#151417] active:to-[#0f0e11] border border-[#2d2b32] hover:border-[#3d3a44] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-200 hover:text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95"
+              className="h-7.5 px-2 rounded-sm bg-base-1 hover:bg-base-2 active:bg-base-3 border border-border hover:border-border-strong text-text-primary flex items-center justify-center gap-1.5 transition-all cursor-pointer group active:scale-95 shadow-2xs"
               title="Clone repository from remote GitLab/GitHub"
             >
               <Download className="w-3.5 h-3.5 text-commito-coral group-hover:scale-105 transition-transform flex-shrink-0" />

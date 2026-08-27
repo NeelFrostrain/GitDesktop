@@ -38,23 +38,37 @@ fn get_git_credential_token(host: &str) -> Option<String> {
 }
 
 fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
+    get_gitlab_client_for_account(None, server_override)
+}
+
+fn get_gitlab_client_for_account(
+    account_id: Option<&str>,
+    server_override: Option<String>,
+) -> Result<GitLabClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
-    let gitlab_acc = provider_accounts
-        .iter()
-        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
-        .or_else(|| {
-            provider_accounts
-                .iter()
-                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
-        });
+    let gitlab_acc = if let Some(id) = account_id {
+        provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else {
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
+            })
+            .cloned()
+    };
 
     let mut gitlab_token = None;
     let mut instance_url = None;
 
-    if let Some(acc) = gitlab_acc {
+    if let Some(ref acc) = gitlab_acc {
         if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
-            gitlab_token = Some(tok);
-            instance_url = Some(acc.instance_url.clone());
+            if !tok.trim().is_empty() {
+                gitlab_token = Some(tok);
+                instance_url = Some(acc.instance_url.clone());
+            }
         }
     }
 
@@ -65,8 +79,10 @@ fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, Ap
             .find(|a| a.provider == "gitlab" && a.is_active)
             .or_else(|| accounts.iter().find(|a| a.provider == "gitlab"))
         {
-            gitlab_token = Some(a.token.clone());
-            instance_url = Some(a.server_url.clone());
+            if !a.token.trim().is_empty() {
+                gitlab_token = Some(a.token.clone());
+                instance_url = Some(a.server_url.clone());
+            }
         }
     }
 
@@ -89,24 +105,39 @@ fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, Ap
         .or_else(|| keyring::get_token().ok().flatten())
         .unwrap_or_default();
 
+    if token.trim().is_empty() {
+        return Err(AppError::Auth(
+            "No authenticated session found for GitLab. Please sign in or provide a token.".to_string(),
+        ));
+    }
+
     GitLabClient::new(server_url, token, None)
 }
 
 fn get_github_client() -> Result<GitHubClient, AppError> {
-    // 1. Try to find GitHub token in token_store (OAuth or PAT)
+    get_github_client_for_account(None)
+}
+
+fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHubClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let gh_acc = if let Some(id) = account_id {
+        provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else {
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github && a.is_active)
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github)
+            })
+            .cloned()
+    };
+
     let mut github_token = None;
 
-    if let Some(gh_acc) = provider_accounts
-        .iter()
-        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github && a.is_active)
-        .or_else(|| {
-            provider_accounts
-                .iter()
-                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github)
-        })
-    {
-        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&gh_acc.id) {
+    if let Some(ref acc) = gh_acc {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
             if !tok.trim().is_empty() {
                 github_token = Some(tok);
             }
@@ -150,7 +181,10 @@ fn get_github_client() -> Result<GitHubClient, AppError> {
         }
     }
 
-    GitHubClient::new(github_token.as_deref())
+    let token = github_token
+        .or_else(|| keyring::get_token().ok().flatten());
+
+    GitHubClient::new(token.as_deref())
 }
 
 /// Helper: convert GitLabProject to UnifiedRepo
@@ -190,22 +224,51 @@ pub async fn select_folder_cmd(app: tauri::AppHandle) -> Result<Option<String>, 
 /// Returns a unified list so the frontend uses a single code path.
 #[command]
 pub async fn fetch_user_repositories(
+    account_id: Option<String>,
     server_url: Option<String>,
     page: Option<u32>,
     provider: Option<String>,
+    search: Option<String>,
 ) -> Result<PagedResult<UnifiedRepo>, AppError> {
     let p = page.unwrap_or(1);
 
-    // Determine provider from argument or active account
-    let resolved_provider = provider.unwrap_or_else(|| {
+    // 1. If account_id is provided, find that account in token_store
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let target_acc = if let Some(ref aid) = account_id {
+        provider_accounts.iter().find(|a| &a.id == aid).cloned()
+    } else {
+        provider_accounts.iter().find(|a| a.is_active).cloned()
+    };
+
+    // Determine resolved provider from target account or fallback argument
+    let resolved_provider = if let Some(ref acc) = target_acc {
+        match acc.provider {
+            crate::domain::accounts::provider::ProviderKind::Github => "github".to_string(),
+            crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket".to_string(),
+            crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab".to_string(),
+        }
+    } else if let Some(prov) = provider {
+        prov.to_lowercase()
+    } else {
         keyring::get_active_account()
-            .map(|a| a.provider)
-            .unwrap_or_else(|| "gitlab".to_string())
-    });
+            .map(|a| a.provider.to_lowercase())
+            .unwrap_or_else(|| "github".to_string())
+    };
+
+    let target_acc_id = target_acc.as_ref().map(|a| a.id.as_str());
 
     if resolved_provider == "github" {
-        let client = get_github_client()?;
-        let repos = client.fetch_repos(p).await?;
+        let client = get_github_client_for_account(target_acc_id)?;
+        let mut repos = client.fetch_repos(p).await?;
+        if let Some(ref q) = search {
+            let query = q.trim().to_lowercase();
+            if !query.is_empty() {
+                repos.retain(|r| {
+                    r.name.to_lowercase().contains(&query)
+                        || r.path_with_namespace.to_lowercase().contains(&query)
+                });
+            }
+        }
         let total = if repos.len() < 20 { p } else { p + 1 }; // GitHub doesn't return total pages
         return Ok(PagedResult {
             items: repos,
@@ -215,14 +278,26 @@ pub async fn fetch_user_repositories(
     }
 
     // GitLab path
-    let client = get_gitlab_client(server_url)?;
+    let client = get_gitlab_client_for_account(target_acc_id, server_url)?;
     let paged = client.fetch_projects(p).await?;
+    let mut items: Vec<UnifiedRepo> = paged
+        .items
+        .into_iter()
+        .map(gitlab_project_to_unified)
+        .collect();
+
+    if let Some(ref q) = search {
+        let query = q.trim().to_lowercase();
+        if !query.is_empty() {
+            items.retain(|r| {
+                r.name.to_lowercase().contains(&query)
+                    || r.path_with_namespace.to_lowercase().contains(&query)
+            });
+        }
+    }
+
     Ok(PagedResult {
-        items: paged
-            .items
-            .into_iter()
-            .map(gitlab_project_to_unified)
-            .collect(),
+        items,
         page: paged.page,
         total_pages: paged.total_pages,
     })
@@ -834,9 +909,54 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
                 let lic_path = repo_dir.join("LICENSE");
                 let year = chrono::Utc::now().format("%Y").to_string();
                 let lic_content = match lic.as_str() {
-                    "MIT" => format!("MIT License\n\nCopyright (c) {} \n\nPermission is hereby granted, free of charge, to any person obtaining a copy...", year),
-                    "Apache-2.0" => format!("Apache License\nVersion 2.0, January 2004\n\nCopyright {} ...", year),
-                    "GPL-3.0" => format!("GNU GENERAL PUBLIC LICENSE\nVersion 3, 29 June 2007\n\nCopyright (C) {} ...", year),
+                    "MIT" => format!(
+                        "MIT License\n\nCopyright (c) {year}\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+                    ),
+                    "Apache-2.0" => format!(
+                        "                                 Apache License\n                           Version 2.0, January 2004\n                        http://www.apache.org/licenses/\n\n   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\n   Copyright {year}\n\n   Licensed under the Apache License, Version 2.0 (the \"License\");\n   you may not use this file except in compliance with the License.\n   You may obtain a copy of the License at\n\n       http://www.apache.org/licenses/LICENSE-2.0\n\n   Unless required by applicable law or agreed to in writing, software\n   distributed under the License is distributed on an \"AS IS\" BASIS,\n   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n   See the License for the specific language governing permissions and\n   limitations under the License.\n"
+                    ),
+                    "GPL-3.0" => format!(
+                        "                    GNU GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n\n Copyright (C) {year}\n\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n                            Preamble\n\n  The GNU General Public License is a free, copyleft license for\nsoftware and other kinds of works.\n\n  This program is free software: you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation, either version 3 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n\n  You should have received a copy of the GNU General Public License\n  along with this program.  If not, see <https://www.gnu.org/licenses/>.\n"
+                    ),
+                    "GPL-2.0" => format!(
+                        "                    GNU GENERAL PUBLIC LICENSE\n                       Version 2, June 1991\n\n Copyright (C) {year}\n\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n  This program is free software; you can redistribute it and/or modify\n  it under the terms of the GNU General Public License as published by\n  the Free Software Foundation; either version 2 of the License, or\n  (at your option) any later version.\n\n  This program is distributed in the hope that it will be useful,\n  but WITHOUT ANY WARRANTY; without even the implied warranty of\n  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n  GNU General Public License for more details.\n"
+                    ),
+                    "AGPL-3.0" => format!(
+                        "                    GNU AFFERO GENERAL PUBLIC LICENSE\n                       Version 3, 19 November 2007\n\n Copyright (C) {year}\n\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n  This program is free software: you can redistribute it and/or modify\n  it under the terms of the GNU Affero General Public License as published by\n  the Free Software Foundation, either version 3 of the License, or\n  (at your option) any later version.\n"
+                    ),
+                    "LGPL-3.0" => format!(
+                        "                   GNU LESSER GENERAL PUBLIC LICENSE\n                       Version 3, 29 June 2007\n\n Copyright (C) {year}\n\n Everyone is permitted to copy and distribute verbatim copies\n of this license document, but changing it is not allowed.\n\n  This program is free software: you can redistribute it and/or modify\n  it under the terms of the GNU Lesser General Public License as published by\n  the Free Software Foundation, either version 3 of the License, or\n  (at your option) any later version.\n"
+                    ),
+                    "BSD-2-Clause" => format!(
+                        "BSD 2-Clause License\n\nCopyright (c) {year}\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+                    ),
+                    "BSD-3-Clause" => format!(
+                        "BSD 3-Clause License\n\nCopyright (c) {year}\n\nRedistribution and use in source and binary forms, with or without\nmodification, are permitted provided that the following conditions are met:\n\n1. Redistributions of source code must retain the above copyright notice, this\n   list of conditions and the following disclaimer.\n\n2. Redistributions in binary form must reproduce the above copyright notice,\n   this list of conditions and the following disclaimer in the documentation\n   and/or other materials provided with the distribution.\n\n3. Neither the name of the copyright holder nor the names of its\n   contributors may be used to endorse or promote products derived from\n   this software without specific prior written permission.\n\nTHIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS \"AS IS\"\nAND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE\nIMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE\nDISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE\nFOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL\nDAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR\nSERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER\nCAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,\nOR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE\nOF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.\n"
+                    ),
+                    "0BSD" => format!(
+                        "BSD Zero Clause License\n\nCopyright (C) {year}\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH\nREGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY\nAND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,\nINDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM\nLOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR\nOTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR\nPERFORMANCE OF THIS SOFTWARE.\n"
+                    ),
+                    "ISC" => format!(
+                        "ISC License\n\nCopyright (c) {year}\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n"
+                    ),
+                    "MPL-2.0" => format!(
+                        "Mozilla Public License Version 2.0\n==================================\n\nCopyright (c) {year}\n\nThis Source Code Form is subject to the terms of the Mozilla Public\nLicense, v. 2.0. If a copy of the MPL was not distributed with this\nfile, You can obtain one at https://mozilla.org/MPL/2.0/.\n"
+                    ),
+                    "Unlicense" => format!(
+                        "This is free and unencumbered software released into the public domain.\n\nAnyone is free to copy, modify, publish, use, compile, sell, or\ndistribute this software, either in source code form or as a compiled\nbinary, for any purpose, commercial or non-commercial, and by any\nmeans.\n\nIn jurisdictions that recognize copyright laws, the author or authors\nof this software dedicate any and all copyright interest in the\nsoftware to the public domain. We make this dedication for the benefit\nof the public at large and to the detriment of our heirs and\nsuccessors. We intend this dedication to be an overt act of\nrelinquishment in perpetuity of all present and future rights to this\nsoftware under copyright law.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR\nOTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,\nARISING FROM, OUT OF OR IN CONNECTION WITH THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\nFor more information, please refer to <https://unlicense.org>\n"
+                    ),
+                    "CC0-1.0" => format!(
+                        "Creative Commons Legal Code\n\nCC0 1.0 Universal (CC0 1.0) Public Domain Dedication\n\nCopyright (c) {year}\n\nThe person who associated a work with this deed has dedicated the work to\nthe public domain by waiving all of his or her rights to the work worldwide\nunder copyright law, including all related and neighboring rights, to the\nextent allowed by law.\n\nYou can copy, modify, distribute and perform the work, even for commercial\npurposes, all without asking permission.\n"
+                    ),
+                    "BSL-1.0" => format!(
+                        "Boost Software License - Version 1.0 - August 17th, 2003\n\nCopyright (c) {year}\n\nPermission is hereby granted, free of charge, to any person or organization\nobtaining a copy of the software and accompanying documentation covered by\nthis license (the \"Software\") to use, reproduce, display, distribute,\nexecute, and transmit the Software, and to prepare derivative works of the\nSoftware, and to permit third-parties to whom the Software is furnished to\ndo so, all subject to the following:\n\nThe copyright notices in the Software and this entire statement, including\nthe above license grant, this restriction and the following disclaimer,\nmust be included in all copies of the Software, in whole or in part, and\nall derivative works of the Software, unless such copies or derivative\nworks are solely in the form of machine-executable object code generated by\na source language processor.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE, TITLE AND NON-INFRINGEMENT. IN NO EVENT\nSHALL THE COPYRIGHT HOLDERS OR ANYONE DISTRIBUTING THE SOFTWARE BE LIABLE\nFOR ANY DAMAGES OR OTHER LIABILITY, WHETHER IN CONTRACT, TORT OR OTHERWISE,\nARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE.\n"
+                    ),
+                    "EPL-2.0" => format!(
+                        "Eclipse Public License - v 2.0\n\nCopyright (c) {year}\n\nTHE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE\nPUBLIC LICENSE (\"AGREEMENT\"). ANY USE, REPRODUCTION OR DISTRIBUTION\nOF THE PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THIS AGREEMENT.\n\nhttps://www.eclipse.org/legal/epl-2.0/\n"
+                    ),
+                    "WTFPL" => format!(
+                        "        DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE\n                    Version 2, December 2004\n\n Copyright (C) {year}\n\n Everyone is permitted to copy and distribute verbatim or modified\n copies of this license document, and changing it is allowed as long\n as the name is changed.\n\n            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE\n   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION\n\n  0. You just DO WHAT THE FUCK YOU WANT TO.\n"
+                    ),
                     _ => "".to_string(),
                 };
                 if !lic_content.is_empty() {

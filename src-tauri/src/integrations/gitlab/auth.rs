@@ -1,3 +1,4 @@
+use crate::core::config;
 use crate::domain::accounts::oauth_pkce;
 use crate::domain::accounts::provider::{AuthProvider, ProviderAccount, ProviderKind, TokenStatus};
 use crate::error::AppError;
@@ -5,8 +6,8 @@ use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
 use serde::Deserialize;
 
 pub const GITLAB_DEFAULT_CLIENT_ID: &str =
-    "0e59a43a08832a83adbb0c03632e8c2ecad1586a111a43a6d97e7fbe6b1bb85f";
-pub const REDIRECT_URI: &str = "gitlab-desktop://oauth/gitlab/callback";
+    "e1e90ccf895458c58b7738412ac7f2ff830b89fbeab9cd7405d6e6a75005202d";
+pub const GITLAB_DEFAULT_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
 
 #[allow(dead_code)]
 #[derive(Debug, Deserialize)]
@@ -31,6 +32,28 @@ struct GitLabUserResponse {
 
 pub struct GitLabAuthProvider;
 
+impl GitLabAuthProvider {
+    pub fn get_client_id(&self) -> String {
+        config::get_env_var("VITE_GITLAB_CLIENT_ID")
+            .unwrap_or_else(|| GITLAB_DEFAULT_CLIENT_ID.to_string())
+    }
+
+    pub fn get_client_secret(&self) -> Option<String> {
+        config::get_env_var("VITE_GITLAB_CLIENT_SECRET")
+    }
+
+    pub fn get_redirect_uri(&self) -> String {
+        config::get_env_var("VITE_GITLAB_REDIRECT_URI")
+            .unwrap_or_else(|| GITLAB_DEFAULT_REDIRECT_URI.to_string())
+    }
+
+    pub fn get_scopes(&self) -> String {
+        config::get_env_var("VITE_GITLAB_SCOPES").unwrap_or_else(|| {
+            "api read_user openid profile email write_repository read_repository".to_string()
+        })
+    }
+}
+
 impl AuthProvider for GitLabAuthProvider {
     fn provider_kind(&self) -> ProviderKind {
         ProviderKind::Gitlab
@@ -42,15 +65,22 @@ impl AuthProvider for GitLabAuthProvider {
 
     fn start_oauth(&self, instance_url: &str) -> Result<String, AppError> {
         let clean_url = instance_url.trim_end_matches('/');
-        let (state, challenge, _verifier) = oauth_pkce::generate_pkce_session("gitlab", clean_url);
+        let client_id = self.get_client_id();
+        let redirect_uri = self.get_redirect_uri();
+        let raw_scopes = self.get_scopes();
+        let formatted_scopes = raw_scopes.replace(',', "+").replace(' ', "+");
+
+        let (state, challenge, _verifier) =
+            oauth_pkce::generate_pkce_session("gitlab", clean_url, &redirect_uri);
 
         let auth_url = format!(
-            "{}/oauth/authorize?client_id={}&redirect_uri={}&response_type=code&state={}&code_challenge={}&code_challenge_method=S256&scope=api+read_user+openid+profile+email+write_repository+read_repository",
+            "{}/oauth/authorize?client_id={}&redirect_uri={}&response_type=code&state={}&code_challenge={}&code_challenge_method=S256&scope={}",
             clean_url,
-            GITLAB_DEFAULT_CLIENT_ID,
-            urlencoding::encode(REDIRECT_URI),
+            urlencoding::encode(&client_id),
+            urlencoding::encode(&redirect_uri),
             urlencoding::encode(&state),
             urlencoding::encode(&challenge),
+            formatted_scopes,
         );
 
         Ok(auth_url)
@@ -62,16 +92,115 @@ impl AuthProvider for GitLabAuthProvider {
         code: &str,
         code_verifier: &str,
     ) -> Result<ProviderAccount, AppError> {
+        self.exchange_code_with_redirect(instance_url, code, code_verifier, None)
+            .await
+    }
+
+    async fn refresh_token(
+        &self,
+        account: &ProviderAccount,
+        refresh_token: &str,
+    ) -> Result<ProviderAccount, AppError> {
+        let clean_url = account.instance_url.trim_end_matches('/');
+        let token_url = format!("{}/oauth/token", clean_url);
+
+        let client_id = self.get_client_id();
+        let client_secret = self.get_client_secret();
+        let redirect_uri = self.get_redirect_uri();
+
+        let mut params = vec![
+            ("client_id", client_id),
+            ("grant_type", "refresh_token".to_string()),
+            ("refresh_token", refresh_token.to_string()),
+            ("redirect_uri", redirect_uri),
+        ];
+
+        let secret_val = client_secret.unwrap_or_default();
+        if !secret_val.is_empty() {
+            params.push(("client_secret", secret_val));
+        }
+
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&token_url)
+            .form(&params)
+            .send()
+            .await
+            .map_err(|e| AppError::Auth(format!("Token refresh request failed: {}", e)))?;
+
+        if !resp.status().is_success() {
+            return Err(AppError::Auth("Failed to refresh GitLab token".to_string()));
+        }
+
+        let token_resp: GitLabOAuthTokenResponse = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Auth(e.to_string()))?;
+
+        let now = chrono::Utc::now().timestamp();
+        let mut updated = account.clone();
+        updated.expires_at = token_resp.expires_in.map(|exp| now + exp);
+        updated.token_status = TokenStatus::Valid;
+
+        crate::domain::accounts::token_store::save_account(
+            updated.clone(),
+            &token_resp.access_token,
+            token_resp.refresh_token.as_deref(),
+        )?;
+
+        Ok(updated)
+    }
+
+    async fn revoke_token(&self, account: &ProviderAccount) -> Result<(), AppError> {
+        let clean_url = account.instance_url.trim_end_matches('/');
+        let revoke_url = format!("{}/oauth/revoke", clean_url);
+        let client_id = self.get_client_id();
+
+        if let Ok(Some(token)) = crate::domain::accounts::token_store::get_token(&account.id) {
+            let client = reqwest::Client::new();
+            let _ = client
+                .post(&revoke_url)
+                .form(&[
+                    ("client_id", client_id.as_str()),
+                    ("token", token.as_str()),
+                ])
+                .send()
+                .await;
+        }
+        Ok(())
+    }
+}
+
+impl GitLabAuthProvider {
+    pub async fn exchange_code_with_redirect(
+        &self,
+        instance_url: &str,
+        code: &str,
+        code_verifier: &str,
+        redirect_uri_override: Option<&str>,
+    ) -> Result<ProviderAccount, AppError> {
         let clean_url = instance_url.trim_end_matches('/');
         let token_url = format!("{}/oauth/token", clean_url);
 
-        let params = [
-            ("client_id", GITLAB_DEFAULT_CLIENT_ID),
-            ("code", code),
-            ("grant_type", "authorization_code"),
-            ("redirect_uri", REDIRECT_URI),
-            ("code_verifier", code_verifier),
+        let client_id = self.get_client_id();
+        let client_secret = self.get_client_secret();
+        let redirect_uri = redirect_uri_override
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| self.get_redirect_uri());
+
+        let mut params = vec![
+            ("client_id", client_id.clone()),
+            ("code", code.to_string()),
+            ("grant_type", "authorization_code".to_string()),
+            ("redirect_uri", redirect_uri.clone()),
+            ("code_verifier", code_verifier.to_string()),
         ];
+
+        let secret_val = client_secret.unwrap_or_default();
+        if !secret_val.is_empty() {
+            params.push(("client_secret", secret_val));
+        }
+
 
         let client = reqwest::Client::new();
         let resp = client
@@ -138,7 +267,7 @@ impl AuthProvider for GitLabAuthProvider {
             display_name: user_data.name,
             avatar_url: user_data.avatar_url.unwrap_or_default(),
             commit_email: user_data.email.unwrap_or_default(),
-            is_active: false,
+            is_active: true,
             token_status: TokenStatus::Valid,
             scopes,
             expires_at,
@@ -150,69 +279,8 @@ impl AuthProvider for GitLabAuthProvider {
             token_resp.refresh_token.as_deref(),
         )?;
 
+        let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&account.id, None);
+
         Ok(account)
-    }
-
-    async fn refresh_token(
-        &self,
-        account: &ProviderAccount,
-        refresh_token: &str,
-    ) -> Result<ProviderAccount, AppError> {
-        let clean_url = account.instance_url.trim_end_matches('/');
-        let token_url = format!("{}/oauth/token", clean_url);
-
-        let params = [
-            ("client_id", GITLAB_DEFAULT_CLIENT_ID),
-            ("grant_type", "refresh_token"),
-            ("refresh_token", refresh_token),
-            ("redirect_uri", REDIRECT_URI),
-        ];
-
-        let client = reqwest::Client::new();
-        let resp = client
-            .post(&token_url)
-            .form(&params)
-            .send()
-            .await
-            .map_err(|e| AppError::Auth(format!("Token refresh request failed: {}", e)))?;
-
-        if !resp.status().is_success() {
-            return Err(AppError::Auth("Failed to refresh GitLab token".to_string()));
-        }
-
-        let token_resp: GitLabOAuthTokenResponse = resp
-            .json()
-            .await
-            .map_err(|e| AppError::Auth(e.to_string()))?;
-
-        let now = chrono::Utc::now().timestamp();
-        let mut updated = account.clone();
-        updated.expires_at = token_resp.expires_in.map(|exp| now + exp);
-        updated.token_status = TokenStatus::Valid;
-
-        crate::domain::accounts::token_store::save_account(
-            updated.clone(),
-            &token_resp.access_token,
-            token_resp.refresh_token.as_deref(),
-        )?;
-
-        Ok(updated)
-    }
-
-    async fn revoke_token(&self, account: &ProviderAccount) -> Result<(), AppError> {
-        let clean_url = account.instance_url.trim_end_matches('/');
-        let revoke_url = format!("{}/oauth/revoke", clean_url);
-        if let Ok(Some(token)) = crate::domain::accounts::token_store::get_token(&account.id) {
-            let client = reqwest::Client::new();
-            let _ = client
-                .post(&revoke_url)
-                .form(&[
-                    ("client_id", GITLAB_DEFAULT_CLIENT_ID),
-                    ("token", token.as_str()),
-                ])
-                .send()
-                .await;
-        }
-        Ok(())
     }
 }

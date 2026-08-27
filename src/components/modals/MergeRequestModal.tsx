@@ -74,6 +74,8 @@ export const MergeRequestModal: React.FC = () => {
     activeRepoPath,
     isMergeRequestModalOpen,
     setIsMergeRequestModalOpen,
+    selectedMergeRequestId,
+    mergeRequestModalTab,
     user,
     status,
     setError,
@@ -234,6 +236,13 @@ export const MergeRequestModal: React.FC = () => {
       return;
     }
 
+    if (mergeRequestModalTab) {
+      setActiveTab(mergeRequestModalTab);
+    }
+    if (selectedMergeRequestId) {
+      setSelectedMrId(selectedMergeRequestId);
+    }
+
     setIsLoadingBranches(true);
     setFormError(null);
 
@@ -269,7 +278,7 @@ export const MergeRequestModal: React.FC = () => {
     setTimeout(() => {
       titleInputRef.current?.focus();
     }, 80);
-  }, [isMergeRequestModalOpen, activeRepoPath]);
+  }, [isMergeRequestModalOpen, activeRepoPath, mergeRequestModalTab, selectedMergeRequestId]);
 
   const targetRemoteInfo = useMemo(() => {
     const remote = remotes.find((r) => r.name === selectedRemote) || remotes[0];
@@ -296,7 +305,18 @@ export const MergeRequestModal: React.FC = () => {
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
       setMergeRequests(res || []);
       if (res && res.length > 0) {
-        setSelectedMrId((prev) => (prev && res.some((m) => String(m.id) === prev) ? prev : String(res[0].id)));
+        setSelectedMrId((prev) => {
+          if (
+            selectedMergeRequestId &&
+            res.some((m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId)
+          ) {
+            const found = res.find(
+              (m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId
+            );
+            return found ? String(found.id) : selectedMergeRequestId;
+          }
+          return prev && res.some((m) => String(m.id) === prev) ? prev : String(res[0].id);
+        });
       }
     } catch (err: unknown) {
       setMergeRequests([]);
@@ -304,7 +324,14 @@ export const MergeRequestModal: React.FC = () => {
     } finally {
       setIsLoadingList(false);
     }
-  }, [activeRepoPath, targetRemoteInfo?.projectPath, targetRemoteInfo?.serverUrl, targetRemoteInfo?.provider, user?.provider]);
+  }, [
+    activeRepoPath,
+    targetRemoteInfo?.projectPath,
+    targetRemoteInfo?.serverUrl,
+    targetRemoteInfo?.provider,
+    user?.provider,
+    selectedMergeRequestId,
+  ]);
 
   // Load Open Requests once when modal opens or active repository changes
   useEffect(() => {
@@ -1029,7 +1056,7 @@ export const MergeRequestModal: React.FC = () => {
     >
       <div
         ref={modalContainerRef}
-        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
+        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header (Compact & Space-saving) */}
@@ -1839,7 +1866,7 @@ export const MergeRequestModal: React.FC = () => {
                                 {activeCommentMenuId === 'desc' && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                   >
                                     <div className="py-0.5">
                                       <button
@@ -1966,7 +1993,7 @@ export const MergeRequestModal: React.FC = () => {
                                         {activeCommentMenuId === comment.id && (
                                           <div
                                             onClick={(e) => e.stopPropagation()}
-                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                           >
                                             <div className="py-0.5">
                                               <button
@@ -2594,7 +2621,7 @@ export const MergeRequestModal: React.FC = () => {
             }}
           >
             <div
-              className="w-full max-w-lg bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
+              className="w-full max-w-lg bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Merge Modal Header */}

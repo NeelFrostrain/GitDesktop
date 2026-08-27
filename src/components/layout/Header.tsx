@@ -64,7 +64,7 @@ export const Header: React.FC = () => {
                 setEditingRelease(null);
                 setIsCreateReleaseModalOpen(true);
               }}
-              className="h-7 w-7 flex items-center justify-center rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-commito-coral/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-400 hover:text-commito-coral transition-all cursor-pointer active:scale-95 group"
+              className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
               title="Draft Release..."
             >
               <Sparkles className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -74,7 +74,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateTagModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-amber-500/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-400 hover:text-amber-400 transition-all cursor-pointer active:scale-95 group"
+              className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-amber-400 transition cursor-pointer active:scale-95 group shadow-2xs"
               title="Create Git Tag..."
             >
               <Tag className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -84,7 +84,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsMergeRequestModalOpen(true)}
-              className="h-7 w-7 flex items-center justify-center rounded-sm border border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-commito-coral/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-400 hover:text-commito-coral transition-all cursor-pointer active:scale-95 group"
+              className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
               title="Create Merge / Pull Request"
             >
               <GitPullRequest className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -94,10 +94,10 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={toggleTerminal}
-              className={`h-7 w-7 flex items-center justify-center rounded-sm border transition-all cursor-pointer active:scale-95 group ${
+              className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
                 isTerminalOpen
-                  ? 'border-commito-coral/70 bg-gradient-to-b from-commito-coral/25 to-commito-coral/10 text-commito-coral ring-1 ring-commito-coral/30 shadow-xs'
-                  : 'border-[#2d2b32] bg-gradient-to-b from-[#222025] via-[#1a191d] to-[#131215] hover:from-[#29272e] hover:via-[#201e24] hover:to-[#17161a] hover:border-commito-coral/50 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.07),0_1px_2px_rgba(0,0,0,0.3)] text-zinc-400 hover:text-commito-coral'
+                  ? 'border-commito-coral/50 bg-commito-coral/15 text-commito-coral'
+                  : 'border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral'
               }`}
               title="Open in Integrated Terminal"
             >

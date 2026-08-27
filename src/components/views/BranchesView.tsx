@@ -197,7 +197,7 @@ export const BranchesView: React.FC = () => {
       {showCreateModal && (
         <form
           onSubmit={handleCreateBranch}
-          className="p-4 bg-base-2 border border-border/80 rounded-md space-y-3 shadow-md animate-in fade-in duration-100 ring-1 ring-black/20"
+          className="p-4 bg-base-2 border border-border/80 rounded-sm space-y-3 shadow-md animate-in fade-in duration-100 ring-1 ring-black/20"
         >
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
@@ -246,7 +246,7 @@ export const BranchesView: React.FC = () => {
       {/* Branches List */}
       <div className="space-y-1.5 font-sans">
         {filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-text-muted italic border border-border/70 rounded-md bg-base-2/40">
+          <div className="p-8 text-center text-xs text-text-muted italic border border-border/70 rounded-sm bg-base-2/40">
             No branches match your query
           </div>
         ) : (

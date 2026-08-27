@@ -6,6 +6,7 @@ import {
   GitBranch,
   Play,
   Search,
+  Loader2,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -68,6 +69,14 @@ export const CherryPickModal: React.FC = () => {
     }
   };
 
+  const toggleSelectAll = () => {
+    if (selectedShas.length === filteredCommits.length) {
+      setSelectedShas([]);
+    } else {
+      setSelectedShas(filteredCommits.map((c) => c.sha));
+    }
+  };
+
   const handleExecuteCherryPick = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeRepoPath || selectedShas.length === 0) return;
@@ -108,30 +117,38 @@ export const CherryPickModal: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-git-added-bg border border-git-added/40 text-git-added flex items-center justify-center">
-              <GitCommit className="w-4 h-4" />
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <GitCommit className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary leading-tight">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
                 Cherry-Pick Commits
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                Select one or more commits from another branch to apply onto current branch
-              </p>
+              </h3>
+              {sourceBranch && (
+                <>
+                  <span className="text-border hidden sm:inline">•</span>
+                  <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                    from {sourceBranch}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsCherryPickModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+            disabled={isSubmitting}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleExecuteCherryPick} className="flex-1 flex flex-col min-h-0 p-5 space-y-4">
+        <form id="cherry-pick-form" onSubmit={handleExecuteCherryPick} className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden">
           {/* Branch Selector & Search */}
           <div className="grid grid-cols-2 gap-3 p-3.5 bg-base-2 border border-border rounded-sm">
             <div className="flex items-center gap-2">
@@ -159,21 +176,24 @@ export const CherryPickModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Options row */}
-          <div className="flex items-center justify-between text-xs text-text-muted px-1">
-            <Checkbox
-              checked={noCommit}
-              onChange={setNoCommit}
-              label="Stage changes without auto-committing (-n / --no-commit)"
-            />
-            <span className="font-mono text-[11px]">{selectedShas.length} selected</span>
-          </div>
+          {/* Commit List Selection Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
+            <div className="flex items-center justify-between text-xs font-bold text-text-muted px-1 pb-1">
+              <span>Select Commits ({selectedShas.length} of {commits.length} chosen)</span>
+              {commits.length > 0 && (
+                <button
+                  type="button"
+                  onClick={toggleSelectAll}
+                  className="text-commito-coral hover:text-commito-coralLight text-xs cursor-pointer font-semibold"
+                >
+                  {selectedShas.length === commits.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
 
-          {/* Commits List */}
-          <div className="flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
             {filteredCommits.length === 0 ? (
               <div className="p-8 text-center bg-base-2 border border-border rounded-sm text-xs text-text-muted italic">
-                No commits found in branch {sourceBranch}
+                {commits.length === 0 ? 'No cherry-pickable commits found on this branch' : 'No commits matched your search'}
               </div>
             ) : (
               filteredCommits.map((c) => {
@@ -213,25 +233,39 @@ export const CherryPickModal: React.FC = () => {
             )}
           </div>
 
-          {/* Modal Footer Controls */}
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-border">
-            <button
-              type="button"
-              onClick={() => setIsCherryPickModalOpen(false)}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={selectedShas.length === 0 || isSubmitting}
-              className={`px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs cursor-pointer disabled:opacity-50`}
-            >
-              <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isSubmitting ? 'Cherry-picking...' : `Cherry-pick ${selectedShas.length} Commit(s)`}</span>
-            </button>
+          <div className="pt-2 border-t border-border">
+            <Checkbox
+              checked={noCommit}
+              onChange={setNoCommit}
+              label="Stage changes without auto-committing (-n / --no-commit)"
+            />
           </div>
         </form>
+
+        {/* Pinned Bottom Footer Controls */}
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-border bg-base-1 shrink-0 select-none">
+          <button
+            type="button"
+            onClick={() => setIsCherryPickModalOpen(false)}
+            disabled={isSubmitting}
+            className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="cherry-pick-form"
+            disabled={selectedShas.length === 0 || isSubmitting}
+            className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current" />
+            )}
+            <span>{isSubmitting ? 'Cherry-picking...' : `Cherry-pick ${selectedShas.length} Commit(s)`}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

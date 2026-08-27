@@ -13,6 +13,7 @@ use commands::auth_commands::*;
 use commands::git_commands::*;
 use commands::git_runtime::*;
 use commands::logs::*;
+use commands::publish_commands::*;
 use commands::remotes::*;
 use commands::repo_commands::*;
 use commands::settings::*;
@@ -113,6 +114,7 @@ pub fn run() {
             push_to_remote,
             pull_from_remote,
             fetch_remote,
+            validate_remote_origin_cmd,
             get_commit_history,
             get_commit_details,
             list_branches,
@@ -170,6 +172,9 @@ pub fn run() {
             undo_commit_cmd,
             export_patch_cmd,
             apply_patch_cmd,
+            stage_patch_cmd,
+            unstage_patch_cmd,
+            discard_patch_cmd,
             get_repo_git_config_cmd,
             set_repo_git_config_cmd,
             get_git_user_identity_cmd,
@@ -218,6 +223,9 @@ pub fn run() {
             accounts_update,
             accounts_remove,
             accounts_start_oauth,
+            accounts_exchange_oauth_code,
+            accounts_list_namespaces,
+            repo_publish,
             remotes_list,
             remotes_add,
             remotes_remove,

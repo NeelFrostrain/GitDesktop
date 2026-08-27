@@ -3,6 +3,7 @@ pub mod auth_commands;
 pub mod git_commands;
 pub mod git_runtime;
 pub mod logs;
+pub mod publish_commands;
 pub mod remotes;
 pub mod repo_commands;
 pub mod settings;

@@ -113,6 +113,11 @@ export interface GitState {
   isRepoModalOpen: boolean;
   isCreateRepoModalOpen: boolean;
   isMergeRequestModalOpen: boolean;
+  selectedMergeRequestId: string | null;
+  mergeRequestModalTab: 'create' | 'list' | 'edit';
+  setSelectedMergeRequestId: (id: string | null) => void;
+  setMergeRequestModalTab: (tab: 'create' | 'list' | 'edit') => void;
+  openMergeRequestModal: (tab?: 'create' | 'list' | 'edit', prId?: string | null) => void;
   isWorktreeModalOpen: boolean;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
@@ -159,6 +164,7 @@ export interface GitState {
   setBlameLines: (lines: BlameLine[]) => void;
   setSelectedFile: (file: string | null) => void;
   toggleStageFile: (file: string) => Promise<void>;
+  toggleStageFiles: (files: string[], stage?: boolean) => Promise<void>;
   setAllStaged: (staged: boolean) => Promise<void>;
   setSelectedCommitSha: (sha: string | null) => void;
   setCommitSummary: (summary: string) => void;
@@ -172,6 +178,13 @@ export interface GitState {
 
   setIsRepoModalOpen: (open: boolean) => void;
   setIsCreateRepoModalOpen: (open: boolean) => void;
+  isPublishRepoModalOpen: boolean;
+  setIsPublishRepoModalOpen: (open: boolean) => void;
+  isRemoteNotFoundModalOpen: boolean;
+  setIsRemoteNotFoundModalOpen: (open: boolean) => void;
+  isCloneRepoModalOpen: boolean;
+  cloneModalInitialUrl: string;
+  setIsCloneRepoModalOpen: (open: boolean, initialUrl?: string) => void;
   setIsMergeRequestModalOpen: (open: boolean) => void;
   setIsWorktreeModalOpen: (open: boolean) => void;
   setIsRebaseModalOpen: (open: boolean) => void;
@@ -236,7 +249,13 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
+  isPublishRepoModalOpen: false,
+  isRemoteNotFoundModalOpen: false,
+  isCloneRepoModalOpen: false,
+  cloneModalInitialUrl: '',
   isMergeRequestModalOpen: false,
+  selectedMergeRequestId: null,
+  mergeRequestModalTab: 'create',
   isWorktreeModalOpen: false,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
@@ -461,6 +480,42 @@ export const useGitStore = create<GitState>((set, get) => ({
     }
   },
 
+  toggleStageFiles: async (files, stage) => {
+    if (!files || files.length === 0) return;
+    const { activeRepoPath, stagedFiles, setStatus } = get();
+    const shouldStage = stage !== undefined ? stage : !files.every((f) => stagedFiles.includes(f));
+
+    let nextStaged: string[];
+    if (shouldStage) {
+      nextStaged = Array.from(new Set([...stagedFiles, ...files]));
+      useLogStore.getState().addLog('info', 'Git', `Staged ${files.length} file(s)`);
+      set({ stagedFiles: nextStaged, hasInitializedStaging: true });
+      if (activeRepoPath) {
+        try {
+          await GitService.stageFiles(activeRepoPath, files);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
+          setStatus(newStatus);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to stage files: ${getErrorMessage(error)}`);
+        }
+      }
+    } else {
+      const filesSet = new Set(files);
+      nextStaged = stagedFiles.filter((f) => !filesSet.has(f));
+      useLogStore.getState().addLog('info', 'Git', `Unstaged ${files.length} file(s)`);
+      set({ stagedFiles: nextStaged, hasInitializedStaging: true });
+      if (activeRepoPath) {
+        try {
+          await GitService.unstageFiles(activeRepoPath, files);
+          const newStatus = await GitService.getRepoStatus(activeRepoPath);
+          setStatus(newStatus);
+        } catch (error: unknown) {
+          useLogStore.getState().addLog('error', 'Git', `Failed to unstage files: ${getErrorMessage(error)}`);
+        }
+      }
+    }
+  },
+
   setAllStaged: async (staged) => {
     const { activeRepoPath, status, setStatus } = get();
     if (!status) return;
@@ -524,7 +579,22 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   setIsRepoModalOpen: (isRepoModalOpen) => set({ isRepoModalOpen }),
   setIsCreateRepoModalOpen: (isCreateRepoModalOpen) => set({ isCreateRepoModalOpen }),
+  setIsPublishRepoModalOpen: (isPublishRepoModalOpen) => set({ isPublishRepoModalOpen }),
+  setIsRemoteNotFoundModalOpen: (isRemoteNotFoundModalOpen) => set({ isRemoteNotFoundModalOpen }),
+  setIsCloneRepoModalOpen: (isCloneRepoModalOpen, initialUrl) =>
+    set({
+      isCloneRepoModalOpen,
+      cloneModalInitialUrl: initialUrl !== undefined ? initialUrl : get().cloneModalInitialUrl,
+    }),
   setIsMergeRequestModalOpen: (isMergeRequestModalOpen) => set({ isMergeRequestModalOpen }),
+  setSelectedMergeRequestId: (selectedMergeRequestId) => set({ selectedMergeRequestId }),
+  setMergeRequestModalTab: (mergeRequestModalTab) => set({ mergeRequestModalTab }),
+  openMergeRequestModal: (tab = 'create', prId = null) =>
+    set({
+      isMergeRequestModalOpen: true,
+      mergeRequestModalTab: tab,
+      selectedMergeRequestId: prId,
+    }),
   setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),

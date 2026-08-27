@@ -123,7 +123,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
           requestClose();
         }
       }}
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
     >
       {/* Modal Dialog Card */}
       <div
@@ -164,7 +164,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-3.5 flex flex-col gap-2.5 bg-base-0">
+        <form id="create-item-form" onSubmit={handleSubmit} className="p-3.5 flex flex-col gap-2.5 bg-base-0 flex-1 overflow-y-auto">
           {/* Text Input */}
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between text-[10px] font-semibold text-text-muted uppercase tracking-wider">
@@ -223,31 +223,32 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
               <span className="truncate">{error}</span>
             </div>
           )}
-
-          {/* Slim Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={requestClose}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              variant={isFile ? 'coral' : 'emerald'}
-              size="sm"
-              disabled={!cleanPath || isSubmitting}
-              isLoading={isSubmitting}
-              leftIcon={!isSubmitting ? (isFile ? <FilePlus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />) : undefined}
-              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
-            >
-              {isFile ? 'Create File' : 'Create Folder'}
-            </Button>
-          </div>
         </form>
+
+        {/* Pinned Bottom Footer Actions */}
+        <div className="flex items-center justify-end gap-2 px-3.5 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={requestClose}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="submit"
+            form="create-item-form"
+            variant={isFile ? 'coral' : 'emerald'}
+            size="sm"
+            disabled={!cleanPath || isSubmitting}
+            isLoading={isSubmitting}
+            leftIcon={!isSubmitting ? (isFile ? <FilePlus className="w-3.5 h-3.5" /> : <FolderPlus className="w-3.5 h-3.5" />) : undefined}
+            rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
+          >
+            {isFile ? 'Create File' : 'Create Folder'}
+          </Button>
+        </div>
       </div>
 
       {/* Unsaved Changes Confirmation Dialog */}

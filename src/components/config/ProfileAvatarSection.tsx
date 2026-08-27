@@ -1,10 +1,11 @@
 import React, { RefObject } from 'react';
-import { Upload, Trash2 } from 'lucide-react';
+import { Trash2, Camera } from 'lucide-react';
 import { UserAvatar } from '../common/UserAvatar';
 
 interface ProfileAvatarSectionProps {
   avatarUrl: string | null;
   name: string;
+  provider?: string;
   fileInputRef: RefObject<HTMLInputElement | null>;
   onImageUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveAvatar: () => void;
@@ -13,62 +14,54 @@ interface ProfileAvatarSectionProps {
 export const ProfileAvatarSection: React.FC<ProfileAvatarSectionProps> = ({
   avatarUrl,
   name,
+  provider,
   fileInputRef,
   onImageUpload,
   onRemoveAvatar,
 }) => {
   return (
-    <div className="space-y-1.5 font-sans select-none">
-      <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint block">
-        Profile
-      </label>
+    <div className="relative group shrink-0">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={onImageUpload}
+        accept="image/png, image/jpeg, image/webp, image/svg+xml"
+        className="hidden"
+      />
 
-      <div className="p-3 bg-base-1 border border-border rounded-sm flex items-center gap-3.5 shadow-2xs">
+      <div
+        onClick={() => fileInputRef.current?.click()}
+        className="relative w-12 h-12 rounded-full overflow-hidden border border-border group-hover:border-commito-coral/60 transition cursor-pointer shadow-2xs"
+        title="Click to upload custom avatar"
+      >
         <UserAvatar
           url={avatarUrl}
           name={name || 'User'}
-          className="w-10 h-10 rounded-sm ring-1 ring-border/80"
-          iconClassName="w-4 h-4"
+          provider={provider}
+          className="w-full h-full object-cover"
+          iconClassName="w-5 h-5"
         />
 
-        <div className="flex-1 min-w-0">
-          <h4 className="text-xs font-bold text-text-primary truncate leading-tight">
-            {name || 'User Identity'}
-          </h4>
-          <p className="text-[10.5px] text-text-muted truncate mt-0.5">
-            App profile image
-          </p>
-
-          <div className="flex items-center gap-1.5 pt-1.5">
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={onImageUpload}
-              accept="image/png, image/jpeg, image/webp, image/svg+xml"
-              className="hidden"
-            />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="h-6 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-[10.5px] font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-            >
-              <Upload className="w-2.5 h-2.5 text-commito-coral" />
-              <span>Upload</span>
-            </button>
-
-            {avatarUrl && (
-              <button
-                type="button"
-                onClick={onRemoveAvatar}
-                className="h-6 px-2.5 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-[10.5px] font-semibold text-git-removed hover:text-danger flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
-              >
-                <Trash2 className="w-2.5 h-2.5" />
-                <span>Reset</span>
-              </button>
-            )}
-          </div>
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+          <Camera className="w-3.5 h-3.5" />
+          <span className="text-[8px] font-bold uppercase tracking-wider mt-0.5">Edit</span>
         </div>
       </div>
+
+      {avatarUrl && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemoveAvatar();
+          }}
+          title="Reset avatar to default"
+          className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 rounded-full bg-base-1 border border-border hover:border-git-removed/50 hover:bg-git-removed/20 text-text-muted hover:text-git-removed flex items-center justify-center transition cursor-pointer shadow-xs"
+        >
+          <Trash2 className="w-2.5 h-2.5" />
+        </button>
+      )}
     </div>
   );
 };

@@ -32,9 +32,42 @@ pub struct GitAuthInfo {
 
 /// Retrieve authentication info for a given remote URL or repo path
 pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> GitAuthInfo {
+    // 1. Check multi-provider token_store registry first
+    let prov_accounts = crate::domain::accounts::token_store::list_accounts();
+    if let Some(url) = remote_url {
+        let url_lower = url.to_lowercase();
+        for acct in &prov_accounts {
+            let host = acct
+                .instance_url
+                .trim_start_matches("https://")
+                .trim_start_matches("http://")
+                .trim_end_matches('/')
+                .to_lowercase();
+
+            if (!host.is_empty() && url_lower.contains(&host))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Github && url_lower.contains("github.com"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && url_lower.contains("gitlab"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && url_lower.contains("bitbucket.org"))
+            {
+                if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acct.id) {
+                    let prov_str = match acct.provider {
+                        crate::domain::accounts::provider::ProviderKind::Github => "github",
+                        crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab",
+                        crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket",
+                    };
+                    return GitAuthInfo {
+                        token: Some(tok),
+                        username: Some(acct.handle.trim_start_matches('@').to_string()),
+                        provider: prov_str.to_string(),
+                    };
+                }
+            }
+        }
+    }
+
     let accounts = keyring::list_accounts();
 
-    // 1. If remote_url is provided, match account by URL host
+    // 2. If remote_url is provided, match legacy account by URL host
     if let Some(url) = remote_url {
         let url_lower = url.to_lowercase();
         for acct in &accounts {
@@ -55,7 +88,7 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
         }
     }
 
-    // 2. Check if a specific account is linked to this repository
+    // 3. Check if a specific account is linked to this repository
     let acct = keyring::get_account_for_repo(repo_path);
     let mut repo_provider = acct.as_ref().map(|a| a.provider.clone());
 
@@ -76,6 +109,8 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
                         repo_provider = Some("github".to_string());
                     } else if url_lower.contains("gitlab") {
                         repo_provider = Some("gitlab".to_string());
+                    } else if url_lower.contains("bitbucket.org") {
+                        repo_provider = Some("bitbucket".to_string());
                     }
                 }
 
@@ -99,7 +134,24 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
 
     let provider = repo_provider.unwrap_or_else(|| "gitlab".to_string());
 
-    // 3. Match token to provider
+    // 4. Match token from provider registry or active keyring
+    for acct in &prov_accounts {
+        let matches = match acct.provider {
+            crate::domain::accounts::provider::ProviderKind::Github => provider == "github",
+            crate::domain::accounts::provider::ProviderKind::Gitlab => provider == "gitlab",
+            crate::domain::accounts::provider::ProviderKind::Bitbucket => provider == "bitbucket",
+        };
+        if matches || acct.is_active {
+            if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acct.id) {
+                return GitAuthInfo {
+                    token: Some(tok),
+                    username: Some(acct.handle.trim_start_matches('@').to_string()),
+                    provider: provider.clone(),
+                };
+            }
+        }
+    }
+
     let (token, username) = if let Some(a) = acct {
         (Some(a.token), Some(a.username))
     } else if let Some(active) = keyring::get_active_account() {
@@ -133,6 +185,8 @@ fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
         if !t_clean.is_empty() {
             let auth_user = if auth_info.provider == "github" {
                 "x-access-token"
+            } else if auth_info.provider == "bitbucket" {
+                "x-token-auth"
             } else {
                 "oauth2"
             };
@@ -382,6 +436,28 @@ pub fn fetch_specific_remote(repo_path: &str, remote_name: &str) -> Result<(), A
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let stderr_lower = stderr.to_lowercase();
+
+        if stderr_lower.contains("repository not found")
+            || stderr_lower.contains("fatal: repository")
+            || stderr_lower.contains("could not read from remote repository")
+            || stderr_lower.contains("does not appear to be a git repository")
+            || stderr_lower.contains("the project you were looking for could not be found")
+            || stderr_lower.contains("remote: not found")
+        {
+            // Auto-clean dead remote from local git config
+            let _ = silent_git_command()
+                .args(["remote", "remove", clean_remote])
+                .current_dir(repo_path)
+                .output();
+
+            return Err(AppError::NotFound(format!(
+                "Remote repository not found on server for '{}'. It may have been deleted or renamed on the provider: {}",
+                clean_remote,
+                stderr.trim()
+            )));
+        }
+
         if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed")
         {
             return Err(AppError::Auth(format!(
@@ -432,6 +508,19 @@ pub fn push_specific_remote(
         let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
         let err_msg = combined.trim().to_string();
         let lower = err_msg.to_lowercase();
+
+        if lower.contains("repository not found")
+            || lower.contains("fatal: repository")
+            || lower.contains("could not read from remote repository")
+            || lower.contains("does not appear to be a git repository")
+            || lower.contains("the project you were looking for could not be found")
+            || lower.contains("remote: not found")
+        {
+            return Err(AppError::NotFound(format!(
+                "Remote repository was not found for '{}'. It may have been deleted on the cloud provider.",
+                clean_remote
+            )));
+        }
 
         if lower.contains("refusing to update checked out branch") {
             return Err(AppError::Git(format!(
@@ -580,6 +669,20 @@ pub fn pull_specific_remote(
             });
         }
 
+        let lower = stderr.to_lowercase();
+        if lower.contains("repository not found")
+            || lower.contains("fatal: repository")
+            || lower.contains("could not read from remote repository")
+            || lower.contains("does not appear to be a git repository")
+            || lower.contains("the project you were looking for could not be found")
+            || lower.contains("remote: not found")
+        {
+            return Err(AppError::NotFound(format!(
+                "Remote repository was not found for '{}'. It may have been deleted on the cloud provider.",
+                clean_remote
+            )));
+        }
+
         if stderr.contains("HTTP Basic: Access denied") || stderr.contains("Authentication failed")
         {
             return Err(AppError::Auth(format!(
@@ -658,3 +761,91 @@ fn fs_is_not_empty(path: &Path) -> bool {
         false
     }
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct RemoteValidationResult {
+    pub has_remote: bool,
+    pub remote_url: Option<String>,
+    pub is_valid: bool,
+    pub is_deleted_or_missing: bool,
+    pub error_message: Option<String>,
+}
+
+/// Validates whether the configured 'origin' remote repository still exists and is accessible on the server.
+pub fn validate_remote_origin(repo_path: &str) -> Result<RemoteValidationResult, AppError> {
+    let output = silent_git_command()
+        .args(["remote", "get-url", "origin"])
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        return Ok(RemoteValidationResult {
+            has_remote: false,
+            remote_url: None,
+            is_valid: false,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let remote_url = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if remote_url.is_empty() {
+        return Ok(RemoteValidationResult {
+            has_remote: false,
+            remote_url: None,
+            is_valid: false,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let auth_info = get_git_auth_info_for_url(repo_path, Some(&remote_url));
+    let mut cmd = silent_git_command();
+    cmd.current_dir(repo_path);
+    apply_git_auth_args(&mut cmd, &auth_info);
+    cmd.args(["ls-remote", "--exit-code", "origin", "HEAD"]);
+
+    let probe_out = cmd.output()?;
+    if probe_out.status.success() {
+        return Ok(RemoteValidationResult {
+            has_remote: true,
+            remote_url: Some(remote_url),
+            is_valid: true,
+            is_deleted_or_missing: false,
+            error_message: None,
+        });
+    }
+
+    let stderr = String::from_utf8_lossy(&probe_out.stderr).to_string();
+    let lower = stderr.to_lowercase();
+
+    let is_missing = lower.contains("repository not found")
+        || lower.contains("fatal: repository")
+        || lower.contains("not found")
+        || lower.contains("does not appear to be a git repository")
+        || lower.contains("the project you were looking for could not be found")
+        || lower.contains("could not read from remote repository")
+        || lower.contains("remote: not found")
+        || !probe_out.status.success();
+
+    if is_missing {
+        // Automatically remove the dead remote from local git config
+        let _ = silent_git_command()
+            .args(["remote", "remove", "origin"])
+            .current_dir(repo_path)
+            .output();
+    }
+
+    Ok(RemoteValidationResult {
+        has_remote: false,
+        remote_url: None,
+        is_valid: false,
+        is_deleted_or_missing: true,
+        error_message: if stderr.trim().is_empty() {
+            None
+        } else {
+            Some(stderr.trim().to_string())
+        },
+    })
+}
+
