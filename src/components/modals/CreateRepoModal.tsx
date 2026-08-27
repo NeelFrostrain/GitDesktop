@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
-import { Checkbox } from '../common/Checkbox';
 import { Dropdown } from '../common/Dropdown';
 import { ConfirmDialog } from '../common/ConfirmDialog';
 import { SystemService } from '../../services/system/systemService';
@@ -218,7 +217,7 @@ export const CreateRepoModal: React.FC = () => {
             {/* 1. Repository Name */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
                   <span>Repository Name</span>
                   <span className="text-commito-coral">*</span>
                 </label>
@@ -238,7 +237,7 @@ export const CreateRepoModal: React.FC = () => {
                   if (localError) setLocalError(null);
                 }}
                 placeholder="e.g. my-awesome-app"
-                className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 font-sans focus:outline-none transition shadow-2xs ${
+                className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 font-sans focus:outline-none transition shadow-2xs ${
                   hasInvalidChars
                     ? 'border-git-removed focus:border-git-removed'
                     : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20'
@@ -249,7 +248,7 @@ export const CreateRepoModal: React.FC = () => {
             {/* 2. Local Path Selector & Destination Preview */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
                   <span>Local Destination Path</span>
                   <span className="text-commito-coral">*</span>
                 </label>
@@ -260,12 +259,12 @@ export const CreateRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <button
                   type="button"
                   onClick={handleSelectParentFolder}
-                  className="h-8 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="h-8 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
                   title="Browse local directory"
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
@@ -277,7 +276,7 @@ export const CreateRepoModal: React.FC = () => {
               <div className="px-2.5 py-1.5 bg-base-1/60 border border-border/60 rounded-sm flex items-center gap-2 text-[11px] text-text-muted font-mono truncate">
                 <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span className="text-text-muted shrink-0">Will be created at:</span>
-                <span className="text-text-primary font-semibold truncate" title={fullDestinationPath}>
+                <span className="text-text-secondary font-medium truncate" title={fullDestinationPath}>
                   {fullDestinationPath}
                 </span>
               </div>
@@ -286,7 +285,7 @@ export const CreateRepoModal: React.FC = () => {
             {/* 3. Description */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
                   <span>Description</span>
                   <span className="text-text-muted font-normal text-[11px]">(optional)</span>
                 </label>
@@ -296,34 +295,68 @@ export const CreateRepoModal: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief summary of your repository or project"
-                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
+                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
               />
             </div>
 
             {/* 4. Initialization Options */}
             <div className="pt-2 border-t border-border/60 space-y-3">
-              <div className="text-xs font-semibold text-text-primary">
+              <div className="text-xs font-semibold text-text-secondary">
                 Initialization Options
               </div>
 
-              {/* Checkbox: README */}
-              <div className="p-2.5 bg-base-1/40 hover:bg-base-1/70 border border-border/60 rounded-sm transition flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-sky-400 shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-text-primary">Initialize with README.md</p>
-                    <p className="text-[11px] text-text-muted leading-tight mt-0.5">
-                      Creates an initial README file with your repository title and description.
+              {/* Option Card: Initialize with README */}
+              <div
+                onClick={() => setInitReadme(!initReadme)}
+                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
+                  initReadme
+                    ? 'bg-sky-500/5 border-sky-500/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div
+                    className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
+                      initReadme
+                        ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                        : 'bg-base-0 text-text-muted border border-border'
+                    }`}
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-semibold text-text-primary/90 flex items-center gap-1.5 leading-none">
+                      <span>Initialize with README.md</span>
+                      {initReadme && (
+                        <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
+                          README
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-text-muted mt-1 leading-none">
+                      Creates an initial README file with your repository title and description
                     </p>
                   </div>
                 </div>
-                <Checkbox checked={initReadme} onChange={setInitReadme} />
+
+                {/* Toggle Switch */}
+                <div
+                  className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
+                    initReadme ? 'bg-sky-500 border-sky-500' : 'bg-base-2 border-border'
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                      initReadme ? 'translate-x-3' : 'translate-x-0'
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Gitignore Template */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-text-primary flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
                     <FileCode className="w-3.5 h-3.5 text-violet-400" />
                     <span>Git ignore template</span>
                   </label>
@@ -357,7 +390,7 @@ export const CreateRepoModal: React.FC = () => {
               {/* License Template */}
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-medium text-text-primary flex items-center gap-1.5">
+                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
                     <Scale className="w-3.5 h-3.5 text-emerald-400" />
                     <span>License</span>
                   </label>

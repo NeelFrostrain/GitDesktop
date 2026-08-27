@@ -115,7 +115,7 @@ export function Dropdown<T extends string = string>({
               {icon || selectedOption?.icon}
             </span>
           )}
-          <span className="truncate font-mono text-xs">
+          <span className="truncate font-sans text-xs text-text-primary/90 font-medium">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
@@ -135,7 +135,7 @@ export function Dropdown<T extends string = string>({
               top: `${menuCoords.top}px`,
               width: `${menuCoords.width}px`,
             }}
-            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto space-y-0.5 scrollbar-thin"
+            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary/90 animate-in fade-in zoom-in-95 duration-100 max-h-60 overflow-y-auto space-y-0.5 scrollbar-thin"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
@@ -152,10 +152,10 @@ export function Dropdown<T extends string = string>({
                     className={`w-full px-2.5 py-1.5 rounded-sm flex items-center justify-between gap-2 transition text-left cursor-pointer ${
                       isSelected
                         ? 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/30'
-                        : 'hover:bg-base-1 text-text-primary'
+                        : 'hover:bg-base-1 text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0 font-mono text-xs">
+                    <div className="flex items-center gap-2 truncate min-w-0 font-sans text-xs">
                       {opt.icon && (
                         <span className="w-4 h-4 flex items-center justify-center shrink-0">
                           {opt.icon}
@@ -164,7 +164,7 @@ export function Dropdown<T extends string = string>({
                       <div className="truncate min-w-0">
                         <span className="block truncate">{opt.label}</span>
                         {opt.description && (
-                          <span className="block text-[10px] text-text-muted font-sans truncate">
+                          <span className="block text-[10.5px] text-text-muted font-sans truncate">
                             {opt.description}
                           </span>
                         )}

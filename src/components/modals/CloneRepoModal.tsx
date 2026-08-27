@@ -307,7 +307,7 @@ export const CloneRepoModal: React.FC = () => {
             {/* 1. Repository Source URL Card */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
                   <span>Repository URL</span>
                   <span className="text-commito-coral">*</span>
                 </label>
@@ -325,7 +325,7 @@ export const CloneRepoModal: React.FC = () => {
                   value={url}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="https://gitlab.com/owner/project.git or git@github.com:owner/project.git"
-                  className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <Globe className="w-4 h-4 text-text-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -334,7 +334,7 @@ export const CloneRepoModal: React.FC = () => {
             {/* 2. Destination Folder & Parent Path */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                <label className="text-xs font-medium text-text-secondary flex items-center gap-1">
                   <span>Local Destination Path</span>
                   <span className="text-commito-coral">*</span>
                 </label>
@@ -345,12 +345,12 @@ export const CloneRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="flex-1 h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <button
                   type="button"
                   onClick={handleSelectParentFolder}
-                  className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
                   title="Browse local directory"
                 >
                   <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
@@ -362,7 +362,7 @@ export const CloneRepoModal: React.FC = () => {
               <div className="px-3 py-1.5 bg-base-1/70 border border-border/70 rounded-sm flex items-center gap-2 text-[11.5px] text-text-muted font-mono truncate">
                 <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
                 <span className="text-text-muted shrink-0">Will clone to:</span>
-                <span className="text-text-primary font-semibold truncate" title={fullDestinationPath}>
+                <span className="text-text-secondary font-medium truncate" title={fullDestinationPath}>
                   {fullDestinationPath}
                 </span>
               </div>
@@ -371,7 +371,7 @@ export const CloneRepoModal: React.FC = () => {
             {/* 3. Authentication & Security Card */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                <div className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
                   <Shield className="w-3.5 h-3.5 text-commito-coral" />
                   <span>Authentication</span>
                 </div>
@@ -555,11 +555,6 @@ export const CloneRepoModal: React.FC = () => {
 
             {/* 4. Clone Settings Section */}
             <div className="space-y-3">
-              {/* <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                <SlidersHorizontal className="w-3.5 h-3.5 text-text-muted" />
-                <span>Clone Settings</span>
-              </div> */}
-
               {/* Branch / Tag Input */}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
@@ -571,7 +566,7 @@ export const CloneRepoModal: React.FC = () => {
                   value={specificBranch}
                   onChange={(e) => setSpecificBranch(e.target.value)}
                   placeholder="e.g. main, dev, or release/v1.0"
-                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
+                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
                 />
               </div>
 
