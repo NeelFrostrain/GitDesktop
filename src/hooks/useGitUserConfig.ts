@@ -85,7 +85,7 @@ export function useGitUserConfig() {
     if (user?.provider) {
       setSelectedProvider(user.provider);
     }
-    setSelectedSyncAccount(user ? `active:${user.id}` : 'custom');
+    setSelectedSyncAccount(user?.id ? String(user.id) : 'custom');
 
     // Read configured user identity from active repository
     if (activeRepoPath) {
@@ -137,11 +137,13 @@ export function useGitUserConfig() {
   // 2. Also include active user if not already in list
   if (user) {
     const userKeys = getAccountKeys(user.provider, user.email, user.username, user.name);
-    const isAlreadyAdded = userKeys.some((k) => seenAccountKeys.has(k)) || allAvailableAccounts.some(a => a.id === `active:${user.id}` || a.id === String(user.id));
+    const isAlreadyAdded =
+      userKeys.some((k) => seenAccountKeys.has(k)) ||
+      allAvailableAccounts.some((a) => a.id === String(user.id));
     if (!isAlreadyAdded) {
       userKeys.forEach((k) => seenAccountKeys.add(k));
       allAvailableAccounts.push({
-        id: `active:${user.id}`,
+        id: String(user.id),
         name: user.name || user.username,
         username: user.username || user.name,
         email: user.email,
@@ -154,7 +156,9 @@ export function useGitUserConfig() {
   // 3. Include accounts from useGitStore
   for (const acc of accounts) {
     const accKeys = getAccountKeys(acc.provider, acc.email, acc.username, acc.name);
-    const isAlreadyAdded = accKeys.some((k) => seenAccountKeys.has(k)) || allAvailableAccounts.some(a => String(a.id) === String(acc.id));
+    const isAlreadyAdded =
+      accKeys.some((k) => seenAccountKeys.has(k)) ||
+      allAvailableAccounts.some((a) => String(a.id) === String(acc.id));
 
     if (!isAlreadyAdded) {
       accKeys.forEach((k) => seenAccountKeys.add(k));
@@ -173,20 +177,31 @@ export function useGitUserConfig() {
   const isValidName = name.trim().length > 0;
   const isFormValid = isValidName && isValidEmail(email);
 
-  const handleSyncAccountChange = (accId: string) => {
+  const handleSyncAccountChange = async (accId: string) => {
     setSelectedSyncAccount(accId);
 
-    if (accId === 'custom') return;
+    if (accId === 'custom') {
+      setSelectedProvider('custom');
+      return;
+    }
 
     const targetAccount = allAvailableAccounts.find((a) => a.id === accId);
 
     if (targetAccount) {
-      const syncName = targetAccount.name || targetAccount.username;
-      if (syncName) setName(syncName);
-      if (targetAccount.email) setEmail(targetAccount.email);
-      if (targetAccount.avatar_url) setAvatarUrl(targetAccount.avatar_url);
-      if (targetAccount.provider === 'github' || targetAccount.provider === 'gitlab' || targetAccount.provider === 'bitbucket') {
-        setSelectedProvider(targetAccount.provider as Provider);
+      const syncName = targetAccount.name || targetAccount.username || '';
+      const syncEmail = targetAccount.email || '';
+      const syncAvatar = targetAccount.avatar_url || null;
+      const syncProvider = (targetAccount.provider || 'custom') as Provider;
+
+      setName(syncName);
+      setEmail(syncEmail);
+      setAvatarUrl(syncAvatar);
+      setSelectedProvider(syncProvider);
+
+      try {
+        await useAccountServicesStore.getState().setActiveAccount(targetAccount.id);
+      } catch (err) {
+        console.warn('Failed to switch active account:', err);
       }
 
       const providerLabel = targetAccount.provider ? targetAccount.provider.toUpperCase() : 'Remote';
