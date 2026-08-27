@@ -1,13 +1,12 @@
 import React from 'react';
 import { Plus, ChevronRight, Users } from 'lucide-react';
-import { useAccounts, ProviderAccount } from '../../features/account-services';
-import { useGitStore } from '../../store/useGitStore';
+import { useAccounts, ProviderAccount, useAccountServicesStore } from '../../features/account-services';
 import { UserAvatar } from '../common/UserAvatar';
 import { Button } from '../common/Button';
 
 export const AccountsWidget: React.FC = () => {
   const { accounts } = useAccounts();
-  const { setIsUserConfigModalOpen } = useGitStore();
+  const { openModalWithTab } = useAccountServicesStore();
 
   const getStatusDot = (account: ProviderAccount) => {
     if (account.token_status === 'expired')
@@ -30,7 +29,7 @@ export const AccountsWidget: React.FC = () => {
         </div>
         <button
           type="button"
-          onClick={() => setIsUserConfigModalOpen(true)}
+          onClick={() => openModalWithTab('accounts')}
           className="flex items-center gap-1 text-[11px] text-text-muted hover:text-text-primary transition cursor-pointer font-medium"
           title="Configure Git Identity & Accounts"
         >
@@ -44,7 +43,7 @@ export const AccountsWidget: React.FC = () => {
           {accounts.map((acc) => (
             <div
               key={acc.id}
-              onClick={() => setIsUserConfigModalOpen(true)}
+              onClick={() => openModalWithTab('accounts')}
               className="flex items-center gap-2.5 px-3 py-2 rounded-sm bg-base-1 border border-border hover:border-commito-coral/40 transition cursor-pointer group shadow-2xs"
             >
               <div className="relative flex-shrink-0">
@@ -67,6 +66,10 @@ export const AccountsWidget: React.FC = () => {
                     className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border flex-shrink-0 ${
                       acc.provider === 'github'
                         ? 'text-purple-400 bg-purple-950/40 border-purple-800/40'
+                        : acc.provider === 'bitbucket'
+                        ? 'text-blue-400 bg-blue-950/40 border-blue-800/40'
+                        : acc.provider === 'custom'
+                        ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800/40'
                         : 'text-commito-coral bg-commito-coral/10 border-commito-coral/30'
                     }`}
                   >
@@ -74,7 +77,7 @@ export const AccountsWidget: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[10.5px] text-text-muted font-mono truncate mt-0.5">
-                  @{acc.handle} · {getCleanHost(acc.instance_url)}
+                  {acc.handle.startsWith('@') ? acc.handle : `@${acc.handle}`} · {getCleanHost(acc.instance_url)}
                 </p>
               </div>
 
@@ -89,7 +92,7 @@ export const AccountsWidget: React.FC = () => {
             type="button"
             variant="coral"
             size="sm"
-            onClick={() => setIsUserConfigModalOpen(true)}
+            onClick={() => openModalWithTab('add')}
           >
             Connect Account
           </Button>

@@ -11,6 +11,8 @@ import { useTerminalStore } from './features/terminal';
 import { useSettingsStore } from './features/settings';
 import { useGitRuntime } from './features/git-runtime';
 import { useGitStore } from './store/useGitStore';
+import { useLogStore } from './store/useLogStore';
+import { useAccountServicesStore } from './features/account-services';
 import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
@@ -50,6 +52,7 @@ const SigningSettings = lazy(() => import('./components/modals/SigningSettings')
 const SettingsPanel = lazy(() => import('./features/settings').then(m => ({ default: m.SettingsPanel })));
 const TerminalPanel = lazy(() => import('./features/terminal').then(m => ({ default: m.TerminalPanel })));
 const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => ({ default: m.MinGitSetupModal })));
+const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -91,19 +94,34 @@ export const App: React.FC = () => {
               if (user) setUser(gitHubUserToUnified(user));
             })
             .catch(() => {});
-        } else {
+        } else if (active.provider === 'gitlab') {
           AccountService.getCurrentGitLabUser()
             .then((user) => {
               if (user) setUser(gitLabUserToUnified(user));
             })
             .catch(() => {});
+        } else {
+          setUser({
+            id: active.id,
+            name: active.name,
+            username: active.username,
+            email: active.email || '',
+            avatar_url: active.avatar_url || null,
+            provider: active.provider,
+            server_url: active.server_url,
+            web_url: active.server_url,
+          });
         }
       })
       .catch(() => {});
 
+    useAccountServicesStore.getState().loadAccounts().catch(() => {});
+
     // Root-level listener for automatic OAuth loopback login success & deep links (GitLab)
     let unlistenEvent: (() => void) | undefined;
     let unlistenDeepLink: (() => void) | undefined;
+
+    let unlistenAccountSynced: (() => void) | undefined;
 
     listen<GitLabUser>('oauth-success', (event) => {
       if (event.payload) {
@@ -114,34 +132,71 @@ export const App: React.FC = () => {
       unlistenEvent = fn;
     });
 
-    onOpenUrl((urls: string[]) => {
+    listen<any>('oauth-account-synced', async (event) => {
+      if (event.payload) {
+        await useAccountServicesStore.getState().loadAccounts();
+        const accs = await AccountService.listSavedAccounts();
+        if (accs) setAccounts(accs);
+        useGitStore.setState({ isRepoModalOpen: false, error: null });
+        useAccountServicesStore.setState({ isModalOpen: false });
+      }
+    }).then((fn) => {
+      unlistenAccountSynced = fn;
+    });
+
+    onOpenUrl(async (urls: string[]) => {
       for (const urlStr of urls) {
-        if (urlStr.includes('gitlab-desktop://oauth/callback')) {
-          try {
+        try {
+          if (urlStr.includes('/oauth/')) {
             const url = new URL(urlStr);
             const code = url.searchParams.get('code');
-            const savedVerifier = sessionStorage.getItem('oauth_verifier');
+            const state = url.searchParams.get('state');
 
-            if (code && savedVerifier) {
-              invoke<GitLabUser>('complete_oauth_login', {
-                serverUrl: 'https://gitlab.com',
-                code,
-                verifier: savedVerifier,
-                clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
-                clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
-              })
-                .then((loggedUser) => {
-                  setUser(gitLabUserToUnified(loggedUser));
-                  sessionStorage.removeItem('oauth_verifier');
+            // 1. Multi-provider OAuth (GitHub / GitLab account services)
+            if (urlStr.includes('/oauth/github/callback') || urlStr.includes('/oauth/gitlab/callback') || state) {
+              if (code) {
+                const provider = urlStr.includes('github') ? 'github' : 'gitlab';
+                try {
+                  const account = await invoke<any>('accounts_exchange_oauth_code', {
+                    provider,
+                    code,
+                    state: state || null,
+                    instanceUrl: null,
+                  });
+                  await useAccountServicesStore.getState().loadAccounts();
+                  useLogStore.getState().addLog('info', 'Auth', `Authenticated with ${provider} (${account?.handle || ''})`);
                   useGitStore.setState({ isRepoModalOpen: false, error: null });
-                })
-                .catch((err: unknown) => {
+                  useAccountServicesStore.setState({ isModalOpen: false });
+                } catch (err: any) {
+                  useLogStore.getState().addLog('error', 'Auth', `OAuth exchange error: ${err?.message || err}`);
                   setError(toAppError(err, 'AUTH_ERROR'));
-                });
+                }
+              }
             }
-          } catch {
-            // Ignore URL parsing errors
+            // 2. Legacy GitLab OAuth callback fallback
+            else if (urlStr.includes('gitlab-desktop://oauth/callback')) {
+              const savedVerifier = sessionStorage.getItem('oauth_verifier');
+              if (code && savedVerifier) {
+                invoke<GitLabUser>('complete_oauth_login', {
+                  serverUrl: 'https://gitlab.com',
+                  code,
+                  verifier: savedVerifier,
+                  clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
+                  clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+                })
+                  .then((loggedUser) => {
+                    setUser(gitLabUserToUnified(loggedUser));
+                    sessionStorage.removeItem('oauth_verifier');
+                    useGitStore.setState({ isRepoModalOpen: false, error: null });
+                  })
+                  .catch((err: unknown) => {
+                    setError(toAppError(err, 'AUTH_ERROR'));
+                  });
+              }
+            }
           }
+        } catch {
+          // Ignore URL parsing errors
         }
       }
     }).then((un) => {
@@ -150,6 +205,7 @@ export const App: React.FC = () => {
 
     return () => {
       if (unlistenEvent) unlistenEvent();
+      if (unlistenAccountSynced) unlistenAccountSynced();
       if (unlistenDeepLink) unlistenDeepLink();
     };
   }, [setUser, setAccounts, setError]);
@@ -334,6 +390,7 @@ export const App: React.FC = () => {
           <SigningSettings />
           <SettingsPanel />
           <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
+          <AccountServicesModal />
         </Suspense>
 
         {/* Global Toast Notifications */}

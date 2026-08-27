@@ -9,11 +9,11 @@ interface AccountServicesState {
   activeAccount: ProviderAccount | null;
   isLoading: boolean;
   isModalOpen: boolean;
-  activeTab: 'accounts' | 'add' | 'remotes';
+  activeTab: 'accounts' | 'add';
 
   setIsModalOpen: (open: boolean) => void;
-  setActiveTab: (tab: 'accounts' | 'add' | 'remotes') => void;
-  openModalWithTab: (tab: 'accounts' | 'add' | 'remotes') => void;
+  setActiveTab: (tab: 'accounts' | 'add') => void;
+  openModalWithTab: (tab: 'accounts' | 'add') => void;
 
   loadAccounts: () => Promise<void>;
   setActiveAccount: (id: string) => Promise<void>;

@@ -173,7 +173,7 @@ export const HomeDashboard: React.FC = () => {
 
           {/* Right Section: Connected Accounts Card (3-4 Columns on desktop) */}
           <div className="lg:col-span-4 xl:col-span-3 2xl:col-span-3 space-y-4 min-w-0">
-            <div className="p-3.5 bg-base-1/60 border border-border rounded-sm shadow-2xs">
+            <div className="p-3.5 bg-base-1/50 border border-border rounded-sm shadow-2xs">
               <AccountsWidget />
             </div>
           </div>

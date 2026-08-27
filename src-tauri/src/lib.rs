@@ -218,6 +218,7 @@ pub fn run() {
             accounts_update,
             accounts_remove,
             accounts_start_oauth,
+            accounts_exchange_oauth_code,
             remotes_list,
             remotes_add,
             remotes_remove,

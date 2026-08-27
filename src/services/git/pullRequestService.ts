@@ -174,7 +174,7 @@ export class PullRequestService {
     commentId: number,
     body: string,
     serverUrl?: string,
-    provider?: 'github' | 'gitlab'
+    provider?: string
   ): Promise<PullRequestComment> {
     return await invoke('edit_pull_request_comment', {
       projectId: projectIdOrPath,
@@ -194,7 +194,7 @@ export class PullRequestService {
     mrId: number,
     commentId: number,
     serverUrl?: string,
-    provider?: 'github' | 'gitlab'
+    provider?: string
   ): Promise<boolean> {
     return await invoke('delete_pull_request_comment', {
       projectId: projectIdOrPath,
@@ -218,7 +218,7 @@ export class PullRequestService {
       squash?: boolean;
       shouldRemoveSourceBranch?: boolean;
       serverUrl?: string;
-      provider?: 'github' | 'gitlab';
+      provider?: string;
     }
   ): Promise<boolean> {
     return await invoke('merge_pull_request', {

@@ -139,7 +139,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         ref={menuRef}
         style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
         onClick={(e) => e.stopPropagation()}
-        className="fixed z-[10000] w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+        className="fixed z-10000 w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
       >
         {/* Launchers */}
         <div className="p-1 space-y-0.5">

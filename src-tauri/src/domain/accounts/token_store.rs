@@ -51,10 +51,10 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
     if reg.accounts.is_empty() {
         let legacy_accounts = crate::auth::keyring::list_accounts();
         for leg in legacy_accounts {
-            let kind = if leg.provider == "github" {
-                ProviderKind::Github
-            } else {
-                ProviderKind::Gitlab
+            let kind = match leg.provider.as_str() {
+                "github" => ProviderKind::Github,
+                "bitbucket" => ProviderKind::Bitbucket,
+                _ => ProviderKind::Gitlab,
             };
             let handle = if leg.username.starts_with('@') {
                 leg.username

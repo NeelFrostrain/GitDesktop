@@ -3,7 +3,9 @@ import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { GitService } from '../services/git/gitService';
 import { AccountService } from '../services/accounts/accountService';
+import { useAccountServicesStore } from '../features/account-services';
 import { getErrorMessage, toAppError } from '../shared/utils/errorUtils';
+import { Provider } from '../types/gitlab';
 
 /**
  * Account option representation for the identity selector dropdown.
@@ -35,12 +37,13 @@ export function useGitUserConfig() {
     pendingCommitData,
     setPendingCommitData,
   } = useGitStore();
+  const accountServicesAccounts = useAccountServicesStore((s) => s.accounts);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [selectedSyncAccount, setSelectedSyncAccount] = useState<string>('custom');
-  const [selectedProvider, setSelectedProvider] = useState<'gitlab' | 'github'>(user?.provider || 'gitlab');
+  const [selectedProvider, setSelectedProvider] = useState<Provider>(user?.provider || 'gitlab');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
@@ -71,6 +74,8 @@ export function useGitUserConfig() {
       .catch(() => {
         // Silently handle account fetch failures
       });
+
+    useAccountServicesStore.getState().loadAccounts().catch(() => {});
 
     // Load initial values from global store
     setName(user?.name || user?.username || '');
@@ -114,22 +119,42 @@ export function useGitUserConfig() {
     return keys;
   };
 
-  if (user) {
-    const userKeys = getAccountKeys(user.provider, user.email, user.username, user.name);
-    userKeys.forEach((k) => seenAccountKeys.add(k));
+  // 1. Add from AccountServicesStore (current multi-provider source of truth: GitHub, GitLab, Bitbucket)
+  for (const acc of accountServicesAccounts) {
+    const cleanUsername = acc.handle.replace(/^@+/, '');
+    const accKeys = getAccountKeys(acc.provider, acc.commit_email, cleanUsername, acc.display_name);
+    accKeys.forEach((k) => seenAccountKeys.add(k));
     allAvailableAccounts.push({
-      id: `active:${user.id}`,
-      name: user.name || user.username,
-      username: user.username || user.name,
-      email: user.email,
-      avatar_url: user.avatar_url,
-      provider: user.provider,
+      id: acc.id,
+      name: acc.display_name || cleanUsername,
+      username: cleanUsername,
+      email: acc.commit_email || null,
+      avatar_url: acc.avatar_url || null,
+      provider: acc.provider,
     });
   }
 
+  // 2. Also include active user if not already in list
+  if (user) {
+    const userKeys = getAccountKeys(user.provider, user.email, user.username, user.name);
+    const isAlreadyAdded = userKeys.some((k) => seenAccountKeys.has(k)) || allAvailableAccounts.some(a => a.id === `active:${user.id}` || a.id === String(user.id));
+    if (!isAlreadyAdded) {
+      userKeys.forEach((k) => seenAccountKeys.add(k));
+      allAvailableAccounts.push({
+        id: `active:${user.id}`,
+        name: user.name || user.username,
+        username: user.username || user.name,
+        email: user.email,
+        avatar_url: user.avatar_url,
+        provider: user.provider,
+      });
+    }
+  }
+
+  // 3. Include accounts from useGitStore
   for (const acc of accounts) {
     const accKeys = getAccountKeys(acc.provider, acc.email, acc.username, acc.name);
-    const isAlreadyAdded = accKeys.some((k) => seenAccountKeys.has(k)) || String(acc.id) === String(user?.id);
+    const isAlreadyAdded = accKeys.some((k) => seenAccountKeys.has(k)) || allAvailableAccounts.some(a => String(a.id) === String(acc.id));
 
     if (!isAlreadyAdded) {
       accKeys.forEach((k) => seenAccountKeys.add(k));
@@ -160,8 +185,8 @@ export function useGitUserConfig() {
       if (syncName) setName(syncName);
       if (targetAccount.email) setEmail(targetAccount.email);
       if (targetAccount.avatar_url) setAvatarUrl(targetAccount.avatar_url);
-      if (targetAccount.provider === 'github' || targetAccount.provider === 'gitlab') {
-        setSelectedProvider(targetAccount.provider as 'github' | 'gitlab');
+      if (targetAccount.provider === 'github' || targetAccount.provider === 'gitlab' || targetAccount.provider === 'bitbucket') {
+        setSelectedProvider(targetAccount.provider as Provider);
       }
 
       const providerLabel = targetAccount.provider ? targetAccount.provider.toUpperCase() : 'Remote';

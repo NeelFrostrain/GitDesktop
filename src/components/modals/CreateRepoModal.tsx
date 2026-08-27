@@ -166,10 +166,10 @@ export const CreateRepoModal: React.FC = () => {
           requestClose();
         }
       }}
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
-        className="w-full max-w-2xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

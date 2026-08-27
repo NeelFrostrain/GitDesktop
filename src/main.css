@@ -15,11 +15,11 @@
    ========================================================================== */
 :root {
   /* --- Unified Surfaces & Backgrounds --- */
-  --surface: #171619;                 /* Main workspace background */
-  --surface-subtle: #121113;          /* Deep frame / Sidebar background */
-  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
-  --surface-hover: #2b292f;           /* Hover state on rows and cards */
-  --surface-active: #382221;          /* Pressed/selected active background */
+  --surface: #0b0a0e;                 /* Main workspace background */
+  --surface-subtle: #070708;          /* Deep frame / Sidebar background */
+  --surface-elevated: #111013;        /* Elevated cards, panels & modals */
+  --surface-hover: #1c1b1f;           /* Hover state on rows and cards */
+  --surface-active: #281d1c;          /* Pressed/selected active background */
 
   /* Legacy surface aliases */
   --app-bg-primary: var(--surface);

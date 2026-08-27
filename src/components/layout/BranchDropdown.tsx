@@ -864,7 +864,7 @@ export const BranchDropdown: React.FC = () => {
 
       {/* Create New Branch Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[10000] bg-black/75 flex items-center justify-center p-4 select-none font-sans">
+        <div className="fixed inset-0 z-10000 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
             className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"

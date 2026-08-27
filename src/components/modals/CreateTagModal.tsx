@@ -431,7 +431,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none font-sans animate-in fade-in duration-100"
+      className="fixed inset-0 z-10000 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none font-sans animate-in fade-in duration-100"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting && !isDeleting && !isPushingExisting) {
           requestClose();

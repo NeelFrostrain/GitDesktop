@@ -128,7 +128,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-100 font-sans select-none"
+      className="fixed inset-0 z-10000 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-100 font-sans select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isSubmitting) {
           requestClose();

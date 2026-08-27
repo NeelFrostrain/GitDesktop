@@ -1,7 +1,7 @@
 /**
- * Supported cloud Git providers.
+ * Supported cloud Git providers and custom identities.
  */
-export type Provider = 'gitlab' | 'github';
+export type Provider = 'gitlab' | 'github' | 'bitbucket' | 'custom';
 
 /**
  * GitLab API user entity.
@@ -66,7 +66,7 @@ export interface UnifiedUser {
 export interface SavedAccount {
   id: string;
   server_url: string;
-  token: string;
+  token?: string;
   name: string;
   username: string;
   email: string | null;

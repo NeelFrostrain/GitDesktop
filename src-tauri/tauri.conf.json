@@ -28,7 +28,7 @@
   },
   "plugins": {
     "deep-link": {
-      "schemes": ["gitlab-desktop"]
+      "schemes": ["gitlab-desktop", "git-desktop"]
     },
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IGF1dG8tdXBkYXRlciBwdWJsaWMga2V5Cg==",

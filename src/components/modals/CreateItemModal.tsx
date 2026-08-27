@@ -123,7 +123,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
           requestClose();
         }
       }}
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs animate-in fade-in duration-100 select-none"
     >
       {/* Modal Dialog Card */}
       <div

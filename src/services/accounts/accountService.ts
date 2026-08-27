@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { SavedAccount, TokenInfo, GitLabUser, GitHubUser, UnifiedRepo, PagedResult } from '../../types/gitlab';
+import { SavedAccount, TokenInfo, GitLabUser, GitHubUser, UnifiedRepo, PagedResult, Provider } from '../../types/gitlab';
 import { ProviderAccount, AccountPatch, RemoteInfo } from '../../features/account-services/types';
 
 /**
@@ -10,6 +10,25 @@ export class AccountService {
    * Fetches saved accounts list (legacy/unified format).
    */
   static async listSavedAccounts(): Promise<SavedAccount[]> {
+    try {
+      const provAccounts = await invoke<ProviderAccount[]>('accounts_list');
+      if (provAccounts && provAccounts.length > 0) {
+        return provAccounts.map((p) => ({
+          id: p.id,
+          provider: p.provider as Provider,
+          username: p.handle.replace(/^@+/, ''),
+          name: p.display_name || p.handle.replace(/^@+/, ''),
+          email: p.commit_email || null,
+          avatar_url: p.avatar_url || null,
+          server_url: p.instance_url,
+          is_active: p.is_active,
+          scopes: p.scopes,
+          expires_at: p.expires_at,
+        }));
+      }
+    } catch {
+      // Fallback to legacy list_accounts_cmd
+    }
     return invoke<SavedAccount[]>('list_accounts_cmd');
   }
 

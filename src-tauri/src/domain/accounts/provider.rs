@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub enum ProviderKind {
     Gitlab,
     Github,
+    Bitbucket,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
