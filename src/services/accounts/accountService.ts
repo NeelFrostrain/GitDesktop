@@ -91,11 +91,19 @@ export class AccountService {
   /**
    * Fetches user repositories from connected cloud provider (GitLab or GitHub).
    */
-  static async fetchUserRepositories(page = 1, perPage = 20, search = ''): Promise<PagedResult<UnifiedRepo>> {
+  static async fetchUserRepositories(
+    page = 1,
+    perPage = 20,
+    search = '',
+    accountId?: string | null,
+    provider?: string | null
+  ): Promise<PagedResult<UnifiedRepo>> {
     return invoke<PagedResult<UnifiedRepo>>('fetch_user_repositories', {
       page,
       perPage,
       search: search || null,
+      accountId: accountId || null,
+      provider: provider || null,
     });
   }
 

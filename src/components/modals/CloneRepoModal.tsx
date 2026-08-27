@@ -31,7 +31,9 @@ import { SystemService } from '../../services/system/systemService';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { RemoteAccountReposTab } from './repo/RemoteAccountReposTab';
 
+type CloneModalTab = 'remote' | 'url';
 type AuthMode = 'saved' | 'credentials' | 'public';
 
 /**
@@ -72,6 +74,7 @@ export const CloneRepoModal: React.FC = () => {
   } = useGitStore();
   const { addRepo } = useRepoStore();
 
+  const [activeMainTab, setActiveMainTab] = useState<CloneModalTab>('remote');
   const [url, setUrl] = useState('');
   const [parentPath, setParentPath] = useState(() => {
     try {
@@ -114,7 +117,12 @@ export const CloneRepoModal: React.FC = () => {
   useEffect(() => {
     if (isCloneRepoModalOpen) {
       const initial = cloneModalInitialUrl || '';
-      setUrl(initial);
+      if (initial) {
+        setUrl(initial);
+        setActiveMainTab('url');
+      } else {
+        setActiveMainTab('remote');
+      }
       setLocalError(null);
       setIsCloning(false);
       setCloneProgressMessage('');
@@ -125,9 +133,11 @@ export const CloneRepoModal: React.FC = () => {
         setAuthMode('credentials');
       }
 
-      setTimeout(() => {
-        urlInputRef.current?.focus();
-      }, 60);
+      if (initial) {
+        setTimeout(() => {
+          urlInputRef.current?.focus();
+        }, 60);
+      }
     }
   }, [isCloneRepoModalOpen, cloneModalInitialUrl, accounts]);
 
@@ -259,11 +269,11 @@ export const CloneRepoModal: React.FC = () => {
       className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
-        className="w-full max-w-xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+        <div className="px-4.5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Download className="w-4 h-4" />
@@ -276,7 +286,9 @@ export const CloneRepoModal: React.FC = () => {
                 Clone a Repository
               </h2>
               <span className="text-border">•</span>
-              <span className="text-xs text-text-muted">Remote Git repository</span>
+              <span className="text-xs text-text-muted">
+                {activeMainTab === 'remote' ? 'Connected accounts' : 'Remote Git URL'}
+              </span>
             </div>
           </div>
 
@@ -290,19 +302,52 @@ export const CloneRepoModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleClone} className="flex-1 min-h-0 flex flex-col overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-y-auto p-4.5 space-y-3.5 text-xs font-sans text-text-primary bg-base-0">
-            {/* Error Message */}
-            {localError && (
-              <div className="flex items-start gap-2.5 p-3 rounded-sm bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="font-semibold">Clone Failed</p>
-                  <p className="text-[11.5px] opacity-90 leading-normal mt-0.5">{localError}</p>
+        {/* Tab Navigation Bar */}
+        <div className="px-4.5 pt-2 bg-base-1 border-b border-border flex items-center shrink-0">
+          <Tabs<CloneModalTab>
+            tabs={[
+              {
+                id: 'remote',
+                label: 'Your Repositories',
+                icon: <FolderGit2 className="w-3.5 h-3.5 text-commito-coral" />,
+              },
+              {
+                id: 'url',
+                label: 'Clone by URL',
+                icon: <Globe className="w-3.5 h-3.5" />,
+              },
+            ]}
+            activeTab={activeMainTab}
+            onChange={setActiveMainTab}
+            size="sm"
+          />
+        </div>
+
+        {/* Tab 1: Your Repositories from Connected Accounts */}
+        {activeMainTab === 'remote' && (
+          <div className="p-4 sm:p-5 overflow-y-auto flex-1 min-h-0 bg-base-0">
+            <RemoteAccountReposTab
+              parentPath={parentPath}
+              onSelectParentPath={handleSelectParentFolder}
+              onClose={() => setIsCloneRepoModalOpen(false)}
+            />
+          </div>
+        )}
+
+        {/* Tab 2: Clone from URL */}
+        {activeMainTab === 'url' && (
+          <form onSubmit={handleClone} className="flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4.5 space-y-3.5 text-xs font-sans text-text-primary bg-base-0">
+              {/* Error Message */}
+              {localError && (
+                <div className="flex items-start gap-2.5 p-3 rounded-sm bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-semibold">Clone Failed</p>
+                    <p className="text-[11.5px] opacity-90 leading-normal mt-0.5">{localError}</p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
             {/* 1. Repository Source URL Card */}
             <div className="space-y-1.5">
@@ -721,7 +766,8 @@ export const CloneRepoModal: React.FC = () => {
             </div>
           </div>
         </form>
-      </div>
+      )}
+    </div>
 
       {/* Unsaved Changes Confirmation Modal */}
       <ConfirmDialog

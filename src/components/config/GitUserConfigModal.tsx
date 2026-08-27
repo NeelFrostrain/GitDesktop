@@ -59,7 +59,7 @@ export const GitUserConfigModal: React.FC = () => {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-100 max-h-[90vh]"
+        className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-100 max-h-[90vh]"
       >
         <ConfigHeader onClose={handleClose} repoName={activeRepoName} />
 

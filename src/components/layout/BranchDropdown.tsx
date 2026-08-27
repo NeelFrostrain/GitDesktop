@@ -405,7 +405,7 @@ export const BranchDropdown: React.FC = () => {
               top: `${topPos}px`,
               width: `${menuWidth}px`,
             }}
-            className="fixed z-[9999] bg-base-0 border border-border-strong/90 rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[520px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none ring-1 ring-black/40"
+            className="fixed z-[9999] bg-base-0 border border-border-strong/90 rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[520px] text-xs font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 select-none ring-1 ring-black/40"
           >
             {/* Header: Segmented Tabs & Action Button */}
             <div className="p-2.5 border-b border-border/70 bg-base-0 flex items-center justify-between gap-2 shrink-0">
@@ -867,7 +867,7 @@ export const BranchDropdown: React.FC = () => {
         <div className="fixed inset-0 z-10000 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
           <form
             onSubmit={handleCreateBranchSubmit}
-            className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
+            className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/40"
           >
             {/* Compact 1-Row Header */}
             <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between shrink-0">

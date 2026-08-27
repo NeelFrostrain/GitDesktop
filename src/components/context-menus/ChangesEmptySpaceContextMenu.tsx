@@ -82,7 +82,7 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     <div
       ref={menuRef}
       style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
-      className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-md shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
+      className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-sm shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
     >
       <div className="p-1 space-y-0.5">
         {/* New File... */}

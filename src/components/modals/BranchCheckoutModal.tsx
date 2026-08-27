@@ -131,7 +131,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans animate-in fade-in duration-100">
-      <div className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-100">
+      <div className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-100">
         {/* Header */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -171,7 +171,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
             <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <ArrowRightLeft className="w-3.5 h-3.5" />
@@ -194,7 +194,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleLeaveChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-gitlab-blue/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-gitlab-blue/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
             <div className="w-7 h-7 rounded-sm bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Archive className="w-3.5 h-3.5" />
@@ -214,7 +214,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleForceCheckout}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-1 hover:bg-git-removed-bg/25 border border-border hover:border-git-removed/50 rounded-md text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-git-removed-bg/25 border border-border hover:border-git-removed/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
             <div className="w-7 h-7 rounded-sm bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Trash2 className="w-3.5 h-3.5" />

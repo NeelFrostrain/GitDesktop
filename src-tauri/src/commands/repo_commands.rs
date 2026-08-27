@@ -38,23 +38,37 @@ fn get_git_credential_token(host: &str) -> Option<String> {
 }
 
 fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
+    get_gitlab_client_for_account(None, server_override)
+}
+
+fn get_gitlab_client_for_account(
+    account_id: Option<&str>,
+    server_override: Option<String>,
+) -> Result<GitLabClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
-    let gitlab_acc = provider_accounts
-        .iter()
-        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
-        .or_else(|| {
-            provider_accounts
-                .iter()
-                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
-        });
+    let gitlab_acc = if let Some(id) = account_id {
+        provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else {
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
+            })
+            .cloned()
+    };
 
     let mut gitlab_token = None;
     let mut instance_url = None;
 
-    if let Some(acc) = gitlab_acc {
+    if let Some(ref acc) = gitlab_acc {
         if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
-            gitlab_token = Some(tok);
-            instance_url = Some(acc.instance_url.clone());
+            if !tok.trim().is_empty() {
+                gitlab_token = Some(tok);
+                instance_url = Some(acc.instance_url.clone());
+            }
         }
     }
 
@@ -65,8 +79,10 @@ fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, Ap
             .find(|a| a.provider == "gitlab" && a.is_active)
             .or_else(|| accounts.iter().find(|a| a.provider == "gitlab"))
         {
-            gitlab_token = Some(a.token.clone());
-            instance_url = Some(a.server_url.clone());
+            if !a.token.trim().is_empty() {
+                gitlab_token = Some(a.token.clone());
+                instance_url = Some(a.server_url.clone());
+            }
         }
     }
 
@@ -89,24 +105,39 @@ fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, Ap
         .or_else(|| keyring::get_token().ok().flatten())
         .unwrap_or_default();
 
+    if token.trim().is_empty() {
+        return Err(AppError::Auth(
+            "No authenticated session found for GitLab. Please sign in or provide a token.".to_string(),
+        ));
+    }
+
     GitLabClient::new(server_url, token, None)
 }
 
 fn get_github_client() -> Result<GitHubClient, AppError> {
-    // 1. Try to find GitHub token in token_store (OAuth or PAT)
+    get_github_client_for_account(None)
+}
+
+fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHubClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let gh_acc = if let Some(id) = account_id {
+        provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else {
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github && a.is_active)
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github)
+            })
+            .cloned()
+    };
+
     let mut github_token = None;
 
-    if let Some(gh_acc) = provider_accounts
-        .iter()
-        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github && a.is_active)
-        .or_else(|| {
-            provider_accounts
-                .iter()
-                .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Github)
-        })
-    {
-        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&gh_acc.id) {
+    if let Some(ref acc) = gh_acc {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
             if !tok.trim().is_empty() {
                 github_token = Some(tok);
             }
@@ -150,7 +181,10 @@ fn get_github_client() -> Result<GitHubClient, AppError> {
         }
     }
 
-    GitHubClient::new(github_token.as_deref())
+    let token = github_token
+        .or_else(|| keyring::get_token().ok().flatten());
+
+    GitHubClient::new(token.as_deref())
 }
 
 /// Helper: convert GitLabProject to UnifiedRepo
@@ -190,22 +224,51 @@ pub async fn select_folder_cmd(app: tauri::AppHandle) -> Result<Option<String>, 
 /// Returns a unified list so the frontend uses a single code path.
 #[command]
 pub async fn fetch_user_repositories(
+    account_id: Option<String>,
     server_url: Option<String>,
     page: Option<u32>,
     provider: Option<String>,
+    search: Option<String>,
 ) -> Result<PagedResult<UnifiedRepo>, AppError> {
     let p = page.unwrap_or(1);
 
-    // Determine provider from argument or active account
-    let resolved_provider = provider.unwrap_or_else(|| {
+    // 1. If account_id is provided, find that account in token_store
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    let target_acc = if let Some(ref aid) = account_id {
+        provider_accounts.iter().find(|a| &a.id == aid).cloned()
+    } else {
+        provider_accounts.iter().find(|a| a.is_active).cloned()
+    };
+
+    // Determine resolved provider from target account or fallback argument
+    let resolved_provider = if let Some(ref acc) = target_acc {
+        match acc.provider {
+            crate::domain::accounts::provider::ProviderKind::Github => "github".to_string(),
+            crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket".to_string(),
+            crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab".to_string(),
+        }
+    } else if let Some(prov) = provider {
+        prov.to_lowercase()
+    } else {
         keyring::get_active_account()
-            .map(|a| a.provider)
-            .unwrap_or_else(|| "gitlab".to_string())
-    });
+            .map(|a| a.provider.to_lowercase())
+            .unwrap_or_else(|| "github".to_string())
+    };
+
+    let target_acc_id = target_acc.as_ref().map(|a| a.id.as_str());
 
     if resolved_provider == "github" {
-        let client = get_github_client()?;
-        let repos = client.fetch_repos(p).await?;
+        let client = get_github_client_for_account(target_acc_id)?;
+        let mut repos = client.fetch_repos(p).await?;
+        if let Some(ref q) = search {
+            let query = q.trim().to_lowercase();
+            if !query.is_empty() {
+                repos.retain(|r| {
+                    r.name.to_lowercase().contains(&query)
+                        || r.path_with_namespace.to_lowercase().contains(&query)
+                });
+            }
+        }
         let total = if repos.len() < 20 { p } else { p + 1 }; // GitHub doesn't return total pages
         return Ok(PagedResult {
             items: repos,
@@ -215,14 +278,26 @@ pub async fn fetch_user_repositories(
     }
 
     // GitLab path
-    let client = get_gitlab_client(server_url)?;
+    let client = get_gitlab_client_for_account(target_acc_id, server_url)?;
     let paged = client.fetch_projects(p).await?;
+    let mut items: Vec<UnifiedRepo> = paged
+        .items
+        .into_iter()
+        .map(gitlab_project_to_unified)
+        .collect();
+
+    if let Some(ref q) = search {
+        let query = q.trim().to_lowercase();
+        if !query.is_empty() {
+            items.retain(|r| {
+                r.name.to_lowercase().contains(&query)
+                    || r.path_with_namespace.to_lowercase().contains(&query)
+            });
+        }
+    }
+
     Ok(PagedResult {
-        items: paged
-            .items
-            .into_iter()
-            .map(gitlab_project_to_unified)
-            .collect(),
+        items,
         page: paged.page,
         total_pages: paged.total_pages,
     })

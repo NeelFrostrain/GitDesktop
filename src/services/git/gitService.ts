@@ -203,6 +203,27 @@ export class GitService {
   }
 
   /**
+   * Stages selected lines or hunks as a unified patch into the Git index.
+   */
+  static async stagePatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('stage_patch_cmd', { repoPath, patchContent });
+  }
+
+  /**
+   * Unstages selected lines or hunks as a unified patch from the Git index.
+   */
+  static async unstagePatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('unstage_patch_cmd', { repoPath, patchContent });
+  }
+
+  /**
+   * Discards selected lines or hunks directly from working copy.
+   */
+  static async discardPatch(repoPath: string, patchContent: string): Promise<void> {
+    return invoke('discard_patch_cmd', { repoPath, patchContent });
+  }
+
+  /**
    * Sets a Git configuration key in the repository's local config.
    */
   static async setRepoConfig(repoPath: string, key: string, value: string): Promise<void> {

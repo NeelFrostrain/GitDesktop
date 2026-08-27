@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
-use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION};
+use reqwest::header::{HeaderMap, HeaderName, HeaderValue, AUTHORIZATION, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
@@ -388,12 +388,17 @@ impl GitLabClient {
         }
 
         let mut headers = HeaderMap::new();
+        if let Ok(val) = HeaderValue::from_str(&token) {
+            headers.insert(HeaderName::from_static("private-token"), val);
+        }
         let auth_val = format!("Bearer {}", token);
+        if let Ok(val) = HeaderValue::from_str(&auth_val) {
+            headers.insert(AUTHORIZATION, val);
+        }
+        headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop/1.0"));
         headers.insert(
-            AUTHORIZATION,
-            HeaderValue::from_str(&auth_val).map_err(|_| {
-                AppError::Validation("Invalid authorization token format".to_string())
-            })?,
+            reqwest::header::ACCEPT,
+            HeaderValue::from_static("application/json"),
         );
 
         let client = builder
@@ -478,11 +483,11 @@ impl GitLabClient {
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse token info JSON: {}", e)))?;
 
-        let scope = raw.scope.or(raw.scopes).unwrap_or_default();
-        let expires_in_seconds = raw.expires_in_seconds.or(raw.expires_in);
+        let scopes_list = raw.scopes.or(raw.scope).unwrap_or_default();
+        let expires_in_seconds = raw.expires_in.or(raw.expires_in_seconds);
 
         Ok(TokenInfo {
-            scope,
+            scope: scopes_list,
             created_at: raw.created_at,
             expires_in_seconds,
             resource_owner_id: raw.resource_owner_id,
@@ -491,17 +496,25 @@ impl GitLabClient {
 
     pub async fn fetch_projects(&self, page: u32) -> Result<PagedResult<GitLabProject>, AppError> {
         let url = format!(
-            "{}/api/v4/projects?membership=true&order_by=updated_at&per_page=20&page={}",
+            "{}/api/v4/projects?membership=true&order_by=updated_at&per_page=30&page={}",
             self.server_url, page
         );
         let mut resp = self.client.get(&url).send().await?;
 
         if !resp.status().is_success() {
             let fallback_url = format!(
-                "{}/api/v4/projects?order_by=updated_at&per_page=20&page={}",
+                "{}/api/v4/projects?min_access_level=10&order_by=updated_at&per_page=30&page={}",
                 self.server_url, page
             );
             resp = self.client.get(&fallback_url).send().await?;
+        }
+
+        if !resp.status().is_success() {
+            let fallback_url2 = format!(
+                "{}/api/v4/projects?owned=true&order_by=updated_at&per_page=30&page={}",
+                self.server_url, page
+            );
+            resp = self.client.get(&fallback_url2).send().await?;
         }
 
         if !resp.status().is_success() {
@@ -519,26 +532,10 @@ impl GitLabClient {
             .and_then(|v| v.parse::<u32>().ok())
             .unwrap_or(1);
 
-        let mut projects: Vec<GitLabProject> = resp
+        let projects: Vec<GitLabProject> = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse projects JSON: {}", e)))?;
-
-        if projects.is_empty() {
-            let fallback_url = format!(
-                "{}/api/v4/projects?min_access_level=10&order_by=updated_at&per_page=20&page={}",
-                self.server_url, page
-            );
-            if let Ok(fb_resp) = self.client.get(&fallback_url).send().await {
-                if fb_resp.status().is_success() {
-                    if let Ok(fb_projects) = fb_resp.json::<Vec<GitLabProject>>().await {
-                        if !fb_projects.is_empty() {
-                            projects = fb_projects;
-                        }
-                    }
-                }
-            }
-        }
 
         Ok(PagedResult {
             items: projects,

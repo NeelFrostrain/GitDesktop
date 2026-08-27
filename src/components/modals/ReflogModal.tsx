@@ -73,7 +73,7 @@ export const ReflogModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 select-none font-sans animate-in fade-in duration-100">
-      <div className="bg-base-0 border border-border-strong rounded-md shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-100">
+      <div className="bg-base-0 border border-border-strong rounded-sm shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-100">
         {/* Header */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
@@ -119,14 +119,14 @@ export const ReflogModal: React.FC = () => {
               <span>Loading reflog timeline...</span>
             </div>
           ) : reflogEntries.length === 0 ? (
-            <div className="p-12 text-center text-text-muted italic bg-base-1 border border-border rounded-md">
+            <div className="p-12 text-center text-text-muted italic bg-base-1 border border-border rounded-sm">
               No reflog entries recorded
             </div>
           ) : (
             reflogEntries.map((entry) => (
               <div
                 key={entry.index + entry.sha}
-                className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-md flex items-center justify-between hover:bg-base-2/70 transition shadow-xs"
+                className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-center justify-between hover:bg-base-2/70 transition shadow-xs"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
                   <span className="px-2 py-0.5 bg-base-2 border border-border rounded font-mono text-[10px] text-commito-coral font-bold flex-shrink-0">

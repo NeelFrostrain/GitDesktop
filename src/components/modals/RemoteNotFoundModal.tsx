@@ -50,7 +50,7 @@ export const RemoteNotFoundModal: React.FC = () => {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
       <div
-        className="w-full max-w-md bg-base-1 border border-border/90 rounded-md shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-md bg-base-1 border border-border/90 rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150"
         role="dialog"
         aria-modal="true"
         aria-labelledby="remote-error-title"

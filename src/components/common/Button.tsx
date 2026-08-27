@@ -61,11 +61,11 @@ export const Button: React.FC<ButtonProps> = ({
   const sizeStyles: Record<ButtonSize, string> = {
     xs: 'h-6 px-2.5 text-[11px] rounded-[5px] gap-1 shadow-2xs',
     sm: 'h-7 px-3 text-xs rounded-sm gap-1.5 shadow-xs',
-    md: 'h-8 px-3.5 text-xs rounded-md gap-1.5 shadow-sm',
-    lg: 'h-9 px-4 text-sm rounded-md gap-2 shadow-md',
+    md: 'h-8 px-3.5 text-xs rounded-sm gap-1.5 shadow-sm',
+    lg: 'h-9 px-4 text-sm rounded-sm gap-2 shadow-md',
     'icon-xs': 'w-6 h-6 p-0 text-[11px] rounded-[5px] shadow-2xs',
     'icon-sm': 'w-7 h-7 p-0 text-xs rounded-sm shadow-xs',
-    'icon-md': 'w-8 h-8 p-0 text-xs rounded-md shadow-sm',
+    'icon-md': 'w-8 h-8 p-0 text-xs rounded-sm shadow-sm',
   };
 
   const variantStyles: Record<ButtonVariant, string> = {

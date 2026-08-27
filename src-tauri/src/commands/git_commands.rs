@@ -845,6 +845,33 @@ pub async fn apply_patch_cmd(repo_path: String, patch_file_path: String) -> Resu
     .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn stage_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::stage_patch(&repo_path, &patch_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn unstage_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::unstage_patch(&repo_path, &patch_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn discard_patch_cmd(repo_path: String, patch_content: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::patch::discard_patch(&repo_path, &patch_content)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
 // Config & .gitignore
 #[command]
 pub async fn get_repo_git_config_cmd(

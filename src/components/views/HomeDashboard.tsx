@@ -96,7 +96,7 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateRepoModalOpen(true)}
-              className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-commito-coral/50"
+              className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-sm text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-commito-coral/50"
             >
               <PlusSquare className="w-3.5 h-3.5" />
               <span>New Repo</span>
@@ -106,7 +106,7 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCloneRepoModalOpen(true)}
-              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
+              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-sm text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
               title="Clone from URL or cloud provider"
             >
               <DownloadCloud className="w-3.5 h-3.5 text-text-muted" />
@@ -115,7 +115,7 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenFolderDialog}
-              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
+              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-sm text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
               title="Open local Git repository folder"
             >
               <FolderOpen className="w-3.5 h-3.5 text-text-muted" />
@@ -127,7 +127,7 @@ export const HomeDashboard: React.FC = () => {
           <div className="hidden md:block h-4.5 w-px bg-border/80 my-auto" />
 
           {/* Streamlined Stats Indicator Strip */}
-          <div className="flex items-center gap-2 bg-base-1/60 border border-border/70 rounded-md px-2.5 py-1 text-xs text-text-muted shadow-2xs select-none">
+          <div className="flex items-center gap-2 bg-base-1/60 border border-border/70 rounded-sm px-2.5 py-1 text-xs text-text-muted shadow-2xs select-none">
             {/* Total Repos */}
             <div className="flex items-center gap-1.5 text-[11px] font-sans font-medium text-text-secondary" title="Total active repositories">
               <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />

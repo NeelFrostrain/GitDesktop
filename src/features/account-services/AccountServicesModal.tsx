@@ -52,7 +52,7 @@ export const AccountServicesModal: React.FC = () => {
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-100"
       >
         {/* Header with Integrated Segmented Tabs */}
         <div className="px-4 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">

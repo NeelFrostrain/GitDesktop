@@ -1029,7 +1029,7 @@ export const MergeRequestModal: React.FC = () => {
     >
       <div
         ref={modalContainerRef}
-        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
+        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header (Compact & Space-saving) */}
@@ -1839,7 +1839,7 @@ export const MergeRequestModal: React.FC = () => {
                                 {activeCommentMenuId === 'desc' && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                   >
                                     <div className="py-0.5">
                                       <button
@@ -1966,7 +1966,7 @@ export const MergeRequestModal: React.FC = () => {
                                         {activeCommentMenuId === comment.id && (
                                           <div
                                             onClick={(e) => e.stopPropagation()}
-                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-md shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                           >
                                             <div className="py-0.5">
                                               <button
@@ -2594,7 +2594,7 @@ export const MergeRequestModal: React.FC = () => {
             }}
           >
             <div
-              className="w-full max-w-lg bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
+              className="w-full max-w-lg bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-95 duration-100"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Merge Modal Header */}
