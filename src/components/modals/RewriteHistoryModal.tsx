@@ -156,9 +156,8 @@ export const RewriteHistoryModal: React.FC = () => {
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-
         {/* Body */}
-        <form onSubmit={handleConfirm} className="p-5 space-y-4 overflow-y-auto">
+        <form id="rewrite-history-form" onSubmit={handleConfirm} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {/* Uncommitted changes blocking alert */}
           {hasUncommittedChanges && (
             <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
@@ -198,7 +197,9 @@ export const RewriteHistoryModal: React.FC = () => {
               </div>
 
               <p className="text-xs text-text-secondary">
-                To position <strong className="text-text-primary uppercase">{pendingHistoryOp.position}</strong> commit:
+                {pendingHistoryOp.direction === 'above'
+                  ? 'To immediately before commit:'
+                  : 'To immediately after commit:'}
               </p>
 
               <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
@@ -212,40 +213,59 @@ export const RewriteHistoryModal: React.FC = () => {
             </div>
           )}
 
-          {/* Merge Details */}
-          {pendingHistoryOp.type === 'merge' && (
+          {/* Squash Details */}
+          {pendingHistoryOp.type === 'squash' && (
             <div className="space-y-3">
               <p className="text-xs text-text-secondary">
-                The following two commits will be merged into a single commit:
+                You are squashing commit:
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
-                {/* Target (Base) Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-git-added block">First Commit (Target)</span>
-                  <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.targetCommit.message}</h4>
-                  <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
-                    {pendingHistoryOp.targetCommit.short_sha}
-                  </span>
-                </div>
-
-                {/* Source Commit */}
-                <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-commito-coral block">Second Commit (Source)</span>
-                  <h4 className="text-xs font-bold text-text-primary truncate">{pendingHistoryOp.sourceCommit.message}</h4>
-                  <span className="inline-block px-1.5 py-0.2 bg-base-3 border border-border rounded font-mono text-[10px] text-text-muted">
-                    {pendingHistoryOp.sourceCommit.short_sha}
-                  </span>
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
+                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.sourceCommit.message}</h4>
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                  <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
+                  <span>•</span>
+                  <span>{pendingHistoryOp.sourceCommit.author_name}</span>
                 </div>
               </div>
 
-              {/* Editable New Message */}
+              <p className="text-xs text-text-secondary">
+                Into the previous commit:
+              </p>
+
+              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
+                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.targetCommit.message}</h4>
+                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
+                  <span>{pendingHistoryOp.targetCommit.short_sha}</span>
+                  <span>•</span>
+                  <span>{pendingHistoryOp.targetCommit.author_name}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Merge / Combine Details */}
+          {pendingHistoryOp.type === 'merge' && (
+            <div className="space-y-3">
+              <p className="text-xs text-text-secondary">
+                Combining 2 commits into 1 single commit:
+              </p>
+
+              <div className="space-y-1.5">
+                <div className="p-2.5 bg-base-2 border border-border rounded-sm text-xs font-bold text-text-primary">
+                  1. {pendingHistoryOp.sourceCommit.message}
+                </div>
+                <div className="p-2.5 bg-base-2 border border-border rounded-sm text-xs font-bold text-text-primary">
+                  2. {pendingHistoryOp.targetCommit.message}
+                </div>
+              </div>
+
               <div className="space-y-1.5 pt-1">
                 <label className="text-xs font-bold text-text-primary block">
-                  New Commit Message:
+                  New Combined Commit Message
                 </label>
                 <textarea
-                  rows={4}
+                  rows={3}
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Enter combined commit message..."
@@ -255,41 +275,42 @@ export const RewriteHistoryModal: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* Footer Controls */}
-          <div className="flex items-center justify-end gap-2 px-3.5 py-2 border-t border-border bg-base-1/70 shrink-0 select-none">
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={isSubmitting}
-              className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
-              className={`h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
-                hasUncommittedChanges
-                  ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed opacity-60'
-                  : 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60'
-              }`}
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
-              )}
-              <span>
-                {isSubmitting
-                  ? 'Rewriting History...'
-                  : pendingHistoryOp.type === 'reorder'
-                  ? 'Execute Reorder'
-                  : 'Merge Commits'}
-              </span>
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Bottom Footer Controls */}
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-border bg-base-1 shrink-0 select-none">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="rewrite-history-form"
+            disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
+            className={`h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
+              hasUncommittedChanges
+                ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed opacity-60'
+                : 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60'
+            }`}
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current" />
+            )}
+            <span>
+              {isSubmitting
+                ? 'Rewriting History...'
+                : pendingHistoryOp.type === 'reorder'
+                ? 'Execute Reorder'
+                : 'Merge Commits'}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
   );

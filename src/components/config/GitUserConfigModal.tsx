@@ -62,7 +62,7 @@ export const GitUserConfigModal: React.FC = () => {
       >
         <ConfigHeader onClose={handleClose} repoName={activeRepoName} />
 
-        <form onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+        <form id="git-user-config-form" onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           {modalError && (
             <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2 text-xs text-git-removed animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-git-removed shrink-0 mt-0.5" />
@@ -98,18 +98,7 @@ export const GitUserConfigModal: React.FC = () => {
                     <span>Sync with Account</span>
                   </button>
                 )
-              ) 
-              // : (
-              //   <button
-              //     type="button"
-              //     onClick={() => setSelectedSyncAccount('custom')}
-              //     className="text-[11px] text-text-muted hover:text-commito-coral font-semibold flex items-center gap-1 cursor-pointer transition"
-              //   >
-              //     <Edit3 className="w-3 h-3" />
-              //     <span>Customize Manually</span>
-              //   </button>
-              // )
-              }
+              )}
             </div>
 
             <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3.5 shadow-2xs">
@@ -156,13 +145,6 @@ export const GitUserConfigModal: React.FC = () => {
 
               {/* Live Commit Header Box Preview */}
               <div className="p-2.5 bg-base-2/70 border border-border/80 rounded-xs space-y-1 font-mono text-[11px] shadow-2xs">
-                {/* <div className="text-[9.5px] font-bold uppercase tracking-wider text-text-faint flex items-center justify-between">
-                  <span>Git Commit Output Preview</span>
-                  <span className="text-[9px] text-text-muted lowercase">git log format</span>
-                </div>
-                <div className="text-[10px] text-text-faint truncate">
-                  commit 8f2c3a1 (HEAD -&gt; {activeRepoName ? 'main' : 'master'})
-                </div> */}
                 <div className="text-[11px] text-text-secondary truncate">
                   Author:{' '}
                   <span className="text-text-primary font-bold">{name || 'Your Name'}</span>{' '}
@@ -171,13 +153,14 @@ export const GitUserConfigModal: React.FC = () => {
               </div>
             </div>
           </div>
-
-          <ConfigFooter
-            onClose={handleClose}
-            isValid={isFormValid}
-            isSubmitting={isSubmitting}
-          />
         </form>
+
+        <ConfigFooter
+          onClose={handleClose}
+          isValid={isFormValid}
+          isSubmitting={isSubmitting}
+          formId="git-user-config-form"
+        />
       </div>
     </div>,
     document.body

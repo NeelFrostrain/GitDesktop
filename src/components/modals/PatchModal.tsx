@@ -132,9 +132,9 @@ export const PatchModal: React.FC = () => {
         </div>
 
         {/* Body Form */}
-        <div className="p-5">
-          {activeTab === 'export' ? (
-            <form onSubmit={handleExportPatch} className="space-y-4">
+        {activeTab === 'export' ? (
+          <>
+            <form id="export-patch-form" onSubmit={handleExportPatch} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div>
                 <label className="text-[11px] font-bold text-text-secondary mb-1 block">
                   Export Destination File Path (Required)
@@ -161,28 +161,32 @@ export const PatchModal: React.FC = () => {
                   className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border select-none">
-                <button
-                  type="button"
-                  onClick={() => setIsPatchModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!exportPath.trim() || isSubmitting}
-                  className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? 'Exporting...' : 'Export Patch File'}</span>
-                </button>
-              </div>
             </form>
-          ) : (
-            <form onSubmit={handleApplyPatch} className="space-y-4">
+
+            {/* Pinned Bottom Footer */}
+            <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+              <button
+                type="button"
+                onClick={() => setIsPatchModalOpen(false)}
+                disabled={isSubmitting}
+                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="export-patch-form"
+                disabled={!exportPath.trim() || isSubmitting}
+                className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>{isSubmitting ? 'Exporting...' : 'Export Patch File'}</span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <form id="apply-patch-form" onSubmit={handleApplyPatch} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
               <div>
                 <label className="text-[11px] font-bold text-text-secondary mb-1 block">
                   Select External Patch File Path (.patch / .diff)
@@ -196,28 +200,30 @@ export const PatchModal: React.FC = () => {
                   required
                 />
               </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border select-none">
-                <button
-                  type="button"
-                  onClick={() => setIsPatchModalOpen(false)}
-                  disabled={isSubmitting}
-                  className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!patchFilePath.trim() || isSubmitting}
-                  className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? 'Applying...' : 'Apply Patch File'}</span>
-                </button>
-              </div>
             </form>
-          )}
-        </div>
+
+            {/* Pinned Bottom Footer */}
+            <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+              <button
+                type="button"
+                onClick={() => setIsPatchModalOpen(false)}
+                disabled={isSubmitting}
+                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="apply-patch-form"
+                disabled={!patchFilePath.trim() || isSubmitting}
+                className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isSubmitting ? 'Applying...' : 'Apply Patch File'}</span>
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

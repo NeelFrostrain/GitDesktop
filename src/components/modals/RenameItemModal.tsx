@@ -166,7 +166,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-3.5 space-y-2.5 bg-base-0">
+        <form id="rename-item-form" onSubmit={handleSubmit} className="p-3.5 space-y-2.5 bg-base-0 flex-1 overflow-y-auto">
           {/* Current Path Info */}
           <div className="space-y-1">
             <label className="text-[10.5px] font-semibold text-text-muted block uppercase tracking-wider">
@@ -205,31 +205,32 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
               <span className="truncate">{error}</span>
             </div>
           )}
-
-          {/* Slim Footer Actions */}
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-border mt-0.5 min-h-[38px]">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={requestClose}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-
-            <Button
-              type="submit"
-              variant="coral"
-              size="sm"
-              disabled={isSubmitting || !cleanNewPath || cleanNewPath === cleanOldPath}
-              isLoading={isSubmitting}
-              rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
-            >
-              Rename
-            </Button>
-          </div>
         </form>
+
+        {/* Pinned Bottom Footer Actions */}
+        <div className="flex items-center justify-end gap-2 px-3.5 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={requestClose}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="submit"
+            form="rename-item-form"
+            variant="coral"
+            size="sm"
+            disabled={isSubmitting || !cleanNewPath || cleanNewPath === cleanOldPath}
+            isLoading={isSubmitting}
+            rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
+          >
+            Rename
+          </Button>
+        </div>
       </div>
 
       {/* Unsaved Changes Confirmation Dialog */}

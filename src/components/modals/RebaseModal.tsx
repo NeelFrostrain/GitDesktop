@@ -163,7 +163,7 @@ export const RebaseModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleExecuteRebase} className="flex-1 flex flex-col min-h-0 p-5 space-y-4">
+        <form id="rebase-form" onSubmit={handleExecuteRebase} className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden">
           {/* Target Branch Selector */}
           <div className="flex items-center gap-3 p-3.5 bg-base-2 border border-border rounded-sm">
             <GitBranch className="w-4 h-4 text-emerald-400 flex-shrink-0" />
@@ -247,31 +247,32 @@ export const RebaseModal: React.FC = () => {
               ))
             )}
           </div>
-
-          {/* Modal Footer Controls */}
-          <div className="flex items-center justify-end gap-2 px-3.5 py-2 border-t border-border bg-base-1/70 shrink-0 select-none">
-            <button
-              type="button"
-              onClick={() => setIsRebaseModalOpen(false)}
-              disabled={isSubmitting}
-              className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
-            >
-              {isSubmitting ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Play className="w-3.5 h-3.5 fill-current" />
-              )}
-              <span>{isSubmitting ? 'Executing Plan...' : 'Execute Rebase Plan'}</span>
-            </button>
-          </div>
         </form>
+
+        {/* Pinned Bottom Footer Controls */}
+        <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-border bg-base-1 shrink-0 select-none">
+          <button
+            type="button"
+            onClick={() => setIsRebaseModalOpen(false)}
+            disabled={isSubmitting}
+            className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="rebase-form"
+            disabled={isSubmitting}
+            className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current" />
+            )}
+            <span>{isSubmitting ? 'Executing Plan...' : 'Execute Rebase Plan'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

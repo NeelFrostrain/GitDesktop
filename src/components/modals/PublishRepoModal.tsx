@@ -48,6 +48,8 @@ export const PublishRepoModal: React.FC = () => {
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(true);
   const [selectedNamespaceId, setSelectedNamespaceId] = useState<string>('personal');
+  const [isCustomWorkspace, setIsCustomWorkspace] = useState(false);
+  const [customWorkspaceSlug, setCustomWorkspaceSlug] = useState('');
   const [namespaces, setNamespaces] = useState<NamespaceOption[]>([]);
   const [isLoadingNamespaces, setIsLoadingNamespaces] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
@@ -280,13 +282,19 @@ export const PublishRepoModal: React.FC = () => {
           `Publishing repository '${name.trim()}' to ${currentAccount?.provider || 'remote'}...`
         );
 
+      const effectiveNamespace = isCustomWorkspace
+        ? customWorkspaceSlug.trim() || null
+        : selectedNamespaceId !== 'personal'
+        ? selectedNamespaceId
+        : null;
+
       const result = await GitService.publishRepository({
         repoPath: activeRepoPath,
         accountId: selectedAccountId,
         name: name.trim(),
         description: description.trim() || null,
         isPrivate,
-        namespaceId: selectedNamespaceId !== 'personal' ? selectedNamespaceId : null,
+        namespaceId: effectiveNamespace,
       });
 
       useLogStore
@@ -382,7 +390,8 @@ export const PublishRepoModal: React.FC = () => {
             </button>
           </div>
         ) : (
-          <form onSubmit={handlePublish} className="p-4 sm:p-5 space-y-4 overflow-y-auto">
+          <>
+            <form id="publish-repo-form" onSubmit={handlePublish} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
             {localError && (
               <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm space-y-2 text-xs text-git-removed animate-in fade-in">
                 <div className="flex items-start gap-2">
@@ -617,128 +626,180 @@ export const PublishRepoModal: React.FC = () => {
                   <Building2 className="w-3 h-3 text-text-muted" />
                   <span>{getNamespaceLabel()}</span>
                 </label>
-                {isLoadingNamespaces && (
+                {isLoadingNamespaces ? (
                   <span className="text-[10px] text-text-muted flex items-center gap-1 font-normal">
                     <Loader2 className="w-2.5 h-2.5 animate-spin" />
                     <span>Loading...</span>
                   </span>
+                ) : isCustomWorkspace ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomWorkspace(false)}
+                    className="text-[10.5px] text-commito-coral hover:text-commito-coralLight font-medium cursor-pointer"
+                  >
+                    Select from list
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNamespaceDropdownOpen(false);
+                      setIsCustomWorkspace(true);
+                    }}
+                    className="text-[10.5px] text-text-muted hover:text-commito-coral font-medium cursor-pointer"
+                  >
+                    Custom workspace...
+                  </button>
                 )}
               </div>
 
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isPublishing && !isLoadingNamespaces) {
-                      setIsAccountDropdownOpen(false);
-                      setIsNamespaceDropdownOpen(!isNamespaceDropdownOpen);
-                    }
-                  }}
-                  disabled={isPublishing || isLoadingNamespaces}
-                  className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
-                    isNamespaceDropdownOpen
-                      ? 'border-commito-coral ring-1 ring-commito-coral/40'
-                      : 'border-border hover:border-border-strong hover:bg-base-1/90'
-                  } ${isLoadingNamespaces ? 'opacity-70 cursor-wait' : ''}`}
-                >
-                  <div className="flex items-center gap-2 truncate min-w-0">
-                    {selectedNamespace?.avatar_url ? (
-                      <img
-                        src={selectedNamespace.avatar_url}
-                        alt=""
-                        className="w-4 h-4 rounded-xs shrink-0 object-cover"
-                      />
-                    ) : selectedNamespace?.kind === 'personal' ? (
-                      <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                    ) : (
-                      <Users className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                    )}
-                    <span className="font-medium text-text-primary truncate">
-                      {selectedNamespace?.name || 'Select organization...'}
-                    </span>
-                    {selectedNamespace?.kind && selectedNamespace.kind !== 'personal' && (
-                      <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
-                        {selectedNamespace.kind}
-                      </span>
-                    )}
-                  </div>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
-                      isNamespaceDropdownOpen ? 'rotate-180 text-commito-coral' : ''
-                    }`}
+              {isCustomWorkspace ? (
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    placeholder="e.g. your-workspace-slug"
+                    value={customWorkspaceSlug}
+                    onChange={(e) => setCustomWorkspaceSlug(e.target.value)}
+                    disabled={isPublishing}
+                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs"
                   />
-                </button>
+                  <p className="text-[10.5px] text-text-muted">
+                    Enter the exact Bitbucket workspace slug identifier from bitbucket.org/&lt;workspace&gt;.
+                  </p>
+                </div>
+              ) : (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isPublishing && !isLoadingNamespaces) {
+                        setIsAccountDropdownOpen(false);
+                        setIsNamespaceDropdownOpen(!isNamespaceDropdownOpen);
+                      }
+                    }}
+                    disabled={isPublishing || isLoadingNamespaces}
+                    className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
+                      isNamespaceDropdownOpen
+                        ? 'border-commito-coral ring-1 ring-commito-coral/40'
+                        : 'border-border hover:border-border-strong hover:bg-base-1/90'
+                    } ${isLoadingNamespaces ? 'opacity-70 cursor-wait' : ''}`}
+                  >
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                      {selectedNamespace?.avatar_url ? (
+                        <img
+                          src={selectedNamespace.avatar_url}
+                          alt=""
+                          className="w-4 h-4 rounded-xs shrink-0 object-cover"
+                        />
+                      ) : selectedNamespace?.kind === 'personal' ? (
+                        <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                      ) : (
+                        <Users className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                      )}
+                      <span className="font-medium text-text-primary truncate">
+                        {selectedNamespace?.name || 'Select organization...'}
+                      </span>
+                      {selectedNamespace?.kind && selectedNamespace.kind !== 'personal' && (
+                        <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
+                          {selectedNamespace.kind}
+                        </span>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
+                        isNamespaceDropdownOpen ? 'rotate-180 text-commito-coral' : ''
+                      }`}
+                    />
+                  </button>
 
-                {/* Organization Dropdown Menu */}
-                {isNamespaceDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
-                    {namespaces.map((ns) => {
-                      const isSelected = selectedNamespaceId === ns.id;
-                      return (
-                        <button
-                          key={ns.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedNamespaceId(ns.id);
-                            setIsNamespaceDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-commito-coral/15 text-commito-coral font-bold'
-                              : 'hover:bg-base-1 text-text-primary'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
-                            {ns.avatar_url ? (
-                              <img
-                                src={ns.avatar_url}
-                                alt=""
-                                className="w-4.5 h-4.5 rounded-xs shrink-0 object-cover"
-                              />
-                            ) : ns.kind === 'personal' ? (
-                              <User className="w-4 h-4 text-text-muted shrink-0" />
-                            ) : (
-                              <Users className="w-4 h-4 text-text-muted shrink-0" />
-                            )}
-                            <div className="truncate min-w-0">
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span className="font-semibold truncate">{ns.name}</span>
-                                {ns.kind && ns.kind !== 'personal' && (
-                                  <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
-                                    {ns.kind}
-                                  </span>
+                  {/* Organization Dropdown Menu */}
+                  {isNamespaceDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+                      {namespaces.map((ns) => {
+                        const isSelected = selectedNamespaceId === ns.id;
+                        return (
+                          <button
+                            key={ns.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedNamespaceId(ns.id);
+                              setIsNamespaceDropdownOpen(false);
+                            }}
+                            className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
+                              isSelected
+                                ? 'bg-commito-coral/15 text-commito-coral font-bold'
+                                : 'hover:bg-base-1 text-text-primary'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
+                              {ns.avatar_url ? (
+                                <img
+                                  src={ns.avatar_url}
+                                  alt=""
+                                  className="w-4.5 h-4.5 rounded-xs shrink-0 object-cover"
+                                />
+                              ) : ns.kind === 'personal' ? (
+                                <User className="w-4 h-4 text-text-muted shrink-0" />
+                              ) : (
+                                <Users className="w-4 h-4 text-text-muted shrink-0" />
+                              )}
+                              <div className="truncate min-w-0">
+                                <div className="flex items-center gap-1.5 truncate">
+                                  <span className="font-semibold truncate">{ns.name}</span>
+                                  {ns.kind && ns.kind !== 'personal' && (
+                                    <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
+                                      {ns.kind}
+                                    </span>
+                                  )}
+                                </div>
+                                {ns.description && (
+                                  <div className="text-[10.5px] text-text-muted truncate">
+                                    {ns.description}
+                                  </div>
                                 )}
                               </div>
-                              {ns.description && (
-                                <div className="text-[10.5px] text-text-muted truncate">
-                                  {ns.description}
-                                </div>
-                              )}
                             </div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                            {isSelected && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
+                          </button>
+                        );
+                      })}
+
+                      <div className="border-t border-border/70 my-1" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsNamespaceDropdownOpen(false);
+                          setIsCustomWorkspace(true);
+                        }}
+                        className="w-full px-3 py-1.5 text-left text-[11px] text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-semibold"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Enter Custom Workspace Slug...</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-3.5 border-t border-border shrink-0 select-none">
+            </form>
+
+            {/* Pinned Bottom Footer Actions */}
+            <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-base-1 border-t border-border shrink-0 select-none">
               <button
                 type="button"
                 onClick={() => setIsPublishRepoModalOpen(false)}
                 disabled={isPublishing}
-                className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
+                className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                form="publish-repo-form"
                 disabled={!isValidName || isPublishing}
-                className={`h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
+                className={`h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
                   isValidName && !isPublishing
                     ? 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98'
                     : 'bg-base-2 text-text-muted border border-border cursor-not-allowed opacity-60'
@@ -752,7 +813,7 @@ export const PublishRepoModal: React.FC = () => {
                 <span>{isPublishing ? 'Publishing...' : 'Publish Repository'}</span>
               </button>
             </div>
-          </form>
+          </>
         )}
       </div>
     </div>,
