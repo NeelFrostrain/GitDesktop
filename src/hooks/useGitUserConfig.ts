@@ -313,8 +313,15 @@ export function useGitUserConfig() {
     setPendingCommitData(null);
   };
 
+  const activeRepoName = activeRepoPath
+    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || null
+    : null;
+
   return {
     isUserConfigModalOpen,
+    activeRepoPath,
+    activeRepoName,
+    selectedProvider,
     name,
     setName,
     email,

@@ -36,6 +36,8 @@ pub struct RepoStatus {
     pub files: Vec<FileStatus>,
     pub is_clean: bool,
     pub has_conflicts: bool,
+    pub has_remote: bool,
+    pub remote_url: Option<String>,
 }
 
 pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
@@ -62,6 +64,36 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
 
     // Calculate ahead/behind counts if tracking branch exists
     let (ahead, behind) = get_ahead_behind(&repo, &current_branch).unwrap_or((0, 0));
+
+    // Check if origin remote is configured
+    let has_remote = silent_git_command()
+        .args(["remote", "get-url", "origin"])
+        .current_dir(path)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    let remote_url = if has_remote {
+        silent_git_command()
+            .args(["remote", "get-url", "origin"])
+            .current_dir(path)
+            .output()
+            .ok()
+            .and_then(|o| {
+                if o.status.success() {
+                    let u = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                    if !u.is_empty() {
+                        Some(u)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+    } else {
+        None
+    };
 
     // Get status list
     let mut opts = StatusOptions::new();
@@ -129,6 +161,8 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
         files,
         is_clean,
         has_conflicts,
+        has_remote,
+        remote_url,
     })
 }
 

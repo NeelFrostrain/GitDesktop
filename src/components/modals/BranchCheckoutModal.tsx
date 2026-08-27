@@ -133,35 +133,37 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-git-modified-bg border-b border-git-modified/40 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-git-modified-bg border border-git-modified/40 text-git-modified flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-git-modified-bg border border-git-modified/40 text-git-modified flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary leading-tight">
-                Uncommitted Changes Detected
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                Switching branch from <span className="font-mono text-git-modified">{currentBranch}</span> to{' '}
-                <span className="font-mono text-commito-coral">{targetBranch}</span>
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
+                Uncommitted Changes
+              </h3>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                {currentBranch} → {targetBranch}
+              </span>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+            disabled={isProcessing}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Content Body with 3 Action Choices */}
-        <div className="p-5 space-y-3">
+        <div className="p-4 space-y-3 overflow-y-auto">
           <p className="text-xs text-text-secondary">
             You have <span className="font-bold text-text-primary">{uncommittedCount}</span> uncommitted file change
-            {uncommittedCount === 1 ? '' : 's'}. Choose how you would like to handle them before switching branches:
+            {uncommittedCount === 1 ? '' : 's'}. Choose how to handle them:
           </p>
 
           {/* Option 1: Bring Changes */}
@@ -169,9 +171,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer"
+            className="w-full p-3 bg-base-2 hover:bg-base-3 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
           >
-            <div className="w-7 h-7 rounded bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <ArrowRightLeft className="w-3.5 h-3.5" />
             </div>
             <div>
@@ -192,9 +194,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleLeaveChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-2 hover:bg-base-3 border border-border hover:border-text-muted rounded-sm text-left transition flex items-start gap-3 group cursor-pointer"
+            className="w-full p-3 bg-base-2 hover:bg-base-3 border border-border hover:border-text-muted rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
           >
-            <div className="w-7 h-7 rounded bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded bg-gitlab-blue/15 border border-gitlab-blue/30 text-gitlab-blue flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Archive className="w-3.5 h-3.5" />
             </div>
             <div>
@@ -212,9 +214,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleForceCheckout}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer"
+            className="w-full p-3 bg-base-2 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-2xs"
           >
-            <div className="w-7 h-7 rounded bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center flex-shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-6 h-6 rounded bg-git-removed-bg border border-git-removed/40 text-git-removed flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <Trash2 className="w-3.5 h-3.5" />
             </div>
             <div>
@@ -229,10 +231,10 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3 bg-base-0 border-t border-border flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2 border-t border-border bg-base-1/70 shrink-0 font-sans select-none">
           <div className="text-[11px] text-text-muted">
             {isProcessing && (
-              <span className="flex items-center gap-1 text-commito-coral">
+              <span className="flex items-center gap-1.5 text-commito-coral font-medium">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 Processing checkout...
               </span>
@@ -242,7 +244,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={onClose}
             disabled={isProcessing}
-            className="px-4 py-1.5 bg-base-2 hover:bg-base-3 border border-border rounded text-xs font-semibold text-text-secondary transition cursor-pointer"
+            className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
           >
             Cancel
           </button>

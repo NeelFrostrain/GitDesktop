@@ -6,10 +6,8 @@ import { SystemService } from '../../services/system/systemService';
 import { UserAvatar } from '../common/UserAvatar';
 import { RepoList } from '../home/RepoList';
 import { AccountsWidget } from '../home/AccountsWidget';
-import { Button } from '../common/Button';
 import {
   FolderGit2,
-  FileEdit,
   Pin,
   PlusSquare,
   DownloadCloud,
@@ -55,109 +53,132 @@ export const HomeDashboard: React.FC = () => {
   return (
     <div className="flex-1 w-full bg-base-0 overflow-y-auto select-none font-sans">
       {/* 1. Hero & Header Workspace Overview */}
-      <div className="px-6 py-5 border-b border-border bg-base-1/50 flex items-center justify-between gap-4 flex-wrap flex-shrink-0">
+      <div className="px-5 py-3 border-b border-border/80 bg-base-0/90 backdrop-blur-xs flex items-center justify-between gap-4 flex-wrap shrink-0">
         {/* Left: User Identity & Greeting */}
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="relative flex-shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative shrink-0">
             <UserAvatar
               url={user?.avatar_url}
               name={user?.name || user?.username}
               provider={user?.provider}
-              className="w-10 h-10 rounded-full ring-1 ring-border shadow-xs"
-              iconClassName="w-5 h-5"
+              className="w-8 h-8 rounded-full ring-1 ring-border/70 shadow-xs"
+              iconClassName="w-4 h-4"
             />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-base-1 absolute -bottom-0.5 -right-0.5" />
+            <span
+              className="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-base-0 absolute -bottom-0.5 -right-0.5 shadow-2xs"
+              title="Active Session"
+            />
           </div>
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-sm font-bold text-text-primary/95 leading-tight">
-                {user ? `${getGreeting()}, ${user.name || user.username}` : 'Welcome to Git Desktop'}
-              </h1>
-            </div>
-            <p className="text-xs text-text-muted mt-0.5 leading-none">
+          <div className="min-w-0 flex flex-col justify-center">
+            <h1 className="text-xs font-semibold text-text-primary tracking-tight leading-tight truncate">
+              {user ? (
+                <>
+                  <span className="text-text-muted font-normal">{getGreeting()}, </span>
+                  <span className="font-semibold text-text-primary">{user.name || user.username}</span>
+                </>
+              ) : (
+                'Welcome to Git Desktop'
+              )}
+            </h1>
+            <p className="text-[11px] text-text-muted leading-tight mt-0.5 truncate">
               {user
-                ? 'Manage your repositories, inspect active working trees, and sync latest changes.'
-                : 'Connect an account or open a repository to get started.'}
+                ? 'Manage repositories, inspect active working trees, and sync changes.'
+                : 'Connect an account or open a local repository to get started.'}
             </p>
           </div>
         </div>
 
-        {/* Right: Primary Fast Action Buttons & Metric Chips */}
-        <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Action Buttons */}
+        {/* Right: Primary Action, Secondary Actions, and Streamlined Stats Strip */}
+        <div className="flex items-center gap-3.5 flex-wrap">
+          {/* Action Button Group */}
           <div className="flex items-center gap-1.5">
-            <Button
+            {/* Primary Action Button */}
+            <button
               type="button"
-              variant="coral"
-              size="sm"
               onClick={() => setIsCreateRepoModalOpen(true)}
-              leftIcon={<PlusSquare className="w-3.5 h-3.5" />}
+              className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-commito-coral/50"
             >
-              New Repo
-            </Button>
-            <Button
+              <PlusSquare className="w-3.5 h-3.5" />
+              <span>New Repo</span>
+            </button>
+
+            {/* Secondary Actions */}
+            <button
               type="button"
-              variant="secondary"
-              size="sm"
               onClick={() => setIsCloneRepoModalOpen(true)}
-              leftIcon={<DownloadCloud className="w-3.5 h-3.5" />}
+              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
+              title="Clone from URL or cloud provider"
             >
-              Clone
-            </Button>
-            <Button
+              <DownloadCloud className="w-3.5 h-3.5 text-text-muted" />
+              <span>Clone</span>
+            </button>
+            <button
               type="button"
-              variant="secondary"
-              size="sm"
               onClick={handleOpenFolderDialog}
-              leftIcon={<FolderOpen className="w-3.5 h-3.5" />}
+              className="h-7.5 px-2.5 bg-base-1/80 hover:bg-base-2 hover:text-text-primary active:bg-base-2/80 border border-border/80 hover:border-border-strong text-text-secondary rounded-md text-xs font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
+              title="Open local Git repository folder"
             >
-              Open Local
-            </Button>
+              <FolderOpen className="w-3.5 h-3.5 text-text-muted" />
+              <span>Open Local</span>
+            </button>
           </div>
 
-          {/* Vertical Divider */}
-          <div className="hidden sm:block h-5 w-px bg-border my-auto" />
+          {/* Subtle Vertical Divider */}
+          <div className="hidden md:block h-4.5 w-px bg-border/80 my-auto" />
 
-          {/* Metric Badges */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <div
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-base-1 border border-border text-[11px] font-mono text-text-secondary shadow-2xs"
-              title="Total active repositories"
-            >
-              <FolderGit2 className="w-3 h-3 text-text-muted" />
-              <span>{metrics.total} Repos</span>
+          {/* Streamlined Stats Indicator Strip */}
+          <div className="flex items-center gap-2 bg-base-1/60 border border-border/70 rounded-md px-2.5 py-1 text-xs text-text-muted shadow-2xs select-none">
+            {/* Total Repos */}
+            <div className="flex items-center gap-1.5 text-[11px] font-sans font-medium text-text-secondary" title="Total active repositories">
+              <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
+              <span className="font-semibold text-text-primary">{metrics.total}</span>
+              <span className="text-text-muted hidden sm:inline">Repos</span>
             </div>
 
+            {/* Changed Count (Strong visual emphasis for actionable modifications) */}
             {metrics.dirtyCount > 0 && (
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-git-modified-bg border border-git-modified/30 text-[11px] font-mono text-git-modified font-semibold shadow-2xs"
-                title="Repositories with uncommitted modifications"
-              >
-                <FileEdit className="w-3 h-3" />
-                <span>{metrics.dirtyCount} changed</span>
-              </div>
+              <>
+                <span className="text-border/80 text-[10px] select-none">•</span>
+                <div
+                  className="flex items-center gap-1 text-[11px] font-sans font-semibold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-xs border border-amber-500/25 shadow-2xs"
+                  title="Repositories with uncommitted modifications"
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                  <span>{metrics.dirtyCount} changed</span>
+                </div>
+              </>
             )}
 
+            {/* Pinned Repos */}
             {metrics.pinned > 0 && (
-              <div
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-base-1 border border-border text-[11px] font-mono text-commito-coral shadow-2xs"
-                title="Pinned favorites"
-              >
-                <Pin className="w-3 h-3 fill-commito-coral/30" />
-                <span>{metrics.pinned} Pinned</span>
-              </div>
+              <>
+                <span className="text-border/80 text-[10px] select-none">•</span>
+                <div
+                  className="flex items-center gap-1 text-[11px] font-sans font-medium text-commito-coral"
+                  title="Pinned favorites"
+                >
+                  <Pin className="w-3 h-3 fill-commito-coral/30 text-commito-coral shrink-0" />
+                  <span className="font-semibold">{metrics.pinned}</span>
+                  <span className="text-text-muted hidden sm:inline">Pinned</span>
+                </div>
+              </>
             )}
 
+            {/* Accounts */}
             {accounts.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setIsUserConfigModalOpen(true)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-[11px] font-mono text-text-secondary transition cursor-pointer shadow-2xs"
-                title="Manage accounts and Git identities"
-              >
-                <Users className="w-3 h-3 text-text-muted" />
-                <span>{accounts.length} Acc</span>
-              </button>
+              <>
+                <span className="text-border/80 text-[10px] select-none">•</span>
+                <button
+                  type="button"
+                  onClick={() => setIsUserConfigModalOpen(true)}
+                  className="flex items-center gap-1 text-[11px] font-sans text-text-secondary hover:text-text-primary transition cursor-pointer"
+                  title="Manage accounts and Git identities"
+                >
+                  <Users className="w-3 h-3 text-text-muted shrink-0" />
+                  <span className="font-semibold">{accounts.length}</span>
+                  <span className="text-text-muted hidden sm:inline">Acc</span>
+                </button>
+              </>
             )}
           </div>
         </div>

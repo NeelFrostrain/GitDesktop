@@ -85,18 +85,28 @@ export const SigningSettings: React.FC = () => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs select-none">
       <div className="w-full max-w-lg bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="h-12 bg-base-0 border-b border-border px-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-git-added" />
-            <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider">
-              Commit Signing & Verification
-            </h2>
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <ShieldCheck className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
+                Commit Signing & Verification
+              </h3>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                {method === 'gpg' ? 'GPG' : 'SSH'}
+              </span>
+            </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsSigningSettingsOpen(false)}
             className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -275,21 +285,22 @@ export const SigningSettings: React.FC = () => {
           )}
 
           {/* Footer Buttons */}
-          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-border select-none">
             <button
               type="button"
               onClick={() => setIsSigningSettingsOpen(false)}
-              className="px-3.5 py-1.5 bg-base-3 hover:bg-base-1 border border-border rounded-sm text-xs text-text-secondary font-medium transition cursor-pointer"
+              disabled={isLoading}
+              className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
             >
-              Close
+              Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer"
+              className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
             >
               {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              <span>Save Configuration</span>
+              <span>{isLoading ? 'Saving...' : 'Save Configuration'}</span>
             </button>
           </div>
         </form>

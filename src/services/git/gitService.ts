@@ -485,4 +485,32 @@ export class GitService {
       headBranch,
     });
   }
+
+  /**
+   * Lists available namespaces/organizations/groups for a provider account.
+   */
+  static async listNamespaces(accountId: string): Promise<import('../../types/git').NamespaceOption[]> {
+    return invoke<import('../../types/git').NamespaceOption[]>('accounts_list_namespaces', { accountId });
+  }
+
+  /**
+   * Publishes a local repository to a remote provider (GitHub, GitLab, or Bitbucket).
+   */
+  static async publishRepository(params: {
+    repoPath: string;
+    accountId: string;
+    name: string;
+    description?: string | null;
+    isPrivate: boolean;
+    namespaceId?: string | null;
+  }): Promise<import('../../types/git').PublishResult> {
+    return invoke<import('../../types/git').PublishResult>('repo_publish', {
+      repoPath: params.repoPath,
+      accountId: params.accountId,
+      name: params.name,
+      description: params.description || null,
+      isPrivate: params.isPrivate,
+      namespaceId: params.namespaceId || null,
+    });
+  }
 }

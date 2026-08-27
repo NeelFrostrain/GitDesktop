@@ -10,6 +10,7 @@ import { getErrorMessage } from '../shared/utils/errorUtils';
  */
 export type GitSyncStatus =
   | 'loading'
+  | 'no-remote'    // No remote origin configured -> Publish Repository
   | 'up-to-date'
   | 'ahead'       // Local has commits remote doesn't
   | 'behind'      // Remote has commits local doesn't
@@ -39,6 +40,9 @@ export function deriveSyncStatus(status: RepoStatus): GitSyncStatus {
   const branch = status.current_branch;
   if (branch === 'HEAD' || branch.startsWith('(HEAD detached')) {
     return 'detached';
+  }
+  if (status.has_remote === false) {
+    return 'no-remote';
   }
   const { ahead, behind } = status;
   if (ahead > 0 && behind > 0) return 'diverged';
@@ -122,13 +126,33 @@ export function useRepositorySync() {
         'diverged': `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
         'up-to-date': 'Branch is up to date with remote',
         'no-upstream': 'Branch has no upstream — Publish to push',
+        'no-remote': 'No remote configured — Publish to share',
         'detached': 'HEAD is detached',
         'loading': '',
       };
       log().addLog('info', 'Git', labelMap[derived] || 'Repository state updated');
     } catch (error: unknown) {
       const message = getErrorMessage(error);
-      if (message.includes('Authentication') || message.includes('Access Denied')) {
+      const isRemoteNotFound =
+        message.toLowerCase().includes('not found') ||
+        message.toLowerCase().includes('deleted') ||
+        message.toLowerCase().includes('could not read from remote') ||
+        message.toLowerCase().includes('does not appear to be a git repository');
+
+      if (isRemoteNotFound) {
+        if (status) {
+          setStatus({
+            ...status,
+            has_remote: false,
+            remote_url: null,
+          });
+        }
+        log().addLog(
+          'warning',
+          'Remote',
+          'Remote repository was not found on server (it may have been deleted). Remote unlinked — you can now Publish to link a new remote.'
+        );
+      } else if (message.includes('Authentication') || message.includes('Access Denied')) {
         setError({ code: 'AUTH_ERROR', message });
       } else {
         log().addLog('warning', 'Git', `Unable to refresh remote state: ${message}`);
@@ -137,7 +161,7 @@ export function useRepositorySync() {
       setIsFetching(false);
       refreshingRef.current = false;
     }
-  }, [activeRepoPath, setStatus, setError, setIsFetching, log]);
+  }, [activeRepoPath, status, setStatus, setError, setIsFetching, log]);
 
   // ── Push ──────────────────────────────────────────────────────────────────
   const executePush = useCallback(async () => {
@@ -227,6 +251,9 @@ export function useRepositorySync() {
   // ── Main action dispatcher ─────────────────────────────────────────────────
   const executeAction = useCallback(async () => {
     switch (syncInfo.syncStatus) {
+      case 'no-remote':
+        useGitStore.getState().setIsPublishRepoModalOpen(true);
+        break;
       case 'ahead':
       case 'no-upstream':
         await executePush();

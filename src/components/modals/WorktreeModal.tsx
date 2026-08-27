@@ -92,25 +92,28 @@ export const WorktreeModal: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-gitlab-teal/20 border border-gitlab-teal/40 text-gitlab-teal flex items-center justify-center">
-              <Layers className="w-4 h-4" />
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <Layers className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary leading-tight">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
                 Git Worktrees Manager
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                Manage multiple linked working trees for parallel branch checkouts
-              </p>
+              </h3>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                {worktrees.length} active worktree{worktrees.length === 1 ? '' : 's'}
+              </span>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsWorktreeModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -207,6 +210,7 @@ export const WorktreeModal: React.FC = () => {
                     </button>
                     {!wt.path.endsWith('.git') && (
                       <button
+                        type="button"
                         onClick={() => handleRemoveWorktree(wt.path)}
                         className="p-1.5 text-text-muted hover:text-git-removed transition cursor-pointer"
                         title="Remove worktree"
@@ -219,6 +223,17 @@ export const WorktreeModal: React.FC = () => {
               ))}
             </div>
           </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex items-center justify-end px-3.5 py-2 border-t border-border bg-base-1/70 shrink-0 font-sans select-none">
+          <button
+            type="button"
+            onClick={() => setIsWorktreeModalOpen(false)}
+            className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs"
+          >
+            Close
+          </button>
         </div>
       </div>
     </div>

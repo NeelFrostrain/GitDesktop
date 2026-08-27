@@ -64,6 +64,22 @@ export interface RepoStatus {
   files: FileStatus[];
   is_clean: boolean;
   has_conflicts: boolean;
+  has_remote?: boolean;
+  remote_url?: string | null;
+}
+
+export interface NamespaceOption {
+  id: string;
+  name: string;
+  description?: string | null;
+  kind: string; // 'personal' | 'org' | 'group' | 'workspace'
+  avatar_url?: string | null;
+}
+
+export interface PublishResult {
+  remote_url: string;
+  web_url: string;
+  branch: string;
 }
 
 /**

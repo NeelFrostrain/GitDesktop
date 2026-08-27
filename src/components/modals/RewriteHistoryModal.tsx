@@ -7,6 +7,7 @@ import {
   GitMerge,
   Info,
   Play,
+  Loader2,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -120,31 +121,39 @@ export const RewriteHistoryModal: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
               {pendingHistoryOp.type === 'reorder' ? (
-                <ArrowUpDown className="w-4 h-4" />
+                <ArrowUpDown className="w-3.5 h-3.5" />
               ) : (
-                <GitMerge className="w-4 h-4" />
+                <GitMerge className="w-3.5 h-3.5" />
               )}
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary leading-tight">
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
                 {pendingHistoryOp.type === 'reorder'
                   ? 'Reorder Commit History'
                   : 'Merge Commits'}
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                Rewriting Git history on branch <span className="font-mono text-commito-coral font-bold">{status?.current_branch || 'HEAD'}</span>
-              </p>
+              </h3>
+              {status?.current_branch && (
+                <>
+                  <span className="text-border hidden sm:inline">•</span>
+                  <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                    {status.current_branch}
+                  </span>
+                </>
+              )}
             </div>
           </div>
           <button
+            type="button"
             onClick={handleClose}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+            disabled={isSubmitting}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -248,24 +257,29 @@ export const RewriteHistoryModal: React.FC = () => {
           )}
 
           {/* Footer Controls */}
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
+          <div className="flex items-center justify-end gap-2 px-3.5 py-2 border-t border-border bg-base-1/70 shrink-0 select-none">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
+              disabled={isSubmitting}
+              className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
-              className={`px-5 py-2 rounded-sm text-xs font-bold flex items-center gap-2 transition shadow-xs ${
+              className={`h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
                 hasUncommittedChanges
-                  ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed'
-                  : 'bg-commito-coral hover:bg-commito-coralLight text-white cursor-pointer'
+                  ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed opacity-60'
+                  : 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60'
               }`}
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
+              {isSubmitting ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Play className="w-3.5 h-3.5 fill-current" />
+              )}
               <span>
                 {isSubmitting
                   ? 'Rewriting History...'

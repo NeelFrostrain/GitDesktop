@@ -116,6 +116,14 @@ function getButtonConfig(
         className: primaryCls,
         disabled: false,
       };
+    case 'no-remote':
+      return {
+        icon: <Upload className="w-3.5 h-3.5" />,
+        label: 'Publish repository',
+        tooltip: 'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
+        className: primaryCls,
+        disabled: false,
+      };
     case 'no-upstream':
       return {
         icon: <Upload className="w-3.5 h-3.5" />,

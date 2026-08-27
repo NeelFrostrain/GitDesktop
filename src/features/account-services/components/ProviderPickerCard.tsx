@@ -300,7 +300,7 @@ export const ProviderPickerCard: React.FC = () => {
       </div>
 
       {/* Security Footer Note */}
-      <div className="flex items-center justify-center gap-2 py-2 px-3 bg-base-1/50 border border-border/60 rounded-sm text-[10.5px] text-text-muted text-center shadow-2xs">
+      <div className="flex items-start justify-center gap-2 py-2 px-3 bg-base-1/50 border border-border/60 rounded-sm text-[10.5px] text-text-muted text-center shadow-2xs">
         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
         <span>
           Secure OAuth 2.0 PKCE authentication in your default browser — credentials stored securely in OS keyring.

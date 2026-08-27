@@ -13,6 +13,7 @@ use commands::auth_commands::*;
 use commands::git_commands::*;
 use commands::git_runtime::*;
 use commands::logs::*;
+use commands::publish_commands::*;
 use commands::remotes::*;
 use commands::repo_commands::*;
 use commands::settings::*;
@@ -219,6 +220,8 @@ pub fn run() {
             accounts_remove,
             accounts_start_oauth,
             accounts_exchange_oauth_code,
+            accounts_list_namespaces,
+            repo_publish,
             remotes_list,
             remotes_add,
             remotes_remove,

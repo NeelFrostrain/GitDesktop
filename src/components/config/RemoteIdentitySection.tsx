@@ -1,7 +1,8 @@
 import React, { RefObject } from 'react';
-import { ChevronDown, Check, Unlink, Link } from 'lucide-react';
+import { ChevronDown, Check, Unlink, Plus } from 'lucide-react';
 import { AccountOption } from '../../hooks/useGitUserConfig';
 import { UserAvatar } from '../common/UserAvatar';
+import { useAccountServicesStore } from '../../features/account-services';
 
 interface RemoteIdentitySectionProps {
   selectedSyncAccount: string;
@@ -20,6 +21,8 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
   onToggleDropdown,
   dropdownRef,
 }) => {
+  const { openModalWithTab } = useAccountServicesStore();
+
   const selectedItem =
     accounts.find(
       (a) =>
@@ -35,41 +38,62 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
     onToggleDropdown();
   };
 
-  const getProviderName = (prov: string) => {
-    const p = (prov || '').toLowerCase();
-    if (p === 'github') return 'GitHub';
-    if (p === 'gitlab') return 'GitLab';
-    if (p === 'bitbucket') return 'Bitbucket';
-    if (p === 'custom') return 'Git Identity';
-    return prov;
+  const getProviderBadge = (provider: string) => {
+    const p = (provider || '').toLowerCase();
+    if (p === 'github') {
+      return (
+        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border text-purple-400 bg-purple-950/40 border-purple-800/40 shrink-0">
+          GitHub
+        </span>
+      );
+    }
+    if (p === 'bitbucket') {
+      return (
+        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border text-blue-400 bg-blue-950/40 border-blue-800/40 shrink-0">
+          Bitbucket
+        </span>
+      );
+    }
+    if (p === 'gitlab') {
+      return (
+        <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border text-commito-coral bg-commito-coral/10 border-commito-coral/30 shrink-0">
+          GitLab
+        </span>
+      );
+    }
+    return (
+      <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border text-emerald-400 bg-emerald-950/40 border-emerald-800/40 shrink-0">
+        Custom
+      </span>
+    );
   };
 
   return (
     <div className="space-y-1.5 font-sans select-none">
       <div className="flex items-center justify-between">
         <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
-          Remote Identity
+          Connected Identity Source
         </label>
         {isLinked ? (
           <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-xs text-[9.5px] font-mono font-bold uppercase tracking-wider flex items-center gap-1">
-            <Link className="w-2.5 h-2.5" />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>LINKED</span>
           </span>
         ) : (
           <span className="px-1.5 py-0.2 bg-base-2 text-text-muted border border-border rounded-xs text-[9.5px] font-mono font-medium uppercase tracking-wider">
-            Unlinked / Manual
+            Manual / Unlinked
           </span>
         )}
       </div>
 
-      {/* Selector Card Dropdown */}
+      {/* Account Selector Dropdown Button */}
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
           onClick={onToggleDropdown}
-          className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs"
+          className="w-full h-9 px-3 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none focus:border-commito-coral/60"
         >
-          <div className="flex items-center gap-2 truncate min-w-0">
+          <div className="flex items-center gap-2.5 truncate min-w-0">
             {selectedItem ? (
               <>
                 <UserAvatar
@@ -77,91 +101,114 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
                   name={selectedItem.name || selectedItem.username}
                   email={selectedItem.email || undefined}
                   provider={selectedItem.provider}
-                  className="w-4 h-4 rounded-xs"
-                  iconClassName="w-2.5 h-2.5"
+                  className="w-5 h-5 rounded-xs ring-1 ring-border/60"
+                  iconClassName="w-3 h-3"
                 />
                 <span className="font-bold text-text-primary truncate">
-                  {getProviderName(selectedItem.provider)}: {selectedItem.name || selectedItem.username}
+                  {selectedItem.name || selectedItem.username}
                 </span>
                 {selectedItem.email && (
-                  <span className="text-[11px] text-text-muted font-mono truncate">
+                  <span className="text-[11px] text-text-muted font-mono truncate hidden sm:inline">
                     ({selectedItem.email})
                   </span>
                 )}
+                {getProviderBadge(selectedItem.provider)}
               </>
             ) : (
               <>
-                <Unlink className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                <span className="font-semibold text-text-secondary truncate">Manual / Unlinked Identity</span>
+                <Unlink className="w-4 h-4 text-text-muted shrink-0" />
+                <span className="font-semibold text-text-secondary truncate">
+                  Manual / Unlinked Git Identity
+                </span>
               </>
             )}
           </div>
           <ChevronDown
             className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
-              isDropdownOpen ? 'rotate-180' : ''
+              isDropdownOpen ? 'rotate-180 text-commito-coral' : ''
             }`}
           />
         </button>
 
+        {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute left-0 right-0 top-full mt-1 bg-base-1 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+          <div className="absolute left-0 right-0 top-full mt-1 bg-base-1 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
+            {accounts.map((acc) => {
+              const isSelected = selectedSyncAccount === acc.id || selectedItem?.id === acc.id;
+              return (
+                <button
+                  key={acc.id}
+                  type="button"
+                  onClick={() => handleSelect(acc.id)}
+                  className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
+                    isSelected
+                      ? 'bg-commito-coral/15 text-commito-coral font-bold'
+                      : 'hover:bg-base-2 text-text-primary'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
+                    <UserAvatar
+                      url={acc.avatar_url}
+                      name={acc.name || acc.username}
+                      email={acc.email || undefined}
+                      provider={acc.provider}
+                      className="w-5 h-5 rounded-xs ring-1 ring-border/60 shrink-0"
+                      iconClassName="w-3 h-3"
+                    />
+                    <div className="truncate min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="font-bold truncate">{acc.name || acc.username}</span>
+                        {getProviderBadge(acc.provider)}
+                      </div>
+                      {acc.email && (
+                        <div className="text-[10.5px] text-text-muted font-mono truncate">
+                          {acc.email}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {isSelected && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
+                </button>
+              );
+            })}
+
+            <div className="border-t border-border/70 my-1" />
+
             <button
               type="button"
               onClick={() => handleSelect('custom')}
-              className={`w-full px-2.5 py-1.5 text-left text-xs flex items-center justify-between transition cursor-pointer ${
+              className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
                 selectedSyncAccount === 'custom'
                   ? 'bg-commito-coral/15 text-commito-coral font-bold'
                   : 'hover:bg-base-2 text-text-primary'
               }`}
             >
-              <div className="flex items-center gap-2 truncate">
-                <Unlink className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                <span>Manual / Unlinked Identity</span>
-              </div>
-              {selectedSyncAccount === 'custom' && <Check className="w-3.5 h-3.5 text-commito-coral" />}
-            </button>
-
-            {accounts.map((acc) => (
-              <button
-                key={acc.id}
-                type="button"
-                onClick={() => handleSelect(acc.id)}
-                className={`w-full px-2.5 py-1.5 text-left text-xs flex items-center justify-between transition cursor-pointer ${
-                  selectedSyncAccount === acc.id
-                    ? 'bg-commito-coral/15 text-commito-coral font-bold'
-                    : 'hover:bg-base-2 text-text-primary'
-                }`}
-              >
-                <div className="flex items-center gap-2 truncate">
-                  <UserAvatar
-                    url={acc.avatar_url}
-                    name={acc.name || acc.username}
-                    email={acc.email || undefined}
-                    provider={acc.provider}
-                    className="w-4 h-4 rounded-xs"
-                    iconClassName="w-2.5 h-2.5"
-                  />
-                  <div className="truncate">
-                    <span className="font-bold">
-                      {getProviderName(acc.provider)}: {acc.name || acc.username}
-                    </span>
-                    {acc.email && (
-                      <span className="text-[11px] text-text-muted font-mono ml-1">
-                        ({acc.email})
-                      </span>
-                    )}
+              <div className="flex items-center gap-2.5 truncate">
+                <Unlink className="w-4 h-4 text-text-muted shrink-0" />
+                <div>
+                  <span className="font-semibold text-text-primary">Manual / Unlinked Identity</span>
+                  <div className="text-[10.5px] text-text-muted">
+                    Set a custom Git name and email without cloud sync
                   </div>
                 </div>
-                {selectedSyncAccount === acc.id && <Check className="w-3.5 h-3.5 text-commito-coral" />}
-              </button>
-            ))}
+              </div>
+              {selectedSyncAccount === 'custom' && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                onToggleDropdown();
+                openModalWithTab('add');
+              }}
+              className="w-full px-3 py-1.5 text-left text-[11px] text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-semibold border-t border-border/50 pt-2"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Connect Another Account...</span>
+            </button>
           </div>
         )}
       </div>
-
-      <p className="text-[10.5px] text-text-muted leading-tight">
-        Sync your name, email and avatar from your connected account.
-      </p>
     </div>
   );
 };

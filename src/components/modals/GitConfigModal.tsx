@@ -134,25 +134,29 @@ export const GitConfigModal: React.FC = () => {
     <div className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 select-none font-sans">
       <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col h-[85vh] animate-in fade-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 bg-base-0 border-b border-border flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-sm bg-commito-coral/20 border border-commito-coral/40 text-commito-coral flex items-center justify-center">
-              <Settings className="w-4 h-4" />
+        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+              <Settings className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-text-primary leading-tight">
-                Repository Settings & Git Config
-              </h2>
-              <p className="text-[11px] text-text-muted">
-                Manage .gitignore patterns and repo-scoped git configuration options
-              </p>
+            <div className="flex items-center gap-2 min-w-0">
+              <h3 className="text-xs font-bold text-text-primary leading-none truncate">
+                Git Config & Ignore Rules
+              </h3>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                {activeTab === 'gitignore' ? '.gitignore' : 'Repository Config'}
+              </span>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setIsConfigModalOpen(false)}
-            className="p-1.5 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition cursor-pointer"
+            disabled={isSubmitting}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            title="Close (Esc)"
           >
-            <X className="w-4 h-4" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -212,21 +216,26 @@ export const GitConfigModal: React.FC = () => {
                 />
               </div>
 
-              <div className="pt-2 flex justify-end gap-2">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border select-none">
                 <button
                   type="button"
                   onClick={() => setIsConfigModalOpen(false)}
-                  className="px-4 py-2 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-secondary cursor-pointer"
+                  disabled={isSubmitting}
+                  className="h-8 px-3.5 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-2xs disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold transition shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="h-8 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
                 >
-                  <Save className="w-3.5 h-3.5" />
-                  <span>Save .gitignore</span>
+                  {isSubmitting ? (
+                    <Save className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Save className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isSubmitting ? 'Saving...' : 'Save .gitignore'}</span>
                 </button>
               </div>
             </form>
