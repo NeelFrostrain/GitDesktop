@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
+import { useAccountServicesStore } from '../../features/account-services/store/accountStore';
 
 interface UserAvatarProps {
   url?: string | null;
@@ -70,6 +71,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   provider,
 }) => {
   const { user } = useGitStore();
+  const accounts = useAccountServicesStore((s) => s.accounts);
 
   // If ANY prop is explicitly passed, do not fallback to global active session user
   const isExplicit =
@@ -118,7 +120,35 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       list.push(trimmed);
     }
 
-    // 2. Direct provider avatar CDN (ONLY if an explicit username/handle is provided, never from display name)
+    // 2. Check if this entity's email or name matches any configured/connected provider account
+    const normEmail = targetEmail?.trim().toLowerCase();
+    const normName = targetName?.trim().toLowerCase();
+    const normHandle = targetHandle?.trim().replace(/^@+/, '').toLowerCase();
+
+    if (normEmail || normName || normHandle) {
+      // Find matching account in connected registry
+      const matchedAccount = accounts.find((a) => {
+        if (normEmail && a.commit_email && a.commit_email.toLowerCase() === normEmail) return true;
+        if (normEmail && a.handle && a.handle.toLowerCase() === normEmail) return true;
+        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle) return true;
+        if (normName && a.display_name && a.display_name.toLowerCase() === normName) return true;
+        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName) return true;
+        return false;
+      });
+
+      if (matchedAccount) {
+        if (matchedAccount.avatar_url && matchedAccount.avatar_url.trim()) {
+          list.push(matchedAccount.avatar_url.trim());
+        }
+        if (matchedAccount.provider === 'github' && matchedAccount.handle) {
+          const h = matchedAccount.handle.replace(/^@+/, '');
+          list.push(`https://github.com/${h}.png?size=128`);
+          list.push(`https://avatars.githubusercontent.com/${h}?size=128`);
+        }
+      }
+    }
+
+    // 3. Direct provider avatar CDN (ONLY if an explicit username/handle is provided, never from display name)
     if (targetHandle) {
       const cleanHandle = targetHandle.trim().replace(/^@+/, '');
       if (cleanHandle && !cleanHandle.includes(' ') && /^[a-zA-Z0-9_-]+$/.test(cleanHandle)) {
@@ -129,13 +159,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       }
     }
 
-    // 3. Gravatar fallback if computed
+    // 4. Gravatar fallback if computed
     if (gravatarUrl) {
       list.push(gravatarUrl);
     }
 
-    return list;
-  }, [url, targetHandle, provider, isExplicit, user?.avatar_url, currentProvider, gravatarUrl]);
+    // De-duplicate URLs while preserving priority
+    return Array.from(new Set(list));
+  }, [url, targetHandle, provider, isExplicit, user?.avatar_url, currentProvider, gravatarUrl, targetEmail, targetName, accounts]);
 
   // Reset candidate index when candidate list changes
   useEffect(() => {
