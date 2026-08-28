@@ -1,9 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  X,
-  Users,
-} from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import { useAccountServicesStore } from './store/accountStore';
 import { AccountsTab } from './tabs/AccountsTab';
 import { AddAccountTab } from './tabs/AddAccountTab';
@@ -45,48 +42,46 @@ export const AccountServicesModal: React.FC = () => {
           setIsModalOpen(false);
         }
       }}
-      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none animate-in fade-in duration-150 font-sans"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-150 font-sans"
     >
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-surface-elevated border border-border-subtle rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
       >
         {/* Clean Modal Header */}
-        <div className="px-6 py-4 border-b border-border-subtle bg-surface-subtle/40 flex items-center justify-between shrink-0">
+        <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-md bg-commito-coral/10 border border-commito-coral/20 flex items-center justify-center text-commito-coral shrink-0">
-              <Users className="w-4 h-4" />
+            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+              <Users className="w-3.5 h-3.5" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
               <h2
                 id="account-services-modal-title"
-                className="text-sm font-semibold text-text leading-none tracking-tight"
+                className="text-xs font-bold text-text-primary leading-none"
               >
                 Connected Accounts
               </h2>
               {accounts.length > 0 && (
-                <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-surface border border-border-subtle text-text-muted">
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted">
                   {accounts.length}
                 </span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="p-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
-              title="Close (Esc)"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(false)}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
+            title="Close (Esc)"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Modal Content Body with comfortable 24px padding */}
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* Modal Content Body */}
+        <div className="p-4 overflow-y-auto flex-1 bg-base-0">
           {activeTab === 'accounts' && <AccountsTab />}
           {activeTab === 'add' && <AddAccountTab />}
         </div>
