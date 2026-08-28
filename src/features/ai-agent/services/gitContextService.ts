@@ -1,5 +1,6 @@
 import { GitService } from '../../../services/git/gitService';
 import { GitRepoContext, AgentAttachment } from '../types';
+import { ToonService } from './toonService';
 
 export class GitContextService {
   /**
@@ -120,29 +121,9 @@ export class GitContextService {
   }
 
   /**
-   * Formats repo context into a clean markdown prompt prefix for the system instruction.
+   * Formats repo context into an ultra-low-token TOON (Token-Oriented Object Notation) block for the prompt.
    */
   static formatContextForPrompt(ctx: GitRepoContext): string {
-    return [
-      `### Active Repository Information:`,
-      `- **Repository Name:** \`${ctx.repoName}\``,
-      `- **Directory Path:** \`${ctx.repoPath}\``,
-      `- **Current Branch:** \`${ctx.currentBranch}\` (Ahead: ${ctx.ahead}, Behind: ${ctx.behind})`,
-      `- **Uncommitted Changes:** ${ctx.dirtyFilesCount} modified/untracked files`,
-      ctx.stagedFiles.length > 0
-        ? `- **Staged Files (${ctx.stagedFiles.length}):**\n  ${ctx.stagedFiles.slice(0, 20).map((f) => `\`${f}\``).join(', ')}`
-        : '- **Staged Files:** (none)',
-      ctx.unstagedFiles.length > 0
-        ? `- **Unstaged Changes (${ctx.unstagedFiles.length}):**\n  ${ctx.unstagedFiles.slice(0, 20).map((f) => `\`${f}\``).join(', ')}`
-        : '- **Unstaged Changes:** (clean)',
-      ctx.recentCommits.length > 0
-        ? `- **Recent Commits:**\n` +
-          ctx.recentCommits
-            .map((c) => `  - \`${c.hash}\` ${c.message} (${c.author})`)
-            .join('\n')
-        : '',
-    ]
-      .filter(Boolean)
-      .join('\n');
+    return ToonService.encodeGitContext(ctx);
   }
 }

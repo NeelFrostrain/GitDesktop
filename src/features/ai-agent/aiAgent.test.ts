@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useAiAgentStore } from './store/useAiAgentStore';
 import { GitContextService } from './services/gitContextService';
 import { GeminiAgentService } from './services/geminiAgentService';
+import { ToonService, encodeToon } from './services/toonService';
 
 describe('AI Git Agent Store & Services', () => {
   beforeEach(() => {
@@ -62,7 +63,19 @@ describe('AI Git Agent Store & Services', () => {
     expect(useAiAgentStore.getState().pendingAttachments.length).toBe(0);
   });
 
-  it('formats git repo context into markdown prompt correctly', () => {
+  it('encodes data and arrays into compact TOON format', () => {
+    const tableData = [
+      { id: '1', name: 'Alpha', status: 'open' },
+      { id: '2', name: 'Beta', status: 'closed' },
+    ];
+
+    const encoded = encodeToon(tableData);
+    expect(encoded).toContain('[2]{id,name,status}:');
+    expect(encoded).toContain('1,Alpha,open');
+    expect(encoded).toContain('2,Beta,closed');
+  });
+
+  it('formats git repo context into compact TOON prompt correctly', () => {
     const mockContext = {
       repoPath: 'E:/Projects/sample',
       repoName: 'sample',
@@ -83,10 +96,28 @@ describe('AI Git Agent Store & Services', () => {
     };
 
     const formatted = GitContextService.formatContextForPrompt(mockContext);
-    expect(formatted).toContain('`sample`');
-    expect(formatted).toContain('`feature-ai`');
-    expect(formatted).toContain('MODIFIED src/App.tsx');
-    expect(formatted).toContain('feat: initial setup');
+    expect(formatted).toContain('git_context:toon');
+    expect(formatted).toContain('repo: sample');
+    expect(formatted).toContain('branch: feature-ai (ahead: 1, behind: 0)');
+    expect(formatted).toContain('staged[1]{status,path}:');
+    expect(formatted).toContain('MODIFIED,src/App.tsx');
+    expect(formatted).toContain('commits[1]{hash,time,author,message}:');
+    expect(formatted).toContain('a1b2c3d,8/28/2026,Alice,feat: initial setup');
+  });
+
+  it('encodes terminal outputs and logs into TOON notation', () => {
+    const termToon = ToonService.encodeTerminalContext({
+      cwd: 'E:/Projects/gitlab-desktop',
+      command: 'git status',
+      exitCode: 0,
+      output: 'On branch dev\nnothing to commit',
+    });
+
+    expect(termToon).toContain('terminal:toon');
+    expect(termToon).toContain('cmd: git status');
+    expect(termToon).toContain('exit_code: 0');
+    expect(termToon).toContain('output[2]:');
+    expect(termToon).toContain('On branch dev');
   });
 
   it('correctly extracts file write and file delete tool calls from model output', () => {

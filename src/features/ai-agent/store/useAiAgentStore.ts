@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { GeminiAgentService } from '../services/geminiAgentService';
 import { GitContextService } from '../services/gitContextService';
+import { ToonService } from '../services/toonService';
 import { useSettingsStore } from '../../settings';
 import { useGitStore } from '../../../store/useGitStore';
 import { useTerminalStore } from '../../terminal/store/terminalStore';
@@ -44,6 +45,7 @@ interface AiAgentState {
   removeAttachment: (attachmentId: string) => void;
   clearAttachments: () => void;
   attachWorkingDiff: () => Promise<void>;
+  attachTerminalHistory: () => Promise<void>;
 
   // Messaging & Execution
   sendMessage: (content: string) => Promise<void>;
@@ -211,9 +213,59 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     get().addAttachment(attachment);
     useToastStore.getState().showToast({
       type: 'info',
-      title: 'Git Diff Attached',
-      message: 'Attached working tree changes to prompt context.',
+      title: 'Git Diff Attached (TOON)',
+      message: 'Attached working tree changes optimized with TOON format.',
     });
+  },
+
+  attachTerminalHistory: async () => {
+    const activeRepo = useGitStore.getState().activeRepoPath;
+    if (!activeRepo) {
+      useToastStore.getState().showToast({
+        type: 'warning',
+        title: 'No Repository Open',
+        message: 'Open a local repository first to inspect terminal history.',
+      });
+      return;
+    }
+
+    try {
+      const history = await ptyBridge.getHistory(activeRepo, 10);
+      const output =
+        history && history.length > 0
+          ? history
+              .map(
+                (h) =>
+                  `${h.command}${h.exit_code !== undefined && h.exit_code !== null ? ` (exit: ${h.exit_code})` : ''}`
+              )
+              .join('\n')
+          : 'No recent terminal commands recorded.';
+
+      const toonText = ToonService.encodeTerminalContext({
+        cwd: activeRepo,
+        output,
+      });
+
+      const attachment: AgentAttachment = {
+        id: `term-${Date.now()}`,
+        type: 'terminal',
+        title: 'Terminal History (TOON)',
+        content: toonText,
+      };
+
+      get().addAttachment(attachment);
+      useToastStore.getState().showToast({
+        type: 'info',
+        title: 'Terminal Output Attached (TOON)',
+        message: 'Attached recent terminal commands encoded in low-token TOON format.',
+      });
+    } catch (err: unknown) {
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Terminal Read Failed',
+        message: 'Could not read recent terminal output.',
+      });
+    }
   },
 
   sendMessage: async (content) => {

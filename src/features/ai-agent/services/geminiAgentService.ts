@@ -1,4 +1,5 @@
 import { AgentMessage, AgentToolCall } from '../types';
+import { ToonService } from './toonService';
 
 export interface GeminiAgentRequestOptions {
   apiKeyPool: string[];
@@ -21,7 +22,7 @@ const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export class GeminiAgentService {
   /**
-   * Sends a structured conversation to the Gemini API with key rotation and tool call extraction.
+   * Sends a structured conversation to the Gemini API with key rotation, TOON format optimization, and tool call extraction.
    */
   static async sendChatMessage(options: GeminiAgentRequestOptions): Promise<GeminiAgentResponse> {
     const {
@@ -48,7 +49,7 @@ export class GeminiAgentService {
       );
     }
 
-    // Build system instruction
+    // Build system instruction with TOON token-efficiency support
     const fullSystemInstruction = [
       `You are the Git Desktop AI Agent & Coding Assistant, an expert coding and Git assistant integrated directly into Git Desktop.`,
       `You have full capabilities to explain code, write code, create files, edit files, delete files, manage branches, and execute Git operations safely.`,
@@ -65,7 +66,8 @@ export class GeminiAgentService {
       `  [FILE_DELETE: relative/path/to/file.ext]`,
       `- Always provide the full updated file contents when creating or writing files so they can be saved directly.`,
       `- Keep your explanations clean, well-formatted with markdown, and concise.`,
-      repoContextPrompt ? `\n--- ACTIVE REPOSITORY STATE ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---` : '',
+      `- Note: Context, git states, and terminal outputs are encoded in TOON (Token-Oriented Object Notation, https://github.com/toon-format/toon) for ultra-low token consumption. Tables are written as name[N]{cols}: with row values.`,
+      repoContextPrompt ? `\n--- ACTIVE REPOSITORY STATE (TOON FORMAT) ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---` : '',
       systemInstruction,
     ]
       .filter(Boolean)
@@ -79,10 +81,10 @@ export class GeminiAgentService {
 
       let partText = msg.content;
 
-      // Append any message attachments (like diffs, status, etc.)
+      // Append any message attachments (like diffs, terminal logs, status) formatted with TOON
       if (msg.attachments && msg.attachments.length > 0) {
         const attachmentTexts = msg.attachments
-          .map((a) => `[ATTACHMENT: ${a.title}]\n${a.content}\n[/ATTACHMENT]`)
+          .map((a) => ToonService.formatAttachmentForPrompt(a))
           .join('\n\n');
         partText = `${partText}\n\n${attachmentTexts}`;
       }
