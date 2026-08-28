@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  Sparkles,
   X,
   Send,
   Plus,
@@ -13,11 +12,49 @@ import {
   ChevronDown,
   Cpu,
   Check,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAiAgentStore } from '../store/useAiAgentStore';
 import { ChatMessageItem } from './ChatMessageItem';
 import { QuickPromptChips } from './QuickPromptChips';
 import { useSettingsStore } from '../../settings';
+import { AgentSecurityMode } from '../types';
+
+const SECURITY_OPTIONS: Array<{
+  id: AgentSecurityMode;
+  name: string;
+  badge: string;
+  desc: string;
+  icon: React.FC<{ className?: string }>;
+  color: string;
+}> = [
+  {
+    id: 'strict',
+    name: 'Strict',
+    badge: 'Ask Everything',
+    desc: 'Terminal commands and file edits/deletes always require manual review.',
+    icon: ShieldAlert,
+    color: 'text-emerald-400',
+  },
+  {
+    id: 'sandboxed',
+    name: 'Sandboxed',
+    badge: 'Safe Auto',
+    desc: 'Auto-saves workspace files; commands and deletes require confirmation.',
+    icon: Shield,
+    color: 'text-sky-400',
+  },
+  {
+    id: 'full_access',
+    name: 'Full Access',
+    badge: 'Unrestricted',
+    desc: 'Agents have full access to execute commands and file operations automatically.',
+    icon: ShieldCheck,
+    color: 'text-amber-400',
+  },
+];
 
 const MODEL_OPTIONS = [
   {
@@ -74,6 +111,8 @@ export const AiAgentPanel: React.FC = () => {
     sessions,
     activeSessionId,
     status,
+    securityMode,
+    setSecurityMode,
     pendingAttachments,
     createSession,
     selectSession,
@@ -90,17 +129,21 @@ export const AiAgentPanel: React.FC = () => {
 
   const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
   const activeModelObj = MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
+  const activeSecurityObj = SECURITY_OPTIONS.find((s) => s.id === securityMode) || SECURITY_OPTIONS[0];
+  const ActiveSecurityIcon = activeSecurityObj.icon;
 
   const [panelWidth, setPanelWidth] = useState<number>(getStoredWidth);
   const [isDragging, setIsDragging] = useState(false);
   const [inputVal, setInputVal] = useState('');
   const [isSessionMenuOpen, setIsSessionMenuOpen] = useState(false);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
+  const [isSecurityMenuOpen, setIsSecurityMenuOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sessionMenuRef = useRef<HTMLDivElement>(null);
   const modelMenuRef = useRef<HTMLDivElement>(null);
+  const securityMenuRef = useRef<HTMLDivElement>(null);
 
   const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
   const isThinking = status === 'thinking';
@@ -128,6 +171,9 @@ export const AiAgentPanel: React.FC = () => {
       if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
         setIsModelMenuOpen(false);
       }
+      if (securityMenuRef.current && !securityMenuRef.current.contains(e.target as Node)) {
+        setIsSecurityMenuOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleOutside);
     return () => document.removeEventListener('mousedown', handleOutside);
@@ -143,7 +189,7 @@ export const AiAgentPanel: React.FC = () => {
     const startWidth = panelWidth;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = startX - moveEvent.clientX; // Moving left increases width
+      const deltaX = startX - moveEvent.clientX; // Moving left increases width of right sidebar
       const maxW = Math.min(1100, window.innerWidth - 80);
       const newWidth = Math.max(340, Math.min(maxW, startWidth + deltaX));
       setPanelWidth(newWidth);
@@ -189,18 +235,20 @@ export const AiAgentPanel: React.FC = () => {
     openSettings('ai');
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div
+    <aside
       style={{ width: `${panelWidth}px` }}
-      className={`fixed inset-y-0 right-0 z-50 bg-base-0 border-l border-border shadow-2xl flex flex-col justify-between select-none ${
+      className={`relative h-full bg-base-0 border-l border-border flex flex-col justify-between select-none shrink-0 z-30 overflow-hidden ${
         isDragging ? '' : 'transition-[width] duration-75'
       }`}
     >
       {/* Left Resizing Drag Handle */}
       <div
         onMouseDown={handleMouseDownResize}
-        className="absolute left-0 inset-y-0 w-2 -translate-x-1/2 cursor-col-resize hover:bg-commito-coral/40 active:bg-commito-coral transition-colors z-50 flex items-center justify-center group"
-        title="Drag to resize AI Agent panel"
+        className="absolute left-0 inset-y-0 w-2 -translate-x-1/2 cursor-col-resize hover:bg-commito-coral/40 active:bg-commito-coral transition-colors z-50 flex items-center justify-center group select-none"
+        title="Drag to resize AI Agent sidebar"
       >
         <div className="w-0.5 h-8 rounded-full bg-border group-hover:bg-commito-coral transition-colors" />
       </div>
@@ -210,9 +258,9 @@ export const AiAgentPanel: React.FC = () => {
         {/* Left: Icon, Session Switcher, Model Switcher */}
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           {/* Logo/Icon */}
-          <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+          {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
             <Sparkles className="w-3.5 h-3.5" />
-          </div>
+          </div> */}
 
           {/* Session Switcher Dropdown */}
           <div className="relative min-w-0 flex-1 max-w-[140px] sm:max-w-[160px]" ref={sessionMenuRef}>
@@ -336,6 +384,74 @@ export const AiAgentPanel: React.FC = () => {
                           </span>
                           {isSelected && <Check className="w-3 h-3 text-commito-coral" />}
                         </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Agent Security Mode Switcher Dropdown */}
+          <div className="relative shrink-0" ref={securityMenuRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsSecurityMenuOpen((v) => !v);
+                setIsModelMenuOpen(false);
+                setIsSessionMenuOpen(false);
+              }}
+              className="flex items-center gap-1 px-1.5 py-1 rounded-sm bg-base-0 hover:bg-base-2 border border-border text-[11px] font-mono text-text-secondary hover:text-text-primary transition cursor-pointer"
+              title="Agent Security & Permissions Mode"
+            >
+              <ActiveSecurityIcon className={`w-3 h-3 ${activeSecurityObj.color} shrink-0`} />
+              <span className="truncate font-medium">
+                {activeSecurityObj.name}
+              </span>
+              <ChevronDown className="w-2.5 h-2.5 text-text-muted shrink-0" />
+            </button>
+
+            {/* Security Dropdown Menu */}
+            {isSecurityMenuOpen && (
+              <div className="absolute top-full right-0 mt-1 w-68 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
+                  <span>Agent Security Mode</span>
+                  <span className="text-[9px] font-mono text-commito-coral">Permissions</span>
+                </div>
+
+                <div className="py-1 space-y-0.5 max-h-60 overflow-y-auto scrollbar-thin">
+                  {SECURITY_OPTIONS.map((opt) => {
+                    const isSelected = opt.id === securityMode;
+                    const IconComp = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => {
+                          setSecurityMode(opt.id);
+                          setIsSecurityMenuOpen(false);
+                        }}
+                        className={`w-full px-2.5 py-2 flex items-start justify-between gap-2 text-left cursor-pointer transition ${
+                          isSelected
+                            ? 'bg-base-2 text-text-primary font-semibold'
+                            : 'hover:bg-base-2/70 text-text-primary'
+                        }`}
+                      >
+                        <div className="flex items-start gap-2 min-w-0 flex-1">
+                          <IconComp className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${opt.color}`} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[11.5px] truncate font-medium flex items-center gap-1.5">
+                              <span>{opt.name}</span>
+                              <span className="text-[9px] font-mono px-1 py-0.1 rounded-xs bg-base-0 border border-border text-text-muted shrink-0">
+                                {opt.badge}
+                              </span>
+                            </div>
+                            <div className="text-[10.5px] text-text-muted/80 leading-snug mt-0.5 whitespace-normal break-words">
+                              {opt.desc}
+                            </div>
+                          </div>
+                        </div>
+                        {isSelected && <Check className="w-3 h-3 text-commito-coral shrink-0 mt-0.5" />}
                       </button>
                     );
                   })}
@@ -474,6 +590,6 @@ export const AiAgentPanel: React.FC = () => {
           <span className="font-mono">{activeModelObj.name}</span>
         </div>
       </div>
-    </div>
+    </aside>
   );
 };

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAiAgentStore } from './store/useAiAgentStore';
 import { GitContextService } from './services/gitContextService';
+import { GeminiAgentService } from './services/geminiAgentService';
 
 describe('AI Git Agent Store & Services', () => {
   beforeEach(() => {
@@ -86,5 +87,54 @@ describe('AI Git Agent Store & Services', () => {
     expect(formatted).toContain('`feature-ai`');
     expect(formatted).toContain('MODIFIED src/App.tsx');
     expect(formatted).toContain('feat: initial setup');
+  });
+
+  it('correctly extracts file write and file delete tool calls from model output', () => {
+    const modelOutput = `
+Here are the changes you requested:
+
+[FILE_WRITE: src/utils/formatter.ts]
+\`\`\`typescript
+export function formatName(name: string) {
+  return name.trim();
+}
+\`\`\`
+[/FILE_WRITE]
+
+And we can clean up the deprecated helper:
+[FILE_DELETE: src/utils/oldHelper.ts]
+
+Finally, test the build:
+\`\`\`bash
+npm run build
+\`\`\`
+`;
+
+    // Access the private extractToolCalls via any cast or service method
+    const tools = (GeminiAgentService as any).extractToolCalls(modelOutput);
+    expect(tools.length).toBe(3);
+
+    expect(tools[0].name).toBe('write_file');
+    expect(tools[0].filePath).toBe('src/utils/formatter.ts');
+    expect(tools[0].fileContent).toContain('export function formatName');
+
+    expect(tools[1].name).toBe('delete_file');
+    expect(tools[1].filePath).toBe('src/utils/oldHelper.ts');
+
+    expect(tools[2].name).toBe('run_command');
+    expect(tools[2].command).toBe('npm run build');
+  });
+
+  it('updates and persists agent security mode correctly', () => {
+    const store = useAiAgentStore.getState();
+    expect(useAiAgentStore.getState().securityMode).toBe('strict');
+
+    store.setSecurityMode('sandboxed');
+    expect(useAiAgentStore.getState().securityMode).toBe('sandboxed');
+    expect(localStorage.getItem('ai_agent_security_mode')).toBe('sandboxed');
+
+    store.setSecurityMode('full_access');
+    expect(useAiAgentStore.getState().securityMode).toBe('full_access');
+    expect(localStorage.getItem('ai_agent_security_mode')).toBe('full_access');
   });
 });

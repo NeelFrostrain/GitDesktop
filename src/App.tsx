@@ -324,10 +324,19 @@ export const App: React.FC = () => {
 
         <div className="flex-1 flex overflow-hidden">
           {isHome ? (
-            /* ── Home page: full-width, no sidebar ── */
-            <HomeDashboard />
+            /* ── Home page: HomeDashboard + relative Right AI Agent sidebar ── */
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                <HomeDashboard />
+              </div>
+
+              {/* Right Sidebar: AI Agent Panel */}
+              <Suspense fallback={null}>
+                <AiAgentPanel />
+              </Suspense>
+            </div>
           ) : (
-            /* ── Repo page: sidebar + main content ── */
+            /* ── Repo page: left rail sidebar + main workspace + relative Right AI Agent sidebar ── */
             <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               {/* Left rail navigation & tabs */}
               <Sidebar />
@@ -350,6 +359,11 @@ export const App: React.FC = () => {
                   </Suspense>
                 </div>
               </div>
+
+              {/* Relative Right AI Agent Sidebar */}
+              <Suspense fallback={null}>
+                <AiAgentPanel />
+              </Suspense>
             </div>
           )}
         </div>
@@ -389,7 +403,6 @@ export const App: React.FC = () => {
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />
-          <AiAgentPanel />
         </Suspense>
 
         {/* Global Toast Notifications */}

@@ -263,7 +263,13 @@ export const RepoList: React.FC = () => {
             </span>
             <span className="text-[11px] font-mono text-text-muted">{pinnedRepos.length} pinned</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3.5">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
+              gap: '12px',
+            }}
+          >
             {pinnedRepos.map((repo) => (
               <RepoCard key={`pinned-${repo.id}`} repo={repo} status={statuses[repo.path]} viewMode="grid" />
             ))}

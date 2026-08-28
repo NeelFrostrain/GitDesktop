@@ -5,6 +5,7 @@ import {
   AgentStatus,
   AgentAttachment,
   AgentToolCall,
+  AgentSecurityMode,
 } from '../types';
 import { GeminiAgentService } from '../services/geminiAgentService';
 import { GitContextService } from '../services/gitContextService';
@@ -15,10 +16,13 @@ import { ptyBridge } from '../../terminal/lib/ptyBridge';
 import { listen } from '@tauri-apps/api/event';
 import { useToastStore } from '../../../store/useToastStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { SystemService } from '../../../services/system/systemService';
+import { GitService } from '../../../services/git/gitService';
 
 interface AiAgentState {
   isOpen: boolean;
   status: AgentStatus;
+  securityMode: AgentSecurityMode;
   error: string | null;
   sessions: AgentSession[];
   activeSessionId: string | null;
@@ -27,6 +31,7 @@ interface AiAgentState {
   // Panel View Actions
   setIsOpen: (isOpen: boolean) => void;
   toggleIsOpen: () => void;
+  setSecurityMode: (mode: AgentSecurityMode) => void;
 
   // Session Actions
   createSession: (repoPath?: string) => string;
@@ -80,6 +85,8 @@ if (!initialActiveId || !initialSessions.some((s) => s.id === initialActiveId)) 
 export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   isOpen: false,
   status: 'idle',
+  securityMode:
+    (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
   error: null,
   sessions: initialSessions,
   activeSessionId: initialActiveId,
@@ -87,6 +94,12 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
   setIsOpen: (isOpen) => set({ isOpen }),
   toggleIsOpen: () => set((s) => ({ isOpen: !s.isOpen })),
+  setSecurityMode: (mode) => {
+    try {
+      localStorage.setItem('ai_agent_security_mode', mode);
+    } catch {}
+    set({ securityMode: mode });
+  },
 
   createSession: (repoPath) => {
     const uniqueId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
@@ -463,6 +476,31 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           error: null,
         };
       });
+
+      // Automatic execution based on configured security mode
+      const currentMode = get().securityMode;
+      if (response.toolCalls && response.toolCalls.length > 0) {
+        for (const tool of response.toolCalls) {
+          if (currentMode === 'full_access') {
+            // Full access: automatically execute tool operations
+            setTimeout(() => {
+              get().executeToolCall(tool.id, true);
+            }, 300);
+          } else if (currentMode === 'sandboxed') {
+            // Sandboxed: auto-apply safe file creations/modifications; commands & deletes require confirmation
+            if (
+              tool.name === 'write_file' ||
+              tool.name === 'create_file' ||
+              tool.name === 'edit_file'
+            ) {
+              setTimeout(() => {
+                get().executeToolCall(tool.id);
+              }, 300);
+            }
+          }
+          // Strict: requires review for all operations (waits for user to click button)
+        }
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       const errorAssistantMessage: AgentMessage = {
@@ -516,10 +554,9 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
     }
 
-    if (!targetTool || !targetTool.command) return;
+    if (!targetTool) return;
 
     const activeRepo = useGitStore.getState().activeRepoPath;
-    const command = targetTool.command.trim();
 
     // Mark tool as executed immediately
     set((state) => {
@@ -546,7 +583,90 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       return { sessions: updated };
     });
 
-    if (runInTerminal && activeRepo) {
+    // Case A: File Write / Create / Edit Tool
+    if (
+      (targetTool.name === 'write_file' ||
+        targetTool.name === 'create_file' ||
+        targetTool.name === 'edit_file') &&
+      targetTool.filePath &&
+      targetTool.fileContent !== undefined
+    ) {
+      if (!activeRepo) {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'No Active Repository',
+          message: 'Please open a repository to create or modify files.',
+        });
+        return;
+      }
+
+      try {
+        await SystemService.saveFileContent(activeRepo, targetTool.filePath, targetTool.fileContent);
+        // Refresh git status to reflect changed / created files
+        const st = await GitService.getRepoStatus(activeRepo).catch(() => null);
+        if (st) useGitStore.getState().setStatus(st);
+
+        useToastStore.getState().showToast({
+          type: 'success',
+          title: 'File Saved',
+          message: `Saved: ${targetTool.filePath}`,
+        });
+
+        // Automatically feed back confirmation to the AI Agent
+        await get().sendMessage(
+          `Applied file change: \`${targetTool.filePath}\` was saved to disk successfully.`
+        );
+      } catch (err) {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'File Save Failed',
+          message: String(err),
+        });
+      }
+      return;
+    }
+
+    // Case B: File Delete Tool
+    if (targetTool.name === 'delete_file' && targetTool.filePath) {
+      if (!activeRepo) {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'No Active Repository',
+          message: 'Please open a repository to delete files.',
+        });
+        return;
+      }
+
+      try {
+        await SystemService.deleteFile(activeRepo, targetTool.filePath);
+        // Refresh git status to reflect deleted files
+        const st = await GitService.getRepoStatus(activeRepo).catch(() => null);
+        if (st) useGitStore.getState().setStatus(st);
+
+        useToastStore.getState().showToast({
+          type: 'success',
+          title: 'File Deleted',
+          message: `Deleted: ${targetTool.filePath}`,
+        });
+
+        // Automatically feed back confirmation to the AI Agent
+        await get().sendMessage(
+          `Deleted \`${targetTool.filePath}\` from the repository successfully.`
+        );
+      } catch (err) {
+        useToastStore.getState().showToast({
+          type: 'error',
+          title: 'File Delete Failed',
+          message: String(err),
+        });
+      }
+      return;
+    }
+
+    // Case C: Run Command Tool
+    if (targetTool.command && runInTerminal && activeRepo) {
+      const command = targetTool.command.trim();
+
       // 1. Open Terminal Panel
       useTerminalStore.getState().setIsOpen(true);
 

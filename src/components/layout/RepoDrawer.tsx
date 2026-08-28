@@ -61,7 +61,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
     const handleMouseMove = (e: MouseEvent) => {
       const maxWidth = Math.min(900, window.innerWidth - 60);
-      const newWidth = Math.max(300, Math.min(maxWidth, window.innerWidth - e.clientX));
+      const newWidth = Math.max(300, Math.min(maxWidth, e.clientX));
       setDrawerWidth(newWidth);
     };
 
@@ -207,25 +207,26 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex justify-end select-none font-sans">
+    <div className="fixed inset-0 z-[9999] flex justify-start select-none font-sans">
       {/* Solid Backdrop (No Blur) */}
       <div
         onClick={onClose}
         className="fixed inset-0 bg-black/60 cursor-default"
       />
 
-      {/* Slide-over Right Drawer */}
+      {/* Slide-over Left Drawer */}
       <div
         style={{ width: `${drawerWidth}px` }}
-        className="relative max-w-full h-full bg-base-0 border-l border-border shadow-2xl flex flex-col z-10 text-text-primary"
+        className="relative max-w-full h-full bg-base-0 border-r border-border shadow-2xl flex flex-col z-10 text-text-primary animate-in slide-in-from-left duration-150"
       >
-        {/* Resizable handle on the left border */}
+        {/* Resizable handle on the right border */}
         <div
           onMouseDown={startResizing}
           onDoubleClick={() => setDrawerWidth(420)}
           title="Drag to resize drawer • Double-click to reset"
-          className={`absolute top-0 -left-1 w-1 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
-            }`}
+          className={`absolute top-0 -right-1 w-1.5 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${
+            isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
+          }`}
         />
 
         {/* 1. Drawer Header (Compact) */}

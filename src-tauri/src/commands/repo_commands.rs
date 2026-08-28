@@ -1198,4 +1198,35 @@ pub async fn rename_file_cmd(
     Ok(())
 }
 
+#[command]
+pub async fn delete_file_cmd(
+    repo_path: String,
+    file_path: String,
+) -> Result<(), AppError> {
+    let full_path = std::path::Path::new(&repo_path).join(&file_path);
+    if !full_path.exists() {
+        return Err(AppError::NotFound(format!(
+            "File does not exist: {}",
+            full_path.display()
+        )));
+    }
+
+    if full_path.is_dir() {
+        std::fs::remove_dir_all(&full_path)
+            .map_err(|e| AppError::Unknown(format!("Failed to delete directory: {}", e)))?;
+    } else {
+        std::fs::remove_file(&full_path)
+            .map_err(|e| AppError::Unknown(format!("Failed to delete file: {}", e)))?;
+    }
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Git,
+        format!("File deleted: {}", file_path);
+        meta: serde_json::json!({ "file_path": file_path })
+    );
+
+    Ok(())
+}
+
+
 

@@ -2,10 +2,14 @@ export type AgentRole = 'user' | 'assistant' | 'system';
 
 export type AgentStatus = 'idle' | 'thinking' | 'executing' | 'error';
 
+export type AgentSecurityMode = 'strict' | 'sandboxed' | 'full_access';
+
 export interface AgentToolCall {
   id: string;
-  name: string; // e.g. 'run_command' | 'stage_files' | 'unstage_files' | 'switch_branch' | 'create_commit'
+  name: 'run_command' | 'write_file' | 'create_file' | 'edit_file' | 'delete_file' | 'read_file' | string;
   command?: string;
+  filePath?: string;
+  fileContent?: string;
   args?: Record<string, unknown>;
   status: 'pending' | 'running' | 'success' | 'failed' | 'rejected';
   output?: string;
