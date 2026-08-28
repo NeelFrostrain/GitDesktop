@@ -19,6 +19,7 @@ import { SplitDiffView } from './diff/SplitDiffView';
 import { ImageDiffView } from './diff/ImageDiffView';
 import { CleanWorkingTreeView } from './diff/CleanWorkingTreeView';
 import { FileEditorView } from './diff/FileEditorView';
+import { StashedChangesView } from './diff/StashedChangesView';
 
 /**
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
@@ -34,6 +35,8 @@ export const DiffViewer: React.FC = () => {
     setDiffViewMode,
     status,
     setError,
+    currentBranchStash,
+    isViewingStashedChanges,
   } = useGitStore();
 
   const [diff, setDiff] = useState<DiffResult | null>(null);
@@ -179,6 +182,10 @@ export const DiffViewer: React.FC = () => {
 
   // ── Render Changes Diff Content ──────────────────────────────────────────
   const renderChangesDiff = () => {
+    if (isViewingStashedChanges && currentBranchStash) {
+      return <StashedChangesView />;
+    }
+
     if (!selectedFile || (status && status.files.length === 0)) {
       if (status && status.files.length === 0) {
         return <CleanWorkingTreeView />;
@@ -395,9 +402,9 @@ export const DiffViewer: React.FC = () => {
   };
 
   return (
-    <main className="flex-1 flex flex-col h-[calc(100vh-3.5rem)] bg-base-0 overflow-hidden">
+    <main className="flex-1 flex flex-col h-full min-h-0 bg-base-0 overflow-hidden">
       {/* Main Diff / Details Display */}
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 flex flex-col min-h-0 h-full overflow-hidden">
         {activeTab === 'changes' ? renderChangesDiff() : renderHistoryDetails()}
       </div>
     </main>

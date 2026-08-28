@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import {
   RepoStatus,
+  FileStatus,
   DiffResult,
   BranchInfo,
   CommitInfo,
@@ -286,6 +287,20 @@ export class GitService {
    */
   static async dropStash(repoPath: string, index: number): Promise<void> {
     return invoke('drop_stash_cmd', { repoPath, index });
+  }
+
+  /**
+   * Lists the files modified in a stash entry.
+   */
+  static async getStashFiles(repoPath: string, index: number): Promise<FileStatus[]> {
+    return invoke<FileStatus[]>('get_stash_files_cmd', { repoPath, index });
+  }
+
+  /**
+   * Gets the diff of a specific file in a stash entry.
+   */
+  static async getStashFileDiff(repoPath: string, index: number, filePath: string): Promise<DiffResult> {
+    return invoke<DiffResult>('get_stash_file_diff_cmd', { repoPath, index, filePath });
   }
 
   /**

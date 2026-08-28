@@ -154,6 +154,8 @@ pub fn run() {
             pop_stash_cmd,
             drop_stash_cmd,
             get_stash_diff_cmd,
+            get_stash_files_cmd,
+            get_stash_file_diff_cmd,
             list_tags_cmd,
             fetch_tags_cmd,
             create_tag_cmd,
