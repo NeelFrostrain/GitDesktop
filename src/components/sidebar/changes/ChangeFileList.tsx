@@ -224,10 +224,15 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
           </div>
         ) : (
           /* Flat List View */
-          <div className="flex flex-col space-y-0.5 font-sans min-w-0">
+          <div className="flex flex-col font-sans min-w-0">
             {filteredFiles.map((file) => {
               const isStaged = stagedFiles.includes(file.path);
               const isSelected = selectedFile === file.path;
+              const fileName = file.path.split(/[\\/]/).pop() || file.path;
+              const dirPath =
+                file.path.includes('/') || file.path.includes('\\')
+                  ? file.path.substring(0, Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\')))
+                  : '';
 
               return (
                 <div
@@ -239,21 +244,44 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                     setSelectedFile(file.path);
                     setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
                   }}
-                  className={`flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs cursor-pointer transition-all duration-100 min-w-0 ${
+                  className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 border-l-2 text-xs transition cursor-pointer select-none ${
                     isSelected
-                      ? 'bg-base-2 text-text font-medium border border-border-strong/70 shadow-xs'
-                      : 'hover:bg-base-2/60 text-text-subtle border border-transparent'
+                      ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
+                      : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                   }`}
+                  title={file.path}
                 >
-                  <div className="shrink-0 flex items-center">
-                    <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
+                  <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+                    {/* Staging Checkbox */}
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="shrink-0 flex items-center"
+                    >
+                      <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
+                    </div>
+
+                    {/* File Icon */}
+                    {/* <FileText
+                      className={`w-3.5 h-3.5 shrink-0 ${
+                        isSelected ? 'text-commito-coral' : 'text-text-muted'
+                      }`}
+                    /> */}
+
+                    {/* File Name & Folder Subtitle */}
+                    <div className="min-w-0 truncate">
+                      <span className="truncate block font-mono text-[11.5px] leading-tight">
+                        {fileName}
+                      </span>
+                      {dirPath && (
+                        <span className="truncate block text-[10px] text-text-muted/70 font-mono leading-tight">
+                          {dirPath}
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <div className="shrink-0 flex items-center">
-                    {getStatusBadge(file.status)}
-                  </div>
-                  <span className="truncate flex-1 font-mono text-[11px] text-text" title={file.path}>
-                    {file.path}
-                  </span>
+
+                  {/* Status Badge */}
+                  {getStatusBadge(file.status)}
                 </div>
               );
             })}

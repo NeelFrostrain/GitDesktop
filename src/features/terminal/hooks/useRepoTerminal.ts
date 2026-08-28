@@ -264,6 +264,92 @@ export function useRepoTerminal(
 
     setupSession();
 
+    // Attach custom keyboard handler for copy/paste and shortcuts
+    terminal.attachCustomKeyEventHandler((event: KeyboardEvent) => {
+      if (event.type !== 'keydown') return true;
+
+      const isCtrlOrCmd = event.ctrlKey || event.metaKey;
+
+      // 1. Copy shortcut: Ctrl+C / Cmd+C (when text is selected) or Ctrl+Shift+C or Ctrl+Insert
+      if (
+        (isCtrlOrCmd && (event.key === 'c' || event.key === 'C')) ||
+        (event.ctrlKey && event.shiftKey && (event.key === 'c' || event.key === 'C')) ||
+        (event.ctrlKey && event.key === 'Insert')
+      ) {
+        if (terminal.hasSelection()) {
+          const selected = terminal.getSelection();
+          if (selected) {
+            navigator.clipboard.writeText(selected).catch(() => {});
+            return false; // Handled: copy selection to clipboard, do not send \x03 (SIGINT) to PTY
+          }
+        }
+        // No selection: let standard Ctrl+C pass through to send SIGINT (\x03) to process
+        return true;
+      }
+
+      // 2. Paste shortcut: Ctrl+V / Cmd+V / Ctrl+Shift+V / Shift+Insert
+      if (
+        (isCtrlOrCmd && (event.key === 'v' || event.key === 'V')) ||
+        (event.ctrlKey && event.shiftKey && (event.key === 'v' || event.key === 'V')) ||
+        (event.shiftKey && event.key === 'Insert')
+      ) {
+        event.preventDefault();
+        event.stopPropagation();
+        navigator.clipboard
+          .readText()
+          .then((clipText) => {
+            if (clipText && clipText.length > 0 && currentRepoId) {
+              const normalized = clipText.replace(/\r\n/g, '\r').replace(/\n/g, '\r');
+              ptyBridge.write(currentRepoId, normalized).catch(() => {});
+
+              if (!clipText.includes('\n') && !clipText.includes('\r')) {
+                inputBufferRef.current =
+                  inputBufferRef.current.slice(0, cursorPosRef.current) +
+                  clipText +
+                  inputBufferRef.current.slice(cursorPosRef.current);
+                cursorPosRef.current += clipText.length;
+              } else {
+                inputBufferRef.current = '';
+                cursorPosRef.current = 0;
+              }
+            }
+          })
+          .catch((err) => {
+            console.warn('[Terminal] Failed to read clipboard text:', err);
+          });
+        return false; // Prevent xterm from sending raw \x16 to PTY
+      }
+
+      return true;
+    });
+
+    // Right-click paste or copy context handler
+    const container = terminalContainerRef.current;
+    const handleContextMenu = async (e: MouseEvent) => {
+      e.preventDefault();
+      if (terminal.hasSelection()) {
+        const selected = terminal.getSelection();
+        if (selected) {
+          await navigator.clipboard.writeText(selected).catch(() => {});
+          terminal.clearSelection();
+          return;
+        }
+      }
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text && currentRepoId) {
+          const normalized = text.replace(/\r\n/g, '\r').replace(/\n/g, '\r');
+          await ptyBridge.write(currentRepoId, normalized);
+        }
+      } catch (err) {
+        console.warn('[Terminal] Right-click paste failed:', err);
+      }
+    };
+
+    if (container) {
+      container.addEventListener('contextmenu', handleContextMenu);
+    }
+
     // Clean previous onData disposable if any
     if (onDataDisposableRef.current) {
       onDataDisposableRef.current.dispose();
@@ -388,6 +474,9 @@ export function useRepoTerminal(
       onDataDisposable.dispose();
       onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();
+      if (container) {
+        container.removeEventListener('contextmenu', handleContextMenu);
+      }
       if (unlistenDataRef.current) {
         unlistenDataRef.current();
         unlistenDataRef.current = null;

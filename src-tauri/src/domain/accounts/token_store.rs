@@ -197,6 +197,9 @@ pub fn update_account(account_id: &str, patch: AccountPatch) -> Result<ProviderA
         if let Some(email) = patch.commit_email {
             acc.commit_email = email.trim().to_string();
         }
+        if let Some(avatar) = patch.avatar_url {
+            acc.avatar_url = avatar.trim().to_string();
+        }
         let updated = acc.clone();
         write_registry(&reg);
         Ok(updated)

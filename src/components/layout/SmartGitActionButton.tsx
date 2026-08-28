@@ -36,13 +36,13 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const primaryCls =
-    'h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98';
+    'h-7 px-2.5 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
   const secondaryCls =
-    'h-7.5 px-3 rounded-sm bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98';
+    'h-7 px-2.5 rounded-sm bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
   const mutedCls =
-    'h-7.5 px-3 rounded-sm border border-border bg-base-1 text-text-muted text-xs font-medium flex items-center gap-1.5 cursor-default select-none shadow-2xs';
+    'h-7 px-2.5 rounded-sm border border-border bg-base-1 text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-2xs';
   const warnCls =
-    'h-7.5 px-3 rounded-sm border border-warning/80 bg-warning text-black text-xs font-bold flex items-center gap-1.5 cursor-default select-none shadow-xs';
+    'h-7 px-2.5 rounded-sm border border-warning/80 bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-xs';
 
   if (!hasRepo) {
     return {
@@ -158,45 +158,53 @@ function getButtonConfig(
 function DirtyWarningBanner() {
   return (
     <span
-      className="text-[10px] text-git-modified bg-git-modified-bg border border-git-modified/40 px-1.5 py-0.5 rounded font-mono"
-      title="Commit or stash local changes before pulling to avoid conflicts"
+      className="flex items-center gap-1 text-[11px] text-amber-400 bg-amber-950/40 border border-amber-800/60 px-1.5 py-0.5 rounded-sm select-none"
+      title="Working tree has uncommitted modifications. Commit or stash before pulling to avoid conflicts."
     >
-      uncommitted changes
+      <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+      <span className="hidden sm:inline">Modified</span>
     </span>
   );
 }
 
 /**
- * Animated bottom sweep progress line during active network operations.
+ * Visual progress bar indicator when push/pull network operations are active.
  */
 function ProgressBar({ isPulling }: { isPulling: boolean }) {
-  const barColor = isPulling
-    ? 'bg-cyan-300 shadow-[0_0_8px_rgba(103,232,249,0.9)]'
-    : 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]';
-
   return (
-    <div className="absolute bottom-0 left-0 right-0 h-[2.5px] overflow-hidden rounded-b-sm bg-black/35">
+    <div
+      className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30 overflow-hidden rounded-b-sm"
+      role="progressbar"
+      aria-label={isPulling ? 'Pull progress' : 'Push progress'}
+    >
       <div
-        style={{ animation: 'progress-sweep 1.2s ease-in-out infinite' }}
-        className={`h-full w-1/2 ${barColor} rounded-full`}
+        className={`h-full animate-[progress_1.2s_ease-in-out_infinite] ${
+          isPulling ? 'bg-blue-300' : 'bg-orange-300'
+        }`}
+        style={{
+          width: '60%',
+          transformOrigin: 'left',
+        }}
       />
     </div>
   );
 }
 
 /**
- * Smart reactive action button adapting automatically to the repository's sync state.
+ * Context-aware smart button that dynamically handles Push, Pull, Sync,
+ * or Fetch based on the current Git ahead/behind divergence state.
  */
 export const SmartGitActionButton: React.FC = () => {
   const {
     syncInfo,
     isBusy,
-    isFetching,
     isPushing,
     isPulling,
+    isFetching,
+    hasRepo,
     executeAction,
     refreshSync,
-    hasRepo,
+    resetBusyState,
   } = useRepositorySync();
 
   const { syncStatus, ahead, behind, branch, isClean } = syncInfo;
@@ -218,7 +226,11 @@ export const SmartGitActionButton: React.FC = () => {
     !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
-    if (isBusy || config.disabled) return;
+    if (isBusy) {
+      resetBusyState();
+      return;
+    }
+    if (config.disabled) return;
     if (syncStatus === 'up-to-date') {
       refreshSync();
     } else {
@@ -227,19 +239,19 @@ export const SmartGitActionButton: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 shrink-0">
       {showDirtyWarning && <DirtyWarningBanner />}
 
-      <div className="relative">
+      <div className="relative shrink-0">
         <button
           type="button"
           onClick={handleClick}
-          disabled={config.disabled || isBusy}
+          disabled={config.disabled && !isBusy}
           className={config.className}
-          title={config.tooltip}
+          title={isBusy ? 'Operation in progress — click to cancel / unstick' : config.tooltip}
         >
           {config.icon}
-          <span>{config.label}</span>
+          <span className="whitespace-nowrap leading-none">{config.label}</span>
         </button>
 
         {isBusy && <ProgressBar isPulling={isPulling} />}

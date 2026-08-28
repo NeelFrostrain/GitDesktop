@@ -72,7 +72,7 @@ export const CloneRepoModal: React.FC = () => {
     setError,
     accounts,
   } = useGitStore();
-  const { addRepo } = useRepoStore();
+  const addRepo = useRepoStore((s) => s.addRepo);
 
   const [activeMainTab, setActiveMainTab] = useState<CloneModalTab>('remote');
   const [url, setUrl] = useState('');

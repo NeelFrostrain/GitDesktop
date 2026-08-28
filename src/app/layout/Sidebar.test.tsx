@@ -71,16 +71,13 @@ describe('Route-Aware Sidebar Component', () => {
     useGitStore.setState({ currentNavView: 'home' });
     render(<Sidebar />);
 
-    // Should contain Home button and repository search
-    expect(screen.getByText('Home')).toBeTruthy();
+    // Should contain repository search and list
     expect(screen.getByPlaceholderText('Filter repositories...')).toBeTruthy();
-    expect(screen.getByText('Repositories (2)')).toBeTruthy();
-    expect(screen.getByText('Add Repository')).toBeTruthy();
+    expect(screen.getByText('Repositories')).toBeTruthy();
     expect(screen.getByText('Alex Developer')).toBeTruthy();
 
     // Should NOT contain repo workspace commit box or Changes tab count
     expect(screen.queryByText(/changed files/i)).toBeNull();
-    expect(screen.queryByPlaceholderText(/summary \(required\)/i)).toBeNull();
   });
 
   it('renders pinned repos first and shows branch chip', () => {
@@ -96,10 +93,9 @@ describe('Route-Aware Sidebar Component', () => {
     useGitStore.setState({ currentNavView: 'changes' });
     render(<Sidebar />);
 
-    // Should render Changes/History tabs and commit box
+    // Should render Changes/History tabs and commit trigger button
     expect(screen.getByText('1 of 2 changed files')).toBeTruthy();
-    const commitBtn = screen.getByText(/commit.*to main/i);
-    expect(commitBtn).toBeTruthy();
+    expect(screen.getByText(/initialize commit/i)).toBeTruthy();
 
     // Should NOT contain the HomeSidebar repo filter box
     expect(screen.queryByPlaceholderText('Filter repositories...')).toBeNull();

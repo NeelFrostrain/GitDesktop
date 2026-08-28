@@ -216,13 +216,33 @@ export function useRepositorySync() {
     }
   }, [activeRepoPath, setStatus, setError, setIsFetching, log]);
 
+  const withTimeout = <T>(promise: Promise<T>, timeoutMs = 25000, errorMsg = 'Git operation timed out'): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(errorMsg)), timeoutMs)
+      ),
+    ]);
+  };
+
+  const resetBusyState = useCallback(() => {
+    setIsPushing(false);
+    setIsPulling(false);
+    setIsFetching(false);
+    refreshingRef.current = false;
+  }, [setIsPushing, setIsPulling, setIsFetching]);
+
   // ── Push ──────────────────────────────────────────────────────────────────
   const executePush = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     setIsPushing(true);
     log().addLog('info', 'Git', `Pushing ${status.ahead} commit(s) to origin/${status.current_branch}`);
     try {
-      await GitService.pushToRemote(activeRepoPath, status.current_branch);
+      await withTimeout(
+        GitService.pushToRemote(activeRepoPath, status.current_branch),
+        30000,
+        'Push timed out. Check network connection or remote credentials.'
+      );
       log().addLog('success', 'Git', `Pushed to origin/${status.current_branch}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
@@ -240,7 +260,11 @@ export function useRepositorySync() {
     setIsPulling(true);
     log().addLog('info', 'Git', `Pulling ${status.behind} commit(s) from origin/${status.current_branch}`);
     try {
-      const result = await GitService.pullFromRemote(activeRepoPath, status.current_branch);
+      const result = await withTimeout(
+        GitService.pullFromRemote(activeRepoPath, status.current_branch),
+        30000,
+        'Pull timed out. Check network connection or remote credentials.'
+      );
       if (!result.success && result.conflicts.length > 0) {
         setError({
           code: 'GIT_CONFLICT',
@@ -333,6 +357,7 @@ export function useRepositorySync() {
     executeAction,
     executePush,
     executePull,
+    resetBusyState,
     hasRepo: !!activeRepoPath,
   };
 }

@@ -4,6 +4,10 @@ import {
   ChevronDown,
   Folder,
   FolderOpen,
+  PlusSquare,
+  MinusSquare,
+  FileEdit,
+  RotateCcw,
 } from 'lucide-react';
 import { FileStatus } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
@@ -89,34 +93,34 @@ export const buildFileTree = (files: FileStatus[]): TreeItem[] => {
 };
 
 /**
- * Returns a Git status character badge (+, -, M, R).
+ * Returns a Git status icon badge (+, -, M, R).
  */
 export const getStatusBadge = (statusStr?: string) => {
   const statusUpper = (statusStr || '').toUpperCase();
   if (statusUpper.includes('NEW') || statusUpper.includes('ADD') || statusUpper.includes('UNTRACKED')) {
     return (
-      <span className="w-4 h-4 rounded-sm bg-git-added/15 text-git-added text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-added/25">
-        +
+      <span className="text-git-added shrink-0" title="Added file">
+        <PlusSquare className="w-3.5 h-3.5" />
       </span>
     );
   }
   if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
     return (
-      <span className="w-4 h-4 rounded-sm bg-git-removed/15 text-git-removed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-removed/25">
-        -
+      <span className="text-git-removed shrink-0" title="Deleted file">
+        <MinusSquare className="w-3.5 h-3.5" />
       </span>
     );
   }
   if (statusUpper.includes('RENAME')) {
     return (
-      <span className="w-4 h-4 rounded-sm bg-git-renamed/15 text-git-renamed text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-renamed/25">
-        R
+      <span className="text-git-renamed shrink-0" title="Renamed file">
+        <RotateCcw className="w-3.5 h-3.5" />
       </span>
     );
   }
   return (
-    <span className="w-4 h-4 rounded-sm bg-git-modified/15 text-git-modified text-[10px] font-mono font-bold flex items-center justify-center shrink-0 border border-git-modified/25">
-      M
+    <span className="text-git-modified shrink-0" title="Modified file">
+      <FileEdit className="w-3.5 h-3.5" />
     </span>
   );
 };
@@ -239,32 +243,40 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         onOpenFileContext(file.path, e.clientX, e.clientY);
       }}
       style={{ paddingLeft: `${node.depth * 12 + 6}px` }}
-      className={`group/file flex items-center gap-1.5 py-1 pr-2 rounded-sm text-xs cursor-pointer transition-all duration-100 min-w-0 ${
+      className={`group/file flex items-center justify-between gap-2 py-1.5 pr-3 border-l-2 text-xs cursor-pointer transition-all duration-100 min-w-0 select-none ${
         isSelected
-          ? 'bg-base-2 text-text font-medium border border-border-strong/70 shadow-xs'
-          : 'hover:bg-base-2/60 text-text-subtle border border-transparent'
+          ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
+          : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
       }`}
+      title={file.path}
     >
-      {/* File Checkbox */}
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="flex items-center shrink-0"
-      >
-        <Checkbox
-          checked={isStaged}
-          onChange={() => toggleStageFile(file.path)}
-        />
+      <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+        {/* File Checkbox */}
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center shrink-0"
+        >
+          <Checkbox
+            checked={isStaged}
+            onChange={() => toggleStageFile(file.path)}
+          />
+        </div>
+
+        {/* File Icon */}
+        {/* <FileText
+          className={`w-3.5 h-3.5 shrink-0 ${
+            isSelected ? 'text-commito-coral' : 'text-text-muted'
+          }`}
+        /> */}
+
+        {/* File Base Name */}
+        <span className="truncate block font-mono text-[11.5px] leading-tight font-medium text-text-primary">
+          {node.name}
+        </span>
       </div>
 
-      {/* Git Status Badge (+, -, M, R) */}
-      <div className="shrink-0 flex items-center">
-        {getStatusBadge(file.status)}
-      </div>
-
-      {/* File Base Name */}
-      <span className="truncate flex-1 font-mono text-[11px] text-text" title={file.path}>
-        {node.name}
-      </span>
+      {/* Status Badge */}
+      {getStatusBadge(file.status)}
     </div>
   );
 };

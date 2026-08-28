@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { useGitStore } from './store/useGitStore';
 import { Sidebar } from './components/sidebar/Sidebar';
 
@@ -32,6 +32,8 @@ describe('Sidebar Component', () => {
 
   it('disables commit button when commit summary is empty', () => {
     render(<Sidebar />);
+    const triggerBtn = screen.getByText(/initialize commit/i);
+    fireEvent.click(triggerBtn);
     const commitBtn = screen.getByText(/commit.*to main/i);
     expect(commitBtn.closest('button')?.disabled).toBe(true);
   });
@@ -39,6 +41,8 @@ describe('Sidebar Component', () => {
   it('enables commit button when commit summary is provided', () => {
     useGitStore.setState({ commitSummary: 'feat: add user authentication' });
     render(<Sidebar />);
+    const triggerBtn = screen.getByText(/initialize commit/i);
+    fireEvent.click(triggerBtn);
     const commitBtn = screen.getByText(/commit.*to main/i);
     expect(commitBtn.closest('button')?.disabled).toBe(false);
   });

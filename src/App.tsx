@@ -13,7 +13,8 @@ import { useGitRuntime } from './features/git-runtime';
 import { useGitStore } from './store/useGitStore';
 import { useLogStore } from './store/useLogStore';
 import { useAccountServicesStore } from './features/account-services';
-import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
+import { useRepoStore } from './store/repoStore';
+import { GitLabUser, gitLabUserToUnified } from './types/gitlab';
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
@@ -55,6 +56,7 @@ const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => (
 const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 const PublishRepoModal = lazy(() => import('./components/modals/PublishRepoModal').then(m => ({ default: m.PublishRepoModal })));
 const RemoteNotFoundModal = lazy(() => import('./components/modals/RemoteNotFoundModal').then(m => ({ default: m.RemoteNotFoundModal })));
+const AiAgentPanel = lazy(() => import('./features/ai-agent').then(m => ({ default: m.AiAgentPanel })));
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -90,34 +92,21 @@ export const App: React.FC = () => {
         const active = accounts.find((a) => a.is_active) || accounts[0];
         if (!active) return;
 
-        if (active.provider === 'github') {
-          AccountService.getGitHubUser()
-            .then((user) => {
-              if (user) setUser(gitHubUserToUnified(user));
-            })
-            .catch(() => {});
-        } else if (active.provider === 'gitlab') {
-          AccountService.getCurrentGitLabUser()
-            .then((user) => {
-              if (user) setUser(gitLabUserToUnified(user));
-            })
-            .catch(() => {});
-        } else {
-          setUser({
-            id: active.id,
-            name: active.name,
-            username: active.username,
-            email: active.email || '',
-            avatar_url: active.avatar_url || null,
-            provider: active.provider,
-            server_url: active.server_url,
-            web_url: active.server_url,
-          });
-        }
+        setUser({
+          id: active.id,
+          name: active.name,
+          username: active.username,
+          email: active.email || '',
+          avatar_url: active.avatar_url || null,
+          provider: active.provider,
+          server_url: active.server_url,
+          web_url: active.server_url,
+        });
       })
       .catch(() => {});
 
     useAccountServicesStore.getState().loadAccounts().catch(() => {});
+    useRepoStore.getState().loadRepos().catch(() => {});
 
     // Root-level listener for automatic OAuth loopback login success & deep links (GitLab)
     let unlistenEvent: (() => void) | undefined;
@@ -282,7 +271,7 @@ export const App: React.FC = () => {
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
 
-  // Global shortcuts: Ctrl+` / Cmd+` (Terminal) and Ctrl+, / Cmd+, (Settings)
+  // Global shortcuts: Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '`') {
@@ -291,6 +280,11 @@ export const App: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         useSettingsStore.getState().toggleSettings();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        import('./features/ai-agent').then(({ useAiAgentStore }) => {
+          useAiAgentStore.getState().toggleIsOpen();
+        });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -330,10 +324,19 @@ export const App: React.FC = () => {
 
         <div className="flex-1 flex overflow-hidden">
           {isHome ? (
-            /* ── Home page: full-width, no sidebar ── */
-            <HomeDashboard />
+            /* ── Home page: HomeDashboard + relative Right AI Agent sidebar ── */
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+                <HomeDashboard />
+              </div>
+
+              {/* Right Sidebar: AI Agent Panel */}
+              <Suspense fallback={null}>
+                <AiAgentPanel />
+              </Suspense>
+            </div>
           ) : (
-            /* ── Repo page: sidebar + main content ── */
+            /* ── Repo page: left rail sidebar + main workspace + relative Right AI Agent sidebar ── */
             <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               {/* Left rail navigation & tabs */}
               <Sidebar />
@@ -356,6 +359,11 @@ export const App: React.FC = () => {
                   </Suspense>
                 </div>
               </div>
+
+              {/* Relative Right AI Agent Sidebar */}
+              <Suspense fallback={null}>
+                <AiAgentPanel />
+              </Suspense>
             </div>
           )}
         </div>

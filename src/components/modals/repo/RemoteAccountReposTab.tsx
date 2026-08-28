@@ -33,7 +33,7 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
   onClose,
 }) => {
   const { setActiveRepoPath, setStatus, setError } = useGitStore();
-  const { addRepo } = useRepoStore();
+  const addRepo = useRepoStore((s) => s.addRepo);
   const { accounts, activeAccount, setActiveAccount, openModalWithTab, loadAccounts } =
     useAccountServicesStore();
 

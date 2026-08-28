@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ProviderAccount, AccountPatch } from '../types';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { avatarCache } from '../../../services/accounts/avatarCacheService';
 
 interface AccountServicesState {
   accounts: ProviderAccount[];
@@ -41,6 +42,27 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       const active = list.find((a) => a.is_active) || list[0] || null;
 
       set({ accounts: list, activeAccount: active });
+
+      // Pre-warm avatar cache for all connected accounts in background
+      const prefetchUrls: string[] = [];
+      for (const a of list) {
+        if (a.avatar_url) prefetchUrls.push(a.avatar_url);
+        const handle = (a.display_name || a.handle || '')
+          .replace(/\s+/g, '')
+          .replace(/^@+/, '')
+          .toLowerCase();
+        if (handle) {
+          if (a.provider === 'github') {
+            prefetchUrls.push(`https://github.com/${handle}.png`);
+            prefetchUrls.push(`https://avatars.githubusercontent.com/${handle}`);
+          } else if (a.provider === 'gitlab') {
+            prefetchUrls.push(`https://gitlab.com/${handle}.png`);
+          }
+        }
+      }
+      if (prefetchUrls.length > 0) {
+        avatarCache.prefetchAvatars(prefetchUrls).catch(() => {});
+      }
 
       // Sync with global user store
       if (active) {

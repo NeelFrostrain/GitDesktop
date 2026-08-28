@@ -482,6 +482,29 @@ pub async fn get_stash_diff_cmd(repo_path: String, index: usize) -> Result<Strin
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
+#[command]
+pub async fn get_stash_files_cmd(
+    repo_path: String,
+    index: usize,
+) -> Result<Vec<crate::git::workspace::status::FileStatus>, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::stash::get_stash_files(&repo_path, index))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_stash_file_diff_cmd(
+    repo_path: String,
+    index: usize,
+    file_path: String,
+) -> Result<crate::git::workspace::diff::DiffResult, AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::stash::get_stash_file_diff(&repo_path, index, &file_path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
 // Tags
 #[command]
 pub async fn list_tags_cmd(repo_path: String) -> Result<Vec<crate::git::tags::TagInfo>, AppError> {

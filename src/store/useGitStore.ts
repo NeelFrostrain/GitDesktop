@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { UnifiedUser, SavedAccount } from '../types/gitlab';
 import {
   RepoStatus,
+  FileStatus,
   AppError,
   BranchInfo,
   LfsFile,
@@ -17,6 +18,7 @@ import {
 import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
+import { avatarCache } from '../services/accounts/avatarCacheService';
 
 /**
  * Top-level application navigation views.
@@ -36,7 +38,11 @@ export type NavView =
 const getCachedUser = (): UnifiedUser | null => {
   try {
     const cached = localStorage.getItem('cached_user');
-    return cached ? (JSON.parse(cached) as UnifiedUser) : null;
+    const user = cached ? (JSON.parse(cached) as UnifiedUser) : null;
+    if (user?.avatar_url) {
+      avatarCache.prefetchAvatars([user.avatar_url]).catch(() => {});
+    }
+    return user;
   } catch {
     return null;
   }
@@ -93,6 +99,10 @@ export interface GitState {
   isLfsInstalled: boolean;
   worktrees: WorktreeInfo[];
   stashes: StashEntry[];
+  currentBranchStash: StashEntry | null;
+  stashFiles: FileStatus[];
+  isViewingStashedChanges: boolean;
+  selectedStashFile: string | null;
   tags: TagInfo[];
   releases: ReleaseInfo[];
   submodules: SubmoduleInfo[];
@@ -157,6 +167,14 @@ export interface GitState {
   setIsLfsInstalled: (installed: boolean) => void;
   setWorktrees: (worktrees: WorktreeInfo[]) => void;
   setStashes: (stashes: StashEntry[]) => void;
+  setCurrentBranchStash: (stash: StashEntry | null) => void;
+  setStashFiles: (files: FileStatus[]) => void;
+  setIsViewingStashedChanges: (viewing: boolean) => void;
+  setSelectedStashFile: (file: string | null) => void;
+  loadBranchStashes: () => Promise<void>;
+  loadStashFiles: () => Promise<void>;
+  restoreCurrentBranchStash: () => Promise<void>;
+  discardCurrentBranchStash: () => Promise<void>;
   setTags: (tags: TagInfo[]) => void;
   setReleases: (releases: ReleaseInfo[]) => void;
   setSubmodules: (submodules: SubmoduleInfo[]) => void;
@@ -226,6 +244,10 @@ export const useGitStore = create<GitState>((set, get) => ({
   isLfsInstalled: true,
   worktrees: [],
   stashes: [],
+  currentBranchStash: null,
+  stashFiles: [],
+  isViewingStashedChanges: false,
+  selectedStashFile: null,
   tags: [],
   releases: [],
   submodules: [],
@@ -303,6 +325,9 @@ export const useGitStore = create<GitState>((set, get) => ({
       selectedCommitSha: null,
       stagedFiles: [],
       hasInitializedStaging: false,
+      currentBranchStash: null,
+      isViewingStashedChanges: false,
+      selectedStashFile: null,
       currentNavView: path ? 'workspace' : 'home',
     });
   },
@@ -357,6 +382,9 @@ export const useGitStore = create<GitState>((set, get) => ({
         localStorage.setItem('cached_user', JSON.stringify(user));
       } catch {
         // Ignore localStorage errors
+      }
+      if (user.avatar_url) {
+        avatarCache.prefetchAvatars([user.avatar_url]).catch(() => {});
       }
       useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name}) [${user.provider}]`);
     } else {
@@ -429,6 +457,8 @@ export const useGitStore = create<GitState>((set, get) => ({
       hasInitializedStaging: true,
       statusVersion: state.statusVersion + 1,
     }));
+
+    get().loadBranchStashes().catch(() => {});
   },
 
   setBranches: (branches) => set({ branches }),
@@ -437,6 +467,99 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsLfsInstalled: (isLfsInstalled) => set({ isLfsInstalled }),
   setWorktrees: (worktrees) => set({ worktrees }),
   setStashes: (stashes) => set({ stashes }),
+  setCurrentBranchStash: (currentBranchStash) => set({ currentBranchStash }),
+  setStashFiles: (stashFiles) => set({ stashFiles }),
+  setIsViewingStashedChanges: (isViewingStashedChanges) => {
+    set({ isViewingStashedChanges });
+    if (isViewingStashedChanges) {
+      get().loadStashFiles().catch(() => {});
+    }
+  },
+  setSelectedStashFile: (selectedStashFile) => set({ selectedStashFile }),
+
+  loadStashFiles: async () => {
+    const { activeRepoPath, currentBranchStash, selectedStashFile } = get();
+    if (!activeRepoPath || !currentBranchStash) {
+      set({ stashFiles: [], selectedStashFile: null });
+      return;
+    }
+    try {
+      const files = await GitService.getStashFiles(activeRepoPath, currentBranchStash.index);
+      const list = files || [];
+      let nextSelected = selectedStashFile;
+      if (!nextSelected || !list.some((f) => f.path === nextSelected)) {
+        nextSelected = list.length > 0 ? list[0].path : null;
+      }
+      set({ stashFiles: list, selectedStashFile: nextSelected });
+    } catch {
+      set({ stashFiles: [], selectedStashFile: null });
+    }
+  },
+
+  loadBranchStashes: async () => {
+    const { activeRepoPath, status } = get();
+    if (!activeRepoPath || !status?.current_branch) {
+      set({ currentBranchStash: null, stashFiles: [], isViewingStashedChanges: false });
+      return;
+    }
+    try {
+      const allStashes = await GitService.listStashes(activeRepoPath);
+      set({ stashes: allStashes || [] });
+      const currentBranch = status.current_branch.trim();
+      const branchStash = (allStashes || []).find((s) => {
+        if (s.branch === currentBranch) return true;
+        if (s.message.includes(`Saved changes on ${currentBranch}`)) return true;
+        if (s.message.includes(`on ${currentBranch}:`)) return true;
+        if (s.message.includes(`WIP on ${currentBranch}`)) return true;
+        return false;
+      }) || null;
+
+      set((state) => ({
+        currentBranchStash: branchStash,
+        isViewingStashedChanges: branchStash ? state.isViewingStashedChanges : false,
+      }));
+
+      if (branchStash) {
+        get().loadStashFiles().catch(() => {});
+      }
+    } catch {
+      set({ currentBranchStash: null, stashFiles: [], isViewingStashedChanges: false });
+    }
+  },
+
+  restoreCurrentBranchStash: async () => {
+    const { activeRepoPath, currentBranchStash, setStatus } = get();
+    if (!activeRepoPath || !currentBranchStash) return;
+
+    try {
+      await GitService.popStash(activeRepoPath, currentBranchStash.index);
+      useLogStore.getState().addLog('success', 'Git', `Restored stashed changes to working directory`);
+      set({ isViewingStashedChanges: false, currentBranchStash: null, selectedStashFile: null });
+      const newStatus = await GitService.getRepoStatus(activeRepoPath);
+      setStatus(newStatus);
+      get().loadBranchStashes().catch(() => {});
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to restore stash: ${msg}`);
+      throw error;
+    }
+  },
+
+  discardCurrentBranchStash: async () => {
+    const { activeRepoPath, currentBranchStash } = get();
+    if (!activeRepoPath || !currentBranchStash) return;
+
+    try {
+      await GitService.dropStash(activeRepoPath, currentBranchStash.index);
+      useLogStore.getState().addLog('info', 'Git', `Discarded stashed changes`);
+      set({ isViewingStashedChanges: false, currentBranchStash: null, selectedStashFile: null });
+      get().loadBranchStashes().catch(() => {});
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
+      useLogStore.getState().addLog('error', 'Git', `Failed to discard stash: ${msg}`);
+      throw error;
+    }
+  },
   setTags: (tags) => set({ tags }),
   setReleases: (releases) => set({ releases }),
   setSubmodules: (submodules) => set({ submodules }),

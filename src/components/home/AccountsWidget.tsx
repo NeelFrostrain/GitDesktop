@@ -49,7 +49,9 @@ export const AccountsWidget: React.FC = () => {
               <div className="relative flex-shrink-0">
                 <UserAvatar
                   url={acc.avatar_url}
-                  name={acc.display_name || acc.handle}
+                  name={acc.display_name}
+                  handle={acc.handle}
+                  email={acc.commit_email}
                   provider={acc.provider}
                   className="w-7 h-7 rounded-sm ring-1 ring-border"
                   iconClassName="w-3.5 h-3.5"

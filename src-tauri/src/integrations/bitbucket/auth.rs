@@ -106,10 +106,11 @@ impl AuthProvider for BitbucketAuthProvider {
             oauth_pkce::generate_pkce_session("bitbucket", clean_url, &redirect_uri);
 
         let auth_url = format!(
-            "{}/site/oauth2/authorize?client_id={}&response_type=code&state={}",
+            "{}/site/oauth2/authorize?client_id={}&response_type=code&state={}&redirect_uri={}",
             clean_url,
             urlencoding::encode(&client_id),
             urlencoding::encode(&state),
+            urlencoding::encode(&redirect_uri),
         );
 
         Ok(auth_url)
@@ -217,9 +218,14 @@ impl BitbucketAuthProvider {
             .map_err(|e| AppError::Auth(format!("Invalid Basic Auth header: {}", e)))?;
         headers.insert(AUTHORIZATION, basic_auth_val);
 
+        let redirect_uri = _redirect_uri_override
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| self.get_redirect_uri());
+
         let params = [
             ("grant_type", "authorization_code"),
             ("code", code),
+            ("redirect_uri", &redirect_uri),
         ];
 
         let client = reqwest::Client::new();

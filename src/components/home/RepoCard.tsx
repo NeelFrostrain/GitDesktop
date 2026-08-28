@@ -28,7 +28,8 @@ export interface RepoCardProps {
 }
 
 export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'grid' }) => {
-  const { pinRepo, removeRepo } = useRepoStore();
+  const pinRepo = useRepoStore((s) => s.pinRepo);
+  const removeRepo = useRepoStore((s) => s.removeRepo);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -173,7 +174,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
 
         <div className="h-px bg-border my-1" />
 
-        {/* Pin & Copy */}
+        {/* Actions */}
         <div className="p-1 space-y-0.5">
           <button
             type="button"
@@ -420,4 +421,3 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
     </>
   );
 };
-

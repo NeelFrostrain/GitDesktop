@@ -10,6 +10,7 @@ import { ProviderBadge } from './ProviderBadge';
 import { EditAccountDialog } from './EditAccountDialog';
 import { useAccountServicesStore } from '../store/accountStore';
 import { UserAvatar } from '../../../components/common/UserAvatar';
+import { Button } from '../../../components/common/Button';
 
 interface AccountRowProps {
   account: ProviderAccount;
@@ -41,12 +42,15 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
     }
   };
 
+  const getCleanHost = (url: string) =>
+    url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+
   return (
     <>
       <div
-        className={`p-3.5 rounded-sm border transition-all duration-150 flex items-center justify-between gap-4 select-none ${
+        className={`p-3 rounded-sm border transition-all duration-150 flex items-center justify-between gap-3.5 select-none ${
           account.is_active
-            ? 'bg-base-1 border-commito-coral/50 shadow-xs ring-1 ring-commito-coral/20'
+            ? 'bg-base-1 border-commito-coral/40 shadow-xs ring-1 ring-commito-coral/20'
             : 'bg-base-1/50 border-border hover:border-border-strong hover:bg-base-1/90'
         }`}
       >
@@ -54,17 +58,19 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <UserAvatar
             url={account.avatar_url}
-            name={account.display_name || account.handle}
+            name={account.display_name}
+            handle={account.handle}
+            email={account.commit_email}
             provider={account.provider}
-            className="w-10 h-10 rounded-sm ring-1 ring-border flex-shrink-0"
-            iconClassName="w-5 h-5"
+            className="w-9 h-9 rounded-sm ring-1 ring-border shrink-0"
+            iconClassName="w-4.5 h-4.5"
           />
 
           <div className="min-w-0 space-y-0.5 flex-1">
             {/* Row 1: Name + Provider Badge + Active Badge */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-xs text-text-primary/95 truncate">
-                {account.display_name}
+              <span className="font-semibold text-xs text-text-primary truncate">
+                {account.display_name || account.handle.replace(/^@+/, '')}
               </span>
               <ProviderBadge provider={account.provider} />
 
@@ -78,9 +84,9 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
 
             {/* Row 2: @handle • instance_url */}
             <div className="text-[11px] text-text-muted font-mono flex items-center gap-1.5 truncate">
-              <span>{account.handle}</span>
+              <span>{account.handle.startsWith('@') ? account.handle : `@${account.handle}`}</span>
               <span className="text-text-muted/50">•</span>
-              <span className="text-text-muted/70 truncate">{account.instance_url}</span>
+              <span className="text-text-muted/70 truncate">{getCleanHost(account.instance_url)}</span>
             </div>
 
             {/* Row 3: Commit author email */}
@@ -93,38 +99,35 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Edit Info Button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {!account.is_active && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="xs"
+              onClick={handleSwitch}
+              disabled={isSwitching}
+              isLoading={isSwitching}
+            >
+              Set Active
+            </Button>
+          )}
+
           <button
             type="button"
             onClick={() => setIsEditOpen(true)}
-            className="px-2 py-1 rounded-sm text-xs font-medium text-text-muted hover:text-text-primary hover:bg-base-2 transition flex items-center gap-1.5 cursor-pointer"
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
             title="Edit local nickname or commit author email override"
           >
             <Pencil className="w-3.5 h-3.5" />
-            <span>Edit</span>
           </button>
 
-          {/* Switch to Account Button (if inactive) */}
-          {!account.is_active && (
-            <button
-              type="button"
-              onClick={handleSwitch}
-              disabled={isSwitching}
-              className="px-3 py-1 bg-base-2 hover:bg-base-3 border border-border text-text-primary rounded-sm text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
-            >
-              {isSwitching && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-              <span>Set Active</span>
-            </button>
-          )}
-
-          {/* Delete Icon */}
           <button
             type="button"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="p-1 rounded-sm text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
-            title="Remove account and delete tokens"
+            className="p-1 rounded-sm text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer disabled:opacity-50"
+            title="Remove account and delete credentials"
           >
             {isDeleting ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-git-removed" />

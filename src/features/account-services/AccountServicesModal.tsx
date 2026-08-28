@@ -1,21 +1,16 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  X,
-  Users,
-  Plus,
-} from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import { useAccountServicesStore } from './store/accountStore';
 import { AccountsTab } from './tabs/AccountsTab';
 import { AddAccountTab } from './tabs/AddAccountTab';
-import { Tabs } from '../../components/common/Tabs';
 
 /**
  * Clean, modern modal dialog for managing multiple Git provider accounts
  * and configuring 1-click browser OAuth sign-ins.
  */
 export const AccountServicesModal: React.FC = () => {
-  const { isModalOpen, setIsModalOpen, activeTab, setActiveTab, accounts, loadAccounts } =
+  const { isModalOpen, setIsModalOpen, activeTab, accounts, loadAccounts } =
     useAccountServicesStore();
 
   useEffect(() => {
@@ -47,15 +42,15 @@ export const AccountServicesModal: React.FC = () => {
           setIsModalOpen(false);
         }
       }}
-      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100 font-sans"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-150 font-sans"
     >
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[88vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-2xl bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
       >
-        {/* Header with Integrated Segmented Tabs */}
-        <div className="px-4 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+        {/* Clean Modal Header */}
+        <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Users className="w-3.5 h-3.5" />
@@ -67,43 +62,26 @@ export const AccountServicesModal: React.FC = () => {
               >
                 Connected Accounts
               </h2>
+              {accounts.length > 0 && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted">
+                  {accounts.length}
+                </span>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
-            <Tabs<'accounts' | 'add'>
-              tabs={[
-                {
-                  id: 'accounts',
-                  label: 'Accounts',
-                  icon: <Users className="w-3 h-3" />,
-                  badge: accounts.length,
-                  badgeVariant: 'neutral',
-                },
-                {
-                  id: 'add',
-                  label: 'Add Account',
-                  icon: <Plus className="w-3 h-3 text-git-added" />,
-                },
-              ]}
-              activeTab={activeTab}
-              onChange={setActiveTab}
-              size="sm"
-            />
-
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(false)}
-              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0 ml-1"
-              title="Close (Esc)"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsModalOpen(false)}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
+            title="Close (Esc)"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Tab Content Body */}
-        <div className="p-4 overflow-y-auto flex-1">
+        {/* Modal Content Body */}
+        <div className="p-4 overflow-y-auto flex-1 bg-base-0">
           {activeTab === 'accounts' && <AccountsTab />}
           {activeTab === 'add' && <AddAccountTab />}
         </div>

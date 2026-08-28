@@ -11,7 +11,6 @@ import {
   Pin,
   FileEdit,
   PlusSquare,
-  Sparkles,
 } from 'lucide-react';
 import { useRepoStore } from '../../store/repoStore';
 import { useGitStore } from '../../store/useGitStore';
@@ -26,7 +25,12 @@ type FilterTab = 'all' | 'pinned' | 'dirty' | 'gitlab' | 'github';
  * Dashboard repository list & grid with search, filter tabs, view modes, spotlight, and quick actions.
  */
 export const RepoList: React.FC = () => {
-  const { repos, statuses, addRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const isLoading = useRepoStore((s) => s.isLoading);
+  const loadRepos = useRepoStore((s) => s.loadRepos);
+  const addRepo = useRepoStore((s) => s.addRepo);
+
   const { setIsCloneRepoModalOpen, setIsCreateRepoModalOpen } = useGitStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
@@ -37,6 +41,10 @@ export const RepoList: React.FC = () => {
       return 'grid';
     }
   });
+
+  useEffect(() => {
+    loadRepos();
+  }, [loadRepos]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -250,12 +258,18 @@ export const RepoList: React.FC = () => {
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-commito-coral" />
+              {/* <Sparkles className="w-3.5 h-3.5 text-commito-coral" /> */}
               <span>Pinned Favorites</span>
             </span>
             <span className="text-[11px] font-mono text-text-muted">{pinnedRepos.length} pinned</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3.5">
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
+              gap: '12px',
+            }}
+          >
             {pinnedRepos.map((repo) => (
               <RepoCard key={`pinned-${repo.id}`} repo={repo} status={statuses[repo.path]} viewMode="grid" />
             ))}
@@ -302,7 +316,7 @@ export const RepoList: React.FC = () => {
           </div>
         ) : (
           /* List View */
-          <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+          <div className="flex flex-col gap-2 animate-in fade-in duration-200">
             {filteredRepos.map((repo) => (
               <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
             ))}
@@ -317,6 +331,18 @@ export const RepoList: React.FC = () => {
             </div>
           </div>
         )
+      ) : isLoading && repos.length === 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3.5 animate-pulse">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="h-36 bg-base-1/40 border border-border/40 rounded-sm p-4 space-y-3 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-1/2 h-4 bg-base-2 rounded-xs" />
+                <div className="w-3/4 h-3 bg-base-2 rounded-xs" />
+              </div>
+              <div className="w-1/3 h-3 bg-base-2 rounded-xs" />
+            </div>
+          ))}
+        </div>
       ) : repos.length === 0 ? (
         /* Empty State */
         <div className="py-16 px-4 bg-base-1/50 border border-border rounded-sm flex flex-col items-center justify-center text-center space-y-4">

@@ -17,7 +17,10 @@ import {
 
 export const HomeDashboard: React.FC = () => {
   const { user, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsUserConfigModalOpen } = useGitStore();
-  const { repos, statuses, loadRepos, addRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const loadRepos = useRepoStore((s) => s.loadRepos);
+  const addRepo = useRepoStore((s) => s.addRepo);
   const { accounts } = useAccounts();
 
   useEffect(() => {
@@ -173,15 +176,15 @@ export const HomeDashboard: React.FC = () => {
       </header>
 
       {/* 2. Main Workspace (Repositories Hub + Connected Accounts) */}
-      <div className="p-4 sm:p-5 lg:p-6 w-full max-w-7xl mx-auto">
+      <div className="p-4 sm:p-5 lg:p-6 w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
-          {/* Main Left Section: Repositories Hub (8-9 Columns on desktop) */}
-          <div className="lg:col-span-8 xl:col-span-9 2xl:col-span-9 space-y-4 min-w-0">
+          {/* Main Left Section: Repositories Hub (8 of 12 Columns on desktop) */}
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 space-y-4 min-w-0">
             <RepoList />
           </div>
 
-          {/* Right Section: Connected Accounts Card (3-4 Columns on desktop) */}
-          <div className="lg:col-span-4 xl:col-span-3 2xl:col-span-3 space-y-4 min-w-0">
+          {/* Right Section: Connected Accounts Card (4 of 12 Columns on desktop) */}
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-4 min-w-0">
             <div className="p-3.5 bg-base-1/50 border border-border/60 rounded-md shadow-2xs">
               <AccountsWidget />
             </div>

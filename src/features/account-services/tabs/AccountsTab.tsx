@@ -9,9 +9,9 @@ export const AccountsTab: React.FC = () => {
 
   return (
     <div className="space-y-3.5 select-none font-sans">
-      {/* Tab Header */}
-      <div className="flex items-center justify-between pb-1">
-        <div className="space-y-0.5">
+      {/* Content Header */}
+      <div className="flex items-center justify-between gap-3 pb-1">
+        <div className="space-y-0.5 min-w-0">
           <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
             Saved Accounts & Identities
           </h3>

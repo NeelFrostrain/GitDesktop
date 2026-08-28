@@ -66,4 +66,32 @@ export class SystemService {
   static async createDirectory(repoPath: string, folderPath: string): Promise<void> {
     return invoke('create_directory_cmd', { repoPath, folderPath });
   }
+
+  /**
+   * Reads text file content from repository.
+   */
+  static async readFileContent(repoPath: string, filePath: string): Promise<string> {
+    return invoke<string>('read_file_content_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Writes / creates / updates file content in repository.
+   */
+  static async saveFileContent(repoPath: string, filePath: string, content: string): Promise<void> {
+    return invoke('save_file_content_cmd', { repoPath, filePath, content });
+  }
+
+  /**
+   * Deletes a file or directory from repository.
+   */
+  static async deleteFile(repoPath: string, filePath: string): Promise<void> {
+    return invoke('delete_file_cmd', { repoPath, filePath });
+  }
+
+  /**
+   * Renames / moves a file in repository.
+   */
+  static async renameFile(repoPath: string, oldPath: string, newPath: string): Promise<void> {
+    return invoke('rename_file_cmd', { repoPath, oldPath, newPath });
+  }
 }
