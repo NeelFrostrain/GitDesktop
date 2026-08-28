@@ -293,7 +293,7 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search repositories..."
-            className="w-full h-8.5 pl-8 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition shadow-2xs font-sans"
+            className="w-full h-8.5 pl-8 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition shadow-2xs font-sans"
           />
           <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           {isLoading && (

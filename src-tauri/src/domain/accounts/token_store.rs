@@ -86,27 +86,39 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
     let mut reg = read_registry();
     let now = chrono::Utc::now().timestamp();
 
-    // Migrate from legacy keyring if registry is empty
-    if reg.accounts.is_empty() {
-        let legacy_accounts = crate::auth::keyring::list_accounts();
-        for leg in legacy_accounts {
-            let kind = match leg.provider.as_str() {
-                "github" => ProviderKind::Github,
-                "bitbucket" => ProviderKind::Bitbucket,
-                _ => ProviderKind::Gitlab,
-            };
-            let handle = if leg.username.starts_with('@') {
-                leg.username
-            } else {
-                format!("@{}", leg.username)
-            };
+    // Always merge accounts from legacy keyring to ensure full sync between PAT logins and OAuth
+    let legacy_accounts = crate::auth::keyring::list_accounts();
+    let mut modified = false;
+
+    for leg in legacy_accounts {
+        let kind = match leg.provider.as_str() {
+            "github" => ProviderKind::Github,
+            "bitbucket" => ProviderKind::Bitbucket,
+            _ => ProviderKind::Gitlab,
+        };
+        let handle = if leg.username.starts_with('@') {
+            leg.username.clone()
+        } else {
+            format!("@{}", leg.username)
+        };
+
+        if let Some(_pos) = reg.accounts.iter().position(|a| a.id == leg.id) {
+            // Update token if changed
+            if !leg.token.trim().is_empty() {
+                let _ = store_token(&leg.id, &leg.token);
+            }
+            if leg.is_active && reg.active_account_id.as_deref() != Some(&leg.id) {
+                reg.active_account_id = Some(leg.id.clone());
+                modified = true;
+            }
+        } else {
             let acc = ProviderAccount {
                 id: leg.id.clone(),
                 provider: kind,
                 instance_url: leg.server_url.clone(),
                 handle,
                 display_name: if !leg.name.is_empty() {
-                    leg.name
+                    leg.name.clone()
                 } else {
                     leg.id.clone()
                 },
@@ -118,11 +130,22 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
                 expires_at: leg.expires_at,
             };
             reg.accounts.push(acc);
-            let _ = store_token(&leg.id, &leg.token);
+            if !leg.token.trim().is_empty() {
+                let _ = store_token(&leg.id, &leg.token);
+            }
+            if leg.is_active {
+                reg.active_account_id = Some(leg.id.clone());
+            }
+            modified = true;
         }
-        if let Some(active) = reg.accounts.iter().find(|a| a.is_active) {
-            reg.active_account_id = Some(active.id.clone());
-        }
+    }
+
+    if reg.active_account_id.is_none() && !reg.accounts.is_empty() {
+        reg.active_account_id = Some(reg.accounts[0].id.clone());
+        modified = true;
+    }
+
+    if modified {
         write_registry(&reg);
     }
 
@@ -183,6 +206,8 @@ pub fn set_active_account(account_id: &str) -> Result<(), AppError> {
         }
         write_registry(&reg);
     }
+    // Also sync to legacy keyring store
+    let _ = crate::auth::keyring::switch_active_account(account_id);
     Ok(())
 }
 
@@ -222,6 +247,9 @@ pub fn remove_account(account_id: &str) -> Result<(), AppError> {
     // Delete secrets from persistent stores
     let _ = delete_token(account_id);
     let _ = delete_refresh_token(account_id);
+
+    // Also remove from legacy keyring
+    let _ = crate::auth::keyring::remove_account(account_id);
 
     Ok(())
 }

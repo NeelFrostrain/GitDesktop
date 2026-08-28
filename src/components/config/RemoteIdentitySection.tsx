@@ -93,7 +93,7 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
         <button
           type="button"
           onClick={onToggleDropdown}
-          className="w-full h-9 px-3 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none focus:border-commito-coral/60"
+          className="w-full h-9 px-3 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none focus:border-border-strong"
         >
           <div className="flex items-center gap-2.5 truncate min-w-0">
             {selectedItem ? (

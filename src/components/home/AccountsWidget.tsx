@@ -44,7 +44,7 @@ export const AccountsWidget: React.FC = () => {
             <div
               key={acc.id}
               onClick={() => openModalWithTab('accounts')}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-sm bg-base-1 border border-border hover:border-commito-coral/40 transition cursor-pointer group shadow-2xs"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-sm bg-base-1 border border-border hover:border-border-strong transition cursor-pointer group shadow-2xs"
             >
               <div className="relative flex-shrink-0">
                 <UserAvatar

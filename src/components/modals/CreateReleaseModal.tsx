@@ -971,7 +971,7 @@ function compareSemverDescending(a: string, b: string): number {
                         value={tagName}
                         onChange={(e) => setTagName(e.target.value)}
                         disabled={isSubmitting}
-                        className="w-full h-8 px-2.5 text-xs font-mono text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                        className="w-full h-8 px-2.5 text-xs font-mono text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
                       />
                       <Tag className="w-3.5 h-3.5 text-text-faint absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -1100,7 +1100,7 @@ function compareSemverDescending(a: string, b: string): number {
                 value={releaseName}
                 onChange={(e) => setReleaseName(e.target.value)}
                 disabled={isSubmitting || isDeleting}
-                className="w-full h-8 px-2.5 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                className="w-full h-8 px-2.5 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
               />
             </div>
 

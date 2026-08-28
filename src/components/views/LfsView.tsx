@@ -162,7 +162,7 @@ export const LfsView: React.FC = () => {
               placeholder="e.g. *.psd, *.fbx, *.bin"
               value={trackPattern}
               onChange={(e) => setTrackPattern(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
             />
             <button
               type="submit"
@@ -220,7 +220,7 @@ export const LfsView: React.FC = () => {
               placeholder="e.g. assets/textures/character.png"
               value={lockFilePath}
               onChange={(e) => setLockFilePath(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
             />
             <button
               type="submit"

@@ -130,6 +130,12 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
       setUser(gitLabUserToUnified(loggedUser));
       await onAccountAdded();
+      try {
+        const { useAccountStore } = await import('../../../store/accountStore');
+        await useAccountStore.getState().fetchAccounts();
+        const { useAccountServicesStore } = await import('../../../features/account-services');
+        await useAccountServicesStore.getState().loadAccounts();
+      } catch {}
       setPatToken('');
       setIsAuthenticating(false);
       useGitStore.setState({ isRepoModalOpen: false, error: null });
@@ -154,6 +160,12 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
       setUser(gitHubUserToUnified(loggedUser));
       await onAccountAdded();
+      try {
+        const { useAccountStore } = await import('../../../store/accountStore');
+        await useAccountStore.getState().fetchAccounts();
+        const { useAccountServicesStore } = await import('../../../features/account-services');
+        await useAccountServicesStore.getState().loadAccounts();
+      } catch {}
       setGithubToken('');
       setIsGithubAuthenticating(false);
       useGitStore.setState({ isRepoModalOpen: false, error: null });
@@ -211,7 +223,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">GitLab Instance URL</label>
-            <div className="flex items-center gap-2 bg-base-1 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
+            <div className="flex items-center gap-2 bg-base-1 border border-border hover:border-border-strong rounded-sm px-2.5 py-1.5 focus-within:border-border-strong">
               <Globe className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <input
                 type="text"
@@ -271,7 +283,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
               <code className="text-commito-coral font-mono">read_user</code> scopes.
             </p>
 
-            <div className="flex items-center gap-2 bg-base-0 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
+            <div className="flex items-center gap-2 bg-base-0 border border-border hover:border-border-strong rounded-sm px-2.5 py-1.5 focus-within:border-border-strong">
               <Key className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <input
                 type="password"

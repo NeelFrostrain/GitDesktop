@@ -26,7 +26,7 @@ export const CommitMessageForm: React.FC<CommitMessageFormProps> = ({
           type="button"
           onClick={() => setIsUserConfigModalOpen(true)}
           title="Configure Git User Identity & Avatar"
-          className="rounded-full hover:ring-2 hover:ring-commito-coral/50 transition cursor-pointer flex-shrink-0"
+          className="rounded-full hover:ring-2 hover:ring-border-strong transition cursor-pointer flex-shrink-0"
         >
           <UserAvatar
             url={user?.avatar_url}
@@ -41,12 +41,12 @@ export const CommitMessageForm: React.FC<CommitMessageFormProps> = ({
           placeholder="Summary (required)"
           value={summary}
           onChange={(e) => onSummaryChange(e.target.value)}
-          className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+          className="flex-1 px-2.5 py-1.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong font-sans"
         />
       </div>
 
       {/* Unified Description Card Input Container */}
-      <div className="bg-base-0 border border-border rounded-sm focus-within:border-commito-coral/50 transition flex flex-col overflow-hidden">
+      <div className="bg-base-0 border border-border hover:border-border-strong rounded-sm focus-within:border-border-strong transition flex flex-col overflow-hidden">
         <textarea
           placeholder="Description"
           rows={4}

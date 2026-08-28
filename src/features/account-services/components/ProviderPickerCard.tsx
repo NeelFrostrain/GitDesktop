@@ -190,7 +190,7 @@ export const ProviderPickerCard: React.FC = () => {
               key={provider.id}
               className={`p-3 rounded-sm border transition-all duration-150 select-none ${
                 isWaiting
-                  ? 'bg-base-1 border-commito-coral/40 shadow-xs ring-1 ring-commito-coral/20'
+                  ? 'bg-base-1 border-border-strong shadow-xs'
                   : 'bg-base-1/50 border-border hover:border-border-strong hover:bg-base-1/90'
               }`}
             >

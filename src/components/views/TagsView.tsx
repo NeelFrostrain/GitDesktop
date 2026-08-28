@@ -324,7 +324,7 @@ export const TagsView: React.FC = () => {
               placeholder={activeTab === 'releases' ? 'Search releases & notes...' : 'Search tags & SHAs...'}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full h-8 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+              className="w-full h-8 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint"
             />
           </div>
 

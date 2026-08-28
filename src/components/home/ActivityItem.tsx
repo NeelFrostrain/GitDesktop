@@ -169,7 +169,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
   return (
     <div
       onClick={handleItemClick}
-      className="p-2.5 rounded-sm bg-base-1 border border-border/80 hover:border-commito-coral/50 hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
+      className="p-2.5 rounded-sm bg-base-1 border border-border/80 hover:border-border-strong hover:bg-base-1/80 transition flex items-start gap-2.5 cursor-pointer group"
     >
       {renderIconAndBadge()}
       {renderContent()}

@@ -171,7 +171,7 @@ export const CherryPickModal: React.FC = () => {
                 placeholder="Search commits by message..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+                className="w-full pl-8 pr-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong"
               />
             </div>
           </div>

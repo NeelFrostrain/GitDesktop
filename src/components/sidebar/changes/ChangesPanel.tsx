@@ -64,7 +64,7 @@ export const ChangesPanel: React.FC = () => {
             placeholder="Filter changed files..."
             value={fileFilter}
             onChange={(e) => setFileFilter(e.target.value)}
-            className="w-full pl-8 pr-7 py-1.5 bg-base-1/80 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong/70 focus:border-commito-coral/70 rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-sans transition-all duration-150"
+            className="w-full pl-8 pr-7 py-1.5 bg-base-1/80 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none font-sans transition-all duration-150"
           />
           {fileFilter && (
             <button

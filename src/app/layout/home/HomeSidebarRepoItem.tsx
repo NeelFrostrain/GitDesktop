@@ -79,10 +79,10 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
       onKeyDown={handleKeyDown}
       className={`group mx-2 my-1.5 p-2.5 rounded-sm border transition-all duration-150 cursor-pointer flex flex-col justify-between gap-2 select-none shadow-2xs ${
         isActive
-          ? 'bg-base-2 border-commito-coral/50 ring-1 ring-commito-coral/30 shadow-xs'
+          ? 'bg-base-2 border-border-strong shadow-xs'
           : repo.pinned
-          ? 'bg-base-1/80 border-border-strong ring-1 ring-commito-coral/20'
-          : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70'
+          ? 'bg-base-1/80 border-border-strong'
+          : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70'
       }`}
     >
       <div className="space-y-1.5">

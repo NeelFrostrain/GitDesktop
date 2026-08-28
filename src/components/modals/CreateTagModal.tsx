@@ -513,7 +513,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                   if (error) setError(null);
                 }}
                 disabled={isSubmitting}
-                className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                className="w-full h-8 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
                 required
               />
             </div>
@@ -560,7 +560,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                     value={customCommitSha}
                     onChange={(e) => setCustomCommitSha(e.target.value)}
                     disabled={isSubmitting}
-                    className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
+                    className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
                     required={targetType === 'commit'}
                   />
                 </div>
@@ -587,7 +587,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                   onChange={(e) => setTagMessage(e.target.value)}
                   disabled={isSubmitting}
                   rows={3}
-                  className="w-full p-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner font-sans resize-none"
+                  className="w-full p-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner font-sans resize-none"
                 />
               )}
             </div>

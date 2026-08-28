@@ -162,7 +162,7 @@ export const SigningSettings: React.FC = () => {
                     }}
                     className={`p-3 rounded-sm border cursor-pointer transition ${
                       method === 'gpg'
-                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                        ? 'bg-base-2 border-border-strong shadow-xs'
                         : 'bg-base-2/50 border-border hover:border-border-strong'
                     }`}
                   >
@@ -180,7 +180,7 @@ export const SigningSettings: React.FC = () => {
                     }}
                     className={`p-3 rounded-sm border cursor-pointer transition ${
                       method === 'ssh'
-                        ? 'bg-base-2 border-commito-coral/50 shadow-xs'
+                        ? 'bg-base-2 border-border-strong shadow-xs'
                         : 'bg-base-2/50 border-border hover:border-border-strong'
                     }`}
                   >
@@ -207,7 +207,7 @@ export const SigningSettings: React.FC = () => {
                     <select
                       value={keyId}
                       onChange={(e) => setKeyId(e.target.value)}
-                      className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                      className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-border-strong"
                     >
                       <option value="">Select a GPG key...</option>
                       {gpgKeys.map((k) => (
@@ -231,7 +231,7 @@ export const SigningSettings: React.FC = () => {
                   <select
                     value={keyId}
                     onChange={(e) => setKeyId(e.target.value)}
-                    className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral"
+                    className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm px-3 py-2 text-xs text-text-primary font-mono focus:outline-none focus:border-border-strong"
                   >
                     <option value="">Select an SSH key...</option>
                     {sshKeys.map((k) => (

@@ -104,7 +104,7 @@ export const Header: React.FC = () => {
                     setEditingRelease(null);
                     setIsCreateReleaseModalOpen(true);
                   }}
-                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
+                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
                   title="Draft Release..."
                 >
                   <PackagePlus className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -114,7 +114,7 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsCreateTagModalOpen(true)}
-                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-amber-400 transition cursor-pointer active:scale-95 group shadow-2xs"
+                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-amber-400 transition cursor-pointer active:scale-95 group shadow-2xs"
                   title="Create Git Tag..."
                 >
                   <Tag className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -124,7 +124,7 @@ export const Header: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsMergeRequestModalOpen(true)}
-                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
+                  className="h-7 w-7 flex items-center justify-center rounded-sm border border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 group shadow-2xs"
                   title="Create Merge / Pull Request"
                 >
                   <GitPullRequest className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
@@ -138,8 +138,8 @@ export const Header: React.FC = () => {
               onClick={toggleTerminal}
               className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs shrink-0 ${
                 isTerminalOpen
-                  ? "border-commito-coral/50 bg-commito-coral/15 text-commito-coral"
-                  : "border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral"
+                  ? "border-border-strong bg-base-2 text-commito-coral"
+                  : "border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral"
               }`}
               title="Open in Integrated Terminal (`)"
             >
@@ -154,8 +154,8 @@ export const Header: React.FC = () => {
                 isSlim ? "w-7 px-0" : "px-2.5"
               } ${
                 isAiAgentOpen
-                  ? "border-commito-coral/60 bg-commito-coral/20 text-commito-coral ring-1 ring-commito-coral/30 font-semibold"
-                  : "border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-commito-coral hover:border-commito-coral/40 font-medium"
+                  ? "border-border-strong bg-base-2 text-commito-coral font-semibold"
+                  : "border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-commito-coral font-medium"
               }`}
               title="AI Git Agent (Ctrl+I)"
             >
@@ -176,7 +176,7 @@ export const Header: React.FC = () => {
                   className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
                     isMoreMenuOpen
                       ? "border-border-strong bg-base-2 text-text-primary"
-                      : "border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary"
+                      : "border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary"
                   }`}
                   title="More repository actions..."
                 >

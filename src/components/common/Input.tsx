@@ -28,7 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             } ${
               error
                 ? 'border-git-removed focus:border-danger'
-                : 'border-border focus:border-commito-coral/50'
+                : 'border-border hover:border-border-strong focus:border-border-strong'
             } ${className}`}
             {...props}
           />

@@ -588,7 +588,7 @@ export const AiAgentPanel: React.FC = () => {
         )}
 
         {/* Claude-style Rounded Input Composer */}
-        <div className="relative flex flex-col bg-transparent border border-border hover:border-border-strong focus-within:border-commito-coral/70 focus-within:ring-1 focus-within:ring-commito-coral/20 rounded-sm p-2.5 transition">
+        <div className="relative flex flex-col bg-transparent border border-border hover:border-border-strong focus-within:border-border-strong rounded-sm p-2.5 transition">
           {/* Top: Multiline Textarea */}
           <textarea
             ref={textareaRef}

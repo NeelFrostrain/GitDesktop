@@ -144,7 +144,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. C:/patches/my-feature.patch"
                   value={exportPath}
                   onChange={(e) => setExportPath(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                   required
                 />
               </div>
@@ -158,7 +158,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. main..feature-branch or HEAD~3..HEAD"
                   value={commitRange}
                   onChange={(e) => setCommitRange(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                 />
               </div>
             </form>
@@ -196,7 +196,7 @@ export const PatchModal: React.FC = () => {
                   placeholder="e.g. C:/patches/incoming-fix.patch"
                   value={patchFilePath}
                   onChange={(e) => setPatchFilePath(e.target.value)}
-                  className="w-full px-3 py-2 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-2 bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                   required
                 />
               </div>

@@ -75,7 +75,7 @@ export const LogFilterBar: React.FC<LogFilterBarProps> = ({
             placeholder="Search logs by message or metadata..."
             value={filter.search || ''}
             onChange={(e) => onChange({ search: e.target.value })}
-            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong font-sans"
           />
           {filter.search && (
             <button

@@ -211,7 +211,7 @@ export const GitConfigModal: React.FC = () => {
                 <textarea
                   value={gitignoreContent}
                   onChange={(e) => setGitignoreContent(e.target.value)}
-                  className="w-full h-full p-4 bg-base-2 border border-border rounded-sm font-mono text-xs text-text-primary focus:outline-none focus:border-commito-coral resize-none"
+                  className="w-full h-full p-4 bg-base-2 border border-border hover:border-border-strong rounded-sm font-mono text-xs text-text-primary focus:outline-none focus:border-border-strong resize-none"
                   placeholder="# Add patterns to ignore..."
                 />
               </div>
@@ -257,14 +257,14 @@ export const GitConfigModal: React.FC = () => {
                     placeholder="Key (e.g. user.email)"
                     value={newKey}
                     onChange={(e) => setNewKey(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
                   />
                   <input
                     type="text"
                     placeholder="Value (e.g. dev@company.com)"
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
                   />
                   <button
                     onClick={() => handleSaveConfigItem(newKey, newValue)}

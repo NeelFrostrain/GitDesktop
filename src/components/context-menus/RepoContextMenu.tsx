@@ -154,7 +154,7 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
             placeholder="e.g. My Primary Client Repo"
             value={aliasText}
             onChange={(e) => setAliasText(e.target.value)}
-            className="w-full px-2.5 py-1 bg-base-2 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+            className="w-full px-2.5 py-1 bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong"
             autoFocus
           />
           <div className="flex justify-end gap-1.5 pt-1">

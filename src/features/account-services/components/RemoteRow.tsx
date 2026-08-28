@@ -122,7 +122,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
             type="text"
             value={editedUrl}
             onChange={(e) => setEditedUrl(e.target.value)}
-            className="flex-1 bg-base-1 border border-border rounded-sm px-2.5 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+            className="flex-1 bg-base-1 border border-border hover:border-border-strong rounded-sm px-2.5 py-1 text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
           />
           <button
             onClick={handleSaveUrl}

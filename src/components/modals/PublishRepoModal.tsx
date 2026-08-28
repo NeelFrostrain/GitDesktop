@@ -453,7 +453,7 @@ export const PublishRepoModal: React.FC = () => {
                   disabled={isPublishing}
                   className={`w-full h-9 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
                     isAccountDropdownOpen
-                      ? 'border-commito-coral ring-1 ring-commito-coral/40'
+                      ? 'border-border-strong bg-base-2'
                       : 'border-border hover:border-border-strong hover:bg-base-1/90'
                   }`}
                 >
@@ -570,7 +570,7 @@ export const PublishRepoModal: React.FC = () => {
                 className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs ${
                   hasInvalidChars
                     ? 'border-git-removed focus:border-danger ring-1 ring-git-removed/20'
-                    : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30'
+                    : 'border-border hover:border-border-strong focus:border-border-strong'
                 }`}
                 required
               />
@@ -587,7 +587,7 @@ export const PublishRepoModal: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isPublishing}
-                className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
               />
             </div>
 
@@ -661,7 +661,7 @@ export const PublishRepoModal: React.FC = () => {
                     value={customWorkspaceSlug}
                     onChange={(e) => setCustomWorkspaceSlug(e.target.value)}
                     disabled={isPublishing}
-                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/30 rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs"
                   />
                   <p className="text-[10.5px] text-text-muted">
                     Enter the exact Bitbucket workspace slug identifier from bitbucket.org/&lt;workspace&gt;.
@@ -680,7 +680,7 @@ export const PublishRepoModal: React.FC = () => {
                     disabled={isPublishing || isLoadingNamespaces}
                     className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
                       isNamespaceDropdownOpen
-                        ? 'border-commito-coral ring-1 ring-commito-coral/40'
+                        ? 'border-border-strong bg-base-2'
                         : 'border-border hover:border-border-strong hover:bg-base-1/90'
                     } ${isLoadingNamespaces ? 'opacity-70 cursor-wait' : ''}`}
                   >

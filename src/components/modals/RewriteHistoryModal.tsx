@@ -239,7 +239,7 @@ export const RewriteHistoryModal: React.FC = () => {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Enter combined commit message..."
-                  className="w-full px-3 py-2 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 resize-y font-sans leading-relaxed"
+                  className="w-full px-3 py-2 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong resize-y font-sans leading-relaxed"
                   required
                 />
               </div>

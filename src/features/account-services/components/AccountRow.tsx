@@ -50,7 +50,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
       <div
         className={`p-3 rounded-sm border transition-all duration-150 flex items-center justify-between gap-3.5 select-none ${
           account.is_active
-            ? 'bg-base-1 border-commito-coral/40 shadow-xs ring-1 ring-commito-coral/20'
+            ? 'bg-base-1 border-border-strong shadow-xs'
             : 'bg-base-1/50 border-border hover:border-border-strong hover:bg-base-1/90'
         }`}
       >

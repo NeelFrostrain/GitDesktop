@@ -220,13 +220,13 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         <div
           onClick={handleCardClick}
           onContextMenu={handleContextMenu}
-          className={`group px-3.5 py-2.5 bg-base-1 border border-border hover:border-commito-coral/50 rounded-sm hover:bg-base-1/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
+          className={`group px-3.5 py-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm hover:bg-base-1/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
             repo.pinned ? 'border-border-strong bg-base-2/20' : ''
           }`}
         >
           {/* Left: Icon + Name + Provider + Branch + Path */}
           <div className="flex items-center gap-3 min-w-0 max-w-[320px] lg:max-w-[380px] shrink-0">
-            <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/30 transition-colors flex-shrink-0">
+            <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
               <FolderGit2 className="w-4 h-4" />
             </div>
             <div className="min-w-0 flex flex-col gap-0.5">
@@ -322,15 +322,15 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
       <div
         onClick={handleCardClick}
         onContextMenu={handleContextMenu}
-        className={`group p-4 bg-base-1 border border-border hover:border-commito-coral/50 rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
-          repo.pinned ? 'border-border-strong bg-base-1/90 ring-1 ring-commito-coral/20' : ''
+        className={`group p-4 bg-base-1 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
+          repo.pinned ? 'border-border-strong bg-base-1/90' : ''
         }`}
       >
         <div className="space-y-2">
           {/* Header Row */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/30 transition-colors flex-shrink-0">
+              <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
                 <FolderGit2 className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">

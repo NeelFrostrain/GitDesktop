@@ -35,11 +35,16 @@ import {
   Columns,
   GitMerge,
   MoreHorizontal,
+  Key,
+  ShieldAlert,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useRemoteStore } from '../../store/remoteStore';
+import { useAccountServicesStore } from '../../features/account-services';
+import { useAccountStore } from '../../store/accountStore';
+import { UserAvatar } from '../common/UserAvatar';
 import {
   UnifiedMergeRequest,
   BranchInfo,
@@ -180,6 +185,24 @@ export const MergeRequestModal: React.FC = () => {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Account services multi-account integration
+  const { accounts, activeAccount, setActiveAccount, openModalWithTab } = useAccountServicesStore();
+  const { setIsSignInModalOpen } = useAccountStore();
+  const { addRemote } = useRemoteStore();
+  const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
+  const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
+  const accountDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Quick remote connection & inline token update
+  const [newRemoteUrl, setNewRemoteUrl] = useState('');
+  const [isAddingRemote, setIsAddingRemote] = useState(false);
+  const [remoteError, setRemoteError] = useState<string | null>(null);
+
+  const [isTokenInputVisible, setIsTokenInputVisible] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [isUpdatingToken, setIsUpdatingToken] = useState(false);
+  const [tokenSaveError, setTokenSaveError] = useState<string | null>(null);
+
   const titleInputRef = useRef<HTMLInputElement>(null);
   const editTitleInputRef = useRef<HTMLInputElement>(null);
   const modalContainerRef = useRef<HTMLDivElement>(null);
@@ -295,16 +318,65 @@ export const MergeRequestModal: React.FC = () => {
 
   const requestTypeLabel = providerName === 'GitHub' ? 'Pull Request' : 'Merge Request';
 
+  // Handlers for Quick Remote Connection and Direct Token Update
+  const handleQuickAddRemote = async () => {
+    if (!activeRepoPath || !newRemoteUrl.trim()) return;
+    setIsAddingRemote(true);
+    setRemoteError(null);
+    try {
+      await addRemote(activeRepoPath, 'origin', newRemoteUrl.trim());
+      setNewRemoteUrl('');
+      await loadRemotes(activeRepoPath);
+      setFormError(null);
+    } catch (err: unknown) {
+      setRemoteError(parseApiError(err) || 'Failed to add remote repository');
+    } finally {
+      setIsAddingRemote(false);
+    }
+  };
+
+  const handleDirectTokenSave = async () => {
+    if (!tokenInput.trim()) return;
+    setIsUpdatingToken(true);
+    setTokenSaveError(null);
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      if (providerName === 'GitHub') {
+        await invoke('login_github_pat', { token: tokenInput.trim() });
+      } else {
+        const sUrl = targetRemoteInfo?.serverUrl || 'https://gitlab.com';
+        await invoke('login_gitlab_pat', { serverUrl: sUrl, token: tokenInput.trim(), customCaPem: null });
+      }
+      await useAccountServicesStore.getState().loadAccounts();
+      await useAccountStore.getState().fetchAccounts();
+      setTokenInput('');
+      setIsTokenInputVisible(false);
+      setFormError(null);
+      await loadMergeRequests();
+    } catch (err: unknown) {
+      setTokenSaveError(parseApiError(err) || 'Failed to update token');
+    } finally {
+      setIsUpdatingToken(false);
+    }
+  };
+
   // Load Open Pull / Merge Requests
   const loadMergeRequests = useCallback(async () => {
     if (!activeRepoPath) return;
+    if (remotes.length === 0 || !targetRemoteInfo?.projectPath) {
+      setMergeRequests([]);
+      setIsLoadingList(false);
+      return;
+    }
+
     setIsLoadingList(true);
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
-      const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const projectPath = targetRemoteInfo.projectPath;
+      const serverUrl = targetRemoteInfo.serverUrl;
+      const provider = targetRemoteInfo.provider !== 'unknown' ? targetRemoteInfo.provider : user?.provider;
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
       setMergeRequests(res || []);
+      setFormError(null);
       if (res && res.length > 0) {
         setSelectedMrId((prev) => {
           if (
@@ -327,6 +399,7 @@ export const MergeRequestModal: React.FC = () => {
     }
   }, [
     activeRepoPath,
+    remotes.length,
     targetRemoteInfo?.projectPath,
     targetRemoteInfo?.serverUrl,
     targetRemoteInfo?.provider,
@@ -334,12 +407,12 @@ export const MergeRequestModal: React.FC = () => {
     selectedMergeRequestId,
   ]);
 
-  // Load Open Requests once when modal opens or active repository changes
+  // Load Open Requests once when modal opens or remotes become available
   useEffect(() => {
-    if (isMergeRequestModalOpen && activeRepoPath) {
+    if (isMergeRequestModalOpen && activeRepoPath && targetRemoteInfo?.projectPath) {
       loadMergeRequests();
     }
-  }, [isMergeRequestModalOpen, activeRepoPath, selectedRemote]);
+  }, [isMergeRequestModalOpen, activeRepoPath, selectedRemote, remotes.length, targetRemoteInfo?.projectPath]);
 
   // Check if an open PR already exists for the selected source branch
   const existingPrForSource = useMemo(() => {
@@ -353,16 +426,217 @@ export const MergeRequestModal: React.FC = () => {
     return formatBranchDropdownOptions(branches);
   }, [branches]);
 
-  // Global click listener to dismiss comment context menu
+  // Global click listener to dismiss comment context menu & account dropdown
   useEffect(() => {
-    const handleGlobalClick = () => {
+    const handleGlobalClick = (e: MouseEvent) => {
       if (activeCommentMenuId !== null) {
         setActiveCommentMenuId(null);
+      }
+      if (
+        accountDropdownRef.current &&
+        !accountDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsAccountDropdownOpen(false);
       }
     };
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
   }, [activeCommentMenuId]);
+
+  // Account switching helper
+  const handleSwitchAccountFromModal = async (accountId: string) => {
+    setIsSwitchingAccount(true);
+    try {
+      await setActiveAccount(accountId);
+      setFormError(null);
+      await loadMergeRequests();
+    } catch (err: unknown) {
+      setFormError(parseApiError(err) || 'Failed to switch account');
+    } finally {
+      setIsSwitchingAccount(false);
+      setIsAccountDropdownOpen(false);
+    }
+  };
+
+  const handleOpenSignIn = () => {
+    if (providerName === 'GitLab') {
+      setIsSignInModalOpen(true);
+    } else {
+      openModalWithTab('add');
+    }
+  };
+
+  // Determine if error is an authentication / 401 failure
+  const isAuthError = useMemo(() => {
+    if (!formError) return false;
+    const lower = formError.toLowerCase();
+    return (
+      lower.includes('401') ||
+      lower.includes('unauthorized') ||
+      lower.includes('no authenticated session') ||
+      lower.includes('token') ||
+      lower.includes('authentication') ||
+      lower.includes('auth error')
+    );
+  }, [formError]);
+
+  // Render No Remote Connected Banner
+  const renderNoRemoteCard = () => (
+    <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-2.5 text-xs shadow-xs">
+      <div className="flex items-start gap-2.5">
+        <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+          <Globe className="w-3.5 h-3.5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-text-primary">No Remote Repository (origin) Configured</div>
+          <p className="text-[11.5px] text-text-secondary mt-0.5 leading-normal">
+            This local repository does not have a remote configured yet. Connect a GitHub or GitLab repository URL to create and sync pull/merge requests.
+          </p>
+        </div>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleQuickAddRemote();
+        }}
+        className="space-y-1.5 pt-1"
+      >
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            placeholder="https://github.com/owner/repo.git or git@github.com:owner/repo.git"
+            value={newRemoteUrl}
+            onChange={(e) => setNewRemoteUrl(e.target.value)}
+            disabled={isAddingRemote}
+            className="flex-1 h-7.5 px-2.5 bg-base-0 border border-border hover:border-border-strong rounded-xs text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
+          />
+          <button
+            type="submit"
+            disabled={isAddingRemote || !newRemoteUrl.trim()}
+            className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralHover text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+          >
+            {isAddingRemote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            <span>Connect Remote</span>
+          </button>
+        </div>
+        {remoteError && <p className="text-[11px] text-git-removed">{remoteError}</p>}
+      </form>
+    </div>
+  );
+
+  // Render Actionable Authentication Error Card
+  const renderAuthAlert = () => (
+    <div className="p-3.5 bg-red-950/25 border border-git-removed/50 rounded-sm space-y-2.5 text-xs shadow-xs">
+      <div className="flex items-start gap-2.5 text-git-removed">
+        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="font-bold flex items-center gap-1.5 text-git-removed">
+            <span>Authentication Failed (Status 401 Unauthorized)</span>
+          </div>
+          <p className="text-[11.5px] text-text-secondary mt-0.5 leading-normal">
+            Your session or Personal Access Token for <span className="font-semibold text-text-primary">{providerName}</span> is expired, invalid, or lacks permissions for repository{' '}
+            <span className="font-mono text-commito-coral font-semibold">{targetRemoteInfo?.projectPath || selectedRemote}</span>.
+          </p>
+        </div>
+      </div>
+
+      {isTokenInputVisible ? (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleDirectTokenSave();
+          }}
+          className="space-y-1.5 pt-1 border-t border-git-removed/20"
+        >
+          <div className="flex items-center gap-1.5">
+            <input
+              type="password"
+              placeholder={`Paste ${providerName} Personal Access Token (PAT)...`}
+              value={tokenInput}
+              onChange={(e) => setTokenInput(e.target.value)}
+              disabled={isUpdatingToken}
+              className="flex-1 h-7 px-2.5 bg-base-1 border border-border hover:border-border-strong rounded-xs text-xs font-mono text-text-primary focus:outline-none"
+              autoFocus
+            />
+            <button
+              type="submit"
+              disabled={isUpdatingToken || !tokenInput.trim()}
+              className="h-7 px-3 bg-commito-coral hover:bg-commito-coralHover text-white rounded-xs text-xs font-semibold flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
+            >
+              {isUpdatingToken ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+              <span>Save & Retry</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsTokenInputVisible(false)}
+              className="h-7 px-2 bg-base-1 hover:bg-base-2 border border-border rounded-xs text-xs text-text-muted hover:text-text-primary cursor-pointer"
+            >
+              Cancel
+            </button>
+          </div>
+          {tokenSaveError && <p className="text-[11px] text-git-removed">{tokenSaveError}</p>}
+        </form>
+      ) : (
+        /* Quick Action Bar */
+        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-git-removed/20">
+          {accounts.length > 1 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-text-muted">Account:</span>
+              <select
+                value={activeAccount?.id || ''}
+                onChange={(e) => handleSwitchAccountFromModal(e.target.value)}
+                disabled={isSwitchingAccount || isLoadingList}
+                className="h-7 px-2 bg-base-1 border border-border hover:border-border-strong rounded-xs text-xs text-text-primary font-mono focus:outline-none cursor-pointer"
+              >
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.provider.toUpperCase()} • {a.display_name || a.handle} {a.is_active ? '(active)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setIsTokenInputVisible(true)}
+            className="h-7 px-3 bg-commito-coral hover:bg-commito-coralHover text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
+          >
+            <Key className="w-3.5 h-3.5" />
+            <span>Update Token (PAT)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenSignIn}
+            className="h-7 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-secondary hover:text-text-primary rounded-xs text-xs font-medium flex items-center gap-1.5 transition cursor-pointer"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+            <span>Browser Sign-In</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={loadMergeRequests}
+            disabled={isLoadingList || isSwitchingAccount}
+            className="h-7 px-2.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-xs text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingList ? 'animate-spin' : ''}`} />
+            <span>Retry</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFormError(null)}
+            className="ml-auto text-[11px] text-text-muted hover:text-text-primary cursor-pointer px-1 py-0.5"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   // Remote options
   const remoteOptions = useMemo(() => {
@@ -1079,6 +1353,95 @@ export const MergeRequestModal: React.FC = () => {
               <span className="text-[11px] text-text-muted truncate hidden sm:inline">
                 {targetRemoteInfo?.projectPath || selectedRemote}
               </span>
+
+              {/* Connected Account Badge & Switcher Dropdown */}
+              <div className="relative ml-1" ref={accountDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setIsAccountDropdownOpen(!isAccountDropdownOpen)}
+                  className="h-6 px-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded flex items-center gap-1.5 text-xs text-text-primary transition cursor-pointer shadow-2xs"
+                  title="Connected Account • Click to switch or add account"
+                >
+                  {activeAccount ? (
+                    <>
+                      <UserAvatar
+                        url={activeAccount.avatar_url}
+                        name={activeAccount.display_name}
+                        handle={activeAccount.handle}
+                        provider={activeAccount.provider}
+                        className="w-3.5 h-3.5"
+                        iconClassName="w-2.5 h-2.5"
+                      />
+                      <span className="font-mono text-[11px] text-text-primary font-semibold truncate max-w-[110px]">
+                        {activeAccount.handle || activeAccount.display_name}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[11px] text-text-muted flex items-center gap-1">
+                      <User className="w-3 h-3" />
+                      <span>No Account</span>
+                    </span>
+                  )}
+                  <ChevronDown className="w-3 h-3 text-text-muted" />
+                </button>
+
+                {isAccountDropdownOpen && (
+                  <div className="absolute left-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-xl z-50 py-1 font-sans animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-3 py-1.5 border-b border-border/60 text-[10.5px] font-bold text-text-muted uppercase tracking-wider flex items-center justify-between">
+                      <span>Connected Accounts</span>
+                      <span className="text-text-faint font-mono">{accounts.length}</span>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto py-1">
+                      {accounts.length === 0 ? (
+                        <div className="px-3 py-2 text-xs text-text-muted italic">No accounts configured</div>
+                      ) : (
+                        accounts.map((acc) => (
+                          <div
+                            key={acc.id}
+                            onClick={() => handleSwitchAccountFromModal(acc.id)}
+                            className={`px-3 py-1.5 flex items-center justify-between hover:bg-base-2 cursor-pointer text-xs transition ${
+                              acc.is_active ? 'bg-base-2 font-bold text-text-primary' : 'text-text-secondary'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 truncate min-w-0">
+                              <UserAvatar
+                                url={acc.avatar_url}
+                                name={acc.display_name}
+                                handle={acc.handle}
+                                provider={acc.provider}
+                                className="w-4 h-4"
+                                iconClassName="w-3 h-3"
+                              />
+                              <div className="truncate min-w-0">
+                                <span className="truncate block leading-tight">{acc.display_name || acc.handle}</span>
+                                <span className="text-[10px] text-text-muted font-mono block leading-tight truncate">
+                                  {acc.provider.toUpperCase()} • {acc.instance_url.replace(/^https?:\/\//, '')}
+                                </span>
+                              </div>
+                            </div>
+                            {acc.is_active && <Check className="w-3.5 h-3.5 text-commito-coral shrink-0 ml-1.5" />}
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    <div className="border-t border-border/60 pt-1 mt-1 px-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAccountDropdownOpen(false);
+                          handleOpenSignIn();
+                        }}
+                        className="w-full px-2 py-1 text-xs text-commito-coral hover:bg-base-2 rounded flex items-center gap-1.5 font-medium transition cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add / Re-authenticate Account</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1213,7 +1576,7 @@ export const MergeRequestModal: React.FC = () => {
                     if (formError) setFormError(null);
                   }}
                   disabled={isSubmitting || isGeneratingAi}
-                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
+                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
                   required
                 />
               </div>
@@ -1327,12 +1690,18 @@ export const MergeRequestModal: React.FC = () => {
                 </div>
               )}
 
-              {formError && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{formError}</span>
-                </div>
-              )}
+              {remotes.length === 0 ? (
+                renderNoRemoteCard()
+              ) : formError ? (
+                isAuthError ? (
+                  renderAuthAlert()
+                ) : (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{formError}</span>
+                  </div>
+                )
+              ) : null}
             </div>
 
             {/* Resizable Divider Splitter Handle */}
@@ -1477,7 +1846,7 @@ export const MergeRequestModal: React.FC = () => {
                     if (formError) setFormError(null);
                   }}
                   disabled={isSavingEdit}
-                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
+                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
                   required
                 />
               </div>
@@ -1509,10 +1878,14 @@ export const MergeRequestModal: React.FC = () => {
               </div>
 
               {formError && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{formError}</span>
-                </div>
+                isAuthError ? (
+                  renderAuthAlert()
+                ) : (
+                  <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span className="truncate">{formError}</span>
+                  </div>
+                )
               )}
             </div>
 
@@ -1612,7 +1985,7 @@ export const MergeRequestModal: React.FC = () => {
                     placeholder={`Search ${requestTypeLabel.toLowerCase()}s...`}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-full h-7.5 pl-7.5 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans"
+                    className="w-full h-7.5 pl-7.5 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans"
                   />
                 </div>
 
@@ -1633,22 +2006,32 @@ export const MergeRequestModal: React.FC = () => {
                   <p className="text-xs font-medium text-text-muted">Loading open {requestTypeLabel.toLowerCase()}s...</p>
                 </div>
               ) : filteredMergeRequests.length === 0 ? (
-                <div className="p-6 text-center bg-base-0 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
-                  <h4 className="text-xs font-bold text-text-primary">No open {requestTypeLabel.toLowerCase()}s</h4>
-                  <p className="text-[11px] text-text-muted max-w-xs mx-auto">
-                    No active {requestTypeLabel.toLowerCase()}s pending on remote{' '}
-                    <span className="font-mono text-text-primary font-semibold">{selectedRemote}</span>.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab('create')}
-                    className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>Create {requestTypeLabel}</span>
-                  </button>
-                </div>
+                remotes.length === 0 ? (
+                  <div className="p-2">
+                    {renderNoRemoteCard()}
+                  </div>
+                ) : formError && isAuthError ? (
+                  <div className="p-2">
+                    {renderAuthAlert()}
+                  </div>
+                ) : (
+                  <div className="p-6 text-center bg-base-0 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
+                    <h4 className="text-xs font-bold text-text-primary">No open {requestTypeLabel.toLowerCase()}s</h4>
+                    <p className="text-[11px] text-text-muted max-w-xs mx-auto">
+                      No active {requestTypeLabel.toLowerCase()}s pending on remote{' '}
+                      <span className="font-mono text-text-primary font-semibold">{selectedRemote}</span>.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('create')}
+                      className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+                    >
+                      <Plus className="w-3 h-3" />
+                      <span>Create {requestTypeLabel}</span>
+                    </button>
+                  </div>
+                )
               ) : (
                 <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 p-0.5">
                   {filteredMergeRequests.map((mr) => {
@@ -1659,8 +2042,8 @@ export const MergeRequestModal: React.FC = () => {
                         onClick={() => setSelectedMrId(String(mr.id))}
                         className={`p-2.5 rounded-sm border transition-all duration-150 cursor-pointer select-none space-y-1 text-left ${
                           isSelected
-                            ? 'bg-base-1 border-commito-coral/50 ring-1 ring-commito-coral/30 shadow-xs'
-                            : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70 shadow-xs'
+                            ? 'bg-base-1 border-border-strong shadow-xs'
+                            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -2065,7 +2448,7 @@ export const MergeRequestModal: React.FC = () => {
                                           value={editingCommentBody}
                                           onChange={(e) => setEditingCommentBody(e.target.value)}
                                           disabled={isSavingCommentEdit}
-                                          className="w-full h-24 p-2.5 bg-base-1 border border-border focus:border-commito-coral rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
+                                          className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
                                         />
                                         <div className="flex items-center justify-end gap-2">
                                           <button
@@ -2125,7 +2508,7 @@ export const MergeRequestModal: React.FC = () => {
                                   value={newCommentText}
                                   onChange={(e) => setNewCommentText(e.target.value)}
                                   disabled={isPostingComment}
-                                  className="w-full h-24 p-2.5 bg-base-1 border border-border focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition"
+                                  className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition"
                                 />
                               ) : (
                                 <div className="w-full min-h-[96px] p-2.5 bg-base-1 border border-border rounded-sm">

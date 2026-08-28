@@ -1,11 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
-import { useGitStore } from '../../store/useGitStore';
-import { useRepoStore } from '../../store/repoStore';
-import { useAccounts } from '../../features/account-services';
-import { SystemService } from '../../services/system/systemService';
-import { UserAvatar } from '../common/UserAvatar';
-import { RepoList } from '../home/RepoList';
-import { AccountsWidget } from '../home/AccountsWidget';
+import React, { useEffect, useMemo } from "react";
+import { useGitStore } from "../../store/useGitStore";
+import { useRepoStore } from "../../store/repoStore";
+import { useAccounts } from "../../features/account-services";
+import { SystemService } from "../../services/system/systemService";
+import { UserAvatar } from "../common/UserAvatar";
+import { RepoList } from "../home/RepoList";
+import { AccountsWidget } from "../home/AccountsWidget";
 import {
   FolderGit2,
   Pin,
@@ -13,10 +13,15 @@ import {
   DownloadCloud,
   FolderOpen,
   Users,
-} from 'lucide-react';
+} from "lucide-react";
 
 export const HomeDashboard: React.FC = () => {
-  const { user, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsUserConfigModalOpen } = useGitStore();
+  const {
+    user,
+    setIsCreateRepoModalOpen,
+    setIsCloneRepoModalOpen,
+    setIsUserConfigModalOpen,
+  } = useGitStore();
   const repos = useRepoStore((s) => s.repos);
   const statuses = useRepoStore((s) => s.statuses);
   const loadRepos = useRepoStore((s) => s.loadRepos);
@@ -29,9 +34,9 @@ export const HomeDashboard: React.FC = () => {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
+    if (h < 12) return "Good morning";
+    if (h < 18) return "Good afternoon";
+    return "Good evening";
   };
 
   const metrics = useMemo(() => {
@@ -78,7 +83,7 @@ export const HomeDashboard: React.FC = () => {
               {getGreeting()},
             </span>
             <span className="text-sm font-semibold text-text-primary tracking-tight truncate">
-              {user ? user.name || user.username : 'Workspace'}
+              {user ? user.name || user.username : "Workspace"}
             </span>
           </div>
         </div>
@@ -135,7 +140,10 @@ export const HomeDashboard: React.FC = () => {
           <div className="flex items-center gap-2.5 text-[11px] text-text-muted select-none">
             <span className="flex items-center gap-1">
               <FolderGit2 className="w-3 h-3 text-text-muted/80" />
-              <span className="font-semibold text-text-primary">{metrics.total}</span> Repositories
+              <span className="font-semibold text-text-primary">
+                {metrics.total}
+              </span>{" "}
+              Repositories
             </span>
 
             {metrics.dirtyCount > 0 && (
@@ -153,7 +161,10 @@ export const HomeDashboard: React.FC = () => {
                 <span className="text-border text-[10px]">·</span>
                 <span className="flex items-center gap-1">
                   <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/20" />
-                  <span className="font-semibold text-text-primary">{metrics.pinned}</span> Pinned
+                  <span className="font-semibold text-text-primary">
+                    {metrics.pinned}
+                  </span>{" "}
+                  Pinned
                 </span>
               </>
             )}
@@ -167,7 +178,10 @@ export const HomeDashboard: React.FC = () => {
                   className="flex items-center gap-1 hover:text-text-primary transition cursor-pointer"
                 >
                   <Users className="w-3 h-3 text-text-muted/80" />
-                  <span className="font-semibold text-text-primary">{accounts.length}</span> Accounts
+                  <span className="font-semibold text-text-primary">
+                    {accounts.length}
+                  </span>{" "}
+                  Accounts
                 </button>
               </>
             )}

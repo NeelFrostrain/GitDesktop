@@ -64,7 +64,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         className={`flex items-center justify-center border transition-all duration-150 shrink-0 ${sizeClasses[size]} ${
           isSelected
             ? 'bg-commito-coral border-commito-coral text-white shadow-2xs'
-            : 'bg-base-0 border-border hover:border-border-strong group-hover:border-commito-coral/50 text-transparent'
+            : 'bg-base-0 border-border hover:border-border-strong group-hover:border-border-strong text-transparent'
         }`}
       >
         {indeterminate ? (

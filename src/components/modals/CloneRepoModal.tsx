@@ -370,7 +370,7 @@ export const CloneRepoModal: React.FC = () => {
                   value={url}
                   onChange={(e) => handleUrlChange(e.target.value)}
                   placeholder="https://gitlab.com/owner/project.git or git@github.com:owner/project.git"
-                  className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <Globe className="w-4 h-4 text-text-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
@@ -390,7 +390,7 @@ export const CloneRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="flex-1 h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <button
                   type="button"
@@ -467,7 +467,7 @@ export const CloneRepoModal: React.FC = () => {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="username or oauth2"
-                        className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-sans text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                        className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-sans text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                       />
                     </div>
 
@@ -492,7 +492,7 @@ export const CloneRepoModal: React.FC = () => {
                           value={passwordOrToken}
                           onChange={(e) => setPasswordOrToken(e.target.value)}
                           placeholder="Password or Token (glpat-... / ghp_...)"
-                          className="w-full h-8 pl-2.5 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-sans text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                          className="w-full h-8 pl-2.5 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-sans text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                         />
                         <button
                           type="button"
@@ -528,7 +528,7 @@ export const CloneRepoModal: React.FC = () => {
                           value={twoFactorCode}
                           onChange={(e) => setTwoFactorCode(e.target.value)}
                           placeholder="6-digit Authenticator OTP code"
-                          className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                          className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                         />
                       </div>
                     </div>
@@ -611,7 +611,7 @@ export const CloneRepoModal: React.FC = () => {
                   value={specificBranch}
                   onChange={(e) => setSpecificBranch(e.target.value)}
                   placeholder="e.g. main, dev, or release/v1.0"
-                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
+                  className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
                 />
               </div>
 

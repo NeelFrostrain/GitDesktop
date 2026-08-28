@@ -81,7 +81,7 @@ function ActiveRepoCard({
   return (
     <div
       onClick={onClick}
-      className="mx-2 my-1 p-2.5 rounded-sm bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-xs"
+      className="mx-2 my-1 p-2.5 rounded-sm bg-base-2 border border-border-strong hover:border-border-strong transition cursor-pointer group shadow-xs"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -137,7 +137,7 @@ function RepoRow({
       onClick={onSelect}
       className={`group relative flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm cursor-pointer transition ${
         isActive
-          ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
+          ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-border-strong'
           : 'hover:bg-base-2 text-text-primary'
       }`}
     >
@@ -402,7 +402,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
           <button
             type="button"
             onClick={() => handleCloneRepo()}
-            className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-commito-coral/40 group"
+            className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-border-strong group"
           >
             <Download className="w-4 h-4 text-commito-coral group-hover:scale-110 transition-transform" />
             <span className="text-[10.5px] leading-tight font-bold">Clone Remote</span>
@@ -420,7 +420,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
             placeholder="Search repositories by name or path..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
+            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border hover:border-border-strong rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition"
           />
           {filterQuery && (
             <button

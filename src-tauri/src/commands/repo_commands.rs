@@ -48,6 +48,30 @@ fn get_gitlab_client_for_account(
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
     let gitlab_acc = if let Some(id) = account_id {
         provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else if let Some(ref server) = server_override {
+        let host = server
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active && a.instance_url.contains(host))
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.instance_url.contains(host))
+            })
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
+            })
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
+            })
+            .cloned()
     } else {
         provider_accounts
             .iter()
@@ -339,6 +363,16 @@ pub async fn get_open_merge_requests(
         }
     }
 
+    if clean_project_id.is_empty()
+        || clean_project_id == "1"
+        || clean_project_id == "origin"
+        || (is_github && !clean_project_id.contains('/'))
+    {
+        return Err(AppError::Validation(
+            "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
+        ));
+    }
+
     if is_github {
         let client = get_github_client()?;
         client.get_open_pull_requests(&clean_project_id).await
@@ -379,6 +413,16 @@ pub async fn create_merge_request(
                 is_github = true;
             }
         }
+    }
+
+    if clean_project_id.is_empty()
+        || clean_project_id == "1"
+        || clean_project_id == "origin"
+        || (is_github && !clean_project_id.contains('/'))
+    {
+        return Err(AppError::Validation(
+            "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
+        ));
     }
 
     if is_github {

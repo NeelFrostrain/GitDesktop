@@ -171,15 +171,15 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
-            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-border-strong text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <ArrowRightLeft className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-text-primary flex items-center gap-2">
                 <span>Bring Changes Along</span>
-                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-xs bg-commito-coral/15 text-commito-coral border border-commito-coral/30 leading-none">
+                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-xs bg-commito-coral/15 text-commito-coral border border-border-strong leading-none">
                   Recommended
                 </span>
               </div>

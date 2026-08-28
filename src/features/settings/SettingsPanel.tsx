@@ -9,7 +9,6 @@ import { CATEGORY_METADATA, SETTINGS_SCHEMA, SettingDefinition } from './lib/set
 import { searchSettings } from './lib/fuzzySearch';
 import { CategoryTree } from './components/CategoryTree';
 import { SettingRow } from './components/SettingRow';
-import { AnsiSwatchGrid } from './components/AnsiSwatchGrid';
 import { AiSettingsTab } from './components/AiSettingsTab';
 import { SettingsSearchBar } from './components/SettingsSearchBar';
 import { useGitStore } from '../../store/useGitStore';
@@ -103,9 +102,6 @@ export const SettingsPanel: React.FC = () => {
     if (searchResults) return [];
 
     return SETTINGS_SCHEMA.filter((s) => {
-      if (selectedCategory === 'commonly_used') {
-        return s.commonlyUsed;
-      }
       if (s.category !== selectedCategory) {
         return false;
       }
@@ -248,22 +244,15 @@ export const SettingsPanel: React.FC = () => {
                 {/* Category Header */}
                 <div className="border-b border-border/70 pb-3">
                   <h3 className="text-sm font-bold text-text-primary">
-                    {currentCategoryMeta?.label || selectedCategory}
+                    {currentCategoryMeta?.label || 'AI & Commit-AI'}
                   </h3>
                   <p className="text-[11.5px] text-text-muted mt-0.5 leading-relaxed">
-                    {selectedCategory === 'commonly_used'
-                      ? 'Quickly customize the most impactful appearance and behavior settings.'
-                      : `Configure ${currentCategoryMeta?.label} preferences and options.`}
+                    Configure Google Gemini API keys, active model rotation, and AI commit generation parameters.
                   </p>
                 </div>
 
-                {/* If AI category, render dedicated AiSettingsTab with multi-key pool */}
+                {/* Render dedicated AiSettingsTab with multi-key pool */}
                 {selectedCategory === 'ai' && <AiSettingsTab />}
-
-                {/* If Terminal category and on ANSI colors subcategory (or all terminal), render AnsiSwatchGrid */}
-                {selectedCategory === 'terminal' && (!selectedSubcategory || selectedSubcategory === 'ANSI Colors') && (
-                  <AnsiSwatchGrid />
-                )}
 
                 {/* Subcategory sections */}
                 {groupedSettings.map(([subcategory, settings]) => {

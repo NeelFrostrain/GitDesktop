@@ -158,7 +158,7 @@ export const BranchesView: React.FC = () => {
               placeholder="Filter branches..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full pl-8 pr-7 py-1.5 bg-base-2/80 hover:bg-base-2 focus:bg-base-2 border border-border/70 hover:border-border-strong focus:border-commito-coral/70 rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-sans transition-all shadow-xs"
+              className="w-full pl-8 pr-7 py-1.5 bg-base-2/80 hover:bg-base-2 focus:bg-base-2 border border-border/70 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none font-sans transition-all shadow-xs"
             />
             {filter && (
               <button
@@ -217,7 +217,7 @@ export const BranchesView: React.FC = () => {
               placeholder="e.g. feature/awesome-thing"
               value={newBranchName}
               onChange={(e) => setNewBranchName(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border/80 hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-mono shadow-inner"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border/80 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none font-mono shadow-inner"
               autoFocus
               required
             />
@@ -258,7 +258,7 @@ export const BranchesView: React.FC = () => {
                 key={b.name}
                 className={`p-2.5 rounded-sm border flex items-center justify-between transition-all duration-150 ${
                   b.is_current
-                    ? 'bg-commito-coral/10 border-commito-coral/30 text-text-primary shadow-xs'
+                    ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
                     : 'bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary shadow-xs'
                 }`}
               >
@@ -281,7 +281,7 @@ export const BranchesView: React.FC = () => {
                         type="text"
                         value={renameValue}
                         onChange={(e) => setRenameValue(e.target.value)}
-                        className="px-2 py-1 bg-base-1 border border-border/80 rounded text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral flex-1"
+                        className="px-2 py-1 bg-base-1 border border-border/80 hover:border-border-strong rounded text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong flex-1"
                         autoFocus
                       />
                       <button
@@ -303,7 +303,7 @@ export const BranchesView: React.FC = () => {
                         {b.name}
                       </span>
                       {b.is_current && (
-                        <span className="px-1.5 py-0.5 bg-commito-coral/20 text-commito-coral border border-commito-coral/40 rounded-xs text-[9px] font-mono font-bold uppercase shrink-0">
+                        <span className="px-1.5 py-0.5 bg-commito-coral text-white rounded-xs text-[9px] font-mono font-extrabold uppercase tracking-wider leading-none shadow-2xs shrink-0 select-none">
                           CURRENT
                         </span>
                       )}

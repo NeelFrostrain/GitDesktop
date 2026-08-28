@@ -253,7 +253,7 @@ export const CreateRepoModal: React.FC = () => {
                 className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 font-sans focus:outline-none transition shadow-2xs ${
                   hasInvalidChars
                     ? 'border-git-removed focus:border-git-removed'
-                    : 'border-border hover:border-border-strong focus:border-commito-coral focus:ring-1 focus:ring-commito-coral/20'
+                    : 'border-border hover:border-border-strong focus:border-border-strong'
                 }`}
               />
             </div>
@@ -272,7 +272,7 @@ export const CreateRepoModal: React.FC = () => {
                   required
                   value={parentPath}
                   onChange={(e) => setParentPath(e.target.value)}
-                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                  className="flex-1 h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                 />
                 <button
                   type="button"
@@ -308,7 +308,7 @@ export const CreateRepoModal: React.FC = () => {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Brief summary of your repository or project"
-                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
+                className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
               />
             </div>
 

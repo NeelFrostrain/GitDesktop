@@ -151,8 +151,8 @@ export function Dropdown<T extends string = string>({
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral shadow-2xs ${
-          isOpen ? 'border-commito-coral ring-1 ring-commito-coral/30' : ''
+        className={`w-full flex items-center justify-between gap-2 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-border-strong shadow-2xs ${
+          isOpen ? 'border-border-strong bg-base-2' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
         <div className="flex items-center gap-2 truncate min-w-0">
@@ -167,7 +167,7 @@ export function Dropdown<T extends string = string>({
         </div>
         <ChevronDown
           className={`w-3.5 h-3.5 text-text-muted transition-transform duration-150 shrink-0 ${
-            isOpen ? 'rotate-180 text-commito-coral' : ''
+            isOpen ? 'rotate-180 text-text-primary' : ''
           }`}
         />
       </button>

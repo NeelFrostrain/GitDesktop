@@ -243,7 +243,7 @@ export const AiSettingsTab: React.FC = () => {
               }}
               onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
               placeholder="Paste Google Gemini API Key (AIza...)"
-              className="flex-1 h-8 px-3 rounded-sm bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral font-mono text-xs text-text-primary placeholder:text-text-faint focus:outline-none focus:ring-1 focus:ring-commito-coral/30 transition shadow-inner"
+              className="flex-1 h-8 px-3 rounded-sm bg-base-0 border border-border hover:border-border-strong focus:border-border-strong font-mono text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
             />
             <button
               type="button"
@@ -368,7 +368,7 @@ export const AiSettingsTab: React.FC = () => {
                 onClick={() => handleSelectModel(m.id)}
                 className={`p-3 rounded-sm border cursor-pointer transition-all select-none flex flex-col justify-between gap-2 shadow-2xs ${
                   isSelected
-                    ? 'bg-base-0 border-commito-coral shadow-xs ring-1 ring-commito-coral/20'
+                    ? 'bg-base-0 border-border-strong shadow-xs'
                     : 'bg-base-0 border-border hover:border-border-strong hover:bg-base-0/80'
                 }`}
               >
