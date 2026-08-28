@@ -60,8 +60,8 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
       onKeyDown={handleKeyDown}
       className={`w-full px-3 py-2 text-left flex items-center justify-between gap-2.5 group/repo cursor-pointer select-none transition border-l-2 ${
         isActive
-          ? 'bg-base-2 border-commito-coral text-text-primary font-semibold'
-          : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+          ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold'
+          : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0 flex-1">

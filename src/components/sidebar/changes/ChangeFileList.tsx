@@ -224,7 +224,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
           </div>
         ) : (
           /* Flat List View */
-          <div className="flex flex-col space-y-0.5 font-sans min-w-0">
+          <div className="flex flex-col font-sans min-w-0">
             {filteredFiles.map((file) => {
               const isStaged = stagedFiles.includes(file.path);
               const isSelected = selectedFile === file.path;
@@ -246,8 +246,8 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                   }}
                   className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 border-l-2 text-xs transition cursor-pointer select-none ${
                     isSelected
-                      ? 'bg-base-2 border-commito-coral text-text-primary font-semibold'
-                      : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+                      ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
+                      : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                   }`}
                   title={file.path}
                 >

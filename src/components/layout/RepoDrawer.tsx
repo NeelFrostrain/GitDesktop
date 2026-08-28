@@ -343,8 +343,8 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                   }}
                   className={`group relative px-3 py-2 border-l-2 transition-all duration-100 cursor-pointer flex items-center justify-between gap-2.5 select-none ${
                     isActive
-                      ? 'bg-base-2 border-commito-coral text-text-primary font-semibold'
-                      : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+                      ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold'
+                      : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                   }`}
                 >
                   {/* Left: Icon + Title & Path */}
