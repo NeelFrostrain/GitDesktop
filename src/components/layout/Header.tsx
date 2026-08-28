@@ -11,12 +11,13 @@ import {
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { useTerminalStore } from '../../features/terminal/store/terminalStore';
+import { useAiAgentStore } from '../../features/ai-agent';
 import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { Dropdown } from '../common/Dropdown';
 
 /**
- * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Terminal),
+ * Top application header bar displaying quick creation tools (Release, Tag, PR/MR, Terminal, AI Agent),
  * active sync/fetch button, remote selector, and branch switcher.
  */
 export const Header: React.FC = () => {
@@ -42,6 +43,11 @@ export const Header: React.FC = () => {
     isOpen: isTerminalOpen,
     toggleIsOpen: toggleTerminal,
   } = useTerminalStore();
+
+  const {
+    isOpen: isAiAgentOpen,
+    toggleIsOpen: toggleAiAgent,
+  } = useAiAgentStore();
 
   useEffect(() => {
     if (activeRepoPath) {
@@ -103,6 +109,20 @@ export const Header: React.FC = () => {
             >
               <Terminal className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
             </button>
+
+            {/* Toggle AI Git Agent */}
+            <button
+              type="button"
+              onClick={toggleAiAgent}
+              className={`h-7 px-2 flex items-center justify-center gap-1.5 rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
+                isAiAgentOpen
+                  ? 'border-commito-coral/60 bg-commito-coral/20 text-commito-coral ring-1 ring-commito-coral/30'
+                  : 'border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral hover:border-commito-coral/40'
+              }`}
+              title="AI Git Agent (Ctrl+I)"
+            >
+              <span className="text-[11px] font-semibold">AI Agent</span>
+            </button>
           </>
         )}
       </div>
@@ -116,7 +136,12 @@ export const Header: React.FC = () => {
           >
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">{error.message}</span>
-            <button onClick={() => setError(null)} className="ml-1 text-git-removed hover:text-danger cursor-pointer">
+            <button
+              type="button"
+              onClick={() => setError(null)}
+              className="ml-1 hover:text-text-primary p-0.5"
+              aria-label="Dismiss error"
+            >
               <X className="w-3 h-3" />
             </button>
           </div>
@@ -124,27 +149,25 @@ export const Header: React.FC = () => {
 
         {!isHome && (
           <>
-            {/* Remote Selector Dropdown (when 2+ remotes exist) */}
-            {remotes.length > 1 && (
-              <div className="w-32">
-                <Dropdown
-                  options={remotes.map((r) => ({
-                    value: r.name,
-                    label: r.name,
-                    icon: <Globe className="w-3 h-3 text-gitlab-teal" />,
-                  }))}
-                  value={activeRemote}
-                  onChange={(val) => setActiveRemote(val)}
-                  placeholder="Remote..."
-                  size="sm"
-                />
-              </div>
-            )}
-
-            {/* Smart Git Action Button (with integrated Fetch / Reload) */}
+            {/* Sync / Push Smart Button */}
             <SmartGitActionButton />
 
-            {/* Branch Switcher Dropdown */}
+            {/* Remote Selector Dropdown */}
+            {remotes.length > 0 && (
+              <Dropdown
+                value={activeRemote || remotes[0]?.name || ''}
+                options={remotes.map((r) => ({
+                  value: r.name,
+                  label: r.name,
+                  description: r.url,
+                }))}
+                onChange={(val) => setActiveRemote(val)}
+                className="w-24 text-xs font-mono"
+                icon={<Globe className="w-3.5 h-3.5 text-text-muted" />}
+              />
+            )}
+
+            {/* Active Branch Switcher */}
             <BranchDropdown />
           </>
         )}

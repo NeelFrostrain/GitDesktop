@@ -829,3 +829,151 @@
   background: linear-gradient(to bottom, #3a3842, #2b2931 50%, #201f25);
   color: #ffffff;
 }
+
+/* ==========================================================================
+   Markdown Preview & AI Agent Formatting
+   ========================================================================== */
+.agent-markdown,
+.markdown-body {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--text, #e6e4e8);
+}
+
+.agent-markdown h1,
+.markdown-body h1 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text, #ffffff);
+  margin-top: 0.65rem;
+  margin-bottom: 0.3rem;
+}
+
+.agent-markdown h2,
+.markdown-body h2 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--commito-coral, #ff6b6b);
+  margin-top: 0.55rem;
+  margin-bottom: 0.25rem;
+}
+
+.agent-markdown h3,
+.agent-markdown h4,
+.markdown-body h3,
+.markdown-body h4 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text, #e6e4e8);
+  margin-top: 0.45rem;
+  margin-bottom: 0.2rem;
+}
+
+.agent-markdown p,
+.markdown-body p {
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-markdown ul,
+.markdown-body ul {
+  list-style-type: disc;
+  padding-left: 1.2rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-markdown ol,
+.markdown-body ol {
+  list-style-type: decimal;
+  padding-left: 1.2rem;
+  margin-top: 0.35rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-markdown li,
+.markdown-body li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.agent-markdown li::marker,
+.markdown-body li::marker {
+  color: var(--commito-coral, #ff6b6b);
+  font-weight: bold;
+}
+
+.agent-markdown strong,
+.markdown-body strong {
+  font-weight: 700;
+  color: var(--text, #ffffff);
+}
+
+.agent-markdown em,
+.markdown-body em {
+  font-style: italic;
+  color: var(--text-subtle, #b3b0b8);
+}
+
+.agent-markdown code,
+.markdown-body code {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 0.2rem;
+  background-color: var(--surface-subtle, #070708);
+  border: 1px solid rgba(255, 107, 107, 0.28);
+  color: var(--commito-coral, #ff6b6b);
+  font-weight: 500;
+}
+
+.agent-markdown pre,
+.markdown-body pre {
+  margin-top: 0.4rem;
+  margin-bottom: 0.4rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 0.25rem;
+  background-color: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border, #29272b);
+  overflow-x: auto;
+}
+
+.agent-markdown pre code,
+.markdown-body pre code {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text, #e6e4e8);
+  font-size: 0.7rem;
+}
+
+.agent-markdown hr,
+.markdown-body hr {
+  border: none;
+  border-top: 1px solid var(--border, #29272b);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.agent-markdown blockquote,
+.markdown-body blockquote {
+  border-left: 3px solid var(--commito-coral, #ff6b6b);
+  padding-left: 0.55rem;
+  margin-top: 0.3rem;
+  margin-bottom: 0.3rem;
+  color: var(--text-muted, #85818c);
+  font-style: italic;
+}
+
+.agent-markdown a,
+.markdown-body a {
+  color: var(--commito-coral, #ff6b6b);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.agent-markdown a:hover,
+.markdown-body a:hover {
+  color: #ff8585;
+}
+

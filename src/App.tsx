@@ -56,6 +56,7 @@ const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => (
 const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
 const PublishRepoModal = lazy(() => import('./components/modals/PublishRepoModal').then(m => ({ default: m.PublishRepoModal })));
 const RemoteNotFoundModal = lazy(() => import('./components/modals/RemoteNotFoundModal').then(m => ({ default: m.RemoteNotFoundModal })));
+const AiAgentPanel = lazy(() => import('./features/ai-agent').then(m => ({ default: m.AiAgentPanel })));
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -270,7 +271,7 @@ export const App: React.FC = () => {
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
 
-  // Global shortcuts: Ctrl+` / Cmd+` (Terminal) and Ctrl+, / Cmd+, (Settings)
+  // Global shortcuts: Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === '`') {
@@ -279,6 +280,11 @@ export const App: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         useSettingsStore.getState().toggleSettings();
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        import('./features/ai-agent').then(({ useAiAgentStore }) => {
+          useAiAgentStore.getState().toggleIsOpen();
+        });
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -383,6 +389,7 @@ export const App: React.FC = () => {
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />
+          <AiAgentPanel />
         </Suspense>
 
         {/* Global Toast Notifications */}
