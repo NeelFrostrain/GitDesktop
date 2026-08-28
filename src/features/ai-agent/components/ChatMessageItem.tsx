@@ -263,6 +263,54 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
             </div>
           )}
         </div>
+
+        {/* User Action Bar (Copy, Read Aloud, Retry/Regenerate) */}
+        <div className="flex items-center gap-1 pt-0.5 text-text-muted select-none opacity-80 hover:opacity-100 transition-opacity">
+          {/* Copy */}
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="p-1 rounded-xs hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
+            title="Copy prompt"
+          >
+            {copied ? (
+              <Check className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Copy className="w-3.5 h-3.5" />
+            )}
+          </button>
+
+          {/* Read aloud */}
+          <button
+            type="button"
+            onClick={handleToggleSpeech}
+            className={`p-1 rounded-xs hover:bg-base-2 transition cursor-pointer ${
+              isSpeaking
+                ? "text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30 animate-pulse"
+                : "hover:text-text-primary"
+            }`}
+            title={isSpeaking ? "Stop reading" : "Read aloud"}
+          >
+            {isSpeaking ? (
+              <VolumeX className="w-3.5 h-3.5" />
+            ) : (
+              <Volume2 className="w-3.5 h-3.5" />
+            )}
+          </button>
+
+          {/* Retry / Regenerate */}
+          <button
+            type="button"
+            onClick={handleRegenerate}
+            disabled={isThinking}
+            className="p-1 rounded-xs hover:bg-base-2 hover:text-commito-coral transition cursor-pointer disabled:opacity-30"
+            title="Retry prompt"
+          >
+            <RotateCw
+              className={`w-3.5 h-3.5 ${isThinking ? "animate-spin" : ""}`}
+            />
+          </button>
+        </div>
       </div>
     );
   }

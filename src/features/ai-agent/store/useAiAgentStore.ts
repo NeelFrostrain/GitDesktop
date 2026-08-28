@@ -435,17 +435,22 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
   },
 
-  regenerateMessage: async (assistantMsgId: string) => {
+  regenerateMessage: async (targetMsgId: string) => {
     const { activeSessionId, sessions } = get();
     if (!activeSessionId) return;
 
     const currentSession = sessions.find((s) => s.id === activeSessionId);
     if (!currentSession) return;
 
-    const msgIndex = currentSession.messages.findIndex((m) => m.id === assistantMsgId);
+    const msgIndex = currentSession.messages.findIndex((m) => m.id === targetMsgId);
     if (msgIndex === -1) return;
 
-    const historyBefore = currentSession.messages.slice(0, msgIndex);
+    const targetMsg = currentSession.messages[msgIndex];
+    const historyBefore =
+      targetMsg.role === 'user'
+        ? currentSession.messages.slice(0, msgIndex + 1)
+        : currentSession.messages.slice(0, msgIndex);
+
     if (historyBefore.length === 0) return;
 
     set((state) => {

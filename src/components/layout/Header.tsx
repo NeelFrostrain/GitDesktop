@@ -98,7 +98,7 @@ export const Header: React.FC = () => {
   return (
     <header
       ref={headerRef}
-      className="h-10 bg-base-0 border-b border-border px-2 flex items-center justify-between gap-3 flex-shrink-0 select-none relative z-40"
+      className="h-10 bg-base-0 border-b border-border px-2 flex items-center justify-between gap-3 flex-shrink-0 select-none relative z-10"
     >
       {/* Left: Quick Create Tools */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
