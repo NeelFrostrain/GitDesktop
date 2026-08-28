@@ -40,19 +40,20 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 select-none animate-fadeIn">
-      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none animate-in fade-in duration-150 font-sans">
+      <div className="bg-surface-elevated border border-border-subtle rounded-xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-border-subtle flex items-center justify-between">
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-commito-coral" />
-            <h3 className="text-sm font-bold text-text-primary">
-              Edit Account Info ({account.handle})
+            <h3 className="text-sm font-semibold text-text">
+              Edit Account ({account.handle})
             </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            className="p-1 rounded-md text-text-muted hover:text-text hover:bg-surface transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
@@ -61,13 +62,13 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {error && (
-            <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-sm text-xs text-git-removed">
+            <div className="p-2.5 bg-red-500/10 border border-red-500/25 rounded-md text-xs text-red-400">
               {error}
             </div>
           )}
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+            <label className="text-xs font-medium text-text-subtle flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-text-muted" />
               <span>Display Nickname</span>
             </label>
@@ -76,16 +77,16 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g. Neel Frostrain"
-              className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
+              className="w-full bg-surface border border-border-subtle focus:border-commito-coral rounded-md px-3 py-2 text-xs text-text placeholder-text-muted/60 focus:outline-none transition"
               required
             />
-            <p className="text-[10px] text-text-muted">
+            <p className="text-[11px] text-text-muted">
               Local display name shown in Git Desktop.
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
+            <label className="text-xs font-medium text-text-subtle flex items-center gap-1.5">
               <Mail className="w-3.5 h-3.5 text-text-muted" />
               <span>Commit Author Email Override</span>
             </label>
@@ -94,26 +95,26 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               value={commitEmail}
               onChange={(e) => setCommitEmail(e.target.value)}
               placeholder="e.g. neelofficial0812@gmail.com"
-              className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs font-mono text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
+              className="w-full bg-surface border border-border-subtle focus:border-commito-coral rounded-md px-3 py-2 text-xs font-mono text-text placeholder-text-muted/60 focus:outline-none transition"
             />
-            <p className="text-[10px] text-text-muted">
+            <p className="text-[11px] text-text-muted">
               Used for Git commit authorship (`user.email`) when this account is active.
             </p>
           </div>
 
           {/* Footer buttons */}
-          <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
+          <div className="pt-3 border-t border-border-subtle flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-3.5 py-1.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary rounded-sm text-xs font-semibold transition cursor-pointer"
+              className="px-3.5 py-1.5 bg-surface hover:bg-surface-hover border border-border-subtle text-text-subtle hover:text-text rounded-md text-xs font-medium transition cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSaving}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coral-hover text-white rounded-md text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shadow-xs disabled:opacity-50"
             >
               {isSaving ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />

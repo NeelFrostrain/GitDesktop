@@ -2,63 +2,60 @@ import React from 'react';
 import { Plus, Users } from 'lucide-react';
 import { AccountRow } from '../components/AccountRow';
 import { useAccountServicesStore } from '../store/accountStore';
-import { Button } from '../../../components/common/Button';
 
 export const AccountsTab: React.FC = () => {
   const { accounts, setActiveTab } = useAccountServicesStore();
 
   return (
-    <div className="space-y-3.5 select-none font-sans">
-      {/* Tab Header */}
-      <div className="flex items-center justify-between pb-1">
-        <div className="space-y-0.5">
-          <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+    <div className="space-y-4 select-none font-sans">
+      {/* Content Header */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-0.5 min-w-0">
+          <h3 className="text-[13px] font-semibold text-text tracking-normal">
             Saved Accounts & Identities
           </h3>
-          <p className="text-[11px] text-text-muted">
+          <p className="text-xs text-text-muted">
             Switch active account to change default commit author and remote sync identity.
           </p>
         </div>
 
-        <Button
+        <button
           type="button"
-          variant="coral"
-          size="sm"
           onClick={() => setActiveTab('add')}
-          leftIcon={<Plus className="w-3.5 h-3.5" />}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coral-hover text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
         >
-          Add Account
-        </Button>
+          <Plus className="w-3.5 h-3.5" />
+          <span>Add Account</span>
+        </button>
       </div>
 
-      {/* List of Accounts */}
+      {/* Unified Connected Accounts List Container */}
       {accounts.length > 0 ? (
-        <div className="space-y-2">
+        <div className="rounded-lg border border-border-subtle bg-surface-elevated/50 overflow-hidden divide-y divide-border-subtle/80 shadow-xs">
           {accounts.map((acc) => (
             <AccountRow key={acc.id} account={acc} />
           ))}
         </div>
       ) : (
         /* Empty State */
-        <div className="py-10 px-4 border border-dashed border-border rounded-sm bg-base-1/30 text-center space-y-3">
-          <div className="w-10 h-10 rounded-sm bg-base-2 border border-border flex items-center justify-center mx-auto text-text-muted">
-            <Users className="w-4.5 h-4.5 text-commito-coral" />
+        <div className="py-12 px-6 border border-dashed border-border-subtle rounded-lg bg-surface-elevated/20 text-center space-y-3">
+          <div className="w-10 h-10 rounded-lg bg-surface-elevated border border-border-subtle flex items-center justify-center mx-auto text-commito-coral shadow-2xs">
+            <Users className="w-5 h-5" />
           </div>
           <div className="space-y-1">
-            <div className="text-xs font-bold text-text-primary">No Accounts Connected</div>
-            <p className="text-[11px] text-text-muted max-w-xs mx-auto">
+            <h4 className="text-xs font-semibold text-text">No Accounts Connected</h4>
+            <p className="text-[11.5px] text-text-muted max-w-sm mx-auto">
               Connect your GitHub, GitLab, or Bitbucket account to sync repositories and commit seamlessly.
             </p>
           </div>
-          <Button
+          <button
             type="button"
-            variant="coral"
-            size="sm"
             onClick={() => setActiveTab('add')}
-            leftIcon={<Plus className="w-3.5 h-3.5" />}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-commito-coral hover:bg-commito-coral-hover text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer mt-1"
           >
-            Connect Account
-          </Button>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Connect Account</span>
+          </button>
         </div>
       )}
     </div>

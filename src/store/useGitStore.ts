@@ -17,6 +17,7 @@ import {
 import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
+import { avatarCache } from '../services/accounts/avatarCacheService';
 
 /**
  * Top-level application navigation views.
@@ -36,7 +37,11 @@ export type NavView =
 const getCachedUser = (): UnifiedUser | null => {
   try {
     const cached = localStorage.getItem('cached_user');
-    return cached ? (JSON.parse(cached) as UnifiedUser) : null;
+    const user = cached ? (JSON.parse(cached) as UnifiedUser) : null;
+    if (user?.avatar_url) {
+      avatarCache.prefetchAvatars([user.avatar_url]).catch(() => {});
+    }
+    return user;
   } catch {
     return null;
   }
@@ -357,6 +362,9 @@ export const useGitStore = create<GitState>((set, get) => ({
         localStorage.setItem('cached_user', JSON.stringify(user));
       } catch {
         // Ignore localStorage errors
+      }
+      if (user.avatar_url) {
+        avatarCache.prefetchAvatars([user.avatar_url]).catch(() => {});
       }
       useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name}) [${user.provider}]`);
     } else {

@@ -134,6 +134,7 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
               <div className="flex items-center gap-3 min-w-0">
                 <UserAvatar
                   name={account.name}
+                  handle={account.username}
                   email={account.email || undefined}
                   url={account.avatar_url}
                   provider={account.provider}
