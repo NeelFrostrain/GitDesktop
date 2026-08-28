@@ -23,8 +23,8 @@ export const AccountsWidget: React.FC = () => {
     <div className="space-y-3 select-none font-sans">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
-          <Users className="w-3.5 h-3.5 text-commito-coral" />
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-text-subtle">
+          <Users className="w-3.5 h-3.5 text-blue-400" />
           <span>Connected Accounts</span>
         </div>
         <button
@@ -44,7 +44,7 @@ export const AccountsWidget: React.FC = () => {
             <div
               key={acc.id}
               onClick={() => openModalWithTab('accounts')}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-sm bg-base-1 border border-border hover:border-commito-coral/40 transition cursor-pointer group shadow-2xs"
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-surface-elevated hover:bg-surface-hover border border-border/75 hover:border-border-strong transition cursor-pointer group shadow-xs"
             >
               <div className="relative flex-shrink-0">
                 <UserAvatar
@@ -53,7 +53,7 @@ export const AccountsWidget: React.FC = () => {
                   handle={acc.handle}
                   email={acc.commit_email}
                   provider={acc.provider}
-                  className="w-7 h-7 rounded-sm ring-1 ring-border"
+                  className="w-7 h-7 rounded-full ring-1 ring-border/80"
                   iconClassName="w-3.5 h-3.5"
                 />
                 <div className="absolute -bottom-0.5 -right-0.5">
@@ -63,16 +63,16 @@ export const AccountsWidget: React.FC = () => {
 
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-medium text-text-primary/90 truncate">{acc.display_name}</span>
+                  <span className="text-xs font-medium text-text-primary truncate">{acc.display_name}</span>
                   <span
-                    className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border flex-shrink-0 ${
+                    className={`text-[10px] font-medium uppercase px-1.5 py-0.2 rounded border flex-shrink-0 ${
                       acc.provider === 'github'
-                        ? 'text-purple-400 bg-purple-950/40 border-purple-800/40'
+                        ? 'text-purple-300/90 bg-purple-500/10 border-purple-500/20'
                         : acc.provider === 'bitbucket'
-                        ? 'text-blue-400 bg-blue-950/40 border-blue-800/40'
+                        ? 'text-blue-300/90 bg-blue-500/10 border-blue-500/20'
                         : acc.provider === 'custom'
-                        ? 'text-emerald-400 bg-emerald-950/40 border-emerald-800/40'
-                        : 'text-commito-coral bg-commito-coral/10 border-commito-coral/30'
+                        ? 'text-emerald-300/90 bg-emerald-500/10 border-emerald-500/20'
+                        : 'text-orange-400/90 bg-orange-500/10 border-orange-500/20'
                     }`}
                   >
                     {acc.provider}

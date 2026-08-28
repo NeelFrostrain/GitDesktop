@@ -151,8 +151,8 @@ export function Dropdown<T extends string = string>({
         type="button"
         onClick={toggleOpen}
         disabled={disabled}
-        className={`w-full flex items-center justify-between gap-2 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-commito-coral shadow-2xs ${
-          isOpen ? 'border-commito-coral ring-1 ring-commito-coral/30' : ''
+        className={`w-full flex items-center justify-between gap-2 bg-surface-elevated hover:bg-surface-hover border border-border/80 hover:border-border-strong rounded-md text-text-primary transition select-none cursor-pointer focus:outline-none focus:border-blue-500/50 shadow-xs ${
+          isOpen ? 'border-blue-500/60 ring-1 ring-blue-500/30' : ''
         } ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${sizeClasses[size]}`}
       >
         <div className="flex items-center gap-2 truncate min-w-0">
@@ -161,13 +161,13 @@ export function Dropdown<T extends string = string>({
               {icon || selectedOption?.icon}
             </span>
           )}
-          <span className="truncate font-sans text-xs text-text-primary/90 font-medium">
+          <span className="truncate font-sans text-xs text-text-primary font-medium">
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </div>
         <ChevronDown
           className={`w-3.5 h-3.5 text-text-muted transition-transform duration-150 shrink-0 ${
-            isOpen ? 'rotate-180 text-commito-coral' : ''
+            isOpen ? 'rotate-180 text-blue-400' : ''
           }`}
         />
       </button>
@@ -182,7 +182,7 @@ export function Dropdown<T extends string = string>({
               width: `${menuCoords.width}px`,
               maxHeight: menuCoords.maxHeight ? `${menuCoords.maxHeight}px` : undefined,
             }}
-            className="fixed z-[10002] bg-base-0 border border-border-strong rounded-sm shadow-2xl p-1 text-xs select-none font-sans text-text-primary/90 animate-in fade-in zoom-in-95 duration-100 overflow-y-auto space-y-0.5 scrollbar-thin ring-1 ring-black/40"
+            className="fixed z-[10002] bg-surface-elevated border border-border-strong rounded-md shadow-xl p-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 overflow-y-auto space-y-0.5 scrollbar-thin ring-1 ring-black/40"
           >
             {options.length === 0 ? (
               <div className="px-3 py-2 text-text-muted italic text-center">
@@ -198,8 +198,8 @@ export function Dropdown<T extends string = string>({
                     onClick={() => handleSelect(opt.value)}
                     className={`w-full px-2.5 py-1.5 rounded-sm flex items-center justify-between gap-2 transition text-left cursor-pointer ${
                       isSelected
-                        ? 'bg-commito-coral/15 text-commito-coral font-semibold border border-commito-coral/30'
-                        : 'hover:bg-base-1 text-text-secondary hover:text-text-primary'
+                        ? 'bg-blue-500/15 text-blue-400 font-semibold border border-blue-500/30'
+                        : 'hover:bg-surface-hover text-text-subtle hover:text-text-primary'
                     }`}
                   >
                     <div className="flex items-center gap-2 truncate min-w-0 font-sans text-xs">
@@ -220,11 +220,11 @@ export function Dropdown<T extends string = string>({
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {opt.badge && (
-                        <span className="px-1.5 py-0.2 bg-base-1 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
+                        <span className="px-1.5 py-0.2 bg-surface-subtle border border-border rounded text-[9.5px] font-mono text-text-muted">
                           {opt.badge}
                         </span>
                       )}
-                      {isSelected && <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />}
+                      {isSelected && <Check className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
                     </div>
                   </button>
                 );
