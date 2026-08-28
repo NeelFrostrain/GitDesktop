@@ -1650,17 +1650,17 @@ export const MergeRequestModal: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto min-h-0 flex flex-col -mx-3">
+                <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 p-0.5">
                   {filteredMergeRequests.map((mr) => {
                     const isSelected = String(mr.id) === String(activeSelectedMr?.id);
                     return (
                       <div
                         key={mr.id}
                         onClick={() => setSelectedMrId(String(mr.id))}
-                        className={`px-3.5 py-2.5 border-l-2 transition-all duration-100 cursor-pointer select-none space-y-1 text-left ${
+                        className={`p-2.5 rounded-sm border transition-all duration-150 cursor-pointer select-none space-y-1 text-left ${
                           isSelected
-                            ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
-                            : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+                            ? 'bg-base-1 border-commito-coral/50 ring-1 ring-commito-coral/30 shadow-xs'
+                            : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70 shadow-xs'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">

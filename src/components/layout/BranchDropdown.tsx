@@ -773,7 +773,7 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     )}
 
-                    <div className="flex flex-col -mx-2">
+                    <div className="space-y-1.5 p-0.5">
                       {filteredPullRequests.map((pr) => {
                         const isCurrent = isCurrentPR(pr.source_branch);
                         const prNumber = pr.iid || pr.id;
@@ -783,10 +783,10 @@ export const BranchDropdown: React.FC = () => {
                           <div
                             key={pr.id}
                             onClick={() => handleSelectPullRequest(pr)}
-                            className={`group flex items-start justify-between gap-2.5 px-3 py-2 border-l-2 cursor-pointer transition-all duration-100 select-none ${
+                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
                               isCurrent
-                                ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
-                                : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+                                ? 'bg-base-2 border-commito-coral/50 ring-1 ring-commito-coral/30 shadow-xs'
+                                : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70 shadow-xs'
                             }`}
                             title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
                           >
