@@ -136,6 +136,7 @@ pub fn run() {
             open_in_terminal_cmd,
             open_in_vscode_cmd,
             show_in_explorer_cmd,
+            open_in_browser_cmd,
             create_repository_cmd,
             get_rebase_commits_cmd,
 

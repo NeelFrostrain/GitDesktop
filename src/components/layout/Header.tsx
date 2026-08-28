@@ -9,6 +9,7 @@ import {
   Globe,
   MoreHorizontal,
   PackagePlus,
+  ExternalLink,
 } from "lucide-react";
 import { useGitStore } from "../../store/useGitStore";
 import { useRemoteStore } from "../../store/remoteStore";
@@ -16,7 +17,8 @@ import { useTerminalStore } from "../../features/terminal/store/terminalStore";
 import { useAiAgentStore } from "../../features/ai-agent";
 import { SmartGitActionButton } from "./SmartGitActionButton";
 import { BranchDropdown } from "./BranchDropdown";
-import { Dropdown } from "../common/Dropdown";
+import { SystemService } from "../../services/system/systemService";
+import { getWebUrlFromRemoteUrl } from "../../shared/utils/urlUtils";
 
 /**
  * Top application header bar displaying quick creation tools (Terminal, AI Agent, 3-dot actions),
@@ -46,7 +48,9 @@ export const Header: React.FC = () => {
   const headerRef = useRef<HTMLElement>(null);
   const [headerWidth, setHeaderWidth] = useState<number>(1000);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isRemoteMenuOpen, setIsRemoteMenuOpen] = useState(false);
   const moreMenuRef = useRef<HTMLDivElement>(null);
+  const remoteMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (activeRepoPath) {
@@ -69,7 +73,7 @@ export const Header: React.FC = () => {
   const isWide = headerWidth >= 780;
   const isSlim = headerWidth < 560;
 
-  // Close 3-dot menu on outside click
+  // Close 3-dot and remote menus on outside click
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
       if (
@@ -77,6 +81,12 @@ export const Header: React.FC = () => {
         !moreMenuRef.current.contains(e.target as Node)
       ) {
         setIsMoreMenuOpen(false);
+      }
+      if (
+        remoteMenuRef.current &&
+        !remoteMenuRef.current.contains(e.target as Node)
+      ) {
+        setIsRemoteMenuOpen(false);
       }
     };
     document.addEventListener("mousedown", handleOutside);
@@ -271,19 +281,78 @@ export const Header: React.FC = () => {
             {/* Sync / Push Smart Button */}
             <SmartGitActionButton />
 
-            {/* Remote Selector Dropdown */}
+            {/* Remote Web Browser Redirect Button */}
             {remotes.length > 0 && (
-              <Dropdown
-                value={activeRemote || remotes[0]?.name || ""}
-                options={remotes.map((r) => ({
-                  value: r.name,
-                  label: r.name,
-                  description: r.url,
-                }))}
-                onChange={(val) => setActiveRemote(val)}
-                className="w-24 text-xs font-mono"
-                icon={<Globe className="w-3.5 h-3.5 text-text-muted" />}
-              />
+              <div className="relative shrink-0" ref={remoteMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (remotes.length === 1) {
+                      const webUrl = getWebUrlFromRemoteUrl(remotes[0].url);
+                      if (webUrl) SystemService.openInBrowser(webUrl);
+                    } else {
+                      setIsRemoteMenuOpen((v) => !v);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    setIsRemoteMenuOpen(true);
+                  }}
+                  className="h-7 w-7 flex items-center justify-center rounded-sm bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 shadow-2xs group"
+                  title={
+                    remotes.length === 1
+                      ? `Open ${remotes[0].name} in browser (${remotes[0].url})`
+                      : `Open Remote in Browser (${remotes.length} remotes available)`
+                  }
+                >
+                  <Globe className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
+                </button>
+
+                {/* Remote Options Menu (when multiple remotes exist or opened) */}
+                {isRemoteMenuOpen && (
+                  <div className="absolute top-full right-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                    <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
+                      <span>Open Remote in Browser</span>
+                      <span className="text-[9px] font-mono text-commito-coral">Web</span>
+                    </div>
+
+                    <div className="py-1">
+                      {remotes.map((r) => {
+                        const webUrl = getWebUrlFromRemoteUrl(r.url);
+                        const isCurrent =
+                          r.name === (activeRemote || remotes[0]?.name);
+                        return (
+                          <button
+                            key={r.name}
+                            type="button"
+                            onClick={() => {
+                              setActiveRemote(r.name);
+                              setIsRemoteMenuOpen(false);
+                              if (webUrl) SystemService.openInBrowser(webUrl);
+                            }}
+                            className="w-full px-2.5 py-1.5 flex items-center justify-between gap-2 hover:bg-base-2 text-left cursor-pointer transition group/item"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <div className="font-mono text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                                <span>{r.name}</span>
+                                {isCurrent && (
+                                  <span className="text-[9px] px-1 py-0.2 rounded-xs bg-base-0 border border-border text-commito-coral font-sans">
+                                    active
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-text-muted truncate font-mono mt-0.5">
+                                {r.url}
+                              </div>
+                            </div>
+                            <ExternalLink className="w-3.5 h-3.5 text-text-muted group-hover/item:text-commito-coral shrink-0 transition" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Active Branch Switcher */}

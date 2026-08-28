@@ -892,6 +892,28 @@ pub async fn show_in_explorer_cmd(repo_path: String) -> Result<(), AppError> {
     Ok(())
 }
 
+#[command]
+pub async fn open_in_browser_cmd(url: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        crate::git::command::silent_command("cmd")
+            .arg("/c")
+            .arg("start")
+            .arg("")
+            .arg(&url)
+            .spawn()?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open").arg(&url).spawn()?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open").arg(&url).spawn()?;
+    }
+    Ok(())
+}
+
 #[derive(Debug, serde::Deserialize)]
 pub struct CreateRepoOptions {
     pub name: String,
