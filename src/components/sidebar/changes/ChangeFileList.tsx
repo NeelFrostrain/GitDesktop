@@ -265,7 +265,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                       className={`w-3.5 h-3.5 shrink-0 ${
                         isSelected ? 'text-commito-coral' : 'text-text-muted'
                       }`}
-                    />
+                    /> */}
 
                     {/* File Name & Folder Subtitle */}
                     <div className="min-w-0 truncate">

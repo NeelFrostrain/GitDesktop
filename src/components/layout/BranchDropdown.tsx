@@ -563,25 +563,25 @@ export const BranchDropdown: React.FC = () => {
                         {filterQuery ? `No local branches match "${filterQuery}"` : 'No local branches.'}
                       </div>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="divide-y divide-border/20 -mx-2">
                         {localBranches.map((branchItem) => {
                           const isCurrent = branchItem.name === currentBranch;
                           return (
                             <div
                               key={branchItem.name}
                               onClick={() => handleSelectBranch(branchItem.name)}
-                              className={`group relative flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm cursor-pointer transition-all duration-150 select-none ${
+                              className={`group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 cursor-pointer transition-all duration-100 select-none ${
                                 isCurrent
-                                  ? 'bg-commito-coral/10 hover:bg-commito-coral/15 border border-commito-coral/30 shadow-xs'
-                                  : 'bg-base-0 hover:bg-base-1/90 border border-transparent hover:border-border/60 hover:shadow-xs'
+                                  ? 'bg-base-2 border-commito-coral text-text-primary font-semibold shadow-2xs'
+                                  : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                               }`}
                             >
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                 <div
-                                  className={`w-5 h-5 rounded-sm flex items-center justify-center shrink-0 transition-colors ${
+                                  className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
                                     isCurrent
                                       ? 'bg-commito-coral/20 text-commito-coral'
-                                      : 'bg-base-2 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
+                                      : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
                                   }`}
                                 >
                                   <GitBranch className="w-3 h-3" />
@@ -666,7 +666,7 @@ export const BranchDropdown: React.FC = () => {
                         )}
                       </div>
                     ) : (
-                      <div className="space-y-1">
+                      <div className="divide-y divide-border/20 -mx-2">
                         {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
                           const slashIdx = remoteBranchItem.name.indexOf('/');
                           const prefix = slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
@@ -676,10 +676,10 @@ export const BranchDropdown: React.FC = () => {
                             <div
                               key={remoteBranchItem.name}
                               onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                              className="group relative flex items-center justify-between gap-2 px-2.5 py-2 rounded-sm bg-base-0 hover:bg-base-1/90 border border-transparent hover:border-border/60 hover:shadow-xs cursor-pointer transition-all duration-150 select-none"
+                              className="group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 border-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-all duration-100 select-none"
                             >
-                              <div className="flex items-center gap-2 min-w-0 flex-1">
-                                <div className="w-5 h-5 rounded-sm bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                <div className="w-5 h-5 rounded-xs bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
                                   <Globe className="w-3 h-3" />
                                 </div>
                                 <div className="min-w-0 truncate font-mono text-xs">
