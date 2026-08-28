@@ -128,6 +128,44 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   const handleRevertCommit = async () => {
     if (!activeRepoPath) return;
 
+    const repoStatus = useGitStore.getState().status;
+    const isDirty = Boolean(
+      repoStatus &&
+        (!repoStatus.is_clean || (repoStatus.files && repoStatus.files.length > 0))
+    );
+
+    if (isDirty) {
+      const shouldStash = confirm(
+        `Cannot revert commit '${commit.short_sha}' with uncommitted changes in your working directory.\n\nWould you like to STASH your working changes now and proceed with the revert?`
+      );
+      if (!shouldStash) {
+        onClose();
+        return;
+      }
+
+      try {
+        await invoke('create_stash_cmd', {
+          repoPath: activeRepoPath,
+          message: `Auto-stash before reverting ${commit.short_sha}`,
+          includeUntracked: true,
+        });
+        useLogStore.getState().addLog('info', 'Git', `Stashed uncommitted changes before revert`);
+
+        await invoke('revert_commit_cmd', {
+          repoPath: activeRepoPath,
+          sha: commit.sha,
+        });
+
+        useLogStore.getState().addLog('success', 'Git', `Reverted commit ${commit.short_sha}`);
+        const res = await GitService.getRepoStatus(activeRepoPath);
+        setStatus(res);
+      } catch (error: unknown) {
+        setError(toAppError(error, 'REVERT_ERROR'));
+      }
+      onClose();
+      return;
+    }
+
     if (confirm(`Revert commit ${commit.short_sha}? This will create a new reverting commit.`)) {
       try {
         await invoke('revert_commit_cmd', {
