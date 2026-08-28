@@ -11,7 +11,6 @@ import {
   Pin,
   FileEdit,
   PlusSquare,
-  Sparkles,
 } from 'lucide-react';
 import { useRepoStore } from '../../store/repoStore';
 import { useGitStore } from '../../store/useGitStore';
@@ -259,7 +258,7 @@ export const RepoList: React.FC = () => {
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary">
             <span className="flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-commito-coral" />
+              {/* <Sparkles className="w-3.5 h-3.5 text-commito-coral" /> */}
               <span>Pinned Favorites</span>
             </span>
             <span className="text-[11px] font-mono text-text-muted">{pinnedRepos.length} pinned</span>
@@ -311,10 +310,12 @@ export const RepoList: React.FC = () => {
           </div>
         ) : (
           /* List View */
-          <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
-            {filteredRepos.map((repo) => (
-              <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
-            ))}
+          <div className="flex flex-col gap-2 animate-in fade-in duration-200">
+            <div className="bg-base-1/40 border border-border rounded-sm overflow-hidden flex flex-col divide-y divide-border/30 shadow-2xs">
+              {filteredRepos.map((repo) => (
+                <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
+              ))}
+            </div>
 
             {/* Add Row */}
             <div

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Check, FileText } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
 import { FileContextMenu } from '../../context-menus/FileContextMenu';

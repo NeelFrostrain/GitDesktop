@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   GitBranch,
-  ArrowUpRight,
-  ArrowDownLeft,
   Pin,
   Clock,
   FileEdit,
@@ -15,9 +13,11 @@ import {
   FolderOpen,
   MoreVertical,
   Copy,
+  CheckCircle2,
 } from 'lucide-react';
 import { RepoEntry, RepoDashboardStatus } from '../../types/home';
 import { useRepoStore, openRepo } from '../../features/repos';
+import { useGitStore } from '../../store/useGitStore';
 import { SystemService } from '../../services/system/systemService';
 import { useLogStore } from '../../store/useLogStore';
 
@@ -30,6 +30,9 @@ export interface RepoCardProps {
 export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'grid' }) => {
   const pinRepo = useRepoStore((s) => s.pinRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
+  const activeRepoPath = useGitStore((s) => s.activeRepoPath);
+  const isActive = repo.path === activeRepoPath;
+
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -108,26 +111,26 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
   };
 
   const renderProvider = () => {
-    if (status?.remote_provider === 'gitlab')
+    const provider = status?.remote_provider;
+    if (provider === 'github') {
       return (
-        <span className="text-[9.5px] font-mono font-bold uppercase text-commito-coral bg-commito-coral/10 border border-commito-coral/30 px-1.5 py-0.2 rounded-xs">
-          GitLab
+        <span className="px-1.5 py-0.2 rounded-xs bg-purple-950/40 border border-purple-500/40 text-[9px] font-mono font-bold text-purple-300 tracking-wider">
+          GITHUB
         </span>
       );
-    if (status?.remote_provider === 'github')
+    }
+    if (provider === 'gitlab') {
       return (
-        <span className="text-[9.5px] font-mono font-bold uppercase text-purple-400 bg-purple-950/40 border border-purple-800/40 px-1.5 py-0.2 rounded-xs">
-          GitHub
+        <span className="px-1.5 py-0.2 rounded-xs bg-orange-950/40 border border-[#e24329]/40 text-[9px] font-mono font-bold text-[#fc6d26] tracking-wider">
+          GITLAB
         </span>
       );
-    return (
-      <span className="text-[9.5px] font-mono font-medium text-text-muted bg-base-0 border border-border px-1.5 py-0.2 rounded-xs">
-        Local
-      </span>
-    );
+    }
+    return null;
   };
 
   const isDirty = Boolean(status && status.dirty_files > 0);
+  const branchName = status?.current_branch || 'main';
 
   // ── Context Menu Portal Box ──────────────────────────────────────────────
   const renderContextMenu = () => {
@@ -142,7 +145,6 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         onClick={(e) => e.stopPropagation()}
         className="fixed z-10000 w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
       >
-        {/* Launchers */}
         <div className="p-1 space-y-0.5">
           <button
             type="button"
@@ -174,7 +176,6 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
 
         <div className="h-px bg-border my-1" />
 
-        {/* Pin & Copy */}
         <div className="p-1 space-y-0.5">
           <button
             type="button"
@@ -197,7 +198,6 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
 
         <div className="h-px bg-border my-1" />
 
-        {/* Remove */}
         <div className="p-1">
           <button
             type="button"
@@ -213,101 +213,87 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
     );
   };
 
-  // ── List View Rendering ──────────────────────────────────────────────────
+  // ── List View Rendering (Seamless Flat Row with Left Accent) ─────────────
   if (viewMode === 'list') {
     return (
       <>
         <div
           onClick={handleCardClick}
           onContextMenu={handleContextMenu}
-          className={`group px-3.5 py-2.5 bg-base-1 border border-border hover:border-commito-coral/50 rounded-sm hover:bg-base-1/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
-            repo.pinned ? 'border-border-strong bg-base-2/20' : ''
+          className={`group px-3.5 py-2.5 border-l-2 transition-all duration-100 cursor-pointer flex items-center justify-between gap-4 select-none ${
+            isActive
+              ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold'
+              : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
           }`}
         >
-          {/* Left: Icon + Name + Provider + Branch + Path */}
-          <div className="flex items-center gap-3 min-w-0 max-w-[320px] lg:max-w-[380px] shrink-0">
-            <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/30 transition-colors flex-shrink-0">
-              <FolderGit2 className="w-4 h-4" />
-            </div>
-            <div className="min-w-0 flex flex-col gap-0.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3
-                  className="text-xs font-semibold text-text-primary/95 truncate group-hover:text-commito-coral transition-colors"
+          {/* Left: Folder Icon + Name + Badges + Path */}
+          <div className="flex items-center gap-2.5 min-w-0 max-w-[340px] lg:max-w-[420px] shrink-0">
+            <FolderGit2
+              className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
+                isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-commito-coral'
+              }`}
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span
+                  className={`text-xs truncate leading-none font-mono ${
+                    isActive ? 'font-bold text-text-primary' : 'font-medium text-text-primary group-hover:text-commito-coral'
+                  }`}
                   title={repo.name}
                 >
                   {repo.name}
-                </h3>
+                </span>
                 {renderProvider()}
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-base-0 border border-border rounded-sm text-[10.5px] font-mono text-text-muted">
-                  <GitBranch className="w-3 h-3 text-commito-coral" />
-                  <span className="truncate max-w-[130px]">{status?.current_branch || 'main'}</span>
+                <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
+                  <GitBranch className="w-2.5 h-2.5 text-commito-coral flex-shrink-0" />
+                  <span className="truncate max-w-[100px]">{branchName}</span>
                 </div>
                 {repo.pinned && (
                   <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
                 )}
               </div>
-              <p className="text-[10px] text-text-muted font-mono truncate" title={repo.path}>
+              <p className="text-[10px] text-text-muted/70 font-mono truncate mt-0.5 leading-tight" title={repo.path}>
                 {repo.path}
               </p>
             </div>
           </div>
 
-          {/* Middle: Last commit summary (Expands across all empty space) */}
+          {/* Middle: Commit Summary */}
           <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0 text-left px-2">
-            <GitCommit className="w-3.5 h-3.5 text-text-muted shrink-0" />
-            <span className="text-[11.5px] text-text-secondary truncate block w-full" title={status?.last_commit_summary}>
+            <GitCommit className="w-3 h-3 text-text-muted shrink-0" />
+            <span className="text-[10.5px] text-text-muted/80 font-mono truncate block w-full" title={status?.last_commit_summary}>
               {status?.last_commit_summary || '—'}
             </span>
           </div>
 
-          {/* Right Section: Time -> Modified badge -> 3-Dots Menu */}
+          {/* Right: Timestamp + Status badge + 3-dots */}
           <div className="flex items-center gap-2.5 flex-shrink-0">
-            {/* Timestamp */}
-            <span className="hidden sm:flex items-center gap-1 text-[10px] text-text-muted font-mono">
+            <span className="hidden sm:flex items-center gap-1 text-[10px] text-text-muted/70 font-mono">
               <Clock className="w-2.5 h-2.5" />
               {formatRelativeTime(status?.last_commit_at || 0)}
             </span>
 
-            {/* Status chips */}
-            <div className="flex items-center gap-1.5">
-              {status && (status.ahead > 0 || status.behind > 0) && (
-                <div className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-sm">
-                  {status.ahead > 0 && (
-                    <span className="flex items-center gap-0.5 text-git-added font-semibold">
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                      {status.ahead}
-                    </span>
-                  )}
-                  {status.behind > 0 && (
-                    <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
-                      <ArrowDownLeft className="w-2.5 h-2.5" />
-                      {status.behind}
-                    </span>
-                  )}
-                </div>
-              )}
+            {isDirty ? (
+              <span
+                className="text-git-modified shrink-0 flex items-center gap-1"
+                title={`${status?.dirty_files} uncommitted changes`}
+              >
+                <FileEdit className="w-3.5 h-3.5" />
+                <span className="font-mono text-[10px] font-bold">{status?.dirty_files}</span>
+              </span>
+            ) : (
+              <span className="text-git-added shrink-0" title="Clean repository">
+                <CheckCircle2 className="w-3.5 h-3.5 text-git-added/70" />
+              </span>
+            )}
 
-              {isDirty ? (
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-sm text-[10px] font-mono text-git-modified font-semibold">
-                  <FileEdit className="w-2.5 h-2.5" />
-                  {status!.dirty_files} modified
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
-                  Clean
-                </div>
-              )}
-            </div>
-
-            {/* 3-Dots Menu Button */}
             <button
               type="button"
               onClick={handleDotsClick}
-              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex-shrink-0"
+              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer flex-shrink-0"
               title="More options"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -322,26 +308,36 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
       <div
         onClick={handleCardClick}
         onContextMenu={handleContextMenu}
-        className={`group p-4 bg-base-1 border border-border hover:border-commito-coral/50 rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
-          repo.pinned ? 'border-border-strong bg-base-1/90 ring-1 ring-commito-coral/20' : ''
+        className={`group p-3.5 bg-base-1/50 border rounded-sm border-l-2 transition-all duration-100 cursor-pointer flex flex-col justify-between gap-2.5 select-none shadow-2xs ${
+          isActive
+            ? 'bg-base-2 border-border/60 border-l-commito-coral text-text-primary font-semibold'
+            : 'border-border/60 border-l-transparent hover:border-l-commito-coral hover:bg-base-2/70'
         }`}
       >
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {/* Header Row */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/30 transition-colors flex-shrink-0">
-                <FolderGit2 className="w-4 h-4" />
-              </div>
+              <FolderGit2
+                className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
+                  isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-commito-coral'
+                }`}
+              />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <h3
-                    className="text-xs font-semibold text-text-primary/95 truncate group-hover:text-commito-coral transition-colors"
+                  <span
+                    className={`text-xs truncate leading-none font-mono ${
+                      isActive ? 'font-bold text-text-primary' : 'font-medium text-text-primary group-hover:text-commito-coral'
+                    }`}
                     title={repo.name}
                   >
                     {repo.name}
-                  </h3>
+                  </span>
                   {renderProvider()}
+                  <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
+                    <GitBranch className="w-2.5 h-2.5 text-commito-coral flex-shrink-0" />
+                    <span className="truncate max-w-[100px]">{branchName}</span>
+                  </div>
                   {repo.pinned && (
                     <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
                   )}
@@ -349,69 +345,48 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
               </div>
             </div>
 
-            {/* 3-Dots Menu Button */}
-            <button
-              type="button"
-              onClick={handleDotsClick}
-              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex-shrink-0"
-              title="More options"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
+            {/* Right: Status Icon + 3-Dots Menu */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isDirty ? (
+                <span
+                  className="text-git-modified shrink-0 flex items-center gap-1"
+                  title={`${status?.dirty_files} uncommitted changes`}
+                >
+                  <FileEdit className="w-3.5 h-3.5" />
+                  <span className="font-mono text-[10px] font-bold">{status?.dirty_files}</span>
+                </span>
+              ) : (
+                <span className="text-git-added shrink-0" title="Clean repository">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-git-added/70" />
+                </span>
+              )}
+
+              <button
+                type="button"
+                onClick={handleDotsClick}
+                className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer flex-shrink-0"
+                title="More options"
+              >
+                <MoreVertical className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Path */}
-          <p className="text-[10.5px] text-text-muted font-mono truncate" title={repo.path}>
+          <p className="text-[10px] text-text-muted/70 font-mono truncate leading-tight" title={repo.path}>
             {repo.path}
           </p>
-
-          {/* Status Badges */}
-          <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-base-0 border border-border rounded-sm text-[10.5px] font-mono text-text-muted">
-              <GitBranch className="w-3 h-3 text-commito-coral" />
-              <span className="truncate max-w-[120px]">{status?.current_branch || 'main'}</span>
-            </div>
-
-            {status && (status.ahead > 0 || status.behind > 0) && (
-              <div className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 bg-base-0 border border-border rounded-sm">
-                {status.ahead > 0 && (
-                  <span className="flex items-center gap-0.5 text-git-added font-semibold">
-                    <ArrowUpRight className="w-2.5 h-2.5" />
-                    {status.ahead}
-                  </span>
-                )}
-                {status.behind > 0 && (
-                  <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
-                    <ArrowDownLeft className="w-2.5 h-2.5" />
-                    {status.behind}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {isDirty ? (
-              <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-git-modified-bg border border-git-modified/30 rounded-sm text-[10px] font-mono text-git-modified font-semibold">
-                <FileEdit className="w-2.5 h-2.5" />
-                {status!.dirty_files} modified
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.5 bg-git-added-bg border border-git-added/20 rounded-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
-                Clean
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Footer commit summary */}
-        <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
+        <div className="pt-2 border-t border-border/50 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0 flex-1">
             <GitCommit className="w-3 h-3 text-text-muted shrink-0" />
-            <span className="text-[11px] text-text-secondary truncate" title={status?.last_commit_summary}>
+            <span className="text-[10.5px] text-text-muted/80 font-mono truncate" title={status?.last_commit_summary}>
               {status?.last_commit_summary || '—'}
             </span>
           </div>
-          <span className="flex items-center gap-1 text-[10px] text-text-muted flex-shrink-0 font-mono">
+          <span className="flex items-center gap-1 text-[10px] text-text-muted/70 flex-shrink-0 font-mono">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(status?.last_commit_at || 0)}
           </span>
@@ -421,4 +396,3 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
     </>
   );
 };
-

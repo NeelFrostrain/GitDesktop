@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Folder,
   FolderOpen,
-  FileText,
   PlusSquare,
   MinusSquare,
   FileEdit,
