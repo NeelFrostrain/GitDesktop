@@ -311,11 +311,9 @@ export const RepoList: React.FC = () => {
         ) : (
           /* List View */
           <div className="flex flex-col gap-2 animate-in fade-in duration-200">
-            <div className="bg-base-1/40 border border-border rounded-sm overflow-hidden flex flex-col divide-y divide-border/30 shadow-2xs">
-              {filteredRepos.map((repo) => (
-                <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
-              ))}
-            </div>
+            {filteredRepos.map((repo) => (
+              <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
+            ))}
 
             {/* Add Row */}
             <div
