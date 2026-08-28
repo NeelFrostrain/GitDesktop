@@ -36,13 +36,21 @@ export const ContributionActivityRadar: React.FC = () => {
 
   return (
     <div className="h-full flex flex-col justify-between p-3.5 bg-surface-subtle/80 border border-border/70 rounded-sm select-none font-sans relative">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-1">
+      {/* Header — badge shows live info when hovering an axis */}
+      <div className="flex items-center justify-between border-b border-border/50 pb-2 mb-1 min-h-[22px]">
         <span className="text-xs font-semibold text-text-primary tracking-tight">
           Activity Overview
         </span>
-        <span className="text-[10px] font-mono text-text-muted px-1.5 py-0.2 rounded-xs bg-base-0 border border-border">
-          Breakdown
+        <span className="text-[10px] font-mono text-text-muted px-1.5 py-0.5 rounded-xs bg-base-0 border border-border transition-all duration-150 max-w-[160px] truncate">
+          {hoveredAxis
+            ? hoveredAxis === 'Commits'
+              ? `${breakdown.commits_count} commits (${breakdown.commits_pct}%)`
+              : hoveredAxis === 'Pull requests'
+                ? `${breakdown.prs_count} PRs (${breakdown.prs_pct}%)`
+                : hoveredAxis === 'Issues'
+                  ? `${breakdown.issues_count} issues (${breakdown.issues_pct}%)`
+                  : `${breakdown.reviews_count} reviews (${breakdown.reviews_pct}%)`
+            : 'Breakdown'}
         </span>
       </div>
 
@@ -217,19 +225,7 @@ export const ContributionActivityRadar: React.FC = () => {
         </div>
       </div>
 
-      {/* Interactive Tooltip on hover (pointer-events-none prevents flickering) */}
-      {hoveredAxis && (
-        <div className="pointer-events-none absolute inset-x-3 bottom-12 z-20 px-2.5 py-1 bg-surface-elevated border border-border text-[10.5px] text-text-secondary rounded-xs text-center shadow-lg animate-in fade-in">
-          <strong>{hoveredAxis}</strong>:{' '}
-          {hoveredAxis === 'Commits'
-            ? `${breakdown.commits_count} commits (${breakdown.commits_pct}%)`
-            : hoveredAxis === 'Pull requests'
-              ? `${breakdown.prs_count} pull/merge requests (${breakdown.prs_pct}%)`
-              : hoveredAxis === 'Issues'
-                ? `${breakdown.issues_count} issues (${breakdown.issues_pct}%)`
-                : `${breakdown.reviews_count} code reviews (${breakdown.reviews_pct}%)`}
-        </div>
-      )}
+
     </div>
   );
 };

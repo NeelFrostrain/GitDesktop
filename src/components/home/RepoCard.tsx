@@ -240,7 +240,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
         <div
           onClick={handleCardClick}
           onContextMenu={handleContextMenu}
-          className={`group px-3.5 py-2.5 bg-surface-subtle border border-border hover:border-border-strong rounded-sm hover:bg-surface-subtle/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
+          className={`group px-3.5 py-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
             repo.pinned ? "border-border-strong" : ""
           }`}
         >
@@ -350,7 +350,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({
       <div
         onClick={handleCardClick}
         onContextMenu={handleContextMenu}
-        className={`group p-4 bg-surface-subtle/80 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
+        className={`group p-4 bg-base-1 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
           repo.pinned ? "border-border-strong" : ""
         }`}
       >

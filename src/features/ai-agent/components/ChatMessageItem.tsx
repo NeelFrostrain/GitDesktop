@@ -244,7 +244,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         </div>
 
         {/* User Bubble */}
-        <div className="max-w-[90%] p-2.5 rounded-sm bg-base-2 border border-border text-xs text-text-primary shadow-2xs leading-relaxed space-y-1.5">
+        <div className="max-w-[90%] px-2.5 py-0.5 rounded-sm bg-base-2 border border-border text-xs text-text-primary shadow-2xs leading-relaxed space-y-1.5">
           <p className="whitespace-pre-wrap">{message.content}</p>
 
           {/* Attachments */}
@@ -372,7 +372,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
                     const allCmds = pendingCommands
                       .map((t) => t.command?.trim())
                       .filter(Boolean)
-                      .join('\n');
+                      .join("\n");
                     navigator.clipboard.writeText(allCmds);
                     setCopiedChained(true);
                     setTimeout(() => setCopiedChained(false), 2000);
