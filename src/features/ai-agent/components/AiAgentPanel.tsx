@@ -1,13 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   X,
-  Send,
   Plus,
   Trash2,
   Paperclip,
   RotateCcw,
   Loader2,
-  FileCode2,
   Settings,
   ChevronDown,
   Cpu,
@@ -15,12 +13,13 @@ import {
   Shield,
   ShieldAlert,
   ShieldCheck,
-} from 'lucide-react';
-import { useAiAgentStore } from '../store/useAiAgentStore';
-import { ChatMessageItem } from './ChatMessageItem';
-import { QuickPromptChips } from './QuickPromptChips';
-import { useSettingsStore } from '../../settings';
-import { AgentSecurityMode } from '../types';
+  ArrowUp,
+} from "lucide-react";
+import { useAiAgentStore } from "../store/useAiAgentStore";
+import { ChatMessageItem } from "./ChatMessageItem";
+import { QuickPromptChips } from "./QuickPromptChips";
+import { useSettingsStore } from "../../settings";
+import { AgentSecurityMode } from "../types";
 
 const SECURITY_OPTIONS: Array<{
   id: AgentSecurityMode;
@@ -31,74 +30,76 @@ const SECURITY_OPTIONS: Array<{
   color: string;
 }> = [
   {
-    id: 'strict',
-    name: 'Strict',
-    badge: 'Ask Everything',
-    desc: 'Terminal commands and file edits/deletes always require manual review.',
+    id: "strict",
+    name: "Strict",
+    badge: "Ask Everything",
+    desc: "Terminal commands and file edits/deletes always require manual review.",
     icon: ShieldAlert,
-    color: 'text-emerald-400',
+    color: "text-emerald-400",
   },
   {
-    id: 'sandboxed',
-    name: 'Sandboxed',
-    badge: 'Safe Auto',
-    desc: 'Auto-saves workspace files; commands and deletes require confirmation.',
+    id: "sandboxed",
+    name: "Sandboxed",
+    badge: "Safe Auto",
+    desc: "Auto-saves workspace files; commands and deletes require confirmation.",
     icon: Shield,
-    color: 'text-sky-400',
+    color: "text-sky-400",
   },
   {
-    id: 'full_access',
-    name: 'Full Access',
-    badge: 'Unrestricted',
-    desc: 'Agents have full access to execute commands and file operations automatically.',
+    id: "full_access",
+    name: "Full Access",
+    badge: "Unrestricted",
+    desc: "Agents have full access to execute commands and file operations automatically.",
     icon: ShieldCheck,
-    color: 'text-amber-400',
+    color: "text-amber-400",
   },
 ];
 
 const MODEL_OPTIONS = [
   {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash Lite',
-    badge: 'Ultra Fast',
-    desc: 'Lightning fast execution, free tier quotas.',
+    id: "gemini-2.5-flash-lite",
+    name: "Gemini 2.5 Flash Lite",
+    badge: "Ultra Fast",
+    desc: "Lightning fast execution, free tier quotas.",
   },
   {
-    id: 'gemini-3.5-flash-lite',
-    name: 'Gemini 3.5 Flash Lite',
-    badge: 'Next-Gen',
-    desc: 'Next-generation lightweight reasoning model.',
+    id: "gemini-3.5-flash-lite",
+    name: "Gemini 3.5 Flash Lite",
+    badge: "Next-Gen",
+    desc: "Next-generation lightweight reasoning model.",
   },
   {
-    id: 'gemini-3.1-flash-lite',
-    name: 'Gemini 3.1 Flash Lite',
-    badge: 'High-Speed',
-    desc: 'Balanced reasoning and rapid latency for diffs.',
+    id: "gemini-3.1-flash-lite",
+    name: "Gemini 3.1 Flash Lite",
+    badge: "High-Speed",
+    desc: "Balanced reasoning and rapid latency for diffs.",
   },
   {
-    id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
-    badge: 'Low Latency',
-    desc: 'Sub-second generation times with concise formatting.',
+    id: "gemini-2.0-flash-lite",
+    name: "Gemini 2.0 Flash Lite",
+    badge: "Low Latency",
+    desc: "Sub-second generation times with concise formatting.",
   },
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    badge: 'Flash',
-    desc: 'Deep semantic understanding across codebases.',
+    id: "gemini-2.0-flash",
+    name: "Gemini 2.0 Flash",
+    badge: "Flash",
+    desc: "Deep semantic understanding across codebases.",
   },
   {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    badge: '1.5 Flash',
-    desc: 'Proven fast reasoning with large context window.',
+    id: "gemini-1.5-flash",
+    name: "Gemini 1.5 Flash",
+    badge: "1.5 Flash",
+    desc: "Proven fast reasoning with large context window.",
   },
 ];
 
 const getStoredWidth = (): number => {
   try {
-    const saved = localStorage.getItem('ai_agent_panel_width');
-    return saved ? Math.max(340, Math.min(window.innerWidth - 80, parseInt(saved, 10))) : 480;
+    const saved = localStorage.getItem("ai_agent_panel_width");
+    return saved
+      ? Math.max(340, Math.min(window.innerWidth - 80, parseInt(saved, 10)))
+      : 480;
   } catch {
     return 480;
   }
@@ -127,14 +128,18 @@ export const AiAgentPanel: React.FC = () => {
   const getEffectiveValue = useSettingsStore((s) => s.getEffectiveValue);
   const setSettingValue = useSettingsStore((s) => s.setSettingValue);
 
-  const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
-  const activeModelObj = MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
-  const activeSecurityObj = SECURITY_OPTIONS.find((s) => s.id === securityMode) || SECURITY_OPTIONS[0];
+  const selectedModel = String(
+    getEffectiveValue("ai.model") || "gemini-2.5-flash-lite",
+  );
+  const activeModelObj =
+    MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
+  const activeSecurityObj =
+    SECURITY_OPTIONS.find((s) => s.id === securityMode) || SECURITY_OPTIONS[0];
   const ActiveSecurityIcon = activeSecurityObj.icon;
 
   const [panelWidth, setPanelWidth] = useState<number>(getStoredWidth);
   const [isDragging, setIsDragging] = useState(false);
-  const [inputVal, setInputVal] = useState('');
+  const [inputVal, setInputVal] = useState("");
   const [isSessionMenuOpen, setIsSessionMenuOpen] = useState(false);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [isSecurityMenuOpen, setIsSecurityMenuOpen] = useState(false);
@@ -145,13 +150,14 @@ export const AiAgentPanel: React.FC = () => {
   const modelMenuRef = useRef<HTMLDivElement>(null);
   const securityMenuRef = useRef<HTMLDivElement>(null);
 
-  const activeSession = sessions.find((s) => s.id === activeSessionId) || sessions[0];
-  const isThinking = status === 'thinking';
+  const activeSession =
+    sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const isThinking = status === "thinking";
 
   // Auto-scroll to bottom on message updates
   useEffect(() => {
     if (isOpen) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [activeSession?.messages, isThinking, isOpen]);
 
@@ -165,18 +171,27 @@ export const AiAgentPanel: React.FC = () => {
   // Close menus on click outside
   useEffect(() => {
     const handleOutside = (e: MouseEvent) => {
-      if (sessionMenuRef.current && !sessionMenuRef.current.contains(e.target as Node)) {
+      if (
+        sessionMenuRef.current &&
+        !sessionMenuRef.current.contains(e.target as Node)
+      ) {
         setIsSessionMenuOpen(false);
       }
-      if (modelMenuRef.current && !modelMenuRef.current.contains(e.target as Node)) {
+      if (
+        modelMenuRef.current &&
+        !modelMenuRef.current.contains(e.target as Node)
+      ) {
         setIsModelMenuOpen(false);
       }
-      if (securityMenuRef.current && !securityMenuRef.current.contains(e.target as Node)) {
+      if (
+        securityMenuRef.current &&
+        !securityMenuRef.current.contains(e.target as Node)
+      ) {
         setIsSecurityMenuOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleOutside);
-    return () => document.removeEventListener('mousedown', handleOutside);
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
   }, []);
 
   if (!isOpen) return null;
@@ -194,32 +209,32 @@ export const AiAgentPanel: React.FC = () => {
       const newWidth = Math.max(340, Math.min(maxW, startWidth + deltaX));
       setPanelWidth(newWidth);
       try {
-        localStorage.setItem('ai_agent_panel_width', newWidth.toString());
+        localStorage.setItem("ai_agent_panel_width", newWidth.toString());
       } catch {}
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
   };
 
   const handleSend = async () => {
     if (!inputVal.trim() || isThinking) return;
     const text = inputVal;
-    setInputVal('');
+    setInputVal("");
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = "auto";
     }
     await sendMessage(text);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -227,12 +242,12 @@ export const AiAgentPanel: React.FC = () => {
 
   const handleTextareaInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputVal(e.target.value);
-    e.target.style.height = 'auto';
+    e.target.style.height = "auto";
     e.target.style.height = `${Math.min(120, e.target.scrollHeight)}px`;
   };
 
   const handleOpenAiSettings = () => {
-    openSettings('ai');
+    openSettings("ai");
   };
 
   if (!isOpen) return null;
@@ -241,7 +256,7 @@ export const AiAgentPanel: React.FC = () => {
     <aside
       style={{ width: `${panelWidth}px` }}
       className={`relative h-full bg-base-0 border-l border-border flex flex-col justify-between select-none shrink-0 z-30 overflow-hidden ${
-        isDragging ? '' : 'transition-[width] duration-75'
+        isDragging ? "" : "transition-[width] duration-75"
       }`}
     >
       {/* Left Resizing Drag Handle */}
@@ -263,7 +278,10 @@ export const AiAgentPanel: React.FC = () => {
           </div> */}
 
           {/* Session Switcher Dropdown */}
-          <div className="relative min-w-0 flex-1 max-w-[140px] sm:max-w-[160px]" ref={sessionMenuRef}>
+          <div
+            className="relative min-w-0 flex-1 max-w-[140px] sm:max-w-[160px]"
+            ref={sessionMenuRef}
+          >
             <button
               type="button"
               onClick={() => {
@@ -273,7 +291,9 @@ export const AiAgentPanel: React.FC = () => {
               className="w-full flex items-center justify-between gap-1 px-2 py-1 rounded-sm bg-base-0 hover:bg-base-2 border border-border text-xs font-semibold text-text-primary transition cursor-pointer"
               title="Switch Chat Session"
             >
-              <span className="truncate text-[11.5px]">{activeSession?.title || 'New Chat'}</span>
+              <span className="truncate text-[11.5px]">
+                {activeSession?.title || "New Chat"}
+              </span>
               <ChevronDown className="w-3 h-3 text-text-muted shrink-0" />
             </button>
 
@@ -307,8 +327,8 @@ export const AiAgentPanel: React.FC = () => {
                         }}
                         className={`group px-2.5 py-1.5 flex items-center justify-between gap-2 cursor-pointer transition ${
                           isCurrent
-                            ? 'bg-base-2 text-commito-coral font-semibold'
-                            : 'hover:bg-base-2/70 text-text-primary'
+                            ? "bg-base-2 text-commito-coral font-semibold"
+                            : "hover:bg-base-2/70 text-text-primary"
                         }`}
                       >
                         <span className="truncate flex-1">{sess.title}</span>
@@ -344,7 +364,7 @@ export const AiAgentPanel: React.FC = () => {
             >
               <Cpu className="w-3 h-3 text-commito-coral shrink-0" />
               <span className="truncate font-medium">
-                {activeModelObj.name.replace('Gemini ', '')}
+                {activeModelObj.name.replace("Gemini ", "")}
               </span>
               <ChevronDown className="w-2.5 h-2.5 text-text-muted shrink-0" />
             </button>
@@ -354,7 +374,9 @@ export const AiAgentPanel: React.FC = () => {
               <div className="absolute top-full left-0 mt-1 w-68 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
                   <span>Gemini Model</span>
-                  <span className="text-[9px] font-mono text-commito-coral">Google AI</span>
+                  <span className="text-[9px] font-mono text-commito-coral">
+                    Google AI
+                  </span>
                 </div>
 
                 <div className="py-1 space-y-0.5 max-h-60 overflow-y-auto scrollbar-thin">
@@ -365,24 +387,30 @@ export const AiAgentPanel: React.FC = () => {
                         key={opt.id}
                         type="button"
                         onClick={async () => {
-                          await setSettingValue('ai.model', opt.id);
+                          await setSettingValue("ai.model", opt.id);
                           setIsModelMenuOpen(false);
                         }}
                         className={`w-full px-2.5 py-1.5 flex items-center justify-between gap-2 text-left cursor-pointer transition ${
                           isSelected
-                            ? 'bg-base-2 text-commito-coral font-semibold'
-                            : 'hover:bg-base-2/70 text-text-primary'
+                            ? "bg-base-2 text-commito-coral font-semibold"
+                            : "hover:bg-base-2/70 text-text-primary"
                         }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="text-[11.5px] truncate font-medium">{opt.name}</div>
-                          <div className="text-[10px] text-text-muted/70 truncate">{opt.desc}</div>
+                          <div className="text-[11.5px] truncate font-medium">
+                            {opt.name}
+                          </div>
+                          <div className="text-[10px] text-text-muted/70 truncate">
+                            {opt.desc}
+                          </div>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <span className="text-[9px] font-mono px-1 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted">
                             {opt.badge}
                           </span>
-                          {isSelected && <Check className="w-3 h-3 text-commito-coral" />}
+                          {isSelected && (
+                            <Check className="w-3 h-3 text-commito-coral" />
+                          )}
                         </div>
                       </button>
                     );
@@ -404,7 +432,9 @@ export const AiAgentPanel: React.FC = () => {
               className="flex items-center gap-1 px-1.5 py-1 rounded-sm bg-base-0 hover:bg-base-2 border border-border text-[11px] font-mono text-text-secondary hover:text-text-primary transition cursor-pointer"
               title="Agent Security & Permissions Mode"
             >
-              <ActiveSecurityIcon className={`w-3 h-3 ${activeSecurityObj.color} shrink-0`} />
+              <ActiveSecurityIcon
+                className={`w-3 h-3 ${activeSecurityObj.color} shrink-0`}
+              />
               <span className="truncate font-medium">
                 {activeSecurityObj.name}
               </span>
@@ -416,7 +446,9 @@ export const AiAgentPanel: React.FC = () => {
               <div className="absolute top-full right-0 mt-1 w-68 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
                   <span>Agent Security Mode</span>
-                  <span className="text-[9px] font-mono text-commito-coral">Permissions</span>
+                  <span className="text-[9px] font-mono text-commito-coral">
+                    Permissions
+                  </span>
                 </div>
 
                 <div className="py-1 space-y-0.5 max-h-60 overflow-y-auto scrollbar-thin">
@@ -433,12 +465,14 @@ export const AiAgentPanel: React.FC = () => {
                         }}
                         className={`w-full px-2.5 py-2 flex items-start justify-between gap-2 text-left cursor-pointer transition ${
                           isSelected
-                            ? 'bg-base-2 text-text-primary font-semibold'
-                            : 'hover:bg-base-2/70 text-text-primary'
+                            ? "bg-base-2 text-text-primary font-semibold"
+                            : "hover:bg-base-2/70 text-text-primary"
                         }`}
                       >
                         <div className="flex items-start gap-2 min-w-0 flex-1">
-                          <IconComp className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${opt.color}`} />
+                          <IconComp
+                            className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${opt.color}`}
+                          />
                           <div className="min-w-0 flex-1">
                             <div className="text-[11.5px] truncate font-medium flex items-center gap-1.5">
                               <span>{opt.name}</span>
@@ -451,7 +485,9 @@ export const AiAgentPanel: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        {isSelected && <Check className="w-3 h-3 text-commito-coral shrink-0 mt-0.5" />}
+                        {isSelected && (
+                          <Check className="w-3 h-3 text-commito-coral shrink-0 mt-0.5" />
+                        )}
                       </button>
                     );
                   })}
@@ -551,18 +587,9 @@ export const AiAgentPanel: React.FC = () => {
           </div>
         )}
 
-        {/* Input Composer */}
-        <div className="relative flex items-end gap-1.5 bg-base-0 border border-border/80 focus-within:border-commito-coral/50 focus-within:ring-1 focus-within:ring-commito-coral/20 rounded-sm p-1.5 transition">
-          {/* Attach Git Diff button */}
-          <button
-            type="button"
-            onClick={attachWorkingDiff}
-            className="p-1 rounded-xs hover:bg-base-2 text-text-muted hover:text-commito-coral transition cursor-pointer shrink-0 mb-0.5"
-            title="Attach Current Git Diff"
-          >
-            <FileCode2 className="w-4 h-4" />
-          </button>
-
+        {/* Claude-style Rounded Input Composer */}
+        <div className="relative flex flex-col bg-transparent border border-border hover:border-border-strong focus-within:border-commito-coral/70 focus-within:ring-1 focus-within:ring-commito-coral/20 rounded-sm p-2.5 transition">
+          {/* Top: Multiline Textarea */}
           <textarea
             ref={textareaRef}
             rows={1}
@@ -570,18 +597,32 @@ export const AiAgentPanel: React.FC = () => {
             onChange={handleTextareaInput}
             onKeyDown={handleKeyDown}
             placeholder="Ask AI Agent about your code, diffs, branches, or Git actions..."
-            className="flex-1 bg-transparent resize-none border-none outline-none text-xs text-text-primary placeholder:text-text-faint max-h-28 py-1 leading-relaxed"
+            className="w-full bg-transparent resize-none border-none outline-none text-xs text-text-primary placeholder:text-text-muted/60 min-h-[32px] max-h-36 py-0.5 leading-relaxed font-sans scrollbar-thin"
           />
 
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!inputVal.trim() || isThinking}
-            className="p-1.5 rounded-xs bg-commito-coral hover:bg-commito-coral/90 disabled:opacity-30 disabled:hover:bg-commito-coral text-white transition cursor-pointer shrink-0 mb-0.5 active:scale-95 shadow-xs"
-            title="Send Message (Enter)"
-          >
-            <Send className="w-3.5 h-3.5" />
-          </button>
+          {/* Bottom Toolbar */}
+          <div className="flex items-center justify-between pt-1">
+            {/* Left: Attach Git Diff (+) */}
+            <button
+              type="button"
+              onClick={attachWorkingDiff}
+              className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-commito-coral hover:bg-base-2/60 transition cursor-pointer"
+              title="Attach Working Diff (+)"
+            >
+              <Plus className="w-4 h-4 stroke-[2]" />
+            </button>
+
+            {/* Right: Claude-style Send Button (ArrowUp) */}
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!inputVal.trim() || isThinking}
+              className="w-7 h-7 rounded-xl bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 disabled:opacity-25 disabled:hover:bg-commito-coral text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs shrink-0"
+              title="Send Message (Enter)"
+            >
+              <ArrowUp className="w-4 h-4 stroke-[2.5]" />
+            </button>
+          </div>
         </div>
 
         {/* Footer Hint */}

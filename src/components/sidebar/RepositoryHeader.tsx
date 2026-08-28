@@ -45,13 +45,13 @@ export const RepositoryHeader: React.FC = () => {
       >
         {layoutMode === 'side-by-side' ? (
           /* Mode 1: Side-by-Side (Single Row with Matching h-8 Height) */
-          <div className="py-[3.5px] px-1 flex items-center justify-between gap-1.5 w-full">
-            {/* Left: Repo Switcher (h-8) */}
+          <div className="py-1 px-1.5 flex items-center gap-1.5 w-full">
+            {/* Left: Repo Switcher */}
             {activeRepoPath ? (
               <button
                 type="button"
                 onClick={handleOpenRepoSwitcher}
-                className="w-[80px] min-w-0 h-8 px-2 rounded-sm border border-border bg-base-1/50 hover:bg-base-2 hover:border-border-strong flex items-center justify-between gap-1.5 cursor-pointer transition shadow-2xs group outline-none text-left"
+                className="flex-1 min-w-[100px] h-8 px-2 rounded-sm border border-border bg-base-1/50 hover:bg-base-2 hover:border-border-strong flex items-center justify-between gap-1.5 cursor-pointer transition shadow-2xs group outline-none text-left"
                 title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}\nClick to switch repository (Double-click background to switch to 2-row mode)`}
               >
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -62,13 +62,13 @@ export const RepositoryHeader: React.FC = () => {
                     {activeRepoName}
                   </span>
                 </div>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
+                <ChevronsUpDown className="w-3 h-3 text-text-muted group-hover:text-text-primary transition-colors shrink-0 ml-0.5" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={handleOpenRepoSwitcher}
-                className="flex-1 min-w-0 h-8 px-2 bg-base-1/50 border border-dashed border-border hover:border-commito-coral/50 hover:bg-base-2/60 rounded-sm flex items-center justify-between gap-1.5 cursor-pointer transition group outline-none text-left"
+                className="flex-1 min-w-[100px] h-8 px-2 bg-base-1/50 border border-dashed border-border hover:border-commito-coral/50 hover:bg-base-2/60 rounded-sm flex items-center justify-between gap-1.5 cursor-pointer transition group outline-none text-left"
               >
                 <div className="flex items-center gap-1.5 text-xs text-text-muted min-w-0">
                   <FolderGit2 className="w-3.5 h-3.5 text-text-faint group-hover:text-commito-coral transition-colors shrink-0" />
@@ -76,12 +76,12 @@ export const RepositoryHeader: React.FC = () => {
                     Select...
                   </span>
                 </div>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-text-faint group-hover:text-muted transition-colors shrink-0" />
+                <ChevronsUpDown className="w-3 h-3 text-text-faint group-hover:text-muted transition-colors shrink-0 ml-0.5" />
               </button>
             )}
 
             {/* Right: Changes / History Tabs (h-8 matching height) */}
-            <div className="flex-1 min-w-0 h-8">
+            <div className="flex-1 min-w-[130px] h-8">
               <Tabs<'changes' | 'history'>
                 tabs={[
                   {
@@ -98,7 +98,7 @@ export const RepositoryHeader: React.FC = () => {
                 activeTab={activeTab}
                 onChange={setActiveTab}
                 fullWidth
-                size="md"
+                size="sm"
                 className="h-full"
                 ariaLabel="Repository change views"
               />
