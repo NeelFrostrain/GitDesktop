@@ -244,9 +244,9 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                     setSelectedFile(file.path);
                     setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
                   }}
-                  className={`w-full px-2 py-1.5 flex items-center justify-between gap-2 border-l-[3px] text-xs cursor-pointer transition-all duration-100 min-w-0 ${
+                  className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 border-l-2 text-xs transition cursor-pointer select-none ${
                     isSelected
-                      ? 'bg-base-2 border-commito-coral text-text-primary font-semibold shadow-2xs'
+                      ? 'bg-base-2 border-commito-coral text-text-primary font-semibold'
                       : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                   }`}
                   title={file.path}
@@ -265,7 +265,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                       className={`w-3.5 h-3.5 shrink-0 ${
                         isSelected ? 'text-commito-coral' : 'text-text-muted'
                       }`}
-                    /> */}
+                    />
 
                     {/* File Name & Folder Subtitle */}
                     <div className="min-w-0 truncate">

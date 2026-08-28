@@ -311,8 +311,8 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* 3. Repository List (Compact Sleek Cards) */}
-        <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin scrollbar-thumb-base-3 min-h-0">
+        {/* 3. Repository List (Seamless Flat List with Left Highlight) */}
+        <div className="flex-1 overflow-y-auto py-1 scrollbar-thin scrollbar-thumb-base-3 min-h-0">
           {filteredRepos.length === 0 ? (
             <div className="py-12 px-4 text-center text-text-muted flex flex-col items-center justify-center select-none">
               <FolderGit2 className="w-7 h-7 mx-auto mb-2 text-text-faint opacity-40" />
@@ -341,26 +341,27 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                       handleSelectRepo(repo.path);
                     }
                   }}
-                  className={`group relative px-3 py-2 rounded-sm border transition-colors cursor-pointer flex items-center justify-between gap-2 select-none ${isActive
-                      ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
-                      : repo.pinned
-                        ? 'bg-base-1 border-border-strong shadow-xs'
-                        : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/60 shadow-xs'
-                    }`}
+                  className={`group relative px-3 py-2 border-l-2 transition-all duration-100 cursor-pointer flex items-center justify-between gap-2.5 select-none ${
+                    isActive
+                      ? 'bg-base-2 border-commito-coral text-text-primary font-semibold'
+                      : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+                  }`}
                 >
                   {/* Left: Icon + Title & Path */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <FolderGit2
-                      className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${isActive ? 'text-commito-coral' : 'text-text-faint group-hover:text-commito-coral'
-                        }`}
+                      className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
+                        isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-commito-coral'
+                      }`}
                     />
 
                     <div className="min-w-0 flex-1">
                       {/* Top Line: Name + Provider Tag + Branch Chip */}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
-                          className={`text-xs font-semibold truncate leading-none transition-colors ${isActive ? 'text-commito-coral' : 'text-text-primary group-hover:text-commito-coral'
-                            }`}
+                          className={`text-xs font-semibold truncate leading-none transition-colors ${
+                            isActive ? 'text-commito-coral' : 'text-text-primary group-hover:text-commito-coral'
+                          }`}
                           title={repo.name}
                         >
                           {repo.name}
@@ -373,24 +374,26 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                       </div>
 
                       {/* Bottom Line: File Path */}
-                      <p className="text-[10px] text-text-faint font-mono truncate mt-0.5 leading-none" title={repo.path}>
+                      <p className="text-[10px] text-text-muted/70 font-mono truncate mt-0.5 leading-tight" title={repo.path}>
                         {repo.path}
                       </p>
                     </div>
                   </div>
 
-                  {/* Right: Status chip */}
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  {/* Right: Status icon */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
                     {isDirty ? (
-                      <div className="h-4.5 px-1.5 inline-flex items-center gap-1 bg-git-modified-bg border border-git-modified/30 rounded-sm text-[9.5px] font-mono text-git-modified font-semibold">
-                        <FileEdit className="w-2.5 h-2.5" />
-                        <span>{status!.dirty_files}</span>
-                      </div>
+                      <span
+                        className="text-git-modified shrink-0 flex items-center gap-1"
+                        title={`${status?.dirty_files} changes`}
+                      >
+                        <FileEdit className="w-3.5 h-3.5" />
+                        <span className="font-mono text-[10px] font-bold">{status?.dirty_files}</span>
+                      </span>
                     ) : (
-                      <div className="h-4.5 px-1.5 inline-flex items-center gap-1 text-[9.5px] font-mono text-git-clean bg-git-added-bg border border-git-added/20 rounded-sm">
-                        <span className="w-1 h-1 rounded-full bg-git-added" />
-                        <span>Clean</span>
-                      </div>
+                      <span className="text-git-added shrink-0" title="Clean repository">
+                        <span className="w-2 h-2 rounded-full bg-git-added inline-block" />
+                      </span>
                     )}
 
                     {repo.pinned && (

@@ -1650,17 +1650,17 @@ export const MergeRequestModal: React.FC = () => {
                   </button>
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto space-y-1.5 pr-0.5">
+                <div className="flex-1 overflow-y-auto min-h-0 divide-y divide-border/20 -mx-3">
                   {filteredMergeRequests.map((mr) => {
                     const isSelected = String(mr.id) === String(activeSelectedMr?.id);
                     return (
                       <div
                         key={mr.id}
                         onClick={() => setSelectedMrId(String(mr.id))}
-                        className={`p-2.5 rounded-sm border transition cursor-pointer space-y-1 select-none ${
+                        className={`px-3.5 py-2.5 border-l-2 transition-all duration-100 cursor-pointer select-none space-y-1 text-left ${
                           isSelected
-                            ? 'bg-commito-coral/10 border-commito-coral/50 shadow-2xs ring-1 ring-commito-coral/20'
-                            : 'bg-base-1 border-border hover:border-border-strong hover:bg-base-1/80'
+                            ? 'bg-base-2 border-commito-coral text-text-primary font-semibold shadow-2xs'
+                            : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
@@ -1670,9 +1670,13 @@ export const MergeRequestModal: React.FC = () => {
                           <span className="text-[10.5px] font-mono text-text-faint">#{mr.id}</span>
                         </div>
 
-                        <h4 className="text-xs font-bold text-text-primary line-clamp-1 leading-tight">{mr.title}</h4>
+                        <h4 className={`text-xs font-bold truncate leading-tight transition-colors ${
+                          isSelected ? 'text-commito-coral' : 'text-text-primary'
+                        }`}>
+                          {mr.title}
+                        </h4>
 
-                        <div className="flex items-center justify-between gap-2 text-[10.5px] font-mono text-text-muted pt-0.5">
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-text-muted/70 pt-0.5">
                           <span className="truncate">
                             <span className="text-commito-coral font-semibold">{mr.source_branch}</span>
                             {' → '}

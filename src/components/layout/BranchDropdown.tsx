@@ -791,10 +791,10 @@ export const BranchDropdown: React.FC = () => {
                           <div
                             key={pr.id}
                             onClick={() => handleSelectPullRequest(pr)}
-                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm cursor-pointer transition-all duration-150 border ${
+                            className={`group flex items-start justify-between gap-2.5 px-3 py-2 border-l-2 cursor-pointer transition-all duration-100 select-none ${
                               isCurrent
-                                ? 'bg-commito-coral/10 border-commito-coral/30 shadow-xs'
-                                : 'bg-base-0 hover:bg-base-1/90 border-transparent hover:border-border/60 hover:shadow-xs'
+                                ? 'bg-base-2 border-commito-coral text-text-primary font-semibold shadow-2xs'
+                                : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
                             }`}
                             title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
                           >

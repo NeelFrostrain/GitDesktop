@@ -244,7 +244,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         onOpenFileContext(file.path, e.clientX, e.clientY);
       }}
       style={{ paddingLeft: `${node.depth * 12 + 6}px` }}
-      className={`group/file flex items-center justify-between gap-2 py-1.5 pr-2.5 border-l-[3px] text-xs cursor-pointer transition-all duration-100 min-w-0 ${
+      className={`group/file flex items-center justify-between gap-2 py-1.5 pr-3 border-l-2 text-xs cursor-pointer transition-all duration-100 min-w-0 select-none ${
         isSelected
           ? 'bg-base-2 border-commito-coral text-text-primary font-semibold shadow-2xs'
           : 'border-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
@@ -271,7 +271,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
         /> */}
 
         {/* File Base Name */}
-        <span className="truncate block font-mono text-[11.5px] leading-tight">
+        <span className="truncate block font-mono text-[11.5px] leading-tight font-medium text-text-primary">
           {node.name}
         </span>
       </div>

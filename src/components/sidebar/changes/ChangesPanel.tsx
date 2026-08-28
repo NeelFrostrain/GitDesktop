@@ -80,7 +80,7 @@ export const ChangesPanel: React.FC = () => {
 
         {/* Selection Count Checkbox Row + View Toggles */}
         <div
-          className="flex items-center justify-between px-1 py-0.5 rounded-sm text-xs select-none"
+          className="flex items-center justify-between px-[10px] py-0.5 rounded-sm text-xs select-none"
           onContextMenu={(e) => {
             e.preventDefault();
             setContextMenu({ x: e.clientX, y: e.clientY });

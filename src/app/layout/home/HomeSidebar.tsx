@@ -85,7 +85,7 @@ export const HomeSidebar: React.FC = () => {
       </div>
 
       {/* Repo list */}
-      <div className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5 min-h-0 scrollbar-thin scrollbar-thumb-base-3">
+      <div className="flex-1 overflow-y-auto pb-2 min-h-0 scrollbar-thin scrollbar-thumb-base-3">
         {filteredRepos.length === 0 ? (
           <div className="py-8 text-center text-text-muted">
             <FolderGit2 className="w-7 h-7 mx-auto mb-2 opacity-20" />
@@ -105,7 +105,7 @@ export const HomeSidebar: React.FC = () => {
         )}
 
         {/* Add / Clone Actions */}
-        <div className="grid grid-cols-2 gap-1.5 mt-1 pt-1">
+        <div className="grid grid-cols-2 gap-1.5 px-2.5 mt-2 pt-2 border-t border-border/40">
           <button
             type="button"
             onClick={handleAddRepo}
