@@ -204,6 +204,7 @@ export const SmartGitActionButton: React.FC = () => {
     hasRepo,
     executeAction,
     refreshSync,
+    resetBusyState,
   } = useRepositorySync();
 
   const { syncStatus, ahead, behind, branch, isClean } = syncInfo;
@@ -225,7 +226,11 @@ export const SmartGitActionButton: React.FC = () => {
     !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
-    if (isBusy || config.disabled) return;
+    if (isBusy) {
+      resetBusyState();
+      return;
+    }
+    if (config.disabled) return;
     if (syncStatus === 'up-to-date') {
       refreshSync();
     } else {
@@ -241,9 +246,9 @@ export const SmartGitActionButton: React.FC = () => {
         <button
           type="button"
           onClick={handleClick}
-          disabled={config.disabled || isBusy}
+          disabled={config.disabled && !isBusy}
           className={config.className}
-          title={config.tooltip}
+          title={isBusy ? 'Operation in progress — click to cancel / unstick' : config.tooltip}
         >
           {config.icon}
           <span className="whitespace-nowrap leading-none">{config.label}</span>
