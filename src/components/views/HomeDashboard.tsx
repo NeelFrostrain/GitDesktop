@@ -7,6 +7,7 @@ import { UserAvatar } from "../common/UserAvatar";
 import { RepoList } from "../home/RepoList";
 import { AccountsWidget } from "../home/AccountsWidget";
 import { ContributionHeatmap } from "../home/ContributionHeatmap";
+import { ContributionActivityRadar } from "../home/ContributionActivityRadar";
 import {
   FolderGit2,
   Pin,
@@ -194,22 +195,19 @@ export const HomeDashboard: React.FC = () => {
       <div className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
         {/* Top Section: Repositories Hub (Left 8 Cols) + Connected Accounts Widget (Right 4 Cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
-          {/* Main Left Section: Repositories Hub */}
+          {/* Main Left Section: Repositories Hub + Contribution Heatmap */}
           <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-9 space-y-4 min-w-0">
             <RepoList />
+            <ContributionHeatmap />
           </div>
 
-          {/* Right Section: Connected Accounts Card */}
+          {/* Right Section: Connected Accounts Card + Activity Overview */}
           <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-3 space-y-4 min-w-0">
             <div className="p-3.5 bg-base-1/50 border border-border/60 rounded-md shadow-2xs">
               <AccountsWidget />
             </div>
+            <ContributionActivityRadar />
           </div>
-        </div>
-
-        {/* Bottom Section: Full Width Contribution Activity Heatmap */}
-        <div className="w-full">
-          <ContributionHeatmap />
         </div>
       </div>
     </div>

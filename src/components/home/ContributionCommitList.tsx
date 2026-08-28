@@ -1,12 +1,23 @@
-import React from 'react';
-import { GitCommit, FolderGit2, Calendar, Clock, X, ExternalLink } from 'lucide-react';
-import { useContributionsStore } from '../../store/contributionsStore';
-import { openRepo } from '../../features/repos';
-import { useRepoStore } from '../../store/repoStore';
+import React from "react";
+import {
+  GitCommit,
+  FolderGit2,
+  Calendar,
+  Clock,
+  X,
+  ExternalLink,
+} from "lucide-react";
+import { useContributionsStore } from "../../store/contributionsStore";
+import { openRepo } from "../../features/repos";
+import { useRepoStore } from "../../store/repoStore";
 
 export const ContributionCommitList: React.FC = () => {
-  const { selectedDate, setSelectedDate, getRecentCommits, getSelectedDayData } =
-    useContributionsStore();
+  const {
+    selectedDate,
+    setSelectedDate,
+    getRecentCommits,
+    getSelectedDayData,
+  } = useContributionsStore();
   const repos = useRepoStore((s) => s.repos);
 
   const commits = getRecentCommits(30);
@@ -14,12 +25,12 @@ export const ContributionCommitList: React.FC = () => {
 
   const formatDateTitle = (dateStr: string) => {
     try {
-      const [y, m, d] = dateStr.split('-').map(Number);
+      const [y, m, d] = dateStr.split("-").map(Number);
       const date = new Date(y, m - 1, d);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       });
     } catch {
       return dateStr;
@@ -32,7 +43,9 @@ export const ContributionCommitList: React.FC = () => {
       return;
     }
     if (repoName) {
-      const found = repos.find((r) => r.name.toLowerCase() === repoName.toLowerCase());
+      const found = repos.find(
+        (r) => r.name.toLowerCase() === repoName.toLowerCase(),
+      );
       if (found) {
         openRepo(found.path);
       }
@@ -48,9 +61,13 @@ export const ContributionCommitList: React.FC = () => {
           <span className="text-xs font-semibold text-text-secondary tracking-tight truncate">
             {selectedDate ? (
               <>
-                Commits on <span className="text-text-primary">{formatDateTitle(selectedDate)}</span>
+                Commits on{" "}
+                <span className="text-text-primary">
+                  {formatDateTitle(selectedDate)}
+                </span>
                 <span className="ml-1.5 text-[11px] font-normal text-text-muted">
-                  ({selectedDay?.count || 0} {selectedDay?.count === 1 ? 'contribution' : 'contributions'})
+                  ({selectedDay?.count || 0}{" "}
+                  {selectedDay?.count === 1 ? "contribution" : "contributions"})
                 </span>
               </>
             ) : (
@@ -84,7 +101,7 @@ export const ContributionCommitList: React.FC = () => {
             <div
               key={commit.id}
               onClick={() => handleOpenRepo(commit.repo_path, commit.repo_name)}
-              className="group px-3.5 py-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
+              className="group px-3.5 py-2.5 bg-base-1/30 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
             >
               {/* Left: Commit info */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -140,10 +157,11 @@ export const ContributionCommitList: React.FC = () => {
           <p className="text-xs text-text-muted">
             {selectedDate
               ? `No local commit records found for ${formatDateTitle(selectedDate)}.`
-              : 'No recent commit activity detected in local repositories.'}
+              : "No recent commit activity detected in local repositories."}
           </p>
           <p className="text-[10px] text-text-muted/70 mt-0.5">
-            Remote merges, PRs, and issues are reflected in the total contribution count.
+            Remote merges, PRs, and issues are reflected in the total
+            contribution count.
           </p>
         </div>
       )}

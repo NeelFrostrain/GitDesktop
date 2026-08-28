@@ -325,7 +325,7 @@ export const RepoList: React.FC = () => {
               {/* Quick Add Card */}
               <div
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border hover:border-border-strong bg-base-1/30 hover:bg-base-1/70 rounded-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-35 shadow-2xs"
+                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/30 rounded-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-35 shadow-2xs"
               >
                 <div className="w-8 h-8 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors mb-2">
                   <Plus className="w-4 h-4" />

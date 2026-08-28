@@ -13,12 +13,11 @@ import {
 import { useContributionsStore } from "../../store/contributionsStore";
 import { useAccountServicesStore } from "../../features/account-services";
 import { ContributionCommitList } from "./ContributionCommitList";
-import { ContributionActivityRadar } from "./ContributionActivityRadar";
 import { UserAvatar } from "../common/UserAvatar";
 
 // Authentic contribution colors with Level 0 harmonized to bg-base-1
 const LEVEL_CLASSES = [
-  "bg-base-0 border-border/80 hover:border-border-strong", // 0 (empty)
+  "bg-base-1 border-border/80 hover:border-border-strong", // 0 (empty)
   "bg-[#0e4429] border-[#0e4429] hover:border-[#146c3e]", // 1 (1-2)
   "bg-[#006d32] border-[#006d32] hover:border-[#008f42]", // 2 (3-5)
   "bg-[#26a641] border-[#26a641] hover:border-[#38c858]", // 3 (6-9)
@@ -302,10 +301,8 @@ export const ContributionHeatmap: React.FC = () => {
         </div>
       </div>
 
-      {/* ── 2. Center Grid: 80-Week Heatmap (Left) + Activity Radar (Right) ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-3.5 items-stretch">
-        {/* Left Matrix: 80-Week Heatmap Calendar */}
-        <div className="xl:col-span-8 2xl:col-span-9 p-3 sm:p-3.5 bg-surface-subtle/80 border border-border/70 rounded-sm flex flex-col justify-between relative overflow-hidden h-fit">
+      {/* ── 2. Heatmap Calendar (Full width within card) ── */}
+      <div className="p-3 sm:p-3.5 bg-surface-subtle/80 border border-border/70 rounded-sm flex flex-col justify-between relative overflow-hidden">
           {/* Scrollable Grid Canvas */}
           <div
             ref={scrollContainerRef}
@@ -446,12 +443,6 @@ export const ContributionHeatmap: React.FC = () => {
               <span>More</span>
             </div>
           </div>
-        </div>
-
-        {/* Right Panel: 4-Axis Activity Radar HUD */}
-        <div className="xl:col-span-4 2xl:col-span-3 flex flex-col">
-          <ContributionActivityRadar />
-        </div>
       </div>
 
       {/* ── 3. Bottom Section: Commit Activity Inspector ── */}
