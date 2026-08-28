@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Copy,
   Check,
@@ -6,12 +6,13 @@ import {
   Volume2,
   VolumeX,
   RotateCw,
-} from 'lucide-react';
-import { marked } from 'marked';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { AgentMessage } from '../types';
-import { ToolCallCard } from './ToolCallCard';
-import { useAiAgentStore } from '../store/useAiAgentStore';
+  Play,
+} from "lucide-react";
+import { marked } from "marked";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { AgentMessage } from "../types";
+import { ToolCallCard } from "./ToolCallCard";
+import { useAiAgentStore } from "../store/useAiAgentStore";
 
 interface ChatMessageItemProps {
   message: AgentMessage;
@@ -20,7 +21,7 @@ interface ChatMessageItemProps {
 
 const formatRelativeTime = (timestamp: number): string => {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
-  if (diffSec < 45) return 'Just now';
+  if (diffSec < 45) return "Just now";
   const diffMin = Math.floor(diffSec / 60);
   if (diffMin < 60) return `${diffMin}m ago`;
   const diffHr = Math.floor(diffMin / 60);
@@ -34,7 +35,8 @@ const formatRelativeTime = (timestamp: number): string => {
  */
 const tokenizeContent = (text: string): string[] => {
   const tokens: string[] = [];
-  const regex = /(\s+|\n+|```[\s\S]*?```|`[^`\n]*`|\*\*[^*\n]*\*\*|[^\s\n`*]+)/g;
+  const regex =
+    /(\s+|\n+|```[\s\S]*?```|`[^`\n]*`|\*\*[^*\n]*\*\*|[^\s\n`*]+)/g;
   let match: RegExpExecArray | null;
   while ((match = regex.exec(text)) !== null) {
     tokens.push(match[0]);
@@ -42,23 +44,44 @@ const tokenizeContent = (text: string): string[] => {
   return tokens.length > 0 ? tokens : [text];
 };
 
-export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLatest = false }) => {
+export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
+  message,
+  isLatest = false,
+}) => {
   const regenerateMessage = useAiAgentStore((s) => s.regenerateMessage);
+  const executeAllToolCallsChained = useAiAgentStore(
+    (s) => s.executeAllToolCallsChained,
+  );
   const status = useAiAgentStore((s) => s.status);
 
   const [copied, setCopied] = useState(false);
+  const [copiedChained, setCopiedChained] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  const isUser = message.role === 'user';
-  const isThinking = status === 'thinking';
+  const isUser = message.role === "user";
+  const isThinking = status === "thinking";
+
+  // Pending command tool calls that can be chained together
+  const pendingCommands = useMemo(() => {
+    if (!message.toolCalls) return [];
+    return message.toolCalls.filter(
+      (t) => t.command && t.status !== "success" && t.status !== "rejected",
+    );
+  }, [message.toolCalls]);
 
   // Tokenize message for natural token-by-token streaming
-  const tokens = useMemo(() => tokenizeContent(message.content), [message.content]);
+  const tokens = useMemo(
+    () => tokenizeContent(message.content),
+    [message.content],
+  );
 
   // Only run typing typewriter effect if this message was generated in the last 4 seconds
-  const isFresh = message.role === 'assistant' && isLatest && Date.now() - message.timestamp < 4000;
+  const isFresh =
+    message.role === "assistant" &&
+    isLatest &&
+    Date.now() - message.timestamp < 4000;
   const [displayedTokenCount, setDisplayedTokenCount] = useState<number>(() =>
-    isFresh ? 0 : tokens.length
+    isFresh ? 0 : tokens.length,
   );
 
   const messageRef = useRef<HTMLDivElement>(null);
@@ -89,10 +112,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
       index = Math.min(total, index + chunk);
       setDisplayedTokenCount(index);
 
-      const latestToken = tokens[index - 1] || '';
+      const latestToken = tokens[index - 1] || "";
 
       let delay = (16 + Math.random() * 12) * speedMultiplier;
-      if (latestToken.includes('\n\n')) {
+      if (latestToken.includes("\n\n")) {
         delay = 120 * speedMultiplier;
       } else if (/[.!?]$/.test(latestToken.trim())) {
         delay = 95 * speedMultiplier;
@@ -112,13 +135,13 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
 
   const isTyping = displayedTokenCount < tokens.length;
   const visibleContent = isTyping
-    ? tokens.slice(0, displayedTokenCount).join('')
+    ? tokens.slice(0, displayedTokenCount).join("")
     : message.content;
 
   // Auto-scroll chat container down as tokens stream in
   useEffect(() => {
     if (isTyping && messageRef.current) {
-      const scrollParent = messageRef.current.closest('.overflow-y-auto');
+      const scrollParent = messageRef.current.closest(".overflow-y-auto");
       if (scrollParent) {
         scrollParent.scrollTop = scrollParent.scrollHeight;
       }
@@ -138,7 +161,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
   };
 
   const handleToggleSpeech = () => {
-    if (!('speechSynthesis' in window)) return;
+    if (!("speechSynthesis" in window)) return;
 
     if (isSpeaking) {
       window.speechSynthesis.cancel();
@@ -148,8 +171,8 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
 
     window.speechSynthesis.cancel();
     const cleanSpeechText = message.content
-      .replace(/```[\s\S]*?```/g, 'Code block omitted.')
-      .replace(/[`*_#]/g, '');
+      .replace(/```[\s\S]*?```/g, "Code block omitted.")
+      .replace(/[`*_#]/g, "");
 
     const utterance = new SpeechSynthesisUtterance(cleanSpeechText);
     utterance.onend = () => setIsSpeaking(false);
@@ -164,21 +187,27 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
   };
 
   const formatTime = (ts: number) => {
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(ts).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Convert markdown to rich HTML with marked
   const renderedHtml = useMemo(() => {
-    if (!visibleContent.trim()) return '';
+    if (!visibleContent.trim()) return "";
 
     // If message has toolCalls, remove duplicate ```bash blocks that are rendered as ToolCards
     let contentToParse = visibleContent;
     if (message.toolCalls && message.toolCalls.length > 0) {
       for (const tool of message.toolCalls) {
         if (tool.command) {
-          const escaped = tool.command.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const blockRegex = new RegExp('```(?:bash|sh|git|shell)?\\s*\\n' + escaped + '\\s*```', 'gi');
-          contentToParse = contentToParse.replace(blockRegex, '');
+          const escaped = tool.command.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const blockRegex = new RegExp(
+            "```(?:bash|sh|git|shell)?\\s*\\n" + escaped + "\\s*```",
+            "gi",
+          );
+          contentToParse = contentToParse.replace(blockRegex, "");
         }
       }
     }
@@ -195,13 +224,13 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
 
   const handleContentClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    const anchor = target.closest('a');
+    const anchor = target.closest("a");
     if (anchor && anchor.href) {
       e.preventDefault();
       try {
         openUrl(anchor.href);
       } catch {
-        window.open(anchor.href, '_blank', 'noopener,noreferrer');
+        window.open(anchor.href, "_blank", "noopener,noreferrer");
       }
     }
   };
@@ -245,10 +274,14 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
       <div className="flex items-center justify-between text-[11px] text-text-muted/60 select-none pb-0.5">
         <div className="flex items-center gap-2">
           {message.modelUsed && (
-            <span className="font-mono text-[10px] text-text-muted/80">{message.modelUsed}</span>
+            <span className="font-mono text-[10px] text-text-muted/80">
+              {message.modelUsed}
+            </span>
           )}
         </div>
-        <span className="font-mono text-[10px] text-text-muted/60">{formatRelativeTime(message.timestamp)}</span>
+        <span className="font-mono text-[10px] text-text-muted/60">
+          {formatRelativeTime(message.timestamp)}
+        </span>
       </div>
 
       {/* Main Content (Direct Markdown Text - No Background Box) */}
@@ -275,6 +308,50 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
       {/* Bottom Command / File Cards */}
       {!isTyping && message.toolCalls && message.toolCalls.length > 0 && (
         <div className="pt-2 space-y-2 animate-in fade-in duration-200">
+          {/* Batch Action Bar for multiple commands */}
+          {pendingCommands.length > 1 && (
+            <div className="p-2.5 bg-base-1/50 hover:bg-base-1/70 border border-border/80 rounded-md flex items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in select-none">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-commito-coral animate-pulse shrink-0" />
+                <span className="text-[11.5px] font-semibold text-text-primary truncate">
+                  Run all {pendingCommands.length} commands
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allCmds = pendingCommands
+                      .map((t) => t.command?.trim())
+                      .filter(Boolean)
+                      .join('\n');
+                    navigator.clipboard.writeText(allCmds);
+                    setCopiedChained(true);
+                    setTimeout(() => setCopiedChained(false), 2000);
+                  }}
+                  className="px-2 py-1.5 rounded-sm bg-base-1 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary text-[11px] font-mono flex items-center gap-1 cursor-pointer transition"
+                  title="Copy all commands"
+                >
+                  {copiedChained ? (
+                    <Check className="w-3 h-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="w-3 h-3" />
+                  )}
+                  <span>Copy All</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => executeAllToolCallsChained(message.id)}
+                  className="px-3 py-1.5 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white font-bold text-[11.5px] flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 transition cursor-pointer"
+                  title="Execute all commands sequentially in Terminal and feed results back to AI"
+                >
+                  <Play className="w-3 h-3 fill-current" />
+                  <span>Run All ({pendingCommands.length})</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {message.toolCalls.map((tool) => (
             <ToolCallCard key={tool.id} toolCall={tool} />
           ))}
@@ -304,10 +381,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
             onClick={handleToggleSpeech}
             className={`p-1 rounded-xs hover:bg-base-2 transition cursor-pointer ${
               isSpeaking
-                ? 'text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30 animate-pulse'
-                : 'hover:text-text-primary'
+                ? "text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30 animate-pulse"
+                : "hover:text-text-primary"
             }`}
-            title={isSpeaking ? 'Stop reading' : 'Read aloud'}
+            title={isSpeaking ? "Stop reading" : "Read aloud"}
           >
             {isSpeaking ? (
               <VolumeX className="w-3.5 h-3.5" />
@@ -324,7 +401,9 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
             className="p-1 rounded-xs hover:bg-base-2 hover:text-commito-coral transition cursor-pointer disabled:opacity-30"
             title="Regenerate response"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isThinking ? 'animate-spin' : ''}`} />
+            <RotateCw
+              className={`w-3.5 h-3.5 ${isThinking ? "animate-spin" : ""}`}
+            />
           </button>
         </div>
       )}
