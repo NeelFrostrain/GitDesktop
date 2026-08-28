@@ -281,6 +281,9 @@ export const Header: React.FC = () => {
             {/* Sync / Push Smart Button */}
             <SmartGitActionButton />
 
+            {/* Active Branch Switcher */}
+            <BranchDropdown />
+
             {/* Remote Web Browser Redirect Button */}
             {remotes.length > 0 && (
               <div className="relative shrink-0" ref={remoteMenuRef}>
@@ -313,7 +316,9 @@ export const Header: React.FC = () => {
                   <div className="absolute top-full right-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
                       <span>Open Remote in Browser</span>
-                      <span className="text-[9px] font-mono text-commito-coral">Web</span>
+                      <span className="text-[9px] font-mono text-commito-coral">
+                        Web
+                      </span>
                     </div>
 
                     <div className="py-1">
@@ -354,9 +359,6 @@ export const Header: React.FC = () => {
                 )}
               </div>
             )}
-
-            {/* Active Branch Switcher */}
-            <BranchDropdown />
           </>
         )}
       </div>
