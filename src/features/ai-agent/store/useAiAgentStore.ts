@@ -236,7 +236,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           ? history
               .map(
                 (h) =>
-                  `${h.command}${h.exit_code !== undefined && h.exit_code !== null ? ` (exit: ${h.exit_code})` : ''}`
+                  `${h.cmd}${h.exit_code !== undefined && h.exit_code !== null ? ` (exit: ${h.exit_code})` : ''}`
               )
               .join('\n')
           : 'No recent terminal commands recorded.';

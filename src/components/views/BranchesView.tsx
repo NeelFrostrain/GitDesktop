@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   GitBranch,
   Search,
@@ -16,6 +16,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
+import { BranchInfo } from '../../types/git';
 import { Button } from '../common/Button';
 
 /**
@@ -137,21 +138,21 @@ export const BranchesView: React.FC = () => {
   const [branchTab, setBranchTab] = useState<'all' | 'local' | 'remote'>('all');
 
   const validRemoteBranches = useMemo(() => {
-    return branches.filter((b) => b.is_remote && !b.name.endsWith('/HEAD') && !b.name.endsWith('\\HEAD'));
+    return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD') && !b.name.endsWith('\\HEAD'));
   }, [branches]);
 
   const localBranches = useMemo(() => {
-    return branches.filter((b) => !b.is_remote);
+    return branches.filter((b: BranchInfo) => !b.is_remote);
   }, [branches]);
 
   const queryLower = filter.trim().toLowerCase();
 
   const filteredLocal = useMemo(() => {
-    return localBranches.filter((b) => b.name.toLowerCase().includes(queryLower));
+    return localBranches.filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
   }, [localBranches, queryLower]);
 
   const filteredRemote = useMemo(() => {
-    return validRemoteBranches.filter((b) => b.name.toLowerCase().includes(queryLower));
+    return validRemoteBranches.filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
   }, [validRemoteBranches, queryLower]);
 
   return (
@@ -330,10 +331,10 @@ export const BranchesView: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-1.5 font-sans">
-              {filteredLocal.map((b) => {
+              {filteredLocal.map((b: BranchInfo) => {
                 const isEditing = editingBranch === b.name;
                 const matchingRemote = validRemoteBranches.find(
-                  (r) => r.name === `origin/${b.name}` || r.name.endsWith(`/${b.name}`)
+                  (r: BranchInfo) => r.name === `origin/${b.name}` || r.name.endsWith(`/${b.name}`)
                 );
 
                 return (
@@ -476,11 +477,11 @@ export const BranchesView: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-1.5 font-sans">
-              {filteredRemote.map((b) => {
+              {filteredRemote.map((b: BranchInfo) => {
                 const slashIdx = b.name.indexOf('/');
                 const prefix = slashIdx !== -1 ? b.name.slice(0, slashIdx + 1) : '';
                 const cleanName = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
-                const isTrackedLocally = localBranches.some((lb) => lb.name === cleanName);
+                const isTrackedLocally = localBranches.some((lb: BranchInfo) => lb.name === cleanName);
 
                 return (
                   <div

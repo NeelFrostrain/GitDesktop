@@ -19,7 +19,7 @@ export interface AgentToolCall {
 
 export interface AgentAttachment {
   id: string;
-  type: 'diff' | 'status' | 'log' | 'branches' | 'file';
+  type: 'diff' | 'status' | 'log' | 'branches' | 'file' | 'terminal';
   title: string;
   content: string;
   meta?: Record<string, unknown>;

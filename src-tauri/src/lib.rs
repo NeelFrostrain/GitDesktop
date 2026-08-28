@@ -42,28 +42,27 @@ pub fn run() {
                 let _ = app.deep_link().register_all();
             }
 
-            // Silently auto-install MinGit in the background if git is not available.
-            // This ensures terminal git commands work on any PC without user interaction.
+            // Portable MinGit runtime manager
             {
                 let runtime_info = crate::domain::git_runtime::detect_git_runtime();
                 if !runtime_info.is_available {
                     crate::log_info!(
                         crate::core::logging::LogCategory::App,
-                        "Git not detected on system. Starting silent MinGit background download..."
+                        "Portable MinGit not found. Starting silent background download..."
                     );
                     let handle = app.handle().clone();
-                    tokio::spawn(async move {
+                    tauri::async_runtime::spawn(async move {
                         match crate::domain::git_runtime::download_and_install_mingit(&handle).await {
                             Ok(info) => {
                                 crate::log_info!(
                                     crate::core::logging::LogCategory::App,
-                                    &format!("MinGit auto-install completed. Git version: {}", info.version.unwrap_or_default())
+                                    &format!("Portable MinGit installed successfully. Version: {}", info.version.unwrap_or_default())
                                 );
                             }
                             Err(e) => {
-                                crate::log_info!(
+                                crate::log_error!(
                                     crate::core::logging::LogCategory::App,
-                                    &format!("MinGit auto-install failed: {}. User can install manually via Git Runtime settings.", e)
+                                    &format!("Portable MinGit auto-install failed: {}. User can install manually via Git Runtime settings.", e)
                                 );
                             }
                         }
@@ -72,9 +71,9 @@ pub fn run() {
                     crate::log_info!(
                         crate::core::logging::LogCategory::App,
                         &format!(
-                            "Git detected: {} (portable: {})",
+                            "Portable Git runtime active: {} (executable: {})",
                             runtime_info.version.unwrap_or_default(),
-                            runtime_info.is_portable_mingit
+                            runtime_info.executable_path.unwrap_or_default()
                         )
                     );
                 }

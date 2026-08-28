@@ -44,7 +44,6 @@ const ReflogModal = lazy(() => import('./components/modals/ReflogModal').then(m 
 const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m => ({ default: m.PatchModal })));
 const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
 const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
-const CreateTagModal = lazy(() => import('./components/modals/CreateTagModal').then(m => ({ default: m.CreateTagModal })));
 const CreateReleaseModal = lazy(() => import('./components/modals/CreateReleaseModal').then(m => ({ default: m.CreateReleaseModal })));
 const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
 const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
@@ -72,8 +71,6 @@ export const App: React.FC = () => {
     setTags,
     setError,
     currentNavView,
-    isCreateTagModalOpen,
-    setIsCreateTagModalOpen,
     isCreateReleaseModalOpen,
     setIsCreateReleaseModalOpen,
     editingRelease,
@@ -165,7 +162,7 @@ export const App: React.FC = () => {
               }
             }
             // 2. Legacy GitLab OAuth callback fallback
-            else if (urlStr.includes('gitlab-desktop://oauth/callback')) {
+            else if (urlStr.includes('git-desktop://oauth/callback') || urlStr.includes('gitlab-desktop://oauth/callback')) {
               const savedVerifier = sessionStorage.getItem('oauth_verifier');
               if (code && savedVerifier) {
                 invoke<GitLabUser>('complete_oauth_login', {
@@ -385,7 +382,6 @@ export const App: React.FC = () => {
           <PatchModal />
           <GitConfigModal />
           <RewriteHistoryModal />
-          <CreateTagModal isOpen={isCreateTagModalOpen} onClose={() => setIsCreateTagModalOpen(false)} />
           <CreateReleaseModal
             isOpen={isCreateReleaseModalOpen}
             initialRelease={editingRelease}

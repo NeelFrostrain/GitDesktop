@@ -77,8 +77,6 @@ export const AiAgentPanel: React.FC = () => {
     sessions,
     activeSessionId,
     status,
-    securityMode,
-    setSecurityMode,
     pendingAttachments,
     createSession,
     selectSession,

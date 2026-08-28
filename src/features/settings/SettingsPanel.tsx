@@ -256,11 +256,6 @@ export const SettingsPanel: React.FC = () => {
 
                 {/* Subcategory sections */}
                 {groupedSettings.map(([subcategory, settings]) => {
-                  // If terminal ANSI colors, we already showed the dedicated swatch grid above
-                  if (selectedCategory === 'terminal' && subcategory === 'ANSI Colors') {
-                    return null;
-                  }
-
                   return (
                     <section key={subcategory} className="space-y-2.5">
                       <div className="flex items-center gap-2">

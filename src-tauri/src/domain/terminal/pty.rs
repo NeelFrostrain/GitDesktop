@@ -47,6 +47,7 @@ fn build_default_command(repo_path: &str) -> CommandBuilder {
     cmd.cwd(repo_path);
     cmd.env("TERM", "xterm-256color");
     cmd.env("COLORTERM", "truecolor");
+    crate::domain::git_runtime::inject_git_path(&mut cmd);
     cmd
 }
 

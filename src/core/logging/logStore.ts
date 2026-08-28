@@ -36,6 +36,63 @@ const DEFAULT_FILTER: LogFilter = {
   this_repo_only: false,
 };
 
+/**
+ * Emits beautifully styled log records to the browser console.
+ */
+export function printLogToConsole(entry: LogEntry): void {
+  const normLevel = String(entry.level).toLowerCase();
+  const d = new Date(entry.at || Date.now());
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  const seconds = String(d.getSeconds()).padStart(2, '0');
+  const formattedTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  const prefix = `[${formattedTime}] [${entry.category}]`;
+  const message = entry.message;
+  const meta = entry.metadata && Object.keys(entry.metadata).length > 0 ? entry.metadata : undefined;
+
+  switch (normLevel) {
+    case 'error':
+      if (meta) {
+        console.error(`%c${prefix} ${message}`, 'color: #f87171; font-weight: bold;', meta);
+      } else {
+        console.error(`%c${prefix} ${message}`, 'color: #f87171; font-weight: bold;');
+      }
+      break;
+    case 'warn':
+    case 'warning':
+      if (meta) {
+        console.warn(`%c${prefix} ${message}`, 'color: #fbbf24; font-weight: bold;', meta);
+      } else {
+        console.warn(`%c${prefix} ${message}`, 'color: #fbbf24; font-weight: bold;');
+      }
+      break;
+    case 'success':
+      if (meta) {
+        console.log(`%c${prefix} ${message}`, 'color: #34d399; font-weight: bold;', meta);
+      } else {
+        console.log(`%c${prefix} ${message}`, 'color: #34d399; font-weight: bold;');
+      }
+      break;
+    case 'debug':
+      if (meta) {
+        console.debug(`%c${prefix} ${message}`, 'color: #94a3b8;', meta);
+      } else {
+        console.debug(`%c${prefix} ${message}`, 'color: #94a3b8;');
+      }
+      break;
+    default:
+      if (meta) {
+        console.info(`%c${prefix} ${message}`, 'color: #60a5fa; font-weight: 500;', meta);
+      } else {
+        console.info(`%c${prefix} ${message}`, 'color: #60a5fa; font-weight: 500;');
+      }
+      break;
+  }
+}
+
 export const useAppLogStore = create<LogStoreState>((set, get) => ({
   recentLogs: [],
   filter: DEFAULT_FILTER,
@@ -55,6 +112,9 @@ export const useAppLogStore = create<LogStoreState>((set, get) => ({
   setAutoScroll: (autoScroll) => set({ autoScroll }),
 
   addEntryToBuffer: (entry) => {
+    // Print to browser console
+    printLogToConsole(entry);
+
     set((state) => {
       const isDuplicate = state.recentLogs.some(
         (e) =>

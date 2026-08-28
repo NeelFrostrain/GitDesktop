@@ -13,42 +13,113 @@ pub struct GitRuntimeInfo {
     pub mingit_dir: Option<String>,
 }
 
-/// Returns the base directory for git-desktop application data
+/// Returns the base directory for application data: `{APPDATA}/CyronicStudio/GitDesktop`
 pub fn get_app_data_dir() -> PathBuf {
     #[cfg(target_os = "windows")]
     {
         if let Ok(app_data) = std::env::var("APPDATA") {
-            return PathBuf::from(app_data).join("gitlab-desktop");
+            let appdata_path = PathBuf::from(&app_data);
+            let primary = appdata_path.join("CyronicStudio").join("GitDesktop");
+            let legacy_cyronics = appdata_path.join("CyronicStudio").join("GitDesktop");
+            let legacy_git_desktop = appdata_path.join("git-desktop");
+            let legacy_gitlab_desktop = appdata_path.join("gitlab-desktop");
+
+            // If legacy exists and primary doesn't yet, auto-migrate
+            if !primary.exists() {
+                if legacy_cyronics.exists() {
+                    let _ = std::fs::create_dir_all(appdata_path.join("CyronicStudio"));
+                    let _ = std::fs::rename(&legacy_cyronics, &primary);
+                } else if legacy_git_desktop.exists() {
+                    let _ = std::fs::create_dir_all(appdata_path.join("CyronicStudio"));
+                    let _ = std::fs::rename(&legacy_git_desktop, &primary);
+                } else if legacy_gitlab_desktop.exists() {
+                    let _ = std::fs::create_dir_all(appdata_path.join("CyronicStudio"));
+                    let _ = std::fs::rename(&legacy_gitlab_desktop, &primary);
+                }
+            }
+            let _ = std::fs::create_dir_all(&primary);
+            return primary;
         }
     }
 
     #[cfg(target_os = "macos")]
     {
         if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home)
+            let primary = PathBuf::from(home)
                 .join("Library")
                 .join("Application Support")
-                .join("gitlab-desktop");
+                .join("CyronicStudio")
+                .join("GitDesktop");
+            let _ = std::fs::create_dir_all(&primary);
+            return primary;
         }
     }
 
     #[cfg(target_os = "linux")]
     {
-        if let Ok(config_home) = std::env::var("XDG_DATA_HOME") {
-            return PathBuf::from(config_home).join("gitlab-desktop");
+        let primary = if let Ok(config_home) = std::env::var("XDG_DATA_HOME") {
+            PathBuf::from(config_home)
+                .join("CyronicStudio")
+                .join("GitDesktop")
         } else if let Ok(home) = std::env::var("HOME") {
-            return PathBuf::from(home)
+            PathBuf::from(home)
                 .join(".local")
                 .join("share")
-                .join("gitlab-desktop");
+                .join("CyronicStudio")
+                .join("GitDesktop")
+        } else {
+            PathBuf::from(".CyronicStudio").join("GitDesktop")
+        };
+        let _ = std::fs::create_dir_all(&primary);
+        return primary;
+    }
+
+    #[allow(unreachable_code)]
+    {
+        let primary =
+            if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
+                PathBuf::from(home)
+                    .join(".CyronicStudio")
+                    .join("GitDesktop")
+            } else {
+                PathBuf::from(".CyronicStudio").join("GitDesktop")
+            };
+        let _ = std::fs::create_dir_all(&primary);
+        primary
+    }
+}
+
+/// Returns the path to the portable MinGit directory (checking dev bundle/resources first, then AppData)
+pub fn get_mingit_dir() -> PathBuf {
+    // 1. Check local project or bundled resources directory
+    let local_dev = PathBuf::from("bin").join("mingit");
+    if local_dev.exists() {
+        return local_dev;
+    }
+    let tauri_dev = PathBuf::from("src-tauri").join("bin").join("mingit");
+    if tauri_dev.exists() {
+        return tauri_dev;
+    }
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            let exe_bundled = parent.join("bin").join("mingit");
+            if exe_bundled.exists() {
+                return exe_bundled;
+            }
+            let res_bundled = parent.join("resources").join("bin").join("mingit");
+            if res_bundled.exists() {
+                return res_bundled;
+            }
+            if let Some(grandparent) = parent.parent() {
+                let gp_res = grandparent.join("resources").join("bin").join("mingit");
+                if gp_res.exists() {
+                    return gp_res;
+                }
+            }
         }
     }
 
-    PathBuf::from(".gitlab-desktop")
-}
-
-/// Returns the path to the portable MinGit directory
-pub fn get_mingit_dir() -> PathBuf {
+    // 2. Persistent AppData directory
     get_app_data_dir().join("bin").join("mingit")
 }
 
@@ -157,12 +228,12 @@ pub fn find_system_git() -> Option<(String, PathBuf)> {
     None
 }
 
-/// Comprehensive detection of active Git runtime
+/// Detection of active Git runtime — strictly uses Portable MinGit runtime
 pub fn detect_git_runtime() -> GitRuntimeInfo {
     let mingit_present = is_mingit_installed();
     let mingit_dir_str = get_mingit_dir().to_string_lossy().to_string();
 
-    // 1. If MinGit is present, retrieve its version
+    // 1. If Portable MinGit is present, retrieve its version
     if mingit_present {
         let exe = get_mingit_executable();
         if let Ok(output) = silent_command(&exe).arg("--version").output() {
@@ -180,28 +251,12 @@ pub fn detect_git_runtime() -> GitRuntimeInfo {
         }
     }
 
-    // 2. Check System Git
-    if let Some((system_ver, system_path)) = find_system_git() {
-        return GitRuntimeInfo {
-            is_available: true,
-            version: Some(system_ver),
-            executable_path: Some(system_path.to_string_lossy().to_string()),
-            is_portable_mingit: false,
-            mingit_installed: mingit_present,
-            mingit_dir: if mingit_present {
-                Some(mingit_dir_str)
-            } else {
-                None
-            },
-        };
-    }
-
-    // 3. Not found anywhere
+    // 2. MinGit not yet installed
     GitRuntimeInfo {
         is_available: false,
         version: None,
         executable_path: None,
-        is_portable_mingit: false,
+        is_portable_mingit: true,
         mingit_installed: false,
         mingit_dir: None,
     }

@@ -3,6 +3,7 @@ use crate::error::AppError;
 use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::{self, Cursor};
+use std::path::PathBuf;
 use tauri::{AppHandle, Emitter};
 
 pub const MINGIT_DOWNLOAD_URL: &str =
@@ -17,14 +18,61 @@ pub struct MinGitProgressPayload {
     pub message: String,
 }
 
+/// Searches for a pre-downloaded MinGit ZIP archive in the project or bundled paths.
+pub fn find_local_mingit_archive() -> Option<PathBuf> {
+    let candidate_paths = [
+        PathBuf::from("bin").join("MinGit-2.47.1-64-bit.zip"),
+        PathBuf::from("bin").join("mingit.zip"),
+        PathBuf::from("src-tauri").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+        PathBuf::from("src-tauri").join("bin").join("mingit.zip"),
+        PathBuf::from("resources").join("MinGit-2.47.1-64-bit.zip"),
+        PathBuf::from("resources").join("mingit.zip"),
+        PathBuf::from("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+        PathBuf::from("MinGit-2.47.1-64-bit.zip"),
+    ];
+
+    for path in &candidate_paths {
+        if path.exists() {
+            return Some(path.clone());
+        }
+    }
+
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(parent) = exe.parent() {
+            let exe_candidates = [
+                parent.join("bin").join("mingit.zip"),
+                parent.join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                parent.join("resources").join("mingit.zip"),
+                parent.join("resources").join("MinGit-2.47.1-64-bit.zip"),
+                parent.join("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                parent.join("MinGit-2.47.1-64-bit.zip"),
+            ];
+            for path in &exe_candidates {
+                if path.exists() {
+                    return Some(path.clone());
+                }
+            }
+            if let Some(grandparent) = parent.parent() {
+                let gp_candidates = [
+                    grandparent.join("resources").join("MinGit-2.47.1-64-bit.zip"),
+                    grandparent.join("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                    grandparent.join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                ];
+                for path in &gp_candidates {
+                    if path.exists() {
+                        return Some(path.clone());
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 pub async fn download_and_install_mingit(
     app_handle: &AppHandle,
 ) -> Result<GitRuntimeInfo, AppError> {
-    let client = reqwest::Client::builder()
-        .user_agent("GitDesktop-MinGitDownloader/1.0")
-        .build()
-        .map_err(|e| AppError::Network(format!("Failed to build HTTP client: {}", e)))?;
-
     let emit_progress = |status: &str, downloaded: u64, total: u64, percent: f64, msg: &str| {
         let payload = MinGitProgressPayload {
             status: status.to_string(),
@@ -36,49 +84,67 @@ pub async fn download_and_install_mingit(
         let _ = app_handle.emit("mingit:download:progress", &payload);
     };
 
-    emit_progress("starting", 0, 0, 0.0, "Initiating MinGit download...");
+    // 1. Check if a pre-downloaded local ZIP archive is present in the dev directory or bundle
+    let zip_buffer: Vec<u8> = if let Some(local_zip_path) = find_local_mingit_archive() {
+        emit_progress("starting", 0, 0, 0.0, "Found pre-downloaded local MinGit archive...");
+        fs::read(&local_zip_path).map_err(|e| {
+            AppError::Filesystem(format!("Failed to read local MinGit archive {:?}: {}", local_zip_path, e))
+        })?
+    } else {
+        // 2. Download from official GitHub Releases
+        let client = reqwest::Client::builder()
+            .user_agent("GitDesktop-MinGitDownloader/1.0")
+            .build()
+            .map_err(|e| AppError::Network(format!("Failed to build HTTP client: {}", e)))?;
 
-    let mut res =
-        client.get(MINGIT_DOWNLOAD_URL).send().await.map_err(|e| {
-            AppError::Network(format!("Failed to connect to MinGit release: {}", e))
-        })?;
+        emit_progress("starting", 0, 0, 0.0, "Initiating MinGit download...");
 
-    if !res.status().is_success() {
-        let err_msg = format!("HTTP error {} downloading MinGit", res.status());
-        emit_progress("error", 0, 0, 0.0, &err_msg);
-        return Err(AppError::Network(err_msg));
-    }
+        let mut res =
+            client.get(MINGIT_DOWNLOAD_URL).send().await.map_err(|e| {
+                AppError::Network(format!("Failed to connect to MinGit release: {}", e))
+            })?;
 
-    let total_bytes = res.content_length().unwrap_or(27 * 1024 * 1024);
-    let mut downloaded_bytes: u64 = 0;
-    let mut zip_buffer = Vec::with_capacity(total_bytes as usize);
+        if !res.status().is_success() {
+            let err_msg = format!("HTTP error {} downloading MinGit", res.status());
+            emit_progress("error", 0, 0, 0.0, &err_msg);
+            return Err(AppError::Network(err_msg));
+        }
 
-    while let Some(chunk) = res
-        .chunk()
-        .await
-        .map_err(|e| AppError::Network(format!("Error downloading chunk: {}", e)))?
-    {
-        downloaded_bytes += chunk.len() as u64;
-        zip_buffer.extend_from_slice(&chunk);
+        let total_bytes = res.content_length().unwrap_or(27 * 1024 * 1024);
+        let mut downloaded_bytes: u64 = 0;
+        let mut buf = Vec::with_capacity(total_bytes as usize);
 
-        let percentage = if total_bytes > 0 {
-            (downloaded_bytes as f64 / total_bytes as f64 * 100.0).min(100.0)
-        } else {
-            0.0
-        };
+        while let Some(chunk) = res
+            .chunk()
+            .await
+            .map_err(|e| AppError::Network(format!("Error downloading chunk: {}", e)))?
+        {
+            downloaded_bytes += chunk.len() as u64;
+            buf.extend_from_slice(&chunk);
 
-        emit_progress(
-            "downloading",
-            downloaded_bytes,
-            total_bytes,
-            percentage,
-            &format!(
-                "Downloading MinGit ({:.1} MB / {:.1} MB)...",
-                downloaded_bytes as f64 / 1_048_576.0,
-                total_bytes as f64 / 1_048_576.0
-            ),
-        );
-    }
+            let percentage = if total_bytes > 0 {
+                (downloaded_bytes as f64 / total_bytes as f64 * 100.0).min(100.0)
+            } else {
+                0.0
+            };
+
+            emit_progress(
+                "downloading",
+                downloaded_bytes,
+                total_bytes,
+                percentage,
+                &format!(
+                    "Downloading MinGit ({:.1} MB / {:.1} MB)...",
+                    downloaded_bytes as f64 / 1_048_576.0,
+                    total_bytes as f64 / 1_048_576.0
+                ),
+            );
+        }
+        buf
+    };
+
+    let total_bytes = zip_buffer.len() as u64;
+    let downloaded_bytes = total_bytes;
 
     emit_progress(
         "extracting",

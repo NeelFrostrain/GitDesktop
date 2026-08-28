@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
 
-const KEYRING_SERVICE: &str = "gitlab-desktop-accounts";
+const KEYRING_SERVICE: &str = "git-desktop-accounts";
 
 #[derive(serde::Serialize, serde::Deserialize, Default, Debug)]
 struct AccountsRegistry {
@@ -20,14 +20,7 @@ struct TokensStore {
 }
 
 fn get_app_dir() -> PathBuf {
-    let mut path = if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata)
-    } else if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
-        PathBuf::from(home)
-    } else {
-        PathBuf::from(".")
-    };
-    path.push("gitlab-desktop");
+    let path = crate::domain::git_runtime::get_app_data_dir();
     let _ = fs::create_dir_all(&path);
     path
 }
@@ -298,7 +291,15 @@ pub fn get_token(account_id: &str) -> Result<Option<String>, AppError> {
         }
     }
 
-    // 5. Check legacy keyring entry under "gitlab-desktop" service
+    // 5. Check legacy keyring entries under previous service names
+    if let Ok(entry) = Entry::new("gitlab-desktop-accounts", account_id) {
+        if let Ok(p) = entry.get_password() {
+            if !p.trim().is_empty() {
+                let _ = store_token(account_id, &p);
+                return Ok(Some(p));
+            }
+        }
+    }
     if let Ok(entry) = Entry::new("gitlab-desktop", account_id) {
         if let Ok(p) = entry.get_password() {
             if !p.trim().is_empty() {

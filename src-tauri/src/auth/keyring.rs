@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 
-const SERVICE_NAME: &str = "gitlab-desktop";
+const SERVICE_NAME: &str = "git-desktop";
 const TOKEN_KEY: &str = "gitlab_token";
 const SERVER_URL_KEY: &str = "gitlab_server_url";
 
@@ -39,17 +39,9 @@ struct LocalAuthStore {
 }
 
 fn get_local_auth_file() -> PathBuf {
-    let mut path = if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata)
-    } else if let Ok(home) = std::env::var("HOME") {
-        PathBuf::from(home)
-    } else {
-        PathBuf::from(".")
-    };
-    path.push("gitlab-desktop");
+    let path = crate::domain::git_runtime::get_app_data_dir();
     let _ = fs::create_dir_all(&path);
-    path.push("auth.json");
-    path
+    path.join("auth.json")
 }
 
 fn read_local_store() -> LocalAuthStore {
@@ -194,15 +186,9 @@ pub fn get_active_account() -> Option<SavedAccount> {
 }
 
 fn get_repo_accounts_file() -> PathBuf {
-    let mut path = if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata)
-    } else {
-        PathBuf::from(".")
-    };
-    path.push("gitlab-desktop");
+    let path = crate::domain::git_runtime::get_app_data_dir();
     let _ = fs::create_dir_all(&path);
-    path.push("repo_accounts.json");
-    path
+    path.join("repo_accounts.json")
 }
 
 #[derive(Serialize, Deserialize, Default)]

@@ -8,7 +8,7 @@ use sha2::{Digest, Sha256};
 pub const DEFAULT_CLIENT_ID: &str =
     "gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df";
 pub const LOOPBACK_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
-pub const DEFAULT_REDIRECT_URI: &str = "gitlab-desktop://oauth/callback";
+pub const DEFAULT_REDIRECT_URI: &str = "git-desktop://oauth/callback";
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PkcePair {

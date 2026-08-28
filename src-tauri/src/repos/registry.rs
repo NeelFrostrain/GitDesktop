@@ -19,17 +19,9 @@ struct RepoRegistry {
 }
 
 fn get_registry_file() -> PathBuf {
-    let mut path = if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata)
-    } else if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
-        PathBuf::from(home)
-    } else {
-        PathBuf::from(".")
-    };
-    path.push("gitlab-desktop");
+    let path = crate::domain::git_runtime::get_app_data_dir();
     let _ = fs::create_dir_all(&path);
-    path.push("known_repos.json");
-    path
+    path.join("known_repos.json")
 }
 
 fn read_registry() -> RepoRegistry {
