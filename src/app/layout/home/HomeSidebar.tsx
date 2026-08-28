@@ -7,7 +7,9 @@ import { HomeSidebarRepoItem } from './HomeSidebarRepoItem';
 import { HomeSidebarAccountFooter } from './HomeSidebarAccountFooter';
 
 export const HomeSidebar: React.FC = () => {
-  const { repos, statuses, addRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const addRepo = useRepoStore((s) => s.addRepo);
   const activeRepoPath = useGitStore((s) => s.activeRepoPath);
   const setIsCloneRepoModalOpen = useGitStore((s) => s.setIsCloneRepoModalOpen);
   const [filterQuery, setFilterQuery] = useState('');

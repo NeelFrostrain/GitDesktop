@@ -36,6 +36,7 @@ pub struct ProviderAccount {
 pub struct AccountPatch {
     pub display_name: Option<String>,
     pub commit_email: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 pub trait AuthProvider: Send + Sync {

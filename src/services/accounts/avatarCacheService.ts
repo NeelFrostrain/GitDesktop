@@ -19,7 +19,7 @@ interface CachedAvatarRecord {
 }
 
 const DB_NAME = 'commito_avatar_cache';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = 'avatars';
 const CACHE_TTL_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 const NEGATIVE_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -52,9 +52,10 @@ class AvatarCacheService {
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME, { keyPath: 'url' });
+          if (db.objectStoreNames.contains(STORE_NAME)) {
+            db.deleteObjectStore(STORE_NAME);
           }
+          db.createObjectStore(STORE_NAME, { keyPath: 'url' });
         };
 
         request.onsuccess = () => {

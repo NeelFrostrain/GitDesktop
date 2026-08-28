@@ -19,6 +19,7 @@ export interface ProviderAccount {
 export interface AccountPatch {
   display_name?: string;
   commit_email?: string;
+  avatar_url?: string;
 }
 
 export interface RemoteInfo {

@@ -13,7 +13,8 @@ import { useGitRuntime } from './features/git-runtime';
 import { useGitStore } from './store/useGitStore';
 import { useLogStore } from './store/useLogStore';
 import { useAccountServicesStore } from './features/account-services';
-import { GitLabUser, gitLabUserToUnified, gitHubUserToUnified } from './types/gitlab';
+import { useRepoStore } from './store/repoStore';
+import { GitLabUser, gitLabUserToUnified } from './types/gitlab';
 import { GitService } from './services/git/gitService';
 import { AccountService } from './services/accounts/accountService';
 import { toAppError } from './shared/utils/errorUtils';
@@ -90,34 +91,21 @@ export const App: React.FC = () => {
         const active = accounts.find((a) => a.is_active) || accounts[0];
         if (!active) return;
 
-        if (active.provider === 'github') {
-          AccountService.getGitHubUser()
-            .then((user) => {
-              if (user) setUser(gitHubUserToUnified(user));
-            })
-            .catch(() => {});
-        } else if (active.provider === 'gitlab') {
-          AccountService.getCurrentGitLabUser()
-            .then((user) => {
-              if (user) setUser(gitLabUserToUnified(user));
-            })
-            .catch(() => {});
-        } else {
-          setUser({
-            id: active.id,
-            name: active.name,
-            username: active.username,
-            email: active.email || '',
-            avatar_url: active.avatar_url || null,
-            provider: active.provider,
-            server_url: active.server_url,
-            web_url: active.server_url,
-          });
-        }
+        setUser({
+          id: active.id,
+          name: active.name,
+          username: active.username,
+          email: active.email || '',
+          avatar_url: active.avatar_url || null,
+          provider: active.provider,
+          server_url: active.server_url,
+          web_url: active.server_url,
+        });
       })
       .catch(() => {});
 
     useAccountServicesStore.getState().loadAccounts().catch(() => {});
+    useRepoStore.getState().loadRepos().catch(() => {});
 
     // Root-level listener for automatic OAuth loopback login success & deep links (GitLab)
     let unlistenEvent: (() => void) | undefined;

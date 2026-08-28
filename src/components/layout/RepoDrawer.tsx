@@ -24,7 +24,12 @@ interface RepoDrawerProps {
 }
 
 export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
-  const { repos, statuses, loadRepos, addRepo, removeRepo, pinRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const loadRepos = useRepoStore((s) => s.loadRepos);
+  const addRepo = useRepoStore((s) => s.addRepo);
+  const removeRepo = useRepoStore((s) => s.removeRepo);
+  const pinRepo = useRepoStore((s) => s.pinRepo);
   const {
     activeRepoPath,
     setIsCreateRepoModalOpen,

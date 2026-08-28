@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { User } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { avatarCache } from '../../services/accounts/avatarCacheService';
 
 interface UserAvatarProps {
   url?: string | null;
@@ -16,9 +15,8 @@ interface UserAvatarProps {
 /**
  * Extracts 1-2 uppercase initials from a name or handle.
  */
-function getInitials(name?: string): string {
-  if (!name) return '';
-  const clean = name.trim().replace(/^@+/, '');
+function getInitials(name?: string, handle?: string): string {
+  const clean = (name || handle || '').trim().replace(/^@+/, '');
   if (!clean) return '';
 
   const parts = clean.split(/\s+/).filter(Boolean);
@@ -42,6 +40,24 @@ function getProviderStyle(provider?: string): string {
     default:
       return 'bg-base-2 text-commito-coral border-border';
   }
+}
+
+/**
+ * Computes SHA-256 hex string for a given text using SubtleCrypto.
+ */
+async function sha256Hex(text: string): Promise<string> {
+  const normalized = text.trim().toLowerCase();
+  if (typeof crypto !== 'undefined' && crypto.subtle && typeof TextEncoder !== 'undefined') {
+    try {
+      const data = new TextEncoder().encode(normalized);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+    } catch {
+      return '';
+    }
+  }
+  return '';
 }
 
 export const UserAvatar: React.FC<UserAvatarProps> = ({
@@ -68,6 +84,26 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   const targetHandle = handle !== undefined ? handle : (isExplicit ? '' : user?.username);
   const targetEmail = email !== undefined ? email : (isExplicit ? '' : user?.email);
 
+  const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
+  const [candidateIndex, setCandidateIndex] = useState<number>(0);
+
+  // Compute Gravatar SHA-256 URL asynchronously if email is present
+  useEffect(() => {
+    let isCancelled = false;
+    if (targetEmail && targetEmail.trim() && !targetEmail.includes('noreply') && !targetEmail.includes('example.com')) {
+      sha256Hex(targetEmail).then((hash) => {
+        if (!isCancelled && hash) {
+          setGravatarUrl(`https://www.gravatar.com/avatar/${hash}?d=404&s=128`);
+        }
+      });
+    } else {
+      setGravatarUrl(null);
+    }
+    return () => {
+      isCancelled = true;
+    };
+  }, [targetEmail]);
+
   // Determine candidate URLs in priority order for THIS specific entity
   const candidateUrls = useMemo(() => {
     const list: string[] = [];
@@ -82,102 +118,46 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       list.push(trimmed);
     }
 
-    // 2. Direct provider avatar CDN (only for this entity's provider and clean username)
-    const rawUsername = (targetHandle || targetName || '').trim().replace(/^@+/, '');
-    const cleanUsername = rawUsername.split(/\s+/)[0]; // First token for username
-
-    if (cleanUsername && cleanUsername.length > 0) {
-      if (currentProvider === 'github') {
-        list.push(`https://github.com/${cleanUsername}.png`);
-        list.push(`https://avatars.githubusercontent.com/${cleanUsername}`);
-      } else if (currentProvider === 'gitlab') {
-        list.push(`https://gitlab.com/${cleanUsername}.png`);
+    // 2. Direct provider avatar CDN (ONLY if an explicit username/handle is provided, never from display name)
+    if (targetHandle) {
+      const cleanHandle = targetHandle.trim().replace(/^@+/, '');
+      if (cleanHandle && !cleanHandle.includes(' ') && /^[a-zA-Z0-9_-]+$/.test(cleanHandle)) {
+        if (currentProvider?.toLowerCase() === 'github') {
+          list.push(`https://github.com/${cleanHandle}.png?size=128`);
+          list.push(`https://avatars.githubusercontent.com/${cleanHandle}?size=128`);
+        }
       }
     }
 
-    // 3. Email fallback (only if specific valid non-noreply email)
-    if (targetEmail && targetEmail.trim() && !targetEmail.includes('noreply') && !targetEmail.includes('example.com')) {
-      list.push(`https://unavatar.io/${encodeURIComponent(targetEmail.trim())}`);
+    // 3. Gravatar fallback if computed
+    if (gravatarUrl) {
+      list.push(gravatarUrl);
     }
 
     return list;
-  }, [url, name, handle, email, provider, isExplicit, user?.avatar_url, currentProvider, targetName, targetHandle, targetEmail]);
+  }, [url, targetHandle, provider, isExplicit, user?.avatar_url, currentProvider, gravatarUrl]);
 
-  // Check sync memory cache first for 0ms immediate render
-  const initialCached = useMemo(() => {
-    for (const u of candidateUrls) {
-      const cached = avatarCache.getSync(u);
-      if (cached) return cached;
-    }
-    return null;
-  }, [candidateUrls]);
-
-  const [avatarSrc, setAvatarSrc] = useState<string | null>(initialCached);
-  const [isLoading, setIsLoading] = useState<boolean>(!initialCached && candidateUrls.length > 0);
-  const [hasFailed, setHasFailed] = useState<boolean>(false);
-
-  // Fetch or load from persistent IndexedDB cache
+  // Reset candidate index when candidate list changes
   useEffect(() => {
-    let isCancelled = false;
-
-    // Check synchronous memory cache first
-    for (const u of candidateUrls) {
-      const mem = avatarCache.getSync(u);
-      if (mem) {
-        setAvatarSrc(mem);
-        setIsLoading(false);
-        setHasFailed(false);
-        return;
-      }
-    }
-
-    if (candidateUrls.length === 0) {
-      setAvatarSrc(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setHasFailed(false);
-
-    avatarCache
-      .getOrFetchAvatar(candidateUrls)
-      .then((resolved) => {
-        if (isCancelled) return;
-        if (resolved) {
-          setAvatarSrc(resolved);
-          setHasFailed(false);
-        } else {
-          setHasFailed(true);
-        }
-      })
-      .catch(() => {
-        if (!isCancelled) setHasFailed(true);
-      })
-      .finally(() => {
-        if (!isCancelled) setIsLoading(false);
-      });
-
-    return () => {
-      isCancelled = true;
-    };
+    setCandidateIndex(0);
   }, [candidateUrls]);
 
-  const initials = useMemo(() => getInitials(targetName || targetHandle), [targetName, targetHandle]);
+  const initials = useMemo(() => getInitials(targetName, targetHandle), [targetName, targetHandle]);
   const providerStyle = useMemo(() => getProviderStyle(currentProvider), [currentProvider]);
   const isCustomRounded = className.includes('rounded-');
   const roundedClass = isCustomRounded ? '' : 'rounded-full';
 
-  // If image is resolved and valid
-  if (avatarSrc && !hasFailed) {
+  const currentSrc = candidateIndex < candidateUrls.length ? candidateUrls[candidateIndex] : null;
+
+  if (currentSrc) {
     return (
       <img
-        src={avatarSrc}
+        key={currentSrc}
+        src={currentSrc}
         alt={targetName || targetHandle || 'Avatar'}
         referrerPolicy="no-referrer"
         onError={() => {
-          // Invalidate failed source and trigger fallback
-          setHasFailed(true);
+          setCandidateIndex((prev) => prev + 1);
         }}
         className={`${className} ${roundedClass} border border-border object-cover flex-shrink-0 shadow-xs select-none`}
       />
@@ -187,9 +167,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   // Fallback with initials or User icon
   return (
     <div
-      className={`${className} ${roundedClass} ${providerStyle} flex items-center justify-center flex-shrink-0 border shadow-xs font-mono font-bold select-none ${
-        isLoading ? 'animate-pulse' : ''
-      }`}
+      className={`${className} ${roundedClass} ${providerStyle} flex items-center justify-center flex-shrink-0 border shadow-xs font-mono font-bold select-none`}
       title={targetName || targetHandle || 'User'}
     >
       {initials ? (

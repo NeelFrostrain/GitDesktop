@@ -26,7 +26,12 @@ type FilterTab = 'all' | 'pinned' | 'dirty' | 'gitlab' | 'github';
  * Dashboard repository list & grid with search, filter tabs, view modes, spotlight, and quick actions.
  */
 export const RepoList: React.FC = () => {
-  const { repos, statuses, addRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const isLoading = useRepoStore((s) => s.isLoading);
+  const loadRepos = useRepoStore((s) => s.loadRepos);
+  const addRepo = useRepoStore((s) => s.addRepo);
+
   const { setIsCloneRepoModalOpen, setIsCreateRepoModalOpen } = useGitStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<FilterTab>('all');
@@ -37,6 +42,10 @@ export const RepoList: React.FC = () => {
       return 'grid';
     }
   });
+
+  useEffect(() => {
+    loadRepos();
+  }, [loadRepos]);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -317,6 +326,18 @@ export const RepoList: React.FC = () => {
             </div>
           </div>
         )
+      ) : isLoading && repos.length === 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-3.5 animate-pulse">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="h-36 bg-base-1/40 border border-border/40 rounded-sm p-4 space-y-3 flex flex-col justify-between">
+              <div className="space-y-2">
+                <div className="w-1/2 h-4 bg-base-2 rounded-xs" />
+                <div className="w-3/4 h-3 bg-base-2 rounded-xs" />
+              </div>
+              <div className="w-1/3 h-3 bg-base-2 rounded-xs" />
+            </div>
+          ))}
+        </div>
       ) : repos.length === 0 ? (
         /* Empty State */
         <div className="py-16 px-4 bg-base-1/50 border border-border rounded-sm flex flex-col items-center justify-center text-center space-y-4">

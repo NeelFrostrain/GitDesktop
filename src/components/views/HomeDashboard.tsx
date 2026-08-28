@@ -17,7 +17,10 @@ import {
 
 export const HomeDashboard: React.FC = () => {
   const { user, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsUserConfigModalOpen } = useGitStore();
-  const { repos, statuses, loadRepos, addRepo } = useRepoStore();
+  const repos = useRepoStore((s) => s.repos);
+  const statuses = useRepoStore((s) => s.statuses);
+  const loadRepos = useRepoStore((s) => s.loadRepos);
+  const addRepo = useRepoStore((s) => s.addRepo);
   const { accounts } = useAccounts();
 
   useEffect(() => {

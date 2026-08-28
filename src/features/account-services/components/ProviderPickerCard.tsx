@@ -3,7 +3,6 @@ import {
   ExternalLink,
   Loader2,
   Globe,
-  ShieldCheck,
   Check,
   ChevronDown,
   ChevronUp,
@@ -108,6 +107,7 @@ export const ProviderPickerCard: React.FC = () => {
     listen<string>('oauth-account-error', (event) => {
       setActiveWaitingProvider(null);
       setError(event.payload || 'OAuth authentication failed');
+      setSuccessMsg(null);
     });
 
     return () => {

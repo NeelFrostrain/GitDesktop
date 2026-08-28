@@ -40,7 +40,7 @@ describe('UserAvatar Component', () => {
     render(<UserAvatar url={avatarUrl} name="Neel Frostrain" />);
     const img = screen.getByRole('img');
     expect(img).toBeTruthy();
-    expect(img.getAttribute('src')).toBe(fakeData);
+    expect(img.getAttribute('src')).toBe(avatarUrl);
   });
 
   it('does NOT leak active user avatar to another account with empty url', () => {
