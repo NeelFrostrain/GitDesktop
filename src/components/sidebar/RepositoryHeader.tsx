@@ -1,27 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronsUpDown, FolderGit2 } from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { RepoDrawer } from '../layout/RepoDrawer';
-import { Tabs } from '../common/Tabs';
+import React, { useState, useEffect } from "react";
+import { ChevronsUpDown, FolderGit2 } from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { RepoDrawer } from "../layout/RepoDrawer";
+import { Tabs } from "../common/Tabs";
 
 export const RepositoryHeader: React.FC = () => {
-  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
+  const { activeRepoPath, status, branches, activeTab, setActiveTab } =
+    useGitStore();
   const [isRepoDrawerOpen, setIsRepoDrawerOpen] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<'side-by-side' | 'stacked'>(() => {
-    const saved = localStorage.getItem('sidebar-header-layout');
-    return saved === 'stacked' ? 'stacked' : 'side-by-side';
-  });
+  const [layoutMode, setLayoutMode] = useState<"side-by-side" | "stacked">(
+    () => {
+      const saved = localStorage.getItem("sidebar-header-layout");
+      return saved === "stacked" ? "stacked" : "side-by-side";
+    },
+  );
 
   useEffect(() => {
-    localStorage.setItem('sidebar-header-layout', layoutMode);
+    localStorage.setItem("sidebar-header-layout", layoutMode);
   }, [layoutMode]);
 
   const activeRepoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).pop() || 'Repository'
-    : 'No Repository';
+    ? activeRepoPath.split(/[/\\]/).pop() || "Repository"
+    : "No Repository";
 
   const branchCount = branches.length || 1;
-  const currentBranch = status?.current_branch || 'main';
+  const currentBranch = status?.current_branch || "main";
   const fileCount = status?.files?.length || 0;
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
@@ -32,7 +35,9 @@ export const RepositoryHeader: React.FC = () => {
   const handleToggleLayout = (e: React.MouseEvent) => {
     // Double click or right click on empty area toggles layout
     if (e.target === e.currentTarget) {
-      setLayoutMode((prev) => (prev === 'side-by-side' ? 'stacked' : 'side-by-side'));
+      setLayoutMode((prev) =>
+        prev === "side-by-side" ? "stacked" : "side-by-side",
+      );
     }
   };
 
@@ -43,7 +48,7 @@ export const RepositoryHeader: React.FC = () => {
         className="border-b border-border bg-base-0 select-none"
         title="Double-click header background to toggle Side-by-Side / Stacked layout"
       >
-        {layoutMode === 'side-by-side' ? (
+        {layoutMode === "side-by-side" ? (
           /* Mode 1: Side-by-Side (Single Row with Matching h-8 Height) */
           <div className="py-1 px-1.5 flex items-center gap-1.5 w-full">
             {/* Left: Repo Switcher */}
@@ -51,7 +56,7 @@ export const RepositoryHeader: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenRepoSwitcher}
-                className="flex-1 min-w-[100px] h-8 px-2 rounded-sm border border-border bg-base-1/50 hover:bg-base-2 hover:border-border-strong flex items-center justify-between gap-1.5 cursor-pointer transition shadow-2xs group outline-none text-left"
+                className="flex-1 min-w-[70px] max-w-[120px] h-8 px-2 rounded-sm border border-border bg-base-1/50 hover:bg-base-2 hover:border-border-strong flex items-center justify-between gap-1.5 cursor-pointer transition shadow-2xs group outline-none text-left"
                 title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}\nClick to switch repository (Double-click background to switch to 2-row mode)`}
               >
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -82,17 +87,17 @@ export const RepositoryHeader: React.FC = () => {
 
             {/* Right: Changes / History Tabs (h-8 matching height) */}
             <div className="flex-1 min-w-[130px] h-8">
-              <Tabs<'changes' | 'history'>
+              <Tabs<"changes" | "history">
                 tabs={[
                   {
-                    id: 'changes',
-                    label: 'Changes',
+                    id: "changes",
+                    label: "Changes",
                     badge: fileCount,
-                    badgeVariant: 'coral',
+                    badgeVariant: "coral",
                   },
                   {
-                    id: 'history',
-                    label: 'History',
+                    id: "history",
+                    label: "History",
                   },
                 ]}
                 activeTab={activeTab}
@@ -143,17 +148,17 @@ export const RepositoryHeader: React.FC = () => {
 
             {/* Bottom Row: Full-width Changes / History Tabs (h-8) */}
             <div className="h-8">
-              <Tabs<'changes' | 'history'>
+              <Tabs<"changes" | "history">
                 tabs={[
                   {
-                    id: 'changes',
-                    label: 'Changes',
+                    id: "changes",
+                    label: "Changes",
                     badge: fileCount,
-                    badgeVariant: 'coral',
+                    badgeVariant: "coral",
                   },
                   {
-                    id: 'history',
-                    label: 'History',
+                    id: "history",
+                    label: "History",
                   },
                 ]}
                 activeTab={activeTab}
