@@ -1182,6 +1182,32 @@ pub async fn get_gitlab_activity_cmd(
 }
 
 #[command]
+pub async fn get_contributions_calendar_cmd(
+    account_id: Option<String>,
+    repo_paths: Vec<String>,
+) -> Result<crate::activity::contributions::ContributionCalendar, AppError> {
+    let res = crate::activity::contributions::get_contributions_calendar(
+        account_id.clone(),
+        repo_paths.clone(),
+    )
+    .await?;
+
+    crate::log_debug!(
+        crate::core::logging::LogCategory::Activity,
+        format!("Generated contribution calendar (total: {} contributions across {} weeks)", res.total_contributions, res.weeks.len());
+        meta: serde_json::json!({
+            "account_id": account_id,
+            "total_contributions": res.total_contributions,
+            "active_days": res.active_days_count,
+            "longest_streak": res.longest_streak,
+            "current_streak": res.current_streak
+        })
+    );
+
+    Ok(res)
+}
+
+#[command]
 pub async fn read_file_content_cmd(
     repo_path: String,
     file_path: String,

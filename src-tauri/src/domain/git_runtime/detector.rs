@@ -289,3 +289,57 @@ pub fn inject_git_path(cmd: &mut CommandBuilder) {
 
     cmd.env("PATH", updated_path);
 }
+
+// Global thread-safe cache for resolved executable path and PATH string
+static RESOLVED_RUNTIME_CACHE: std::sync::RwLock<Option<(PathBuf, Option<String>)>> =
+    std::sync::RwLock::new(None);
+
+/// Clears cached git binary and PATH configuration (called after MinGit installation)
+pub fn invalidate_git_runtime_cache() {
+    if let Ok(mut lock) = RESOLVED_RUNTIME_CACHE.write() {
+        *lock = None;
+    }
+}
+
+/// Returns cached (executable_path, optional_path_env) to avoid repetitive disk existence checks
+pub fn get_cached_git_command_config() -> (PathBuf, Option<String>) {
+    if let Ok(lock) = RESOLVED_RUNTIME_CACHE.read() {
+        if let Some(ref cached) = *lock {
+            return cached.clone();
+        }
+    }
+
+    let mingit_exe = get_mingit_executable();
+    let exe_to_run = if mingit_exe.exists() {
+        mingit_exe
+    } else {
+        PathBuf::from("git")
+    };
+
+    let bin_dirs = get_mingit_bin_dirs();
+    let path_env = if !bin_dirs.is_empty() {
+        let separator = if cfg!(target_os = "windows") { ";" } else { ":" };
+        let existing_path = std::env::var("PATH").unwrap_or_default();
+        let bin_paths_str = bin_dirs
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect::<Vec<_>>()
+            .join(separator);
+
+        let updated_path = if existing_path.is_empty() {
+            bin_paths_str
+        } else {
+            format!("{}{}{}", bin_paths_str, separator, existing_path)
+        };
+        Some(updated_path)
+    } else {
+        None
+    };
+
+    let result = (exe_to_run, path_env);
+    if let Ok(mut lock) = RESOLVED_RUNTIME_CACHE.write() {
+        *lock = Some(result.clone());
+    }
+    result
+}
+

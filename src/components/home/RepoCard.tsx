@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   GitBranch,
   ArrowUpRight,
@@ -15,19 +15,23 @@ import {
   FolderOpen,
   MoreVertical,
   Copy,
-} from 'lucide-react';
-import { RepoEntry, RepoDashboardStatus } from '../../types/home';
-import { useRepoStore, openRepo } from '../../features/repos';
-import { SystemService } from '../../services/system/systemService';
-import { useLogStore } from '../../store/useLogStore';
+} from "lucide-react";
+import { RepoEntry, RepoDashboardStatus } from "../../types/home";
+import { useRepoStore, openRepo } from "../../features/repos";
+import { SystemService } from "../../services/system/systemService";
+import { useLogStore } from "../../store/useLogStore";
 
 export interface RepoCardProps {
   repo: RepoEntry;
   status?: RepoDashboardStatus;
-  viewMode?: 'grid' | 'list';
+  viewMode?: "grid" | "list";
 }
 
-export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'grid' }) => {
+export const RepoCard: React.FC<RepoCardProps> = ({
+  repo,
+  status,
+  viewMode = "grid",
+}) => {
   const pinRepo = useRepoStore((s) => s.pinRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
@@ -40,8 +44,8 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         setMenuPos(null);
       }
     };
-    window.addEventListener('mousedown', handleOutside);
-    return () => window.removeEventListener('mousedown', handleOutside);
+    window.addEventListener("mousedown", handleOutside);
+    return () => window.removeEventListener("mousedown", handleOutside);
   }, [menuPos]);
 
   const handleCardClick = () => openRepo(repo.path);
@@ -67,7 +71,11 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
   const handleRemoveClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuPos(null);
-    if (confirm(`Remove '${repo.name}' from your workspace list? (Files won't be deleted)`)) {
+    if (
+      confirm(
+        `Remove '${repo.name}' from your workspace list? (Files won't be deleted)`,
+      )
+    ) {
       removeRepo(repo.id);
     }
   };
@@ -94,27 +102,32 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
     e.stopPropagation();
     setMenuPos(null);
     navigator.clipboard.writeText(repo.path);
-    useLogStore.getState().addLog('info', 'System', `Copied '${repo.path}' to clipboard`);
+    useLogStore
+      .getState()
+      .addLog("info", "System", `Copied '${repo.path}' to clipboard`);
   };
 
   const formatRelativeTime = (ts: number) => {
-    if (!ts) return '—';
+    if (!ts) return "—";
     const diff = Math.floor(Date.now() / 1000) - ts;
-    if (diff < 60) return 'just now';
+    if (diff < 60) return "just now";
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    return new Date(ts * 1000).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const renderProvider = () => {
-    if (status?.remote_provider === 'gitlab')
+    if (status?.remote_provider === "gitlab")
       return (
         <span className="text-[9.5px] font-mono font-bold uppercase text-commito-coral bg-commito-coral/10 border border-commito-coral/30 px-1.5 py-0.2 rounded-xs">
           GitLab
         </span>
       );
-    if (status?.remote_provider === 'github')
+    if (status?.remote_provider === "github")
       return (
         <span className="text-[9.5px] font-mono font-bold uppercase text-purple-400 bg-purple-950/40 border border-purple-800/40 px-1.5 py-0.2 rounded-xs">
           GitHub
@@ -133,7 +146,10 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
   const renderContextMenu = () => {
     if (!menuPos) return null;
     const adjustedX = Math.max(8, Math.min(menuPos.x, window.innerWidth - 220));
-    const adjustedY = Math.max(8, Math.min(menuPos.y, window.innerHeight - 260));
+    const adjustedY = Math.max(
+      8,
+      Math.min(menuPos.y, window.innerHeight - 260),
+    );
 
     return createPortal(
       <div
@@ -181,8 +197,12 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
             onClick={handlePinClick}
             className="w-full px-2.5 py-1.5 rounded-xs hover:bg-base-2 text-text-primary flex items-center gap-2 transition cursor-pointer"
           >
-            <Pin className={`w-3.5 h-3.5 ${repo.pinned ? 'text-commito-coral fill-commito-coral/30' : 'text-text-muted'}`} />
-            <span>{repo.pinned ? 'Unpin from Favorites' : 'Pin to Favorites'}</span>
+            <Pin
+              className={`w-3.5 h-3.5 ${repo.pinned ? "text-commito-coral fill-commito-coral/30" : "text-text-muted"}`}
+            />
+            <span>
+              {repo.pinned ? "Unpin from Favorites" : "Pin to Favorites"}
+            </span>
           </button>
 
           <button
@@ -209,19 +229,19 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
           </button>
         </div>
       </div>,
-      document.body
+      document.body,
     );
   };
 
   // ── List View Rendering ──────────────────────────────────────────────────
-  if (viewMode === 'list') {
+  if (viewMode === "list") {
     return (
       <>
         <div
           onClick={handleCardClick}
           onContextMenu={handleContextMenu}
-          className={`group px-3.5 py-2.5 bg-base-1 border border-border hover:border-border-strong rounded-sm hover:bg-base-1/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
-            repo.pinned ? 'border-border-strong bg-base-2/20' : ''
+          className={`group px-3.5 py-2.5 bg-surface-subtle border border-border hover:border-border-strong rounded-sm hover:bg-surface-subtle/90 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs ${
+            repo.pinned ? "border-border-strong" : ""
           }`}
         >
           {/* Left: Icon + Name + Provider + Branch + Path */}
@@ -240,13 +260,18 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
                 {renderProvider()}
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-base-0 border border-border rounded-sm text-[10.5px] font-mono text-text-muted">
                   <GitBranch className="w-3 h-3 text-commito-coral" />
-                  <span className="truncate max-w-[130px]">{status?.current_branch || 'main'}</span>
+                  <span className="truncate max-w-[130px]">
+                    {status?.current_branch || "main"}
+                  </span>
                 </div>
                 {repo.pinned && (
                   <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
                 )}
               </div>
-              <p className="text-[10px] text-text-muted font-mono truncate" title={repo.path}>
+              <p
+                className="text-[10px] text-text-muted font-mono truncate"
+                title={repo.path}
+              >
                 {repo.path}
               </p>
             </div>
@@ -255,8 +280,11 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
           {/* Middle: Last commit summary (Expands across all empty space) */}
           <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0 text-left px-2">
             <GitCommit className="w-3.5 h-3.5 text-text-muted shrink-0" />
-            <span className="text-[11.5px] text-text-secondary truncate block w-full" title={status?.last_commit_summary}>
-              {status?.last_commit_summary || '—'}
+            <span
+              className="text-[11.5px] text-text-secondary truncate block w-full"
+              title={status?.last_commit_summary}
+            >
+              {status?.last_commit_summary || "—"}
             </span>
           </div>
 
@@ -322,8 +350,8 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
       <div
         onClick={handleCardClick}
         onContextMenu={handleContextMenu}
-        className={`group p-4 bg-base-1 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
-          repo.pinned ? 'border-border-strong bg-base-1/90' : ''
+        className={`group p-4 bg-surface-subtle/80 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-3 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[140px] ${
+          repo.pinned ? "border-border-strong" : ""
         }`}
       >
         <div className="space-y-2">
@@ -361,7 +389,10 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
           </div>
 
           {/* Path */}
-          <p className="text-[10.5px] text-text-muted font-mono truncate" title={repo.path}>
+          <p
+            className="text-[10.5px] text-text-muted font-mono truncate"
+            title={repo.path}
+          >
             {repo.path}
           </p>
 
@@ -369,7 +400,9 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
           <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
             <div className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-base-0 border border-border rounded-sm text-[10.5px] font-mono text-text-muted">
               <GitBranch className="w-3 h-3 text-commito-coral" />
-              <span className="truncate max-w-[120px]">{status?.current_branch || 'main'}</span>
+              <span className="truncate max-w-[120px]">
+                {status?.current_branch || "main"}
+              </span>
             </div>
 
             {status && (status.ahead > 0 || status.behind > 0) && (
@@ -407,8 +440,11 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         <div className="pt-2 border-t border-border/60 flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0 flex-1">
             <GitCommit className="w-3 h-3 text-text-muted shrink-0" />
-            <span className="text-[11px] text-text-secondary truncate" title={status?.last_commit_summary}>
-              {status?.last_commit_summary || '—'}
+            <span
+              className="text-[11px] text-text-secondary truncate"
+              title={status?.last_commit_summary}
+            >
+              {status?.last_commit_summary || "—"}
             </span>
           </div>
           <span className="flex items-center gap-1 text-[10px] text-text-muted flex-shrink-0 font-mono">

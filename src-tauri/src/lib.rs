@@ -225,6 +225,7 @@ pub fn run() {
             get_repo_dashboard_status_cmd,
             get_local_activity_cmd,
             get_gitlab_activity_cmd,
+            get_contributions_calendar_cmd,
             accounts_list,
             accounts_set_active,
             accounts_update,
