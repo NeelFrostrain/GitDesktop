@@ -271,8 +271,8 @@ export const Header: React.FC = () => {
             {/* Sync / Push Smart Button */}
             <SmartGitActionButton />
 
-            {/* Remote Selector Dropdown (only when repository has multiple remotes like origin + upstream) */}
-            {remotes.length > 1 && (
+            {/* Remote Selector Dropdown */}
+            {remotes.length > 0 && (
               <Dropdown
                 value={activeRemote || remotes[0]?.name || ""}
                 options={remotes.map((r) => ({

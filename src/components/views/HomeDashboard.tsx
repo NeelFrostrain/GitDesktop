@@ -91,7 +91,7 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={handleOpenFolderDialog}
-              className="h-8 px-3 bg-surface-elevated hover:bg-surface-hover active:bg-surface-subtle border border-border/80 hover:border-border-strong text-text-primary rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none"
+              className="h-8 px-3 bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border/70 hover:border-border text-text-secondary hover:text-text-primary rounded-md text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
               title="Open local Git repository folder"
             >
               <FolderOpen className="w-3.5 h-3.5 text-text-muted" />
@@ -102,7 +102,7 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCloneRepoModalOpen(true)}
-              className="h-8 px-3 bg-surface-elevated hover:bg-surface-hover active:bg-surface-subtle border border-border/80 hover:border-border-strong text-text-primary rounded-lg text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none"
+              className="h-8 px-3 bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border/70 hover:border-border text-text-secondary hover:text-text-primary rounded-md text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-[0.98] focus:outline-none"
               title="Clone repository from remote URL or account"
             >
               <DownloadCloud className="w-3.5 h-3.5 text-text-muted" />
@@ -113,12 +113,22 @@ export const HomeDashboard: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsCreateRepoModalOpen(true)}
-              className="h-8 px-3.5 bg-gradient-to-b from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 active:from-blue-600 active:to-blue-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-md shadow-blue-950/40 border border-blue-400/30 active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-blue-400/50"
+              className="h-8 px-3.5 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-md text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-[0.98] focus:outline-none focus:ring-1 focus:ring-commito-coral/50"
               title="Create a new Git repository locally"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>New Repository</span>
             </button>
+
+            {/* Settings Utility Button */}
+            {/* <button
+              type="button"
+              onClick={() => setIsUserConfigModalOpen(true)}
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-base-1 border border-border/60 hover:border-border rounded-md transition cursor-pointer focus:outline-none"
+              title="Settings & Connected Accounts"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+            </button> */}
           </div>
 
           {/* Bottom Row: Small info & metrics */}
@@ -142,7 +152,7 @@ export const HomeDashboard: React.FC = () => {
               <>
                 <span className="text-border text-[10px]">·</span>
                 <span className="flex items-center gap-1">
-                  <Pin className="w-3 h-3 text-blue-400 fill-blue-400/20" />
+                  <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/20" />
                   <span className="font-semibold text-text-primary">{metrics.pinned}</span> Pinned
                 </span>
               </>
