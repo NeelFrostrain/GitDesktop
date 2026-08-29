@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Search,
   X,
@@ -7,20 +7,26 @@ import {
   List,
   FoldVertical,
   UnfoldVertical,
-} from 'lucide-react';
-import { useGitStore } from '../../../store/useGitStore';
-import { Checkbox } from '../../common/Checkbox';
-import { ChangeFileList, ChangesViewMode } from './ChangeFileList';
-import { ChangesHeaderContextMenu } from '../../context-menus/ChangesHeaderContextMenu';
+} from "lucide-react";
+import { useGitStore } from "../../../store/useGitStore";
+import { Checkbox } from "../../common/Checkbox";
+import { ChangeFileList, ChangesViewMode } from "./ChangeFileList";
+import { ChangesHeaderContextMenu } from "../../context-menus/ChangesHeaderContextMenu";
 
 export const ChangesPanel: React.FC = () => {
-  const [fileFilter, setFileFilter] = useState('');
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [fileFilter, setFileFilter] = useState("");
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [viewMode, setViewMode] = useState<ChangesViewMode>(() => {
     try {
-      return (localStorage.getItem('git_changes_view_mode') as ChangesViewMode) || 'tree';
+      return (
+        (localStorage.getItem("git_changes_view_mode") as ChangesViewMode) ||
+        "tree"
+      );
     } catch {
-      return 'tree';
+      return "tree";
     }
   });
   const [expandAllTrigger, setExpandAllTrigger] = useState(0);
@@ -30,13 +36,14 @@ export const ChangesPanel: React.FC = () => {
   const { status, stagedFiles, setAllStaged } = useGitStore();
 
   const allFiles = status?.files || [];
-  const isAllStaged = allFiles.length > 0 && stagedFiles.length === allFiles.length;
+  const isAllStaged =
+    allFiles.length > 0 && stagedFiles.length === allFiles.length;
 
   const handleToggleViewMode = () => {
-    const nextMode: ChangesViewMode = viewMode === 'tree' ? 'list' : 'tree';
+    const nextMode: ChangesViewMode = viewMode === "tree" ? "list" : "tree";
     setViewMode(nextMode);
     try {
-      localStorage.setItem('git_changes_view_mode', nextMode);
+      localStorage.setItem("git_changes_view_mode", nextMode);
     } catch {
       // Ignore localStorage errors
     }
@@ -69,7 +76,7 @@ export const ChangesPanel: React.FC = () => {
           {fileFilter && (
             <button
               type="button"
-              onClick={() => setFileFilter('')}
+              onClick={() => setFileFilter("")}
               className="absolute right-2 p-0.5 text-text-muted hover:text-text rounded-sm transition-colors cursor-pointer"
               title="Clear filter"
             >
@@ -80,7 +87,7 @@ export const ChangesPanel: React.FC = () => {
 
         {/* Selection Count Checkbox Row + View Toggles */}
         <div
-          className="flex items-center justify-between px-[10px] py-0.5 rounded-sm text-xs select-none"
+          className="flex items-center justify-between px-1 py-0.5 rounded-sm text-xs select-none"
           onContextMenu={(e) => {
             e.preventDefault();
             setContextMenu({ x: e.clientX, y: e.clientY });
@@ -95,19 +102,23 @@ export const ChangesPanel: React.FC = () => {
             />
             <span className="text-[11.5px] font-medium text-text-subtle truncate">
               {allFiles.length === 0
-                ? '0 of 0 changed files'
+                ? "0 of 0 changed files"
                 : `${stagedFiles.length} of ${allFiles.length} changed files`}
             </span>
           </div>
 
           <div className="flex items-center gap-0.5 shrink-0">
             {/* Expand / Collapse All (Tree view only) */}
-            {viewMode === 'tree' && allFiles.length > 0 && (
+            {viewMode === "tree" && allFiles.length > 0 && (
               <button
                 type="button"
                 onClick={handleToggleExpandAll}
                 className="p-1 rounded-sm text-text-muted hover:text-text hover:bg-base-2/80 transition-colors cursor-pointer"
-                title={areFoldersExpanded ? 'Collapse all folders' : 'Expand all folders'}
+                title={
+                  areFoldersExpanded
+                    ? "Collapse all folders"
+                    : "Expand all folders"
+                }
               >
                 {areFoldersExpanded ? (
                   <FoldVertical className="w-3.5 h-3.5" />
@@ -122,13 +133,17 @@ export const ChangesPanel: React.FC = () => {
               type="button"
               onClick={handleToggleViewMode}
               className={`p-1 rounded-sm transition-colors cursor-pointer ${
-                viewMode === 'tree'
-                  ? 'text-commito-coral hover:text-commito-coral/90 hover:bg-base-2/80'
-                  : 'text-text-muted hover:text-text hover:bg-base-2/80'
+                viewMode === "tree"
+                  ? "text-commito-coral hover:text-commito-coral/90 hover:bg-base-2/80"
+                  : "text-text-muted hover:text-text hover:bg-base-2/80"
               }`}
-              title={viewMode === 'tree' ? 'Tree View (Click for List View)' : 'List View (Click for Tree View)'}
+              title={
+                viewMode === "tree"
+                  ? "Tree View (Click for List View)"
+                  : "List View (Click for Tree View)"
+              }
             >
-              {viewMode === 'tree' ? (
+              {viewMode === "tree" ? (
                 <FolderTree className="w-3.5 h-3.5" />
               ) : (
                 <List className="w-3.5 h-3.5" />
@@ -172,4 +187,3 @@ export const ChangesPanel: React.FC = () => {
     </div>
   );
 };
-

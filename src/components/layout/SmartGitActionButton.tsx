@@ -44,6 +44,9 @@ function getButtonConfig(
   const warnCls =
     'h-7 px-2.5 rounded-sm border border-warning/80 bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-xs';
 
+  const neutralCls =
+    'h-7.5 px-2.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none group';
+
   if (!hasRepo) {
     return {
       icon: <GitBranch className="w-3.5 h-3.5" />,
@@ -104,16 +107,14 @@ function getButtonConfig(
       };
     case 'up-to-date':
       return {
-        icon: (
-          <RefreshCw
-            className={`w-3.5 h-3.5 text-white ${
-              isFetching ? 'animate-spin' : ''
-            }`}
-          />
+        icon: isFetching ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
+        ) : (
+          <RefreshCw className="w-3.5 h-3.5 text-text-muted group-hover:text-commito-coral transition-colors" />
         ),
-        label: isFetching ? 'Fetching...' : 'Up to date',
+        label: isFetching ? 'Fetching...' : 'Fetch origin',
         tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
-        className: primaryCls,
+        className: neutralCls,
         disabled: false,
       };
     case 'no-remote':

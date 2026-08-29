@@ -1,62 +1,182 @@
-import React, { useEffect, lazy, Suspense } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { getCurrentWindow } from '@tauri-apps/api/window';
-import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
-import { invoke } from '@tauri-apps/api/core';
-import { Sidebar } from './components/sidebar/Sidebar';
-import { ErrorBoundary } from './components/common';
-import { Titlebar, Header } from './components/layout';
-import { HomeDashboard } from './components/views';
-import { useTerminalStore } from './features/terminal';
-import { useSettingsStore } from './features/settings';
-import { useGitRuntime } from './features/git-runtime';
-import { useGitStore } from './store/useGitStore';
-import { useLogStore } from './store/useLogStore';
-import { useAccountServicesStore } from './features/account-services';
-import { useRepoStore } from './store/repoStore';
-import { GitLabUser, gitLabUserToUnified } from './types/gitlab';
-import { GitService } from './services/git/gitService';
-import { AccountService } from './services/accounts/accountService';
-import { toAppError } from './shared/utils/errorUtils';
-import { DiffViewer } from './components/views/DiffViewer';
-import { ToastContainer } from './components/common/ToastContainer';
+import React, { useEffect, lazy, Suspense } from "react";
+import { listen } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { invoke } from "@tauri-apps/api/core";
+import { Sidebar } from "./components/sidebar/Sidebar";
+import { ErrorBoundary } from "./components/common";
+import { Titlebar, Header } from "./components/layout";
+import { HomeDashboard } from "./components/views";
+import { useTerminalStore } from "./features/terminal";
+import { useSettingsStore } from "./features/settings";
+import { useGitRuntime } from "./features/git-runtime";
+import { useGitStore } from "./store/useGitStore";
+import { useLogStore } from "./store/useLogStore";
+import { useAccountServicesStore } from "./features/account-services";
+import { useRepoStore } from "./store/repoStore";
+import { GitLabUser, gitLabUserToUnified } from "./types/gitlab";
+import { GitService } from "./services/git/gitService";
+import { AccountService } from "./services/accounts/accountService";
+import { toAppError } from "./shared/utils/errorUtils";
+import { DiffViewer } from "./components/views/DiffViewer";
+import { ToastContainer } from "./components/common/ToastContainer";
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
-const FileBrowser = lazy(() => import('./components/views/FileBrowser').then(m => ({ default: m.FileBrowser })));
-const ConflictView = lazy(() => import('./components/views/ConflictView').then(m => ({ default: m.ConflictView })));
-const BranchesView = lazy(() => import('./components/views/BranchesView').then(m => ({ default: m.BranchesView })));
-const LfsView = lazy(() => import('./components/views/LfsView').then(m => ({ default: m.LfsView })));
-const StashManagerView = lazy(() => import('./components/views/StashManagerView').then(m => ({ default: m.StashManagerView })));
-const TagsView = lazy(() => import('./components/views/TagsView').then(m => ({ default: m.TagsView })));
-const SubmodulesView = lazy(() => import('./components/views/SubmodulesView').then(m => ({ default: m.SubmodulesView })));
-const BlameViewer = lazy(() => import('./components/views/BlameViewer').then(m => ({ default: m.BlameViewer })));
+const FileBrowser = lazy(() =>
+  import("./components/views/FileBrowser").then((m) => ({
+    default: m.FileBrowser,
+  })),
+);
+const ConflictView = lazy(() =>
+  import("./components/views/ConflictView").then((m) => ({
+    default: m.ConflictView,
+  })),
+);
+const BranchesView = lazy(() =>
+  import("./components/views/BranchesView").then((m) => ({
+    default: m.BranchesView,
+  })),
+);
+const LfsView = lazy(() =>
+  import("./components/views/LfsView").then((m) => ({ default: m.LfsView })),
+);
+const StashManagerView = lazy(() =>
+  import("./components/views/StashManagerView").then((m) => ({
+    default: m.StashManagerView,
+  })),
+);
+const TagsView = lazy(() =>
+  import("./components/views/TagsView").then((m) => ({ default: m.TagsView })),
+);
+const SubmodulesView = lazy(() =>
+  import("./components/views/SubmodulesView").then((m) => ({
+    default: m.SubmodulesView,
+  })),
+);
+const BlameViewer = lazy(() =>
+  import("./components/views/BlameViewer").then((m) => ({
+    default: m.BlameViewer,
+  })),
+);
 
 // Lazy-loaded Modals & Panels (loaded only when triggered by user actions)
-const RepoModal = lazy(() => import('./components/modals/RepoModal').then(m => ({ default: m.RepoModal })));
-const CreateRepoModal = lazy(() => import('./components/modals/CreateRepoModal').then(m => ({ default: m.CreateRepoModal })));
-const CloneRepoModal = lazy(() => import('./components/modals/CloneRepoModal').then(m => ({ default: m.CloneRepoModal })));
-const MergeRequestModal = lazy(() => import('./components/modals/MergeRequestModal').then(m => ({ default: m.MergeRequestModal })));
-const WorktreeModal = lazy(() => import('./components/modals/WorktreeModal').then(m => ({ default: m.WorktreeModal })));
-const ConflictResolverModal = lazy(() => import('./components/modals/ConflictResolverModal').then(m => ({ default: m.ConflictResolverModal })));
-const RebaseModal = lazy(() => import('./components/modals/RebaseModal').then(m => ({ default: m.RebaseModal })));
-const CherryPickModal = lazy(() => import('./components/modals/CherryPickModal').then(m => ({ default: m.CherryPickModal })));
-const ReflogModal = lazy(() => import('./components/modals/ReflogModal').then(m => ({ default: m.ReflogModal })));
-const PatchModal = lazy(() => import('./components/modals/PatchModal').then(m => ({ default: m.PatchModal })));
-const GitConfigModal = lazy(() => import('./components/modals/GitConfigModal').then(m => ({ default: m.GitConfigModal })));
-const RewriteHistoryModal = lazy(() => import('./components/modals/RewriteHistoryModal').then(m => ({ default: m.RewriteHistoryModal })));
-const CreateTagModal = lazy(() => import('./components/modals/CreateTagModal').then(m => ({ default: m.CreateTagModal })));
-const CreateReleaseModal = lazy(() => import('./components/modals/CreateReleaseModal').then(m => ({ default: m.CreateReleaseModal })));
-const GitUserConfigModal = lazy(() => import('./components/config/GitUserConfigModal').then(m => ({ default: m.GitUserConfigModal })));
-const LogModal = lazy(() => import('./components/logs/LogModal').then(m => ({ default: m.LogModal })));
-const GitLabSignInModal = lazy(() => import('./components/modals/GitLabSignInModal').then(m => ({ default: m.GitLabSignInModal })));
-const SigningSettings = lazy(() => import('./components/modals/SigningSettings').then(m => ({ default: m.SigningSettings })));
-const SettingsPanel = lazy(() => import('./features/settings').then(m => ({ default: m.SettingsPanel })));
-const TerminalPanel = lazy(() => import('./features/terminal').then(m => ({ default: m.TerminalPanel })));
-const MinGitSetupModal = lazy(() => import('./features/git-runtime').then(m => ({ default: m.MinGitSetupModal })));
-const AccountServicesModal = lazy(() => import('./features/account-services').then(m => ({ default: m.AccountServicesModal })));
-const PublishRepoModal = lazy(() => import('./components/modals/PublishRepoModal').then(m => ({ default: m.PublishRepoModal })));
-const RemoteNotFoundModal = lazy(() => import('./components/modals/RemoteNotFoundModal').then(m => ({ default: m.RemoteNotFoundModal })));
-const AiAgentPanel = lazy(() => import('./features/ai-agent').then(m => ({ default: m.AiAgentPanel })));
+const RepoModal = lazy(() =>
+  import("./components/modals/RepoModal").then((m) => ({
+    default: m.RepoModal,
+  })),
+);
+const CreateRepoModal = lazy(() =>
+  import("./components/modals/CreateRepoModal").then((m) => ({
+    default: m.CreateRepoModal,
+  })),
+);
+const CloneRepoModal = lazy(() =>
+  import("./components/modals/CloneRepoModal").then((m) => ({
+    default: m.CloneRepoModal,
+  })),
+);
+const MergeRequestModal = lazy(() =>
+  import("./components/modals/MergeRequestModal").then((m) => ({
+    default: m.MergeRequestModal,
+  })),
+);
+const WorktreeModal = lazy(() =>
+  import("./components/modals/WorktreeModal").then((m) => ({
+    default: m.WorktreeModal,
+  })),
+);
+const ConflictResolverModal = lazy(() =>
+  import("./components/modals/ConflictResolverModal").then((m) => ({
+    default: m.ConflictResolverModal,
+  })),
+);
+const RebaseModal = lazy(() =>
+  import("./components/modals/RebaseModal").then((m) => ({
+    default: m.RebaseModal,
+  })),
+);
+const CherryPickModal = lazy(() =>
+  import("./components/modals/CherryPickModal").then((m) => ({
+    default: m.CherryPickModal,
+  })),
+);
+const ReflogModal = lazy(() =>
+  import("./components/modals/ReflogModal").then((m) => ({
+    default: m.ReflogModal,
+  })),
+);
+const PatchModal = lazy(() =>
+  import("./components/modals/PatchModal").then((m) => ({
+    default: m.PatchModal,
+  })),
+);
+const GitConfigModal = lazy(() =>
+  import("./components/modals/GitConfigModal").then((m) => ({
+    default: m.GitConfigModal,
+  })),
+);
+const RewriteHistoryModal = lazy(() =>
+  import("./components/modals/RewriteHistoryModal").then((m) => ({
+    default: m.RewriteHistoryModal,
+  })),
+);
+const CreateTagModal = lazy(() =>
+  import("./components/modals/CreateTagModal").then((m) => ({
+    default: m.CreateTagModal,
+  })),
+);
+const CreateReleaseModal = lazy(() =>
+  import("./components/modals/CreateReleaseModal").then((m) => ({
+    default: m.CreateReleaseModal,
+  })),
+);
+const GitUserConfigModal = lazy(() =>
+  import("./components/config/GitUserConfigModal").then((m) => ({
+    default: m.GitUserConfigModal,
+  })),
+);
+const LogModal = lazy(() =>
+  import("./components/logs/LogModal").then((m) => ({ default: m.LogModal })),
+);
+const GitLabSignInModal = lazy(() =>
+  import("./components/modals/GitLabSignInModal").then((m) => ({
+    default: m.GitLabSignInModal,
+  })),
+);
+const SigningSettings = lazy(() =>
+  import("./components/modals/SigningSettings").then((m) => ({
+    default: m.SigningSettings,
+  })),
+);
+const SettingsPanel = lazy(() =>
+  import("./features/settings").then((m) => ({ default: m.SettingsPanel })),
+);
+const TerminalPanel = lazy(() =>
+  import("./features/terminal").then((m) => ({ default: m.TerminalPanel })),
+);
+const MinGitSetupModal = lazy(() =>
+  import("./features/git-runtime").then((m) => ({
+    default: m.MinGitSetupModal,
+  })),
+);
+const AccountServicesModal = lazy(() =>
+  import("./features/account-services").then((m) => ({
+    default: m.AccountServicesModal,
+  })),
+);
+const PublishRepoModal = lazy(() =>
+  import("./components/modals/PublishRepoModal").then((m) => ({
+    default: m.PublishRepoModal,
+  })),
+);
+const RemoteNotFoundModal = lazy(() =>
+  import("./components/modals/RemoteNotFoundModal").then((m) => ({
+    default: m.RemoteNotFoundModal,
+  })),
+);
+const AiAgentPanel = lazy(() =>
+  import("./features/ai-agent").then((m) => ({ default: m.AiAgentPanel })),
+);
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -96,7 +216,7 @@ export const App: React.FC = () => {
           id: active.id,
           name: active.name,
           username: active.username,
-          email: active.email || '',
+          email: active.email || "",
           avatar_url: active.avatar_url || null,
           provider: active.provider,
           server_url: active.server_url,
@@ -105,8 +225,14 @@ export const App: React.FC = () => {
       })
       .catch(() => {});
 
-    useAccountServicesStore.getState().loadAccounts().catch(() => {});
-    useRepoStore.getState().loadRepos().catch(() => {});
+    useAccountServicesStore
+      .getState()
+      .loadAccounts()
+      .catch(() => {});
+    useRepoStore
+      .getState()
+      .loadRepos()
+      .catch(() => {});
 
     // Root-level listener for automatic OAuth loopback login success & deep links (GitLab)
     let unlistenEvent: (() => void) | undefined;
@@ -114,7 +240,7 @@ export const App: React.FC = () => {
 
     let unlistenAccountSynced: (() => void) | undefined;
 
-    listen<GitLabUser>('oauth-success', (event) => {
+    listen<GitLabUser>("oauth-success", (event) => {
       if (event.payload) {
         setUser(gitLabUserToUnified(event.payload));
         useGitStore.setState({ isRepoModalOpen: false, error: null });
@@ -123,7 +249,7 @@ export const App: React.FC = () => {
       unlistenEvent = fn;
     });
 
-    listen<any>('oauth-account-synced', async (event) => {
+    listen<any>("oauth-account-synced", async (event) => {
       if (event.payload) {
         await useAccountServicesStore.getState().loadAccounts();
         const accs = await AccountService.listSavedAccounts();
@@ -138,50 +264,78 @@ export const App: React.FC = () => {
     onOpenUrl(async (urls: string[]) => {
       for (const urlStr of urls) {
         try {
-          if (urlStr.includes('/oauth/')) {
+          if (urlStr.includes("/oauth/")) {
             const url = new URL(urlStr);
-            const code = url.searchParams.get('code');
-            const state = url.searchParams.get('state');
+            const code = url.searchParams.get("code");
+            const state = url.searchParams.get("state");
 
             // 1. Multi-provider OAuth (GitHub / GitLab account services)
-            if (urlStr.includes('/oauth/github/callback') || urlStr.includes('/oauth/gitlab/callback') || state) {
+            if (
+              urlStr.includes("/oauth/github/callback") ||
+              urlStr.includes("/oauth/gitlab/callback") ||
+              state
+            ) {
               if (code) {
-                const provider = urlStr.includes('github') ? 'github' : 'gitlab';
+                const provider = urlStr.includes("github")
+                  ? "github"
+                  : "gitlab";
                 try {
-                  const account = await invoke<any>('accounts_exchange_oauth_code', {
-                    provider,
-                    code,
-                    state: state || null,
-                    instanceUrl: null,
-                  });
+                  const account = await invoke<any>(
+                    "accounts_exchange_oauth_code",
+                    {
+                      provider,
+                      code,
+                      state: state || null,
+                      instanceUrl: null,
+                    },
+                  );
                   await useAccountServicesStore.getState().loadAccounts();
-                  useLogStore.getState().addLog('info', 'Auth', `Authenticated with ${provider} (${account?.handle || ''})`);
+                  useLogStore
+                    .getState()
+                    .addLog(
+                      "info",
+                      "Auth",
+                      `Authenticated with ${provider} (${account?.handle || ""})`,
+                    );
                   useGitStore.setState({ isRepoModalOpen: false, error: null });
                   useAccountServicesStore.setState({ isModalOpen: false });
                 } catch (err: any) {
-                  useLogStore.getState().addLog('error', 'Auth', `OAuth exchange error: ${err?.message || err}`);
-                  setError(toAppError(err, 'AUTH_ERROR'));
+                  useLogStore
+                    .getState()
+                    .addLog(
+                      "error",
+                      "Auth",
+                      `OAuth exchange error: ${err?.message || err}`,
+                    );
+                  setError(toAppError(err, "AUTH_ERROR"));
                 }
               }
             }
             // 2. Legacy GitLab OAuth callback fallback
-            else if (urlStr.includes('git-desktop://oauth/callback') || urlStr.includes('gitlab-desktop://oauth/callback')) {
-              const savedVerifier = sessionStorage.getItem('oauth_verifier');
+            else if (
+              urlStr.includes("git-desktop://oauth/callback") ||
+              urlStr.includes("gitlab-desktop://oauth/callback")
+            ) {
+              const savedVerifier = sessionStorage.getItem("oauth_verifier");
               if (code && savedVerifier) {
-                invoke<GitLabUser>('complete_oauth_login', {
-                  serverUrl: 'https://gitlab.com',
+                invoke<GitLabUser>("complete_oauth_login", {
+                  serverUrl: "https://gitlab.com",
                   code,
                   verifier: savedVerifier,
                   clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
-                  clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+                  clientSecret:
+                    import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
                 })
                   .then((loggedUser) => {
                     setUser(gitLabUserToUnified(loggedUser));
-                    sessionStorage.removeItem('oauth_verifier');
-                    useGitStore.setState({ isRepoModalOpen: false, error: null });
+                    sessionStorage.removeItem("oauth_verifier");
+                    useGitStore.setState({
+                      isRepoModalOpen: false,
+                      error: null,
+                    });
                   })
                   .catch((err: unknown) => {
-                    setError(toAppError(err, 'AUTH_ERROR'));
+                    setError(toAppError(err, "AUTH_ERROR"));
                   });
               }
             }
@@ -245,11 +399,11 @@ export const App: React.FC = () => {
     // 2. Window focus & document visibility sync
     const handleFocus = () => syncStatus();
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') syncStatus();
+      if (document.visibilityState === "visible") syncStatus();
     };
 
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
 
     // 3. Tauri window focus event
     const appWindow = getCurrentWindow();
@@ -265,8 +419,8 @@ export const App: React.FC = () => {
     return () => {
       isDisposed = true;
       clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (unlistenTauriFocus) unlistenTauriFocus();
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
@@ -274,51 +428,60 @@ export const App: React.FC = () => {
   // Global shortcuts: Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "`") {
         e.preventDefault();
         useTerminalStore.getState().toggleIsOpen();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ",") {
         e.preventDefault();
         useSettingsStore.getState().toggleSettings();
-      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        !e.shiftKey &&
+        (e.key === "i" || e.key === "I")
+      ) {
         // Ctrl+I (without Shift) → AI Agent panel
         e.preventDefault();
-        import('./features/ai-agent').then(({ useAiAgentStore }) => {
+        import("./features/ai-agent").then(({ useAiAgentStore }) => {
           useAiAgentStore.getState().toggleIsOpen();
         });
-      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+      } else if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        (e.key === "i" || e.key === "I")
+      ) {
         // Ctrl+Shift+I → block devtools from opening
         e.preventDefault();
       }
     };
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
-    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
+    window.addEventListener("keydown", handleKeyDown, { capture: true });
+    return () =>
+      window.removeEventListener("keydown", handleKeyDown, { capture: true });
   }, []);
 
   const renderMainContent = () => {
     switch (currentNavView) {
-      case 'files':
+      case "files":
         return <FileBrowser />;
-      case 'branches':
+      case "branches":
         return <BranchesView />;
-      case 'locks':
+      case "locks":
         return <LfsView />;
-      case 'stashes':
+      case "stashes":
         return <StashManagerView />;
-      case 'tags':
+      case "tags":
         return <TagsView />;
-      case 'submodules':
+      case "submodules":
         return <SubmodulesView />;
-      case 'history':
-      case 'changes':
-      case 'workspace':
+      case "history":
+      case "changes":
+      case "workspace":
         return <DiffViewer />;
       default:
         return <HomeDashboard />;
     }
   };
 
-  const isHome = currentNavView === 'home';
+  const isHome = currentNavView === "home";
 
   return (
     <ErrorBoundary>
@@ -326,11 +489,11 @@ export const App: React.FC = () => {
         {/* Custom Application Titlebar */}
         <Titlebar />
 
-        <div className="flex-1 flex overflow-hidden">
+        <div className="flex-1 flex overflow-hidden p-1.5 pt-0 gap-1.5 pb-1.5">
           {isHome ? (
             /* ── Home page: HomeDashboard + relative Right AI Agent sidebar ── */
-            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
-              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden gap-1.5">
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
                 <HomeDashboard />
               </div>
 
@@ -341,19 +504,25 @@ export const App: React.FC = () => {
             </div>
           ) : (
             /* ── Repo page: left rail sidebar + main workspace + relative Right AI Agent sidebar ── */
-            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden gap-1.5">
               {/* Left rail navigation & tabs */}
               <Sidebar />
 
               {/* Main workspace body */}
-              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
                 <Header />
                 <Suspense fallback={null}>
                   <ConflictView />
                 </Suspense>
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                   <div className="flex-1 flex min-h-0 overflow-hidden">
-                    <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-base-0 text-text-muted text-xs">Loading view...</div>}>
+                    <Suspense
+                      fallback={
+                        <div className="flex-1 flex items-center justify-center bg-base-0 text-text-muted text-xs">
+                          Loading view...
+                        </div>
+                      }
+                    >
                       {renderMainContent()}
                     </Suspense>
                   </div>
@@ -406,7 +575,10 @@ export const App: React.FC = () => {
           <GitLabSignInModal />
           <SigningSettings />
           <SettingsPanel />
-          <MinGitSetupModal isOpen={showInstallPrompt} onClose={() => setShowInstallPrompt(false)} />
+          <MinGitSetupModal
+            isOpen={showInstallPrompt}
+            onClose={() => setShowInstallPrompt(false)}
+          />
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />

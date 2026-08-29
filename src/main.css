@@ -37,8 +37,9 @@
 
   /* --- Unified Scrollbars --- */
   --scrollbar-track: transparent;
-  --scrollbar-thumb: #36353d;
-  --scrollbar-thumb-hover: #46454e;
+  --scrollbar-thumb: rgba(255,255,255,0.1);
+  --scrollbar-thumb-hover: rgba(255,255,255,0.22);
+  --scrollbar-thumb-active: rgba(255,255,255,0.32);
 
   /* Legacy border aliases */
   --app-border: var(--border);
@@ -232,8 +233,9 @@
   --app-density: comfortable;
 
   /* --- Scrollbar Tokens --- */
-  --scrollbar-thumb: #36353d;
-  --scrollbar-thumb-hover: #46454e;
+  --scrollbar-thumb: rgba(255,255,255,0.09);
+  --scrollbar-thumb-hover: rgba(255,255,255,0.2);
+  --scrollbar-thumb-active: rgba(255,255,255,0.3);
   --scrollbar-track: transparent;
 }
 
@@ -393,15 +395,15 @@ body,
 *::after {
   box-sizing: border-box;
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb, #36353d) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 /* ==========================================================================
    5. Scrollbar Styles & Utilities
    ========================================================================== */
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 *::-webkit-scrollbar-track {
@@ -409,27 +411,31 @@ body,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb, #36353d);
-  border-radius: 4px;
+  background: rgba(255,255,255,0.10);
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover, #46454e);
+  background: rgba(255,255,255,0.22);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(255,255,255,0.32);
 }
 
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Utility: .scrollbar-thin */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb, #36353d) transparent;
+  scrollbar-color: rgba(255,255,255,0.10) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3.5px;
+  height: 3.5px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
@@ -437,12 +443,12 @@ body,
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb, #36353d);
+  background: rgba(255,255,255,0.10);
   border-radius: 9999px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover, #46454e);
+  background: rgba(255,255,255,0.22);
 }
 
 /* Utility: .scrollbar-none */

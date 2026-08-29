@@ -45,7 +45,10 @@ export const Sidebar: React.FC = () => {
       }
       setIsResizing(false);
       try {
-        localStorage.setItem("sidebar_width", latestSidebarWidthRef.current.toString());
+        localStorage.setItem(
+          "sidebar_width",
+          latestSidebarWidthRef.current.toString(),
+        );
       } catch {}
     };
 
@@ -68,7 +71,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       style={{ width: `${sidebarWidth}px` }}
-      className="relative h-full bg-base-0 border-r border-border flex flex-col flex-shrink-0 select-none group/sidebar z-20"
+      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col flex-shrink-0 select-none group/sidebar z-20 overflow-hidden shadow-2xs"
     >
       {/* Resizable handle bar on the right border */}
       <div

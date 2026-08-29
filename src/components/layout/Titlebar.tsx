@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import React, { useState, useEffect, useRef } from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import {
   Minus,
   Square,
@@ -14,13 +14,13 @@ import {
   Settings,
   Users,
   Plus,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useSettingsStore } from '../../features/settings';
-import { useAccountServicesStore } from '../../features/account-services';
-import { UserAvatar } from '../common/UserAvatar';
-import { SystemService } from '../../services/system/systemService';
-import { AccountService } from '../../services/accounts/accountService';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useSettingsStore } from "../../features/settings";
+import { useAccountServicesStore } from "../../features/account-services";
+import { UserAvatar } from "../common/UserAvatar";
+import { SystemService } from "../../services/system/systemService";
+import { AccountService } from "../../services/accounts/accountService";
 
 /**
  * Custom frameless application titlebar with drag region, user profile menu,
@@ -41,18 +41,19 @@ export const Titlebar: React.FC = () => {
     setCurrentNavView,
   } = useGitStore();
   const accountServicesAccounts = useAccountServicesStore((s) => s.accounts);
-  const totalAccountsCount = accountServicesAccounts.length || accounts?.length || 0;
+  const totalAccountsCount =
+    accountServicesAccounts.length || accounts?.length || 0;
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const appWindow = getCurrentWindow();
 
   const activeRepoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository'
+    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || "Repository"
     : null;
-  const currentBranch = status?.current_branch || 'main';
+  const currentBranch = status?.current_branch || "main";
   const uncommittedCount = status?.files?.length || 0;
-  const isClean = status?.is_clean ?? (uncommittedCount === 0);
+  const isClean = status?.is_clean ?? uncommittedCount === 0;
 
   useEffect(() => {
     const checkMaximized = async () => {
@@ -90,8 +91,8 @@ export const Titlebar: React.FC = () => {
         setIsProfileOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleMinimize = async (e: React.MouseEvent) => {
@@ -100,7 +101,7 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.minimizeWindow();
     } catch {
-      await appWindow.minimize().catch(() => { });
+      await appWindow.minimize().catch(() => {});
     }
   };
 
@@ -111,7 +112,7 @@ export const Titlebar: React.FC = () => {
       const isNowMaximized = await SystemService.toggleMaximizeWindow();
       setIsMaximized(isNowMaximized);
     } catch {
-      await appWindow.toggleMaximize().catch(() => { });
+      await appWindow.toggleMaximize().catch(() => {});
       const maximized = await appWindow.isMaximized().catch(() => false);
       setIsMaximized(maximized);
     }
@@ -123,7 +124,28 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.closeWindow();
     } catch {
-      await appWindow.close().catch(() => { });
+      await appWindow.close().catch(() => {});
+    }
+  };
+
+  const handleDragMouseDown = async (e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (
+      target.closest(
+        'button, input, select, a, [role="button"], .titlebar-no-drag',
+      )
+    ) {
+      return;
+    }
+    if (e.detail === 2) {
+      handleToggleMaximize(e);
+      return;
+    }
+    try {
+      await appWindow.startDragging();
+    } catch {
+      // Ignore dragging error
     }
   };
 
@@ -144,75 +166,34 @@ export const Titlebar: React.FC = () => {
   return (
     <header
       data-tauri-drag-region
-      className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
+      onMouseDown={handleDragMouseDown}
+      onDoubleClick={handleToggleMaximize}
+      className="titlebar-drag h-10 rounded-sm bg-base-0 border-b mb-2 border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Icon + Current Open Repo Details */}
-      <div data-tauri-drag-region className="flex items-center gap-2.5 min-w-0">
+      {/* Left: App Icon + Clean Title */}
+      <div
+        data-tauri-drag-region
+        className="flex items-center gap-2 min-w-0 pointer-events-none"
+      >
         <div className="flex items-center gap-2 pointer-events-none flex-shrink-0">
-          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-sm object-contain shadow-xs" />
+          <img
+            src="/app-icon.png"
+            alt="Git Desktop"
+            className="w-4 h-4 rounded-sm object-contain shadow-xs"
+          />
         </div>
-
-        {activeRepoName && currentNavView !== 'home' ? (
-          <div data-tauri-drag-region className="flex items-center gap-2 min-w-0">
-            <div className="h-3.5 w-px bg-border/70 flex-shrink-0" />
-
-            {/* Repo Name */}
-            <div
-              data-tauri-drag-region
-              className="flex items-center gap-1.5 min-w-0"
-              title={`Repository: ${activeRepoName}\nPath: ${activeRepoPath}`}
-            >
-              <FolderGit2 className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-              <span className="font-semibold text-xs text-text truncate max-w-[160px]">
-                {activeRepoName}
-              </span>
-            </div>
-
-            {/* Active Branch Chip */}
-            <div
-              data-tauri-drag-region
-              className="h-5 px-1.5 inline-flex items-center gap-1 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono text-text-subtle flex-shrink-0"
-              title={`Branch: ${currentBranch}`}
-            >
-              <GitBranch className="w-3 h-3 text-commito-coral flex-shrink-0" />
-              <span className="truncate max-w-[120px]">{currentBranch}</span>
-            </div>
-
-            {/* Status Indicator Chip (Clean / Modified) */}
-            <div
-              data-tauri-drag-region
-              className={`h-5 px-1.5 inline-flex items-center gap-1 rounded-sm text-[10.5px] font-mono font-medium border flex-shrink-0 ${isClean
-                ? 'bg-git-added/10 text-git-added border-git-added/25'
-                : 'bg-git-modified/10 text-git-modified border-git-modified/25'
-                }`}
-              title={isClean ? 'Working directory clean' : `${uncommittedCount} modified files in working directory`}
-            >
-              <span>{isClean ? 'clean' : `${uncommittedCount} modified`}</span>
-            </div>
-
-            {/* Ahead / Behind Counts Chip */}
-            {Boolean(status?.ahead || status?.behind) && (
-              <div
-                data-tauri-drag-region
-                className="h-5 px-1.5 inline-flex items-center gap-1.5 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono flex-shrink-0"
-              >
-                {Boolean(status?.ahead) && (
-                  <span className="text-git-ahead" title={`${status?.ahead} commits ahead of remote`}>
-                    ↑{status?.ahead}
-                  </span>
-                )}
-                {Boolean(status?.behind) && (
-                  <span className="text-git-behind" title={`${status?.behind} commits behind remote`}>
-                    ↓{status?.behind}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div data-tauri-drag-region className="flex items-center gap-2">
-            <div className="h-3.5 w-px bg-border/70" />
-            <span className="text-xs text-text-muted font-medium">Git Desktop</span>
+        <span className="text-xs font-semibold text-text-primary tracking-tight">
+          Git Desktop
+        </span>
+        {activeRepoName && currentNavView !== "home" && (
+          <div
+            data-tauri-drag-region
+            className="flex items-center gap-1.5 min-w-0 text-text-muted text-xs"
+          >
+            <span className="text-border-strong">/</span>
+            <span className="text-text-secondary truncate max-w-[220px] font-medium">
+              {activeRepoName}
+            </span>
           </div>
         )}
       </div>
@@ -222,10 +203,10 @@ export const Titlebar: React.FC = () => {
         className="titlebar-no-drag flex items-center gap-1.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {currentNavView !== 'home' && (
+        {currentNavView !== "home" && (
           <button
             type="button"
-            onClick={() => setCurrentNavView('home')}
+            onClick={() => setCurrentNavView("home")}
             className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer text-xs font-semibold select-none active:scale-95 group shadow-2xs"
             title="Go to Home"
           >
@@ -240,18 +221,19 @@ export const Titlebar: React.FC = () => {
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
             className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer select-none active:scale-95 shadow-2xs"
-            title={user ? user.name || user.username : 'Account Menu'}
+            title={user ? user.name || user.username : "Account Menu"}
           >
             <UserAvatar
               url={user?.avatar_url}
-              name={user?.name || user?.username || 'Guest'}
+              name={user?.name || user?.username || "Guest"}
               provider={user?.provider}
               className="w-4 h-4 rounded-full"
               iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
-              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180 text-commito-coral' : ''
-                }`}
+              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
+                isProfileOpen ? "rotate-180 text-commito-coral" : ""
+              }`}
             />
           </button>
 
@@ -260,14 +242,17 @@ export const Titlebar: React.FC = () => {
             <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 text-xs select-none">
               <div className="px-3 py-2.5 border-b border-border">
                 <div className="font-semibold text-text-primary truncate">
-                  {user?.name || user?.username || 'Guest'}
+                  {user?.name || user?.username || "Guest"}
                 </div>
                 {user?.username && user.name && (
-                  <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
+                  <div className="text-[11px] text-text-muted font-mono truncate">
+                    @{user.username}
+                  </div>
                 )}
                 {totalAccountsCount > 0 && (
                   <div className="text-[10px] text-text-faint mt-0.5">
-                    {totalAccountsCount} account{totalAccountsCount > 1 ? 's' : ''} saved
+                    {totalAccountsCount} account
+                    {totalAccountsCount > 1 ? "s" : ""} saved
                   </div>
                 )}
               </div>
@@ -276,7 +261,9 @@ export const Titlebar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  useAccountServicesStore.getState().openModalWithTab('accounts');
+                  useAccountServicesStore
+                    .getState()
+                    .openModalWithTab("accounts");
                   setIsProfileOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
@@ -288,7 +275,7 @@ export const Titlebar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  useAccountServicesStore.getState().openModalWithTab('add');
+                  useAccountServicesStore.getState().openModalWithTab("add");
                   setIsProfileOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
@@ -353,7 +340,7 @@ export const Titlebar: React.FC = () => {
           type="button"
           onClick={handleToggleMaximize}
           className="w-8 h-6 flex items-center justify-center rounded-sm text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
-          title={isMaximized ? 'Restore' : 'Maximize'}
+          title={isMaximized ? "Restore" : "Maximize"}
         >
           {isMaximized ? (
             <Copy className="w-3 h-3 rotate-180 pointer-events-none" />

@@ -231,7 +231,7 @@ export const AiAgentPanel: React.FC = () => {
   return (
     <aside
       style={{ width: `${panelWidth}px` }}
-      className={`relative h-full bg-base-0 border-l border-border flex flex-col justify-between select-none shrink-0 z-30 ${
+      className={`relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden ${
         isDragging ? "" : "transition-[width] duration-75"
       }`}
     >
