@@ -309,6 +309,41 @@ pub async fn unlock_lfs_file(
 }
 
 #[command]
+pub async fn install_lfs(repo_path: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::lfs::install_lfs(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn lfs_pull(repo_path: String) -> Result<String, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::lfs::lfs_pull(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn lfs_fetch(repo_path: String, remote: Option<String>) -> Result<String, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::lfs::lfs_fetch(&repo_path, remote.as_deref()))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn lfs_push(repo_path: String, remote: Option<String>) -> Result<String, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::lfs::lfs_push(&repo_path, remote.as_deref()))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn list_lfs_tracked_patterns(repo_path: String) -> Result<Vec<String>, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::lfs::list_tracked_patterns(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn list_worktrees(
     repo_path: String,
 ) -> Result<Vec<crate::git::worktree::WorktreeInfo>, AppError> {

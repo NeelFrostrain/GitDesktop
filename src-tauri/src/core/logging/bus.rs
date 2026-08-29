@@ -34,7 +34,28 @@ pub fn log(app_opt: Option<&AppHandle>, entry: LogEntry) {
     // 2. Append to disk via store
     store::append_log(&entry);
 
-    // 3. Emit Tauri event "app:log" to frontend
+    // 3. Print to terminal stdout with explicit flush
+    let formatted_time = chrono::DateTime::parse_from_rfc3339(&entry.at)
+        .map(|dt| dt.with_timezone(&chrono::Local).format("%Y-%m-%d %H:%M:%S").to_string())
+        .unwrap_or_else(|_| chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string());
+
+    let meta_str = match &entry.metadata {
+        Some(m) => format!(" | meta: {}", m),
+        None => String::new(),
+    };
+
+    println!(
+        "[{}] [{}] [{:?}] {}{}",
+        formatted_time,
+        format!("{:?}", entry.level).to_uppercase(),
+        entry.category,
+        entry.message,
+        meta_str
+    );
+    use std::io::Write;
+    let _ = std::io::stdout().flush();
+
+    // 4. Emit Tauri event "app:log" to frontend
     let handle = app_opt.or_else(|| GLOBAL_APP_HANDLE.get());
     if let Some(app) = handle {
         let _ = app.emit("app:log", &entry);

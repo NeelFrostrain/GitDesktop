@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -6,7 +7,7 @@ import tailwindcss from "@tailwindcss/vite";
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
     environment: 'jsdom',
@@ -33,23 +34,33 @@ export default defineConfig(async () => ({
     minify: "esbuild",
     cssMinify: true,
     sourcemap: false,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["react", "react-dom"],
-          icons: ["lucide-react"],
-          query: ["@tanstack/react-query"],
-          editor: ["@monaco-editor/react"],
-          terminal: ["@xterm/xterm", "@xterm/addon-fit", "@xterm/addon-search"],
-          tauri: [
-            "@tauri-apps/api",
-            "@tauri-apps/plugin-dialog",
-            "@tauri-apps/plugin-opener",
-            "@tauri-apps/plugin-shell",
-            "@tauri-apps/plugin-deep-link",
-          ],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('monaco-editor') || id.includes('@monaco-editor')) {
+              return 'monaco';
+            }
+            if (id.includes('@xterm')) {
+              return 'terminal';
+            }
+            if (id.includes('lucide-react')) {
+              return 'icons';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('scheduler')) {
+              return 'react-vendor';
+            }
+            if (id.includes('@tauri-apps')) {
+              return 'tauri-vendor';
+            }
+            if (id.includes('@tanstack')) {
+              return 'query-vendor';
+            }
+            return 'vendor';
+          }
         },
       },
     },
   },
-}));
+});

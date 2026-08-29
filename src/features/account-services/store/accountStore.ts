@@ -77,6 +77,11 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
           web_url: active.instance_url,
         });
       }
+
+      // Sync contribution calendar with updated accounts
+      import('../../../store/contributionsStore').then((m) => {
+        m.useContributionsStore.getState().loadContributions().catch(() => {});
+      });
     } catch (err: any) {
       console.warn('Failed to load accounts:', err);
     } finally {

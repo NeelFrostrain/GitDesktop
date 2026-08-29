@@ -47,11 +47,37 @@ pub async fn login_gitlab_pat(
         expires_at: None,
         scopes: Some(vec!["api".to_string(), "read_user".to_string()]),
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
     keyring::save_token(&token)?;
     keyring::save_server_url(&server_url)?;
+
+    // Synchronize to domain::accounts::token_store
+    let clean_url = server_url.trim_end_matches('/');
+    let prov_account_id = format!(
+        "gitlab:{}:{}",
+        clean_url.replace("https://", "").replace("http://", ""),
+        user.id
+    );
+    let handle = format!("@{}", user.username.trim_start_matches('@'));
+    let prov_account = crate::domain::accounts::provider::ProviderAccount {
+        id: prov_account_id.clone(),
+        provider: crate::domain::accounts::provider::ProviderKind::Gitlab,
+        instance_url: clean_url.to_string(),
+        handle,
+        display_name: user.name.clone(),
+        avatar_url: user.avatar_url.clone().unwrap_or_default(),
+        commit_email: user.email.clone().unwrap_or_default(),
+        is_active: true,
+        token_status: crate::domain::accounts::provider::TokenStatus::Valid,
+        scopes: vec!["api".to_string(), "read_user".to_string()],
+        expires_at: None,
+        refresh_token_expires_at: None,
+    };
+    let _ = crate::domain::accounts::token_store::save_account(prov_account, &token, None);
+    let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&prov_account_id, None);
 
     crate::log_success!(
         crate::core::logging::LogCategory::Account,
@@ -164,6 +190,7 @@ pub async fn complete_oauth_login(
         expires_at,
         scopes: scopes_list,
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
@@ -222,13 +249,17 @@ pub async fn gitlab_ensure_fresh_token(account_id: String) -> Result<String, App
 
 #[command]
 pub async fn gitlab_get_token_info_cmd(account_id: String) -> Result<TokenInfo, AppError> {
-    let accounts = keyring::list_accounts();
+    let accounts = crate::domain::accounts::token_store::list_accounts();
     let account = accounts
         .iter()
         .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
-    let client = GitLabClient::new(account.server_url.clone(), account.token.clone(), None)?;
+    let token = crate::domain::accounts::token_store::get_valid_token(&account_id)
+        .await?
+        .ok_or_else(|| AppError::Auth(format!("No token found for account '{}'", account_id)))?;
+
+    let client = GitLabClient::new(account.instance_url.clone(), token, None)?;
     client.get_token_info().await
 }
 
@@ -263,6 +294,7 @@ pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
                         expires_at: None,
                         scopes: None,
                         created_at: None,
+                        refresh_token_expires_at: None,
                     };
                     let _ = keyring::add_or_update_account(account);
                     Ok(Some(user))
@@ -291,6 +323,17 @@ pub async fn list_accounts_cmd() -> Result<Vec<keyring::SavedAccount>, AppError>
 #[command]
 pub async fn switch_account_cmd(account_id: String) -> Result<Option<GitLabUser>, AppError> {
     keyring::switch_active_account(&account_id)?;
+
+    // Also sync to domain token_store
+    let accounts = crate::domain::accounts::token_store::list_accounts();
+    if let Some(acc) = accounts.iter().find(|a| {
+        a.id == account_id
+            || a.handle.trim_start_matches('@') == account_id.split('@').next().unwrap_or("")
+            || account_id.contains(&a.handle.trim_start_matches('@').to_string())
+    }) {
+        let _ = crate::domain::accounts::token_store::set_active_account(&acc.id);
+    }
+
     if let Some(acct) = keyring::get_active_account() {
         if acct.provider == "gitlab" {
             let server_url = acct.server_url.clone();
@@ -307,6 +350,7 @@ pub async fn switch_account_cmd(account_id: String) -> Result<Option<GitLabUser>
 
 #[command]
 pub async fn remove_account_cmd(account_id: String) -> Result<(), AppError> {
+    let _ = crate::domain::accounts::token_store::remove_account(&account_id);
     keyring::remove_account(&account_id)
 }
 
@@ -355,9 +399,31 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
         expires_at: None,
         scopes: Some(vec!["repo".to_string(), "read:user".to_string()]),
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
+
+    // Synchronize to domain::accounts::token_store
+    let clean_url = "https://github.com";
+    let prov_account_id = format!("github:{}", gh_user.id);
+    let handle = format!("@{}", gh_user.login.trim_start_matches('@'));
+    let prov_account = crate::domain::accounts::provider::ProviderAccount {
+        id: prov_account_id.clone(),
+        provider: crate::domain::accounts::provider::ProviderKind::Github,
+        instance_url: clean_url.to_string(),
+        handle,
+        display_name: gh_user.name.clone().unwrap_or_else(|| gh_user.login.clone()),
+        avatar_url: gh_user.avatar_url.clone().unwrap_or_default(),
+        commit_email: gh_user.email.clone().unwrap_or_default(),
+        is_active: true,
+        token_status: crate::domain::accounts::provider::TokenStatus::Valid,
+        scopes: vec!["repo".to_string(), "read:user".to_string()],
+        expires_at: None,
+        refresh_token_expires_at: None,
+    };
+    let _ = crate::domain::accounts::token_store::save_account(prov_account, &token, None);
+    let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&prov_account_id, None);
 
     crate::log_success!(
         crate::core::logging::LogCategory::Account,

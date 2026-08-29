@@ -172,7 +172,7 @@ export const StashManagerView: React.FC = () => {
             placeholder="Stash message (optional, e.g. WIP before branch switch)"
             value={stashMessage}
             onChange={(e) => setStashMessage(e.target.value)}
-            className="w-full px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-sans"
+            className="w-full px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-sans"
             autoFocus
           />
 

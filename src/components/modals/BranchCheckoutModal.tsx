@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import React, { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -7,11 +7,11 @@ import {
   Trash2,
   X,
   Loader2,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { GitService } from '../../services/git/gitService';
-import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { GitService } from "../../services/git/gitService";
+import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
 
 interface BranchCheckoutModalProps {
   isOpen: boolean;
@@ -50,7 +50,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      await invoke('create_stash_cmd', {
+      await invoke("create_stash_cmd", {
         repoPath: activeRepoPath,
         message: `Auto-stash before checkout to ${targetBranch}`,
         includeUntracked: true,
@@ -59,26 +59,32 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
       try {
-        await invoke('pop_stash_cmd', {
+        await invoke("pop_stash_cmd", {
           repoPath: activeRepoPath,
           index: 0,
         });
-        useLogStore.getState().addLog('success', 'Git', `Switched to '${targetBranch}' and brought changes along`);
+        useLogStore
+          .getState()
+          .addLog(
+            "success",
+            "Git",
+            `Switched to '${targetBranch}' and brought changes along`,
+          );
       } catch (popErr: unknown) {
         const popMsg = getErrorMessage(popErr);
         useLogStore
           .getState()
           .addLog(
-            'warning',
-            'Git',
-            `Switched to '${targetBranch}', but stash pop had conflicts: ${popMsg}`
+            "warning",
+            "Git",
+            `Switched to '${targetBranch}', but stash pop had conflicts: ${popMsg}`,
           );
       }
 
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CHECKOUT_ERROR'));
+      setError(toAppError(error, "CHECKOUT_ERROR"));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -90,7 +96,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      await invoke('create_stash_cmd', {
+      await invoke("create_stash_cmd", {
         repoPath: activeRepoPath,
         message: `Saved changes on ${currentBranch} before checkout`,
         includeUntracked: true,
@@ -100,11 +106,15 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
 
       useLogStore
         .getState()
-        .addLog('info', 'Git', `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`);
+        .addLog(
+          "info",
+          "Git",
+          `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`,
+        );
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CHECKOUT_ERROR'));
+      setError(toAppError(error, "CHECKOUT_ERROR"));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -118,11 +128,13 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     try {
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
-      useLogStore.getState().addLog('warning', 'Git', `Force checked out '${targetBranch}'`);
+      useLogStore
+        .getState()
+        .addLog("warning", "Git", `Force checked out '${targetBranch}'`);
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CHECKOUT_ERROR'));
+      setError(toAppError(error, "CHECKOUT_ERROR"));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -135,16 +147,20 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-sm bg-git-modified-bg border border-git-modified/40 text-git-modified flex items-center justify-center shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-git-modified-bg border border-git-modified/40 text-git-modified flex items-center justify-center shrink-0">
               <AlertTriangle className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="text-xs font-bold text-text-primary leading-none truncate">
                 Uncommitted Changes
               </h3>
               <span className="text-border hidden sm:inline">•</span>
               <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
-                <span className="text-text-secondary">{currentBranch}</span> <span className="text-text-muted">→</span> <span className="text-commito-coral font-bold">{targetBranch}</span>
+                <span className="text-text-secondary">{currentBranch}</span>{" "}
+                <span className="text-text-muted">→</span>{" "}
+                <span className="text-commito-coral font-bold">
+                  {targetBranch}
+                </span>
               </span>
             </div>
           </div>
@@ -162,8 +178,12 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
         {/* Content Body with 3 Action Choices */}
         <div className="p-4 sm:p-5 space-y-3 bg-base-0 overflow-y-auto">
           <p className="text-xs text-text-secondary leading-relaxed">
-            You have <span className="font-bold text-text-primary">{uncommittedCount}</span> uncommitted file change
-            {uncommittedCount === 1 ? '' : 's'}. Choose how to handle them:
+            You have{" "}
+            <span className="font-bold text-text-primary">
+              {uncommittedCount}
+            </span>{" "}
+            uncommitted file change
+            {uncommittedCount === 1 ? "" : "s"}. Choose how to handle them:
           </p>
 
           {/* Option 1: Bring Changes */}
@@ -171,20 +191,24 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
             type="button"
             onClick={handleBringChanges}
             disabled={isProcessing}
-            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-commito-coral/50 rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
+            className="w-full p-3.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-left transition flex items-start gap-3 group cursor-pointer shadow-xs"
           >
-            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+            <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-border-strong text-commito-coral flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
               <ArrowRightLeft className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="text-xs font-bold text-text-primary flex items-center gap-2">
                 <span>Bring Changes Along</span>
-                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-xs bg-commito-coral/15 text-commito-coral border border-commito-coral/30 leading-none">
+                <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded-xs bg-commito-coral/15 text-commito-coral border border-border-strong leading-none">
                   Recommended
                 </span>
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Stashes your modifications, checks out <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{targetBranch}</span>, and reapplies them immediately.
+                Stashes your modifications, checks out{" "}
+                <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
+                  {targetBranch}
+                </span>
+                , and reapplies them immediately.
               </p>
             </div>
           </button>
@@ -204,7 +228,11 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Leave Changes on {currentBranch}
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Saves your changes in a stash associated with <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{currentBranch}</span> so you can resume later.
+                Saves your changes in a stash associated with{" "}
+                <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
+                  {currentBranch}
+                </span>{" "}
+                so you can resume later.
               </p>
             </div>
           </button>
@@ -224,7 +252,12 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Discard Changes & Force Checkout
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Permanently overwrites and discards local modifications when switching to <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">{targetBranch}</span>.
+                Permanently overwrites and discards local modifications when
+                switching to{" "}
+                <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
+                  {targetBranch}
+                </span>
+                .
               </p>
             </div>
           </button>

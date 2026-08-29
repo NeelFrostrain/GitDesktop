@@ -393,55 +393,6 @@ export class GitService {
 
   // ── Git LFS ──────────────────────────────────────────────────────────────────
 
-  /**
-   * Checks if Git LFS CLI binary is installed.
-   */
-  static async checkLfsInstalled(): Promise<boolean> {
-    return invoke<boolean>('check_lfs_installed');
-  }
-
-  /**
-   * Lists Git LFS tracked files.
-   */
-  static async listLfsFiles(repoPath: string): Promise<LfsFile[]> {
-    return invoke<LfsFile[]>('list_lfs_files', { repoPath });
-  }
-
-  /**
-   * Tracks a pattern with Git LFS.
-   */
-  static async trackLfsPattern(repoPath: string, pattern: string): Promise<void> {
-    return invoke('track_lfs_pattern', { repoPath, pattern });
-  }
-
-  /**
-   * Untracks a pattern from Git LFS.
-   */
-  static async untrackLfsPattern(repoPath: string, pattern: string): Promise<void> {
-    return invoke('untrack_lfs_pattern', { repoPath, pattern });
-  }
-
-  /**
-   * Lists active Git LFS locks.
-   */
-  static async listLfsLocks(repoPath: string): Promise<LfsLock[]> {
-    return invoke<LfsLock[]>('list_lfs_locks', { repoPath });
-  }
-
-  /**
-   * Locks an LFS file path.
-   */
-  static async lockLfsFile(repoPath: string, path: string): Promise<void> {
-    return invoke('lock_lfs_file', { repoPath, path });
-  }
-
-  /**
-   * Unlocks an LFS file path.
-   */
-  static async unlockLfsFile(repoPath: string, path: string, force = false): Promise<void> {
-    return invoke('unlock_lfs_file', { repoPath, path, force });
-  }
-
   // ── Worktrees ────────────────────────────────────────────────────────────────
 
   /**
@@ -556,5 +507,93 @@ export class GitService {
       isPrivate: params.isPrivate,
       namespaceId: params.namespaceId || null,
     });
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Git LFS Operations                                                         */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Checks if Git LFS is installed in system PATH.
+   */
+  static async checkLfsInstalled(): Promise<boolean> {
+    return invoke<boolean>('check_lfs_installed');
+  }
+
+  /**
+   * Installs Git LFS hooks in the repository.
+   */
+  static async installLfs(repoPath: string): Promise<void> {
+    return invoke<void>('install_lfs', { repoPath });
+  }
+
+  /**
+   * Lists all Git LFS tracked files in the repository.
+   */
+  static async listLfsFiles(repoPath: string): Promise<import('../../types/git').LfsFile[]> {
+    return invoke<import('../../types/git').LfsFile[]>('list_lfs_files', { repoPath });
+  }
+
+  /**
+   * Tracks a pattern with Git LFS.
+   */
+  static async trackLfsPattern(repoPath: string, pattern: string): Promise<void> {
+    return invoke<void>('track_lfs_pattern', { repoPath, pattern });
+  }
+
+  /**
+   * Untracks a pattern from Git LFS.
+   */
+  static async untrackLfsPattern(repoPath: string, pattern: string): Promise<void> {
+    return invoke<void>('untrack_lfs_pattern', { repoPath, pattern });
+  }
+
+  /**
+   * Lists all currently tracked LFS patterns from .gitattributes.
+   */
+  static async listLfsTrackedPatterns(repoPath: string): Promise<string[]> {
+    return invoke<string[]>('list_lfs_tracked_patterns', { repoPath });
+  }
+
+  /**
+   * Pulls all Git LFS objects for the current branch.
+   */
+  static async lfsPull(repoPath: string): Promise<string> {
+    return invoke<string>('lfs_pull', { repoPath });
+  }
+
+  /**
+   * Fetches Git LFS objects.
+   */
+  static async lfsFetch(repoPath: string, remote?: string): Promise<string> {
+    return invoke<string>('lfs_fetch', { repoPath, remote: remote || null });
+  }
+
+  /**
+   * Pushes Git LFS objects to remote.
+   */
+  static async lfsPush(repoPath: string, remote?: string): Promise<string> {
+    return invoke<string>('lfs_push', { repoPath, remote: remote || null });
+  }
+
+  /**
+   * Lists all active Git LFS locks.
+   */
+  static async listLfsLocks(repoPath: string): Promise<import('../../types/git').LfsLock[]> {
+    return invoke<import('../../types/git').LfsLock[]>('list_lfs_locks', { repoPath });
+  }
+
+  /**
+   * Locks a file in Git LFS.
+   */
+  static async lockLfsFile(repoPath: string, path: string): Promise<void> {
+    return invoke<void>('lock_lfs_file', { repoPath, path });
+  }
+
+  /**
+   * Unlocks a file in Git LFS.
+   */
+  static async unlockLfsFile(repoPath: string, path: string, force = false): Promise<void> {
+    return invoke<void>('unlock_lfs_file', { repoPath, path, force });
   }
 }

@@ -14,6 +14,9 @@ struct GitHubTokenResponse {
     access_token: String,
     token_type: String,
     scope: Option<String>,
+    refresh_token: Option<String>,
+    expires_in: Option<i64>,
+    refresh_token_expires_in: Option<i64>,
 }
 
 #[allow(dead_code)]
@@ -53,7 +56,7 @@ impl GitHubAuthProvider {
 
     pub fn get_scopes(&self) -> String {
         config::get_env_var("VITE_GITHUB_SCOPES")
-            .unwrap_or_else(|| "repo,read:user,user:email".to_string())
+            .unwrap_or_else(|| "repo,read:user,user:email,read:org".to_string())
     }
 }
 
@@ -101,9 +104,97 @@ impl AuthProvider for GitHubAuthProvider {
     async fn refresh_token(
         &self,
         account: &ProviderAccount,
-        _refresh_token: &str,
+        refresh_token: &str,
     ) -> Result<ProviderAccount, AppError> {
-        Ok(account.clone())
+        let clean_url = account.instance_url.trim_end_matches('/');
+        let token_url = format!("{}/login/oauth/access_token", clean_url);
+
+        let client_id = self.get_client_id();
+        let client_secret = self.get_client_secret();
+
+        let mut headers = HeaderMap::new();
+        headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+        headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
+
+        let mut params = vec![
+            ("client_id", client_id),
+            ("grant_type", "refresh_token".to_string()),
+            ("refresh_token", refresh_token.to_string()),
+        ];
+
+        let secret_val = client_secret.unwrap_or_default();
+        if !secret_val.is_empty() {
+            params.push(("client_secret", secret_val));
+        }
+
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&token_url)
+            .headers(headers)
+            .form(&params)
+            .send()
+            .await
+            .map_err(|e| AppError::Auth(format!("GitHub token refresh request failed: {}", e)))?;
+
+        let body_text = resp
+            .text()
+            .await
+            .map_err(|e| AppError::Auth(format!("Failed to read GitHub refresh response: {}", e)))?;
+
+        if let Ok(err_json) = serde_json::from_str::<serde_json::Value>(&body_text) {
+            if let Some(err_code) = err_json.get("error").and_then(|v| v.as_str()) {
+                let desc = err_json
+                    .get("error_description")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(err_code);
+                crate::log_error!(
+                    crate::core::logging::LogCategory::Account,
+                    format!("GitHub OAuth token refresh rejected: {} ({})", desc, err_code);
+                    meta: serde_json::json!({ "account_id": account.id, "error": err_code, "desc": desc })
+                );
+                let is_invalid_token = err_code == "bad_refresh_token"
+                    || err_code == "invalid_grant"
+                    || err_code == "unauthorized_client"
+                    || err_code == "invalid_token";
+                if is_invalid_token {
+                    return Err(AppError::Auth(format!("[NEEDS_REAUTH] GitHub refresh token expired or revoked: {}", desc)));
+                }
+                return Err(AppError::Auth(format!("GitHub OAuth refresh error: {}", desc)));
+            }
+        }
+
+        let token_data: GitHubTokenResponse = serde_json::from_str(&body_text).map_err(|e| {
+            AppError::Auth(format!(
+                "Failed to parse GitHub refresh response ({}): {}",
+                e, body_text
+            ))
+        })?;
+
+        let now = chrono::Utc::now().timestamp();
+        // GitHub App user access tokens expire in 8 hours (28800s)
+        let expires_at = token_data.expires_in.map(|exp| now + exp);
+        let refresh_token_expires_at = token_data.refresh_token_expires_in.map(|exp| now + exp);
+
+        let mut updated = account.clone();
+        updated.expires_at = expires_at;
+        updated.refresh_token_expires_at = refresh_token_expires_at;
+        updated.token_status = TokenStatus::Valid;
+
+        let new_refresh_tok = token_data.refresh_token.as_deref().unwrap_or(refresh_token);
+
+        crate::domain::accounts::token_store::save_account(
+            updated.clone(),
+            &token_data.access_token,
+            Some(new_refresh_tok),
+        )?;
+
+        crate::log_info!(
+            crate::core::logging::LogCategory::Account,
+            format!("Successfully refreshed GitHub access token for account {}", account.id);
+            meta: serde_json::json!({ "account_id": account.id, "handle": account.handle, "expires_at": expires_at })
+        );
+
+        Ok(updated)
     }
 
     async fn revoke_token(&self, _account: &ProviderAccount) -> Result<(), AppError> {
@@ -233,6 +324,10 @@ impl GitHubAuthProvider {
         let handle = format!("@{}", user_data.login.trim_start_matches('@'));
         let display_name = user_data.name.unwrap_or_else(|| user_data.login.clone());
 
+        let now = chrono::Utc::now().timestamp();
+        let expires_at = token_data.expires_in.map(|exp| now + exp);
+        let refresh_token_expires_at = token_data.refresh_token_expires_in.map(|exp| now + exp);
+
         let account = ProviderAccount {
             id: account_id.clone(),
             provider: ProviderKind::Github,
@@ -247,13 +342,14 @@ impl GitHubAuthProvider {
                 .scope
                 .map(|s| s.split(',').map(|x| x.trim().to_string()).collect())
                 .unwrap_or_default(),
-            expires_at: None,
+            expires_at,
+            refresh_token_expires_at,
         };
 
         crate::domain::accounts::token_store::save_account(
             account.clone(),
             &token_data.access_token,
-            None,
+            token_data.refresh_token.as_deref(),
         )?;
 
         let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&account.id, None);

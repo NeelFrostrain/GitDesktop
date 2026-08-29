@@ -136,7 +136,7 @@ export const WorktreeModal: React.FC = () => {
                   placeholder="e.g. ../my-repo-hotfix"
                   value={newWorktreePath}
                   onChange={(e) => setNewWorktreePath(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-1.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                   required
                 />
               </div>
@@ -150,7 +150,7 @@ export const WorktreeModal: React.FC = () => {
                   placeholder="e.g. hotfix/patch-v1.1"
                   value={newWorktreeBranch}
                   onChange={(e) => setNewWorktreeBranch(e.target.value)}
-                  className="w-full px-3 py-1.5 bg-base-0 border border-border rounded-sm text-xs text-text-primary focus:outline-none focus:border-commito-coral font-mono"
+                  className="w-full px-3 py-1.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                 />
               </div>
             </div>

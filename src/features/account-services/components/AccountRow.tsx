@@ -50,7 +50,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
       <div
         className={`p-3 rounded-sm border transition-all duration-150 flex items-center justify-between gap-3.5 select-none ${
           account.is_active
-            ? 'bg-base-1 border-commito-coral/40 shadow-xs ring-1 ring-commito-coral/20'
+            ? 'bg-base-1 border-border-strong shadow-xs'
             : 'bg-base-1/50 border-border hover:border-border-strong hover:bg-base-1/90'
         }`}
       >
@@ -78,6 +78,11 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
                 <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-git-added-bg border border-git-added/30 text-git-added text-[10px] font-mono font-bold">
                   <Check className="w-2.5 h-2.5 stroke-[2.5]" />
                   <span>Active</span>
+                </span>
+              )}
+              {account.token_status === 'needs_reauth' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-rose-950/40 border border-rose-700/50 text-rose-300 text-[10px] font-mono font-bold">
+                  <span>Reconnect Required</span>
                 </span>
               )}
             </div>

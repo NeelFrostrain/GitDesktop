@@ -9,6 +9,7 @@ import {
 } from '../types';
 import { GeminiAgentService } from '../services/geminiAgentService';
 import { GitContextService } from '../services/gitContextService';
+import { ToonService } from '../services/toonService';
 import { useSettingsStore } from '../../settings';
 import { useGitStore } from '../../../store/useGitStore';
 import { useTerminalStore } from '../../terminal/store/terminalStore';
@@ -44,11 +45,13 @@ interface AiAgentState {
   removeAttachment: (attachmentId: string) => void;
   clearAttachments: () => void;
   attachWorkingDiff: () => Promise<void>;
+  attachTerminalHistory: () => Promise<void>;
 
   // Messaging & Execution
   sendMessage: (content: string) => Promise<void>;
   regenerateMessage: (assistantMsgId: string) => Promise<void>;
   executeToolCall: (toolCallId: string, runInTerminal?: boolean) => Promise<void>;
+  executeAllToolCallsChained: (messageId: string) => Promise<void>;
   rejectToolCall: (toolCallId: string) => void;
 }
 
@@ -210,9 +213,59 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     get().addAttachment(attachment);
     useToastStore.getState().showToast({
       type: 'info',
-      title: 'Git Diff Attached',
-      message: 'Attached working tree changes to prompt context.',
+      title: 'Git Diff Attached (TOON)',
+      message: 'Attached working tree changes optimized with TOON format.',
     });
+  },
+
+  attachTerminalHistory: async () => {
+    const activeRepo = useGitStore.getState().activeRepoPath;
+    if (!activeRepo) {
+      useToastStore.getState().showToast({
+        type: 'warning',
+        title: 'No Repository Open',
+        message: 'Open a local repository first to inspect terminal history.',
+      });
+      return;
+    }
+
+    try {
+      const history = await ptyBridge.getHistory(activeRepo, 10);
+      const output =
+        history && history.length > 0
+          ? history
+              .map(
+                (h) =>
+                  `${h.cmd}${h.exit_code !== undefined && h.exit_code !== null ? ` (exit: ${h.exit_code})` : ''}`
+              )
+              .join('\n')
+          : 'No recent terminal commands recorded.';
+
+      const toonText = ToonService.encodeTerminalContext({
+        cwd: activeRepo,
+        output,
+      });
+
+      const attachment: AgentAttachment = {
+        id: `term-${Date.now()}`,
+        type: 'terminal',
+        title: 'Terminal History (TOON)',
+        content: toonText,
+      };
+
+      get().addAttachment(attachment);
+      useToastStore.getState().showToast({
+        type: 'info',
+        title: 'Terminal Output Attached (TOON)',
+        message: 'Attached recent terminal commands encoded in low-token TOON format.',
+      });
+    } catch (err: unknown) {
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Terminal Read Failed',
+        message: 'Could not read recent terminal output.',
+      });
+    }
   },
 
   sendMessage: async (content) => {
@@ -382,17 +435,22 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
   },
 
-  regenerateMessage: async (assistantMsgId: string) => {
+  regenerateMessage: async (targetMsgId: string) => {
     const { activeSessionId, sessions } = get();
     if (!activeSessionId) return;
 
     const currentSession = sessions.find((s) => s.id === activeSessionId);
     if (!currentSession) return;
 
-    const msgIndex = currentSession.messages.findIndex((m) => m.id === assistantMsgId);
+    const msgIndex = currentSession.messages.findIndex((m) => m.id === targetMsgId);
     if (msgIndex === -1) return;
 
-    const historyBefore = currentSession.messages.slice(0, msgIndex);
+    const targetMsg = currentSession.messages[msgIndex];
+    const historyBefore =
+      targetMsg.role === 'user'
+        ? currentSession.messages.slice(0, msgIndex + 1)
+        : currentSession.messages.slice(0, msgIndex);
+
     if (historyBefore.length === 0) return;
 
     set((state) => {
@@ -725,6 +783,131 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       // Trigger automatic AI response to this execution result
       await get().sendMessage(observationContent);
     }
+  },
+
+  executeAllToolCallsChained: async (messageId: string) => {
+    const { activeSessionId, sessions } = get();
+    if (!activeSessionId) return;
+
+    const currentSession = sessions.find((s) => s.id === activeSessionId);
+    if (!currentSession) return;
+
+    const targetMsg = currentSession.messages.find((m) => m.id === messageId);
+    if (!targetMsg || !targetMsg.toolCalls) return;
+
+    const pendingCommands = targetMsg.toolCalls.filter(
+      (t) => t.command && t.status !== 'success' && t.status !== 'rejected'
+    );
+
+    if (pendingCommands.length === 0) return;
+
+    const activeRepo = useGitStore.getState().activeRepoPath;
+    if (!activeRepo) {
+      useToastStore.getState().showToast({
+        type: 'warning',
+        title: 'No Active Repository',
+        message: 'Open a local Git repository before executing commands.',
+      });
+      return;
+    }
+
+    // Extract commands list
+    const commandsList = pendingCommands
+      .map((t) => t.command!.trim())
+      .filter(Boolean);
+
+    const executedIds = new Set(pendingCommands.map((t) => t.id));
+
+    // 1. Mark all tools as success immediately
+    set((state) => {
+      const updated: AgentSession[] = state.sessions.map((s) => {
+        if (s.id === activeSessionId) {
+          return {
+            ...s,
+            messages: s.messages.map((m) => {
+              if (m.id === messageId && m.toolCalls) {
+                return {
+                  ...m,
+                  toolCalls: m.toolCalls.map((t): AgentToolCall =>
+                    executedIds.has(t.id)
+                      ? { ...t, status: 'success', executedAt: Date.now() }
+                      : t
+                  ),
+                };
+              }
+              return m;
+            }),
+          };
+        }
+        return s;
+      });
+      saveStoredSessions(updated, activeSessionId);
+      return { sessions: updated };
+    });
+
+    // 2. Open Terminal Panel
+    useTerminalStore.getState().setIsOpen(true);
+
+    const safeRepoId = activeRepo.replace(/\\/g, '/').replace(/:/g, '_');
+    let capturedOutput = '';
+    let unlisten: (() => void) | null = null;
+
+    try {
+      unlisten = await listen<string>(`terminal:${safeRepoId}:data`, (event) => {
+        if (event.payload) {
+          capturedOutput += event.payload;
+        }
+      });
+    } catch {}
+
+    // 3. Dispatch commands sequentially (one-by-one with Enter) for 100% PowerShell / CMD / Bash compatibility
+    try {
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Executing Commands',
+        message: `Running ${commandsList.length} commands in terminal...`,
+      });
+
+      for (let i = 0; i < commandsList.length; i++) {
+        const cmd = commandsList[i];
+        await ptyBridge.write(activeRepo, `${cmd}\r\n`);
+        if (i < commandsList.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 400));
+        }
+      }
+    } catch (err) {
+      useToastStore.getState().showToast({
+        type: 'info',
+        title: 'Terminal Dispatched',
+        message: `Sent ${commandsList.length} commands to terminal.`,
+      });
+    }
+
+    // 4. Wait for command outputs to stream in
+    const waitTime = Math.min(7000, Math.max(2500, commandsList.length * 1500));
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
+
+    if (unlisten) {
+      unlisten();
+    }
+
+    // 5. Clean output
+    let cleanOutput = capturedOutput
+      .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+      .replace(/\x1b\].*?\x07/g, '')
+      .replace(/\r/g, '')
+      .trim();
+
+    // 6. Refresh git status
+    const st = await GitService.getRepoStatus(activeRepo).catch(() => null);
+    if (st) useGitStore.getState().setStatus(st);
+
+    // 7. Feed execution result back to AI Agent!
+    const observationContent = cleanOutput
+      ? `Output from running commands (${commandsList.join(', ')}):\n\`\`\`\n${cleanOutput}\n\`\`\``
+      : `Executed ${commandsList.length} commands in terminal successfully.`;
+
+    await get().sendMessage(observationContent);
   },
 
   rejectToolCall: (toolCallId) => {

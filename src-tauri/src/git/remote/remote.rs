@@ -36,6 +36,40 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
     let prov_accounts = crate::domain::accounts::token_store::list_accounts();
     if let Some(url) = remote_url {
         let url_lower = url.to_lowercase();
+
+        // 1a. First check active accounts matching URL
+        for acct in &prov_accounts {
+            if !acct.is_active {
+                continue;
+            }
+            let host = acct
+                .instance_url
+                .trim_start_matches("https://")
+                .trim_start_matches("http://")
+                .trim_end_matches('/')
+                .to_lowercase();
+
+            if (!host.is_empty() && url_lower.contains(&host))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Github && url_lower.contains("github.com"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && url_lower.contains("gitlab"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && url_lower.contains("bitbucket.org"))
+            {
+                if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
+                    let prov_str = match acct.provider {
+                        crate::domain::accounts::provider::ProviderKind::Github => "github",
+                        crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab",
+                        crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket",
+                    };
+                    return GitAuthInfo {
+                        token: Some(tok),
+                        username: Some(acct.handle.trim_start_matches('@').to_string()),
+                        provider: prov_str.to_string(),
+                    };
+                }
+            }
+        }
+
+        // 1b. Check any account matching URL
         for acct in &prov_accounts {
             let host = acct
                 .instance_url
@@ -49,7 +83,7 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && url_lower.contains("gitlab"))
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && url_lower.contains("bitbucket.org"))
             {
-                if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acct.id) {
+                if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
                     let prov_str = match acct.provider {
                         crate::domain::accounts::provider::ProviderKind::Github => "github",
                         crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab",
@@ -134,15 +168,33 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
 
     let provider = repo_provider.unwrap_or_else(|| "gitlab".to_string());
 
-    // 4. Match token from provider registry or active keyring
+    // 4a. Match active account of the specific provider
     for acct in &prov_accounts {
         let matches = match acct.provider {
             crate::domain::accounts::provider::ProviderKind::Github => provider == "github",
             crate::domain::accounts::provider::ProviderKind::Gitlab => provider == "gitlab",
             crate::domain::accounts::provider::ProviderKind::Bitbucket => provider == "bitbucket",
         };
-        if matches || acct.is_active {
-            if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acct.id) {
+        if matches && acct.is_active {
+            if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
+                return GitAuthInfo {
+                    token: Some(tok),
+                    username: Some(acct.handle.trim_start_matches('@').to_string()),
+                    provider: provider.clone(),
+                };
+            }
+        }
+    }
+
+    // 4b. Match any account of the specific provider
+    for acct in &prov_accounts {
+        let matches = match acct.provider {
+            crate::domain::accounts::provider::ProviderKind::Github => provider == "github",
+            crate::domain::accounts::provider::ProviderKind::Gitlab => provider == "gitlab",
+            crate::domain::accounts::provider::ProviderKind::Bitbucket => provider == "bitbucket",
+        };
+        if matches {
+            if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
                 return GitAuthInfo {
                     token: Some(tok),
                     username: Some(acct.handle.trim_start_matches('@').to_string()),
@@ -172,7 +224,20 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
 }
 
 pub fn get_git_auth_info(repo_path: &str) -> GitAuthInfo {
-    get_git_auth_info_for_url(repo_path, None)
+    let remote_url = if let Ok(repo) = Repository::open(repo_path) {
+        let remote_name = if repo.find_remote("origin").is_ok() {
+            "origin"
+        } else if repo.find_remote("upstream").is_ok() {
+            "upstream"
+        } else {
+            "origin"
+        };
+        repo.find_remote(remote_name).ok().and_then(|r| r.url().map(|u| u.to_string()))
+    } else {
+        None
+    };
+
+    get_git_auth_info_for_url(repo_path, remote_url.as_deref())
 }
 
 pub fn apply_git_auth_args_pub(cmd: &mut Command, auth_info: &GitAuthInfo) {
@@ -445,12 +510,6 @@ pub fn fetch_specific_remote(repo_path: &str, remote_name: &str) -> Result<(), A
             || stderr_lower.contains("the project you were looking for could not be found")
             || stderr_lower.contains("remote: not found")
         {
-            // Auto-clean dead remote from local git config
-            let _ = silent_git_command()
-                .args(["remote", "remove", clean_remote])
-                .current_dir(repo_path)
-                .output();
-
             return Err(AppError::NotFound(format!(
                 "Remote repository not found on server for '{}'. It may have been deleted or renamed on the provider: {}",
                 clean_remote,
@@ -825,27 +884,69 @@ pub fn validate_remote_origin(repo_path: &str) -> Result<RemoteValidationResult,
         || lower.contains("does not appear to be a git repository")
         || lower.contains("the project you were looking for could not be found")
         || lower.contains("could not read from remote repository")
-        || lower.contains("remote: not found")
-        || !probe_out.status.success();
-
-    if is_missing {
-        // Automatically remove the dead remote from local git config
-        let _ = silent_git_command()
-            .args(["remote", "remove", "origin"])
-            .current_dir(repo_path)
-            .output();
-    }
+        || lower.contains("remote: not found");
 
     Ok(RemoteValidationResult {
-        has_remote: false,
-        remote_url: None,
+        has_remote: true,
+        remote_url: Some(remote_url),
         is_valid: false,
-        is_deleted_or_missing: true,
+        is_deleted_or_missing: is_missing,
         error_message: if stderr.trim().is_empty() {
             None
         } else {
             Some(stderr.trim().to_string())
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+
+    #[test]
+    fn test_validate_remote_origin_preserves_config_on_probe_failure() {
+        let dir = std::env::temp_dir().join(format!("git_test_repo_{}", rand::random::<u32>()));
+        let _ = fs::create_dir_all(&dir);
+        let repo_path = dir.to_str().unwrap();
+
+        // 1. Initialize git repo
+        let repo = Repository::init(&dir).unwrap();
+
+        // 2. Add an unreachable mock remote
+        let remote_url = "https://invalid-host-mock.local/owner/repo.git";
+        repo.remote("origin", remote_url).unwrap();
+
+        // 3. Set branch tracking config and user config
+        let mut config = repo.config().unwrap();
+        config.set_str("user.name", "Test User").unwrap();
+        config.set_str("user.email", "test@user.local").unwrap();
+        config.set_str("branch.main.remote", "origin").unwrap();
+        config.set_str("branch.main.merge", "refs/heads/main").unwrap();
+        config.set_str("branch.main.vscode-merge-base", "origin/main").unwrap();
+
+        let config_file_path = dir.join(".git").join("config");
+        let initial_config_content = fs::read_to_string(&config_file_path).unwrap();
+        assert!(initial_config_content.contains("[remote \"origin\"]"));
+        assert!(initial_config_content.contains("vscode-merge-base = origin/main"));
+
+        // 4. Run validate_remote_origin - this will fail network probe
+        let val_res = validate_remote_origin(repo_path).unwrap();
+        assert!(!val_res.is_valid);
+        assert!(val_res.has_remote);
+        assert_eq!(val_res.remote_url.as_deref(), Some(remote_url));
+
+        // 5. Verify .git/config still has [remote "origin"] and branch configuration intact
+        let final_config_content = fs::read_to_string(&config_file_path).unwrap();
+        assert!(final_config_content.contains("[remote \"origin\"]"), "Remote section must not be stripped");
+        assert!(final_config_content.contains("url = https://invalid-host-mock.local/owner/repo.git"));
+        assert!(final_config_content.contains("vscode-merge-base = origin/main"), "Branch config must remain intact");
+
+        // Verify git2 can still find the remote
+        let reloaded_repo = Repository::open(&dir).unwrap();
+        assert!(reloaded_repo.find_remote("origin").is_ok());
+
+        let _ = fs::remove_dir_all(&dir);
+    }
 }
 

@@ -36,7 +36,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               type="text"
               value={hex}
               onChange={(e) => setSettingValue(setting.id, e.target.value)}
-              className="w-24 h-7 px-2 bg-base-2 border border-border/70 rounded-xs text-[11.5px] font-mono text-text-primary focus:outline-none focus:border-commito-coral/60 focus:ring-1 focus:ring-commito-coral/20 transition"
+              className="w-24 h-7 px-2 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-[11.5px] font-mono text-text-primary focus:outline-none focus:border-border-strong transition"
               placeholder="#000000"
             />
           </div>
@@ -64,7 +64,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
                 step={setting.step}
                 value={num}
                 onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
-                className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-commito-coral/60"
+                className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-border-strong"
               />
               {setting.unit && (
                 <span className="text-[10.5px] font-mono text-text-muted select-none">
@@ -81,7 +81,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
           <select
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="h-7 px-2.5 bg-base-2 border border-border/70 rounded-xs text-xs text-text-primary focus:outline-none focus:border-commito-coral/60 cursor-pointer max-w-[240px]"
+            className="h-7 px-2.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-xs text-text-primary focus:outline-none focus:border-border-strong cursor-pointer max-w-[240px]"
           >
             {setting.options?.map((opt) => (
               <option key={opt.value} value={opt.value} className="bg-base-2 text-text-primary">
@@ -120,7 +120,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
             type="text"
             value={String(value ?? setting.default)}
             onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="w-64 h-7 px-2.5 bg-base-2 border border-border/70 rounded-xs text-xs text-text-primary font-mono focus:outline-none focus:border-commito-coral/60"
+            className="w-64 h-7 px-2.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-xs text-text-primary font-mono focus:outline-none focus:border-border-strong"
           />
         );
       }
@@ -131,7 +131,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
     <div
       className={`p-3 rounded-sm border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 group ${
         modified
-          ? 'bg-base-1/90 border-commito-coral/30 shadow-xs'
+          ? 'bg-base-1/90 border-border-strong shadow-xs'
           : 'bg-base-1/40 border-border/50 hover:border-border/80 hover:bg-base-1/70'
       }`}
     >

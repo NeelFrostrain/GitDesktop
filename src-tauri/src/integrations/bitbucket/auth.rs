@@ -374,6 +374,7 @@ impl BitbucketAuthProvider {
             token_status: TokenStatus::Valid,
             scopes: scopes_vec,
             expires_at,
+            refresh_token_expires_at: None,
         };
 
         crate::domain::accounts::token_store::save_account(

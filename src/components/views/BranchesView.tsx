@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   GitBranch,
   Search,
@@ -11,12 +11,13 @@ import {
   GitPullRequest,
   X,
   Globe,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { GitService } from '../../services/git/gitService';
-import { toAppError } from '../../shared/utils/errorUtils';
-import { Button } from '../common/Button';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { GitService } from "../../services/git/gitService";
+import { toAppError } from "../../shared/utils/errorUtils";
+import { BranchInfo } from "../../types/git";
+import { Button } from "../common/Button";
 
 /**
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
@@ -31,12 +32,12 @@ export const BranchesView: React.FC = () => {
     setIsMergeRequestModalOpen,
   } = useGitStore();
 
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchName, setNewBranchName] = useState("");
   const [editingBranch, setEditingBranch] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [renameValue, setRenameValue] = useState("");
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
@@ -46,7 +47,7 @@ export const BranchesView: React.FC = () => {
       const res = await GitService.listBranches(activeRepoPath);
       setBranches(res || []);
     } catch (error: unknown) {
-      setError(toAppError(error, 'BRANCH_ERROR'));
+      setError(toAppError(error, "BRANCH_ERROR"));
     } finally {
       setIsLoading(false);
     }
@@ -61,13 +62,15 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.checkoutBranch(activeRepoPath, branchName);
-      useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
+      useLogStore
+        .getState()
+        .addLog("success", "Git", `Checked out branch '${branchName}'`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CHECKOUT_ERROR'));
+      setError(toAppError(error, "CHECKOUT_ERROR"));
     }
   };
 
@@ -77,15 +80,21 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.createBranch(activeRepoPath, newBranchName.trim());
-      useLogStore.getState().addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
-      setNewBranchName('');
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git",
+          `Created branch '${newBranchName.trim()}' and checked out`,
+        );
+      setNewBranchName("");
       setShowCreateModal(false);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
+      setError(toAppError(error, "CREATE_BRANCH_ERROR"));
     }
   };
 
@@ -93,16 +102,26 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath || !renameValue.trim()) return;
 
     try {
-      await GitService.renameBranch(activeRepoPath, oldName, renameValue.trim());
-      useLogStore.getState().addLog('info', 'Git', `Renamed branch '${oldName}' to '${renameValue.trim()}'`);
+      await GitService.renameBranch(
+        activeRepoPath,
+        oldName,
+        renameValue.trim(),
+      );
+      useLogStore
+        .getState()
+        .addLog(
+          "info",
+          "Git",
+          `Renamed branch '${oldName}' to '${renameValue.trim()}'`,
+        );
       setEditingBranch(null);
-      setRenameValue('');
+      setRenameValue("");
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'RENAME_BRANCH_ERROR'));
+      setError(toAppError(error, "RENAME_BRANCH_ERROR"));
     }
   };
 
@@ -115,10 +134,12 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.deleteBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${branchName}'`);
+      useLogStore
+        .getState()
+        .addLog("info", "Git", `Deleted branch '${branchName}'`);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
+      setError(toAppError(error, "DELETE_BRANCH_ERROR"));
     }
   };
 
@@ -127,14 +148,45 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.pushBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('success', 'Git', `Pushed branch '${branchName}' to origin with upstream set`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git",
+          `Pushed branch '${branchName}' to origin with upstream set`,
+        );
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'PUSH_BRANCH_ERROR'));
+      setError(toAppError(error, "PUSH_BRANCH_ERROR"));
     }
   };
 
-  const filtered = branches.filter((b) => b.name.toLowerCase().includes(filter.toLowerCase()));
+  const [branchTab, setBranchTab] = useState<"all" | "local" | "remote">("all");
+
+  const validRemoteBranches = useMemo(() => {
+    return branches.filter(
+      (b: BranchInfo) =>
+        b.is_remote && !b.name.endsWith("/HEAD") && !b.name.endsWith("\\HEAD"),
+    );
+  }, [branches]);
+
+  const localBranches = useMemo(() => {
+    return branches.filter((b: BranchInfo) => !b.is_remote);
+  }, [branches]);
+
+  const queryLower = filter.trim().toLowerCase();
+
+  const filteredLocal = useMemo(() => {
+    return localBranches.filter((b: BranchInfo) =>
+      b.name.toLowerCase().includes(queryLower),
+    );
+  }, [localBranches, queryLower]);
+
+  const filteredRemote = useMemo(() => {
+    return validRemoteBranches.filter((b: BranchInfo) =>
+      b.name.toLowerCase().includes(queryLower),
+    );
+  }, [validRemoteBranches, queryLower]);
 
   return (
     <div className="flex-1 h-full bg-base-1 overflow-y-auto p-6 select-none space-y-4">
@@ -142,12 +194,16 @@ export const BranchesView: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-text-primary tracking-tight">Branches</h2>
+            <h2 className="text-base font-bold text-text-primary tracking-tight">
+              Branches
+            </h2>
             <span className="px-1.5 py-0.2 bg-base-2 text-text-muted text-[10.5px] font-mono font-medium rounded-sm border border-border/70">
-              {branches.length}
+              {localBranches.length + validRemoteBranches.length}
             </span>
           </div>
-          <p className="text-xs text-text-muted">Manage local and remote tracking branches</p>
+          <p className="text-xs text-text-muted">
+            Manage local repository and remote tracking branches
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -158,12 +214,12 @@ export const BranchesView: React.FC = () => {
               placeholder="Filter branches..."
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="w-full pl-8 pr-7 py-1.5 bg-base-2/80 hover:bg-base-2 focus:bg-base-2 border border-border/70 hover:border-border-strong focus:border-commito-coral/70 rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-sans transition-all shadow-xs"
+              className="w-full pl-8 pr-7 py-1.5 bg-base-2/80 hover:bg-base-2 focus:bg-base-2 border border-border/70 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none font-sans transition-all shadow-xs"
             />
             {filter && (
               <button
                 type="button"
-                onClick={() => setFilter('')}
+                onClick={() => setFilter("")}
                 className="absolute right-2 top-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
               >
                 <X className="w-3 h-3" />
@@ -178,7 +234,9 @@ export const BranchesView: React.FC = () => {
             className="p-1.5 bg-base-2 hover:bg-base-3 border border-border/70 rounded-sm text-text-muted hover:text-text-primary transition shadow-xs cursor-pointer disabled:opacity-50"
             title="Refresh branches"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-commito-coral' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-commito-coral" : ""}`}
+            />
           </button>
 
           <Button
@@ -193,6 +251,58 @@ export const BranchesView: React.FC = () => {
         </div>
       </div>
 
+      {/* Segmented Category Filter */}
+      <div className="flex items-center gap-2 border-b border-border/60 pb-2.5">
+        <div className="flex items-center gap-1 bg-base-2 p-0.5 rounded-sm border border-border/60">
+          <button
+            type="button"
+            onClick={() => setBranchTab("all")}
+            className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              branchTab === "all"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <span>All Branches</span>
+            <span className="text-[10px] font-mono px-1 rounded-xs bg-base-2 text-text-muted">
+              {localBranches.length + validRemoteBranches.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBranchTab("local")}
+            className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              branchTab === "local"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <GitBranch className="w-3 h-3 text-commito-coral" />
+            <span>Local</span>
+            <span className="text-[10px] font-mono px-1 rounded-xs bg-base-2 text-text-muted">
+              {localBranches.length}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setBranchTab("remote")}
+            className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
+              branchTab === "remote"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
+            }`}
+          >
+            <Globe className="w-3 h-3 text-gitlab-blue" />
+            <span>Remote</span>
+            <span className="text-[10px] font-mono px-1 rounded-xs bg-base-2 text-text-muted">
+              {validRemoteBranches.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
       {/* Create Branch Inline Drawer Modal */}
       {showCreateModal && (
         <form
@@ -200,13 +310,16 @@ export const BranchesView: React.FC = () => {
           className="p-4 bg-base-2 border border-border/80 rounded-sm space-y-3 shadow-md animate-in fade-in duration-100 ring-1 ring-black/20"
         >
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Plus className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div>
-              <h3 className="text-xs font-bold text-text-primary">Create New Branch</h3>
+              <h3 className="text-xs font-bold text-text-primary">
+                Create New Branch
+              </h3>
               <p className="text-[11px] text-text-muted">
-                Branch will be created from HEAD ({branches.find((b) => b.is_current)?.name || 'active branch'})
+                Branch will be created from HEAD (
+                {branches.find((b) => b.is_current)?.name || "active branch"})
               </p>
             </div>
           </div>
@@ -217,7 +330,7 @@ export const BranchesView: React.FC = () => {
               placeholder="e.g. feature/awesome-thing"
               value={newBranchName}
               onChange={(e) => setNewBranchName(e.target.value)}
-              className="flex-1 px-3 py-1.5 bg-base-1 border border-border/80 hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary focus:outline-none focus:ring-1 focus:ring-commito-coral/20 font-mono shadow-inner"
+              className="flex-1 px-3 py-1.5 bg-base-1 border border-border/80 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none font-mono shadow-inner"
               autoFocus
               required
             />
@@ -243,113 +356,214 @@ export const BranchesView: React.FC = () => {
         </form>
       )}
 
-      {/* Branches List */}
-      <div className="space-y-1.5 font-sans">
-        {filtered.length === 0 ? (
-          <div className="p-8 text-center text-xs text-text-muted italic border border-border/70 rounded-sm bg-base-2/40">
-            No branches match your query
-          </div>
-        ) : (
-          filtered.map((b) => {
-            const isEditing = editingBranch === b.name;
+      {/* Local Branches Section */}
+      {(branchTab === "all" || branchTab === "local") && (
+        <div className="space-y-2">
+          {branchTab === "all" && (
+            <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary tracking-tight">
+              <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
+              <span>Local Branches</span>
+              <span className="text-[10px] text-text-muted font-mono font-normal">
+                ({filteredLocal.length})
+              </span>
+            </div>
+          )}
 
-            return (
-              <div
-                key={b.name}
-                className={`p-2.5 rounded-sm border flex items-center justify-between transition-all duration-150 ${
-                  b.is_current
-                    ? 'bg-commito-coral/10 border-commito-coral/30 text-text-primary shadow-xs'
-                    : 'bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary shadow-xs'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-4">
+          {filteredLocal.length === 0 ? (
+            <div className="p-6 text-center text-xs text-text-muted italic border border-border/70 rounded-sm bg-base-2/40">
+              No local branches match your filter
+            </div>
+          ) : (
+            <div className="space-y-1.5 font-sans">
+              {filteredLocal.map((b: BranchInfo) => {
+                const isEditing = editingBranch === b.name;
+                const matchingRemote = validRemoteBranches.find(
+                  (r: BranchInfo) =>
+                    r.name === `origin/${b.name}` ||
+                    r.name.endsWith(`/${b.name}`),
+                );
+
+                return (
                   <div
-                    className={`w-6 h-6 rounded-sm flex items-center justify-center shrink-0 ${
+                    key={b.name}
+                    className={`p-2.5 rounded-sm border flex items-center justify-between transition-all duration-150 ${
                       b.is_current
-                        ? 'bg-commito-coral/20 text-commito-coral'
-                        : b.is_remote
-                        ? 'bg-gitlab-blue/10 text-gitlab-blue'
-                        : 'bg-base-1 text-text-muted'
+                        ? "bg-base-2 border-border-strong text-text-primary shadow-xs"
+                        : "bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary shadow-xs"
                     }`}
                   >
-                    {b.is_remote ? <Globe className="w-3.5 h-3.5" /> : <GitBranch className="w-3.5 h-3.5" />}
-                  </div>
-
-                  {isEditing ? (
-                    <div className="flex items-center gap-2 flex-1 max-w-sm">
-                      <input
-                        type="text"
-                        value={renameValue}
-                        onChange={(e) => setRenameValue(e.target.value)}
-                        className="px-2 py-1 bg-base-1 border border-border/80 rounded text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral flex-1"
-                        autoFocus
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRenameBranch(b.name)}
-                        className="p-1 bg-git-added text-text-on-accent rounded cursor-pointer"
-                        title="Save rename"
-                      >
-                        <Check className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 truncate">
-                      <span
-                        className={`font-mono text-xs truncate ${
-                          b.is_current ? 'font-bold text-commito-coral' : 'font-semibold text-text'
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-4">
+                      <div
+                        className={`w-6 h-6 rounded-sm flex items-center justify-center shrink-0 ${
+                          b.is_current
+                            ? "bg-commito-coral/20 text-commito-coral"
+                            : "bg-base-1 text-text-muted"
                         }`}
                       >
-                        {b.name}
-                      </span>
-                      {b.is_current && (
-                        <span className="px-1.5 py-0.5 bg-commito-coral/20 text-commito-coral border border-commito-coral/40 rounded-xs text-[9px] font-mono font-bold uppercase shrink-0">
-                          CURRENT
-                        </span>
-                      )}
-                      {b.is_remote && (
-                        <span className="px-1.5 py-0.2 bg-gitlab-blue/15 text-gitlab-blue border border-gitlab-blue/30 rounded-xs text-[9px] font-mono font-medium shrink-0">
-                          remote
-                        </span>
+                        <GitBranch className="w-3.5 h-3.5" />
+                      </div>
+
+                      {isEditing ? (
+                        <div className="flex items-center gap-2 flex-1 max-w-sm">
+                          <input
+                            type="text"
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            className="px-2 py-1 bg-base-1 border border-border/80 hover:border-border-strong rounded text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong flex-1"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRenameBranch(b.name)}
+                            className="p-1 bg-git-added text-text-on-accent rounded cursor-pointer"
+                            title="Save rename"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 truncate">
+                          <span
+                            className={`font-mono text-xs truncate ${
+                              b.is_current
+                                ? "font-bold text-commito-coral"
+                                : "font-semibold text-text"
+                            }`}
+                          >
+                            {b.name}
+                          </span>
+                          {b.is_current && (
+                            <span className="px-1.5 py-0.5 bg-commito-coral text-white rounded-xs text-[9px] font-mono font-extrabold uppercase tracking-wider leading-none shadow-2xs shrink-0 select-none">
+                              CURRENT
+                            </span>
+                          )}
+                          {matchingRemote && (
+                            <span className="px-1.5 py-0.2 bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 rounded-xs text-[9px] font-mono flex items-center gap-1 shrink-0">
+                              <Globe className="w-2.5 h-2.5" />
+                              <span>{matchingRemote.name}</span>
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
 
-                {/* Actions Toolbar */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => handlePushBranch(b.name)}
-                    className="p-1.5 text-text-muted hover:text-commito-coral bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
-                    title="Push branch to origin"
+                    {/* Actions Toolbar */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handlePushBranch(b.name)}
+                        className="p-1.5 text-text-muted hover:text-commito-coral bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                        title="Push branch to origin"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsMergeRequestModalOpen(true)}
+                        className="p-1.5 text-text-muted hover:text-emerald-400 bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                        title="Create Merge / Pull Request"
+                      >
+                        <GitPullRequest className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingBranch(b.name);
+                          setRenameValue(b.name);
+                        }}
+                        className="p-1.5 text-text-muted hover:text-text-primary bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                        title="Rename branch"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      {!b.is_current && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleCheckout(b.name)}
+                            className="px-2.5 py-1 bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary transition cursor-pointer shadow-xs"
+                          >
+                            Checkout
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBranch(b.name)}
+                            className="p-1.5 text-text-muted hover:text-git-removed bg-base-1 hover:bg-git-removed-bg border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                            title="Delete branch"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Remote Tracking Branches Section */}
+      {(branchTab === "all" || branchTab === "remote") && (
+        <div className="space-y-2 pt-3">
+          {branchTab === "all" && (
+            <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary tracking-tight">
+              <Globe className="w-3.5 h-3.5 text-gitlab-blue" />
+              <span>Remote Tracking Branches</span>
+              <span className="text-[10px] text-text-muted font-mono font-normal">
+                ({filteredRemote.length})
+              </span>
+            </div>
+          )}
+
+          {filteredRemote.length === 0 ? (
+            <div className="p-6 text-center text-xs text-text-muted italic border border-border/70 rounded-sm bg-base-2/40">
+              No remote tracking branches match your filter
+            </div>
+          ) : (
+            <div className="space-y-1.5 font-sans">
+              {filteredRemote.map((b: BranchInfo) => {
+                const slashIdx = b.name.indexOf("/");
+                const prefix =
+                  slashIdx !== -1 ? b.name.slice(0, slashIdx + 1) : "";
+                const cleanName =
+                  slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+                const isTrackedLocally = localBranches.some(
+                  (lb: BranchInfo) => lb.name === cleanName,
+                );
+
+                return (
+                  <div
+                    key={b.name}
+                    className="p-2.5 rounded-sm border bg-base-2/40 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary transition-all duration-150 flex items-center justify-between shadow-xs"
                   >
-                    <Upload className="w-3.5 h-3.5" />
-                  </button>
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-4">
+                      <div className="w-6 h-6 rounded-sm bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0">
+                        <Globe className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex items-center gap-2 truncate font-mono text-xs">
+                        {prefix && (
+                          <span className="text-text-muted text-[11px] font-normal">
+                            {prefix}
+                          </span>
+                        )}
+                        <span className="font-semibold text-text">
+                          {cleanName}
+                        </span>
+                        {isTrackedLocally && (
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 rounded-xs text-[9px] font-mono shrink-0">
+                            tracked locally
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setIsMergeRequestModalOpen(true)}
-                    className="p-1.5 text-text-muted hover:text-emerald-400 bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
-                    title="Create Merge / Pull Request"
-                  >
-                    <GitPullRequest className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingBranch(b.name);
-                      setRenameValue(b.name);
-                    }}
-                    className="p-1.5 text-text-muted hover:text-text-primary bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
-                    title="Rename branch"
-                  >
-                    <Edit3 className="w-3.5 h-3.5" />
-                  </button>
-
-                  {!b.is_current && (
-                    <>
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => handleCheckout(b.name)}
@@ -357,23 +571,14 @@ export const BranchesView: React.FC = () => {
                       >
                         Checkout
                       </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteBranch(b.name)}
-                        className="p-1.5 text-text-muted hover:text-git-removed bg-base-1 hover:bg-git-removed-bg border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
-                        title="Delete branch"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

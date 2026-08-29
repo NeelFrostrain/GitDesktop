@@ -371,7 +371,7 @@ export const BranchDropdown: React.FC = () => {
         onClick={handleToggle}
         className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-2xs active:scale-95 group ${
           isOpen
-            ? 'bg-base-2 border-commito-coral text-text-primary ring-1 ring-commito-coral/20'
+            ? 'bg-base-2 border-border-strong text-text-primary'
             : 'bg-base-1 hover:bg-base-2 active:bg-base-3 border-border hover:border-border-strong text-text-primary'
         }`}
         title={`Current branch: ${currentBranch}`}
@@ -505,7 +505,7 @@ export const BranchDropdown: React.FC = () => {
                   }
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
-                  className="w-full h-8 pl-8 pr-7 bg-base-1/70 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong focus:border-commito-coral/70 focus:ring-1 focus:ring-commito-coral/20 rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none font-sans transition-all shadow-xs"
+                  className="w-full h-8 pl-8 pr-7 bg-base-1/70 hover:bg-base-1 focus:bg-base-1 border border-border/60 hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text placeholder:text-text-muted focus:outline-none font-sans transition-all shadow-xs"
                 />
                 {filterQuery && (
                   <button
@@ -612,13 +612,13 @@ export const BranchDropdown: React.FC = () => {
 
                               {isCurrent ? (
                                 <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral/20 text-commito-coral border border-commito-coral/35 tracking-wider">
+                                  <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral text-white tracking-wider leading-none shadow-2xs select-none">
                                     CURRENT
                                   </span>
                                   <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                                 </div>
                               ) : (
-                                <span className="text-[10.5px] font-sans font-medium text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/10 border border-commito-coral/25 px-1.5 py-0.5 rounded-xs">
+                                <span className="text-[10.5px] font-sans font-semibold text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/15 px-1.5 py-0.5 rounded-xs">
                                   <span>Switch</span>
                                   <ArrowRight className="w-2.5 h-2.5" />
                                 </span>
@@ -785,8 +785,8 @@ export const BranchDropdown: React.FC = () => {
                             onClick={() => handleSelectPullRequest(pr)}
                             className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
                               isCurrent
-                                ? 'bg-base-1 border-commito-coral/50 ring-1 ring-commito-coral/30 shadow-xs'
-                                : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70 shadow-xs'
+                                ? 'bg-base-1 border-border-strong shadow-xs'
+                                : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
                             }`}
                             title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
                           >
@@ -900,7 +900,7 @@ export const BranchDropdown: React.FC = () => {
                     placeholder="e.g. feature/new-workflow"
                     value={newBranchName}
                     onChange={(e) => setNewBranchName(e.target.value)}
-                    className="w-full h-7.5 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition font-mono shadow-2xs"
+                    className="w-full h-7.5 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition font-mono shadow-2xs"
                   />
                 </div>
               </div>

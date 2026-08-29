@@ -40,17 +40,10 @@ pub fn safe_repo_id(repo_id: &str) -> String {
     format!("{}_{}", short_name, short_hash)
 }
 
-/// Base logging directory: `{data_dir}/gitlab-desktop/logs`
+/// Base logging directory: `{app_data_dir}/logs`
 pub fn get_logs_base_dir() -> PathBuf {
-    let mut path = if let Ok(appdata) = std::env::var("APPDATA") {
-        PathBuf::from(appdata)
-    } else if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
-        PathBuf::from(home)
-    } else {
-        PathBuf::from(".")
-    };
-    path.push("gitlab-desktop");
-    path.push("logs");
+    let path = crate::domain::git_runtime::get_app_data_dir().join("logs");
+    let _ = std::fs::create_dir_all(&path);
     path
 }
 

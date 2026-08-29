@@ -72,12 +72,12 @@ export const App: React.FC = () => {
     setTags,
     setError,
     currentNavView,
-    isCreateTagModalOpen,
-    setIsCreateTagModalOpen,
     isCreateReleaseModalOpen,
     setIsCreateReleaseModalOpen,
     editingRelease,
     setEditingRelease,
+    isCreateTagModalOpen,
+    setIsCreateTagModalOpen,
   } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
@@ -165,7 +165,7 @@ export const App: React.FC = () => {
               }
             }
             // 2. Legacy GitLab OAuth callback fallback
-            else if (urlStr.includes('gitlab-desktop://oauth/callback')) {
+            else if (urlStr.includes('git-desktop://oauth/callback') || urlStr.includes('gitlab-desktop://oauth/callback')) {
               const savedVerifier = sessionStorage.getItem('oauth_verifier');
               if (code && savedVerifier) {
                 invoke<GitLabUser>('complete_oauth_login', {
@@ -280,15 +280,19 @@ export const App: React.FC = () => {
       } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         useSettingsStore.getState().toggleSettings();
-      } else if ((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')) {
+      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+        // Ctrl+I (without Shift) → AI Agent panel
         e.preventDefault();
         import('./features/ai-agent').then(({ useAiAgentStore }) => {
           useAiAgentStore.getState().toggleIsOpen();
         });
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
+        // Ctrl+Shift+I → block devtools from opening
+        e.preventDefault();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
   const renderMainContent = () => {
@@ -385,7 +389,10 @@ export const App: React.FC = () => {
           <PatchModal />
           <GitConfigModal />
           <RewriteHistoryModal />
-          <CreateTagModal isOpen={isCreateTagModalOpen} onClose={() => setIsCreateTagModalOpen(false)} />
+          <CreateTagModal
+            isOpen={isCreateTagModalOpen}
+            onClose={() => setIsCreateTagModalOpen(false)}
+          />
           <CreateReleaseModal
             isOpen={isCreateReleaseModalOpen}
             initialRelease={editingRelease}

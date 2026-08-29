@@ -38,7 +38,7 @@ SETTINGS_SCHEMA.forEach((s) => defsMap.set(s.id, s));
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   isOpen: false,
   activeScope: 'app',
-  selectedCategory: 'commonly_used',
+  selectedCategory: 'ai',
   selectedSubcategory: null,
   searchQuery: '',
   appOverrides: {},
@@ -46,7 +46,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   activeRepoPath: null,
   isLoading: false,
 
-  openSettings: (category = 'commonly_used', subcategory?: string) => {
+  openSettings: (category = 'ai', subcategory?: string) => {
     set({
       isOpen: true,
       selectedCategory: category,
@@ -101,12 +101,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSettingValue: async (id: string, value: any) => {
     const { activeScope, activeRepoPath, appOverrides, repoOverrides } = get();
     const def = defsMap.get(id);
-    if (!def) return;
 
-    const isApp = def.scope === 'app' || activeScope === 'app' || !activeRepoPath;
+    const isApp = !def || def.scope === 'app' || activeScope === 'app' || !activeRepoPath;
 
     // Apply live to DOM if setting has a CSS Custom Property
-    if (def.cssVar) {
+    if (def?.cssVar) {
       applySettingToDom(def.cssVar, value, def);
     }
 

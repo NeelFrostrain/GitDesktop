@@ -225,7 +225,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
           onDoubleClick={() => setDrawerWidth(420)}
           title="Drag to resize drawer • Double-click to reset"
           className={`absolute top-0 -right-1 w-1.5 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${
-            isResizing ? 'bg-commito-coral' : 'hover:bg-commito-coral/60'
+            isResizing ? 'bg-border-strong' : 'hover:bg-border-strong'
           }`}
         />
 
@@ -265,7 +265,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
               placeholder="Search repositories by name or path..."
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
-              className="w-full pl-8 pr-7 h-7 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition shadow-2xs font-sans"
+              className="w-full pl-8 pr-7 h-7 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition shadow-2xs font-sans"
             />
             {filterQuery && (
               <button
@@ -347,10 +347,10 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                   }}
                   className={`group relative px-3 py-2 rounded-sm border transition-all duration-150 cursor-pointer flex items-center justify-between gap-2.5 select-none ${
                     isActive
-                      ? 'bg-base-2 border-commito-coral/50 ring-1 ring-commito-coral/30 text-text-primary shadow-xs'
+                      ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
                       : repo.pinned
-                      ? 'bg-base-1/80 border-border-strong ring-1 ring-commito-coral/20 shadow-xs'
-                      : 'bg-base-1/50 border-border/60 hover:border-commito-coral/50 hover:bg-base-2/70 shadow-xs'
+                      ? 'bg-base-1/80 border-border-strong shadow-xs'
+                      : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
                   }`}
                 >
                   {/* Left: Icon + Title & Path */}

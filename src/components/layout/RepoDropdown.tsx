@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   FolderGit2,
@@ -15,15 +15,15 @@ import {
   Plus,
   Layers,
   UserCheck,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { RepoStatus } from '../../types/git';
-import { UnifiedRepo } from '../../types/gitlab';
-import { GitService } from '../../services/git/gitService';
-import { AccountService } from '../../services/accounts/accountService';
-import { SystemService } from '../../services/system/systemService';
-import { toAppError } from '../../shared/utils/errorUtils';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { RepoStatus } from "../../types/git";
+import { UnifiedRepo } from "../../types/gitlab";
+import { GitService } from "../../services/git/gitService";
+import { AccountService } from "../../services/accounts/accountService";
+import { SystemService } from "../../services/system/systemService";
+import { toAppError } from "../../shared/utils/errorUtils";
 
 interface RepoDropdownProps {
   isOpen: boolean;
@@ -37,17 +37,27 @@ function getRepoName(path: string): string {
 
 function truncatePath(path: string, maxLen = 38): string {
   if (path.length <= maxLen) return path;
-  const parts = path.replace(/\\/g, '/').split('/');
+  const parts = path.replace(/\\/g, "/").split("/");
   if (parts.length <= 3) return path;
   return `${parts[0]}/.../${parts[parts.length - 1]}`;
 }
 
 /** Section Label Header */
-function SectionHeader({ title, count, badge }: { title: string; count?: number; badge?: string }) {
+function SectionHeader({
+  title,
+  count,
+  badge,
+}: {
+  title: string;
+  count?: number;
+  badge?: string;
+}) {
   return (
     <div className="flex items-center justify-between px-3 pt-2.5 pb-1 select-none">
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">{title}</span>
+        <span className="text-[10px] font-extrabold uppercase tracking-wider text-text-muted">
+          {title}
+        </span>
         {badge && (
           <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-base-3 text-text-secondary border border-border">
             {badge}
@@ -74,23 +84,25 @@ function ActiveRepoCard({
   onClick: () => void;
 }) {
   const name = getRepoName(path);
-  const branch = status?.current_branch || 'HEAD';
+  const branch = status?.current_branch || "HEAD";
   const isClean = status?.is_clean ?? true;
   const fileCount = status?.files?.length || 0;
 
   return (
     <div
       onClick={onClick}
-      className="mx-2 my-1 p-2.5 rounded-sm bg-base-2 border border-commito-coral/40 hover:border-commito-coral/70 transition cursor-pointer group shadow-xs"
+      className="mx-2 my-1 p-2.5 rounded-sm bg-base-2 border border-border-strong hover:border-border-strong transition cursor-pointer group shadow-xs"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center flex-shrink-0">
+          {/* <div className="w-7 h-7 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center flex-shrink-0">
             <FolderGit2 className="w-4 h-4 text-commito-coral" />
-          </div>
+          </div> */}
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-text-primary truncate">{name}</span>
+              <span className="text-xs font-bold text-text-primary truncate">
+                {name}
+              </span>
               <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded bg-commito-coral text-white tracking-wider">
                 ACTIVE
               </span>
@@ -101,11 +113,22 @@ function ActiveRepoCard({
                 {branch}
               </span>
               <span className="text-text-muted">•</span>
-              <span className={isClean ? 'text-git-clean font-semibold' : 'text-git-dirty font-semibold'}>
-                {isClean ? 'clean' : `${fileCount} change${fileCount === 1 ? '' : 's'}`}
+              <span
+                className={
+                  isClean
+                    ? "text-git-clean font-semibold"
+                    : "text-git-dirty font-semibold"
+                }
+              >
+                {isClean
+                  ? "clean"
+                  : `${fileCount} change${fileCount === 1 ? "" : "s"}`}
               </span>
             </div>
-            <p className="text-[9.5px] text-text-muted font-mono mt-0.5 truncate" title={path}>
+            <p
+              className="text-[9.5px] text-text-muted font-mono mt-0.5 truncate"
+              title={path}
+            >
               {truncatePath(path)}
             </p>
           </div>
@@ -137,19 +160,26 @@ function RepoRow({
       onClick={onSelect}
       className={`group relative flex items-center justify-between gap-2 px-2.5 py-1.5 mx-1.5 rounded-sm cursor-pointer transition ${
         isActive
-          ? 'bg-commito-activeBg text-commito-activeText font-semibold border border-commito-coral/30'
-          : 'hover:bg-base-2 text-text-primary'
+          ? "bg-commito-activeBg text-commito-activeText font-semibold border border-border-strong"
+          : "hover:bg-base-2 text-text-primary"
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
         <FolderGit2
           className={`w-3.5 h-3.5 flex-shrink-0 ${
-            isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
+            isActive
+              ? "text-commito-coral"
+              : "text-text-muted group-hover:text-text-secondary"
           }`}
         />
         <div className="min-w-0">
-          <span className="block truncate text-xs font-bold leading-snug">{name}</span>
-          <span className="block truncate text-[10px] text-text-muted font-mono leading-tight" title={path}>
+          <span className="block truncate text-xs font-bold leading-snug">
+            {name}
+          </span>
+          <span
+            className="block truncate text-[10px] text-text-muted font-mono leading-tight"
+            title={path}
+          >
             {truncatePath(path)}
           </span>
         </div>
@@ -177,8 +207,14 @@ function RepoRow({
 }
 
 /** Cloud Remote Repository Row */
-function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => void }) {
-  const isPrivate = repo.visibility === 'private';
+function CloudRepoRow({
+  repo,
+  onClone,
+}: {
+  repo: UnifiedRepo;
+  onClone: () => void;
+}) {
+  const isPrivate = repo.visibility === "private";
 
   return (
     <div
@@ -192,7 +228,9 @@ function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => voi
           <Globe className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
         )}
         <div className="min-w-0">
-          <span className="block truncate text-xs font-bold leading-snug">{repo.name}</span>
+          <span className="block truncate text-xs font-bold leading-snug">
+            {repo.name}
+          </span>
           <span className="block truncate text-[10px] text-text-muted font-mono leading-tight">
             {repo.path_with_namespace}
           </span>
@@ -208,7 +246,11 @@ function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => voi
  * Fast repository switcher dropdown portal supporting active repository status preview,
  * recent repositories list, cloud projects list, and quick creation/cloning shortcuts.
  */
-export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, triggerRect }) => {
+export const RepoDropdown: React.FC<RepoDropdownProps> = ({
+  isOpen,
+  onClose,
+  triggerRect,
+}) => {
   const {
     activeRepoPath,
     setActiveRepoPath,
@@ -225,7 +267,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     status,
   } = useGitStore();
 
-  const [filterQuery, setFilterQuery] = useState('');
+  const [filterQuery, setFilterQuery] = useState("");
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [userRepos, setUserRepos] = useState<UnifiedRepo[]>([]);
   const [isLoadingRepos, setIsLoadingRepos] = useState(false);
@@ -247,10 +289,10 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen, onClose]);
 
   // Fetch remote projects when dropdown opens
@@ -296,12 +338,14 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     try {
       setActiveRepoPath(repoPath);
       addRecentRepo(repoPath);
-      useLogStore.getState().addLog('info', 'Repo', `Switched repository to '${repoPath}'`);
+      useLogStore
+        .getState()
+        .addLog("info", "Repo", `Switched repository to '${repoPath}'`);
 
       const newStatus = await GitService.getRepoStatus(repoPath);
       setStatus(newStatus);
     } catch (error: unknown) {
-      setError(toAppError(error, 'REPO_SWITCH_ERROR'));
+      setError(toAppError(error, "REPO_SWITCH_ERROR"));
     }
     onClose();
   };
@@ -314,7 +358,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
         await handleSelectRepoPath(selected);
       }
     } catch (error: unknown) {
-      setError(toAppError(error, 'SELECT_FOLDER_ERROR'));
+      setError(toAppError(error, "SELECT_FOLDER_ERROR"));
     }
   };
 
@@ -332,18 +376,21 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
 
   const handleViewAllRepos = () => {
     onClose();
-    setActiveModalTab('repos');
+    setActiveModalTab("repos");
     setIsRepoModalOpen(true);
   };
 
   const handleManageAccounts = () => {
     onClose();
-    setActiveModalTab('accounts');
+    setActiveModalTab("accounts");
     setIsRepoModalOpen(true);
   };
 
   const menuWidth = Math.max(triggerRect.width, 360);
-  const leftPos = Math.min(triggerRect.left, window.innerWidth - menuWidth - 12);
+  const leftPos = Math.min(
+    triggerRect.left,
+    window.innerWidth - menuWidth - 12,
+  );
   const topPos = triggerRect.bottom + 6;
 
   return createPortal(
@@ -360,7 +407,9 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
       <div className="px-3 pt-2.5 pb-2 border-b border-border bg-base-0/90 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-1.5">
           <FolderGit2 className="w-4 h-4 text-commito-coral" />
-          <span className="font-extrabold text-xs text-text-primary tracking-wide">Switch Repository</span>
+          <span className="font-extrabold text-xs text-text-primary tracking-wide">
+            Switch Repository
+          </span>
         </div>
 
         <button
@@ -368,12 +417,14 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
           onClick={() => setShowAddMenu(!showAddMenu)}
           className={`px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 transition shadow-xs cursor-pointer ${
             showAddMenu
-              ? 'bg-base-2 text-text-primary border border-border'
-              : 'bg-commito-coral hover:bg-commito-coralLight text-white'
+              ? "bg-base-2 text-text-primary border border-border"
+              : "bg-commito-coral hover:bg-commito-coralLight text-white"
           }`}
           title="Add or create repository"
         >
-          <Plus className={`w-3.5 h-3.5 transition-transform duration-150 ${showAddMenu ? 'rotate-45' : ''}`} />
+          <Plus
+            className={`w-3.5 h-3.5 transition-transform duration-150 ${showAddMenu ? "rotate-45" : ""}`}
+          />
           <span>Add</span>
         </button>
       </div>
@@ -387,7 +438,9 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
             className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-emerald-500/40 group"
           >
             <FolderPlus className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[10.5px] leading-tight font-bold">Add Local</span>
+            <span className="text-[10.5px] leading-tight font-bold">
+              Add Local
+            </span>
           </button>
 
           <button
@@ -396,16 +449,20 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
             className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-blue-500/40 group"
           >
             <PlusSquare className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
-            <span className="text-[10.5px] leading-tight font-bold">Create New</span>
+            <span className="text-[10.5px] leading-tight font-bold">
+              Create New
+            </span>
           </button>
 
           <button
             type="button"
             onClick={() => handleCloneRepo()}
-            className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-commito-coral/40 group"
+            className="px-2 py-1.5 rounded bg-base-1 hover:bg-base-3 border border-border text-text-primary flex flex-col items-center justify-center gap-1 text-center transition cursor-pointer font-medium hover:border-border-strong group"
           >
             <Download className="w-4 h-4 text-commito-coral group-hover:scale-110 transition-transform" />
-            <span className="text-[10.5px] leading-tight font-bold">Clone Remote</span>
+            <span className="text-[10.5px] leading-tight font-bold">
+              Clone Remote
+            </span>
           </button>
         </div>
       )}
@@ -420,12 +477,12 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
             placeholder="Search repositories by name or path..."
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
-            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition"
+            className="w-full pl-8 pr-7 py-1 bg-base-2 border border-border hover:border-border-strong rounded text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition"
           />
           {filterQuery && (
             <button
               type="button"
-              onClick={() => setFilterQuery('')}
+              onClick={() => setFilterQuery("")}
               className="absolute right-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
             >
               <X className="w-3 h-3" />
@@ -437,16 +494,18 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
       {/* 3. Dedicated Scrollable Repository Content */}
       <div className="flex-1 overflow-y-auto py-1 space-y-2 min-h-0">
         {/* CURRENT REPOSITORY SECTION */}
-        {activeRepoPath && (!filterQuery || getRepoName(activeRepoPath).toLowerCase().includes(queryLower)) && (
-          <div>
-            <SectionHeader title="Current Repository" />
-            <ActiveRepoCard
-              path={activeRepoPath}
-              status={status}
-              onClick={() => handleSelectRepoPath(activeRepoPath)}
-            />
-          </div>
-        )}
+        {activeRepoPath &&
+          (!filterQuery ||
+            getRepoName(activeRepoPath).toLowerCase().includes(queryLower)) && (
+            <div>
+              <SectionHeader title="Current Repository" />
+              <ActiveRepoCard
+                path={activeRepoPath}
+                status={status}
+                onClick={() => handleSelectRepoPath(activeRepoPath)}
+              />
+            </div>
+          )}
 
         {/* RECENT REPOSITORIES SECTION */}
         <div>
@@ -454,7 +513,9 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
 
           {filteredRecentRepos.length === 0 ? (
             <div className="px-3 py-2 text-text-muted text-[11px] italic">
-              {filterQuery ? 'No repositories found matching search.' : 'No recent repositories.'}
+              {filterQuery
+                ? "No repositories found matching search."
+                : "No recent repositories."}
             </div>
           ) : (
             <div className="space-y-0.5">
@@ -487,7 +548,9 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
               </div>
             ) : filteredUserRepos.length === 0 ? (
               <div className="px-3 py-2 text-text-muted text-[11px] italic">
-                {filterQuery ? 'No matching cloud projects.' : 'No projects available.'}
+                {filterQuery
+                  ? "No matching cloud projects."
+                  : "No projects available."}
               </div>
             ) : (
               <div className="space-y-0.5">
@@ -495,7 +558,11 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
                   <CloudRepoRow
                     key={repo.id}
                     repo={repo}
-                    onClone={() => handleCloneRepo(repo.http_url_to_repo || repo.ssh_url_to_repo)}
+                    onClone={() =>
+                      handleCloneRepo(
+                        repo.http_url_to_repo || repo.ssh_url_to_repo,
+                      )
+                    }
                   />
                 ))}
               </div>
@@ -526,6 +593,6 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
         </button>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };

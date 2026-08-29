@@ -183,7 +183,7 @@ export const CreateItemModal: React.FC<CreateItemModalProps> = ({
                 placeholder={
                   isFile ? 'e.g. src/components/Header.tsx or .gitignore' : 'e.g. src/components'
                 }
-                className="w-full h-7.5 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                className="w-full h-7.5 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
               />
             </div>
           </div>

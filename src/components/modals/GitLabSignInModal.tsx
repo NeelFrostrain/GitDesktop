@@ -94,6 +94,10 @@ export const GitLabSignInModal: React.FC = () => {
 
       setUser(gitLabUserToUnified(user));
       await fetchAccounts();
+      try {
+        const { useAccountServicesStore } = await import('../../features/account-services');
+        await useAccountServicesStore.getState().loadAccounts();
+      } catch {}
       setIsSignInModalOpen(false);
     } catch (error: unknown) {
       setLocalError(getErrorMessage(error));
@@ -185,7 +189,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={serverUrl}
                     onChange={(e) => setServerUrl(e.target.value)}
                     placeholder="https://gitlab.com"
-                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition font-mono"
                     required
                   />
                 </div>
@@ -202,7 +206,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={clientId}
                     onChange={(e) => setClientId(e.target.value)}
                     placeholder="Leave empty for default"
-                    className="w-full bg-base-2 border border-border rounded-sm px-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm px-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition font-mono"
                   />
                 </div>
               )}
@@ -246,7 +250,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={serverUrl}
                     onChange={(e) => setServerUrl(e.target.value)}
                     placeholder="https://gitlab.com"
-                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition font-mono"
                     required
                   />
                 </div>
@@ -261,7 +265,7 @@ export const GitLabSignInModal: React.FC = () => {
                     value={patToken}
                     onChange={(e) => setPatToken(e.target.value)}
                     placeholder="glpat-xxxxxxxxxxxxxxxxxxxx"
-                    className="w-full bg-base-2 border border-border rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral transition font-mono"
+                    className="w-full bg-base-2 border border-border hover:border-border-strong rounded-sm pl-9 pr-3 py-2 text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong transition font-mono"
                     required
                   />
                 </div>

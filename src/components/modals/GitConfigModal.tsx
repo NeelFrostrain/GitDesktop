@@ -1,21 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  Settings,
-  FileCode,
-  Save,
-  Wrench,
-  Plus,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { GitConfigItem } from '../../types/git';
-import { GitService } from '../../services/git/gitService';
-import { toAppError } from '../../shared/utils/errorUtils';
+import React, { useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { X, Settings, FileCode, Save, Wrench, Plus } from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { GitConfigItem } from "../../types/git";
+import { GitService } from "../../services/git/gitService";
+import { toAppError } from "../../shared/utils/errorUtils";
 
 const GITIGNORE_TEMPLATES: Record<string, string> = {
-  'Node.js / React': `# Node / JS / React
+  "Node.js / React": `# Node / JS / React
 node_modules/
 dist/
 build/
@@ -26,12 +19,12 @@ yarn-debug.log*
 yarn-error.log*
 .DS_Store
 `,
-  'Rust / Cargo': `# Rust
+  "Rust / Cargo": `# Rust
 target/
 **/*.rs.bk
 Cargo.lock
 `,
-  'Python': `# Python
+  Python: `# Python
 __pycache__/
 *.py[cod]
 *$py.class
@@ -42,7 +35,7 @@ venv/
 ENV/
 .env
 `,
-  'Unreal Engine / Unity': `# Unreal & Unity
+  "Unreal Engine / Unity": `# Unreal & Unity
 Binaries/
 DerivedDataCache/
 Intermediate/
@@ -59,27 +52,25 @@ Logs/
  * Modal dialogue for editing repository .gitignore rules and inspecting/setting local Git configuration keys.
  */
 export const GitConfigModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isConfigModalOpen,
-    setIsConfigModalOpen,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isConfigModalOpen, setIsConfigModalOpen, setError } =
+    useGitStore();
 
-  const [activeTab, setActiveTab] = useState<'gitignore' | 'config'>('gitignore');
-  const [gitignoreContent, setGitignoreContent] = useState('');
+  const [activeTab, setActiveTab] = useState<"gitignore" | "config">(
+    "gitignore",
+  );
+  const [gitignoreContent, setGitignoreContent] = useState("");
   const [configItems, setConfigItems] = useState<GitConfigItem[]>([]);
-  const [newKey, setNewKey] = useState('');
-  const [newValue, setNewValue] = useState('');
+  const [newKey, setNewKey] = useState("");
+  const [newValue, setNewValue] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!isConfigModalOpen || !activeRepoPath) return;
 
     // Load .gitignore
-    invoke<string>('read_gitignore_cmd', { repoPath: activeRepoPath })
-      .then((content) => setGitignoreContent(content || ''))
-      .catch(() => setGitignoreContent(''));
+    invoke<string>("read_gitignore_cmd", { repoPath: activeRepoPath })
+      .then((content) => setGitignoreContent(content || ""))
+      .catch(() => setGitignoreContent(""));
 
     // Load repo git config
     GitService.getRepoConfig(activeRepoPath)
@@ -93,22 +84,24 @@ export const GitConfigModal: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await invoke('write_gitignore_cmd', {
+      await invoke("write_gitignore_cmd", {
         repoPath: activeRepoPath,
         content: gitignoreContent,
       });
 
-      useLogStore.getState().addLog('success', 'Git', 'Updated repository .gitignore file');
+      useLogStore
+        .getState()
+        .addLog("success", "Git", "Updated repository .gitignore file");
       setIsConfigModalOpen(false);
     } catch (error: unknown) {
-      setError(toAppError(error, 'CONFIG_ERROR'));
+      setError(toAppError(error, "CONFIG_ERROR"));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleAddTemplate = (templateName: string) => {
-    const templateText = GITIGNORE_TEMPLATES[templateName] || '';
+    const templateText = GITIGNORE_TEMPLATES[templateName] || "";
     setGitignoreContent((prev) => `${prev}\n\n${templateText}`.trim());
   };
 
@@ -117,14 +110,16 @@ export const GitConfigModal: React.FC = () => {
 
     try {
       await GitService.setRepoConfig(activeRepoPath, key.trim(), val.trim());
-      useLogStore.getState().addLog('info', 'Git', `Set repo config ${key} = ${val}`);
+      useLogStore
+        .getState()
+        .addLog("info", "Git", `Set repo config ${key} = ${val}`);
 
       const items = await GitService.getRepoConfig(activeRepoPath);
       setConfigItems(items || []);
-      setNewKey('');
-      setNewValue('');
+      setNewKey("");
+      setNewValue("");
     } catch (error: unknown) {
-      setError(toAppError(error, 'CONFIG_ERROR'));
+      setError(toAppError(error, "CONFIG_ERROR"));
     }
   };
 
@@ -136,16 +131,16 @@ export const GitConfigModal: React.FC = () => {
         {/* Modal Header */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
               <Settings className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="text-xs font-bold text-text-primary leading-none truncate">
                 Git Config & Ignore Rules
               </h3>
               <span className="text-border hidden sm:inline">•</span>
               <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
-                {activeTab === 'gitignore' ? '.gitignore' : 'Repository Config'}
+                {activeTab === "gitignore" ? ".gitignore" : "Repository Config"}
               </span>
             </div>
           </div>
@@ -163,11 +158,11 @@ export const GitConfigModal: React.FC = () => {
         {/* Tab Header */}
         <div className="px-5 pt-3 pb-2 border-b border-border flex items-center gap-2 bg-base-0/50">
           <button
-            onClick={() => setActiveTab('gitignore')}
+            onClick={() => setActiveTab("gitignore")}
             className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-              activeTab === 'gitignore'
-                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
-                : 'bg-base-2 text-text-secondary hover:text-text-primary'
+              activeTab === "gitignore"
+                ? "bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs"
+                : "bg-base-2 text-text-secondary hover:text-text-primary"
             }`}
           >
             <FileCode className="w-3.5 h-3.5" />
@@ -175,11 +170,11 @@ export const GitConfigModal: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('config')}
+            onClick={() => setActiveTab("config")}
             className={`px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-              activeTab === 'config'
-                ? 'bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs'
-                : 'bg-base-2 text-text-secondary hover:text-text-primary'
+              activeTab === "config"
+                ? "bg-commito-coral hover:bg-commito-coralLight text-white shadow-xs"
+                : "bg-base-2 text-text-secondary hover:text-text-primary"
             }`}
           >
             <Wrench className="w-3.5 h-3.5" />
@@ -188,12 +183,18 @@ export const GitConfigModal: React.FC = () => {
         </div>
 
         {/* Body Content */}
-        {activeTab === 'gitignore' ? (
+        {activeTab === "gitignore" ? (
           <>
-            <form id="gitignore-form" onSubmit={handleSaveGitignore} className="p-4 sm:p-5 space-y-4 flex flex-col flex-1 overflow-y-auto min-h-0">
+            <form
+              id="gitignore-form"
+              onSubmit={handleSaveGitignore}
+              className="p-4 sm:p-5 space-y-4 flex flex-col flex-1 overflow-y-auto min-h-0"
+            >
               {/* Template Preset Buttons */}
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold text-text-muted">Append Template:</span>
+                <span className="text-xs font-bold text-text-muted">
+                  Append Template:
+                </span>
                 {Object.keys(GITIGNORE_TEMPLATES).map((name) => (
                   <button
                     key={name}
@@ -211,7 +212,7 @@ export const GitConfigModal: React.FC = () => {
                 <textarea
                   value={gitignoreContent}
                   onChange={(e) => setGitignoreContent(e.target.value)}
-                  className="w-full h-full p-4 bg-base-2 border border-border rounded-sm font-mono text-xs text-text-primary focus:outline-none focus:border-commito-coral resize-none"
+                  className="w-full h-full p-4 bg-base-2 border border-border hover:border-border-strong rounded-sm font-mono text-xs text-text-primary focus:outline-none focus:border-border-strong resize-none"
                   placeholder="# Add patterns to ignore..."
                 />
               </div>
@@ -238,7 +239,7 @@ export const GitConfigModal: React.FC = () => {
                 ) : (
                   <Save className="w-3.5 h-3.5" />
                 )}
-                <span>{isSubmitting ? 'Saving...' : 'Save .gitignore'}</span>
+                <span>{isSubmitting ? "Saving..." : "Save .gitignore"}</span>
               </button>
             </div>
           </>
@@ -257,14 +258,14 @@ export const GitConfigModal: React.FC = () => {
                     placeholder="Key (e.g. user.email)"
                     value={newKey}
                     onChange={(e) => setNewKey(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
                   />
                   <input
                     type="text"
                     placeholder="Value (e.g. dev@company.com)"
                     value={newValue}
                     onChange={(e) => setNewValue(e.target.value)}
-                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-commito-coral"
+                    className="flex-1 px-3 py-1.5 bg-base-1 border border-border hover:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none focus:border-border-strong"
                   />
                   <button
                     onClick={() => handleSaveConfigItem(newKey, newValue)}
@@ -292,7 +293,9 @@ export const GitConfigModal: React.FC = () => {
                       key={item.key}
                       className="p-3 bg-base-2/60 border border-border rounded-sm flex items-center justify-between font-mono text-xs"
                     >
-                      <span className="font-bold text-commito-coral">{item.key}</span>
+                      <span className="font-bold text-commito-coral">
+                        {item.key}
+                      </span>
                       <span className="text-text-primary">{item.value}</span>
                     </div>
                   ))

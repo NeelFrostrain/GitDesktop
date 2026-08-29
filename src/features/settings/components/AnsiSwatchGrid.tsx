@@ -8,14 +8,14 @@ export const AnsiSwatchGrid: React.FC = () => {
 
   const standardAnsi = SETTINGS_SCHEMA.filter(
     (s) =>
-      s.category === 'terminal' &&
+      (s.category as string) === 'terminal' &&
       s.subcategory === 'ANSI Colors' &&
       !s.id.includes('Bright')
   );
 
   const brightAnsi = SETTINGS_SCHEMA.filter(
     (s) =>
-      s.category === 'terminal' &&
+      (s.category as string) === 'terminal' &&
       s.subcategory === 'ANSI Colors' &&
       s.id.includes('Bright')
   );

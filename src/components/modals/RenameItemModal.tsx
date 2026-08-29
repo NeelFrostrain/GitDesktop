@@ -193,7 +193,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
                 }}
                 disabled={isSubmitting}
                 placeholder="e.g. src/components/NewName.tsx"
-                className="w-full h-7.5 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                className="w-full h-7.5 px-2.5 font-mono text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm focus:outline-none transition shadow-2xs placeholder:text-text-faint"
               />
             </div>
           </div>

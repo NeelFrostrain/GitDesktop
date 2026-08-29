@@ -91,7 +91,7 @@ export const RemoteReposTab: React.FC = () => {
   return (
     <div className="space-y-3">
       {/* Search Bar */}
-      <div className="flex items-center gap-2 bg-base-1 border border-border rounded-sm px-2.5 py-1.5 focus-within:border-commito-coral">
+      <div className="flex items-center gap-2 bg-base-1 border border-border hover:border-border-strong rounded-sm px-2.5 py-1.5 focus-within:border-border-strong">
         <Search className="w-3.5 h-3.5 text-text-muted shrink-0" />
         <input
           type="text"

@@ -146,20 +146,12 @@ export function useRepositorySync() {
     try {
       // 1. Probe remote validity first
       const validation = await GitService.validateRemoteOrigin(activeRepoPath).catch(() => null);
-      if (validation && (!validation.has_remote || !validation.is_valid)) {
-        const current = useGitStore.getState().status;
-        if (current) {
-          setStatus({
-            ...current,
-            has_remote: false,
-            remote_url: null,
-          });
-        }
+      if (validation && validation.has_remote && validation.is_deleted_or_missing) {
         useGitStore.getState().setIsRemoteNotFoundModalOpen(true);
         log().addLog(
           'warning',
           'Remote',
-          'Remote repository does not exist on the server (it may have been deleted). Remote unlinked — click Publish to re-link.'
+          'Remote repository was not found on the server (it may have been deleted or renamed).'
         );
         return;
       }
@@ -191,19 +183,11 @@ export function useRepositorySync() {
         message.toLowerCase().includes('does not appear to be a git repository');
 
       if (isRemoteNotFound) {
-        const current = useGitStore.getState().status;
-        if (current) {
-          setStatus({
-            ...current,
-            has_remote: false,
-            remote_url: null,
-          });
-        }
         useGitStore.getState().setIsRemoteNotFoundModalOpen(true);
         log().addLog(
           'warning',
           'Remote',
-          'Remote repository was not found on server (it may have been deleted). Remote unlinked — you can now Publish to link a new remote.'
+          'Remote repository was not found on server (it may have been deleted or renamed).'
         );
       } else if (message.includes('Authentication') || message.includes('Access Denied')) {
         setError({ code: 'AUTH_ERROR', message });

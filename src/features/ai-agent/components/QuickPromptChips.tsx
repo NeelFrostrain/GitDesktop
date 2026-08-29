@@ -47,7 +47,7 @@ const PROMPT_TEMPLATES = [
 
 export const QuickPromptChips: React.FC = () => {
   const { sendMessage, attachWorkingDiff } = useAiAgentStore();
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handlePromptClick = async (tpl: typeof PROMPT_TEMPLATES[0]) => {
     if (tpl.attachDiff) {

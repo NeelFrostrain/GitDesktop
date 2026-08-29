@@ -47,7 +47,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-commito-coral/50 hover:bg-base-2/60 rounded-md flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
+            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-border-strong hover:bg-base-2/60 rounded-md flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
           >
             <div className="flex items-center gap-2 text-xs text-text-muted min-w-0">
               <FolderGit2 className="w-3.5 h-3.5 text-text-faint group-hover:text-commito-coral transition-colors shrink-0" />

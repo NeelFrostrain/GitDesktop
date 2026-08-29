@@ -1,36 +1,38 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub enum LogLevel {
-    #[serde(rename = "Debug")]
+    #[serde(alias = "debug", alias = "DEBUG")]
     Debug,
-    #[serde(rename = "Info")]
+    #[serde(alias = "info", alias = "INFO")]
     Info,
-    #[serde(rename = "Success")]
+    #[serde(alias = "success", alias = "SUCCESS")]
     Success,
-    #[serde(rename = "Warn")]
+    #[serde(alias = "warn", alias = "WARN", alias = "warning", alias = "Warning", alias = "WARNING")]
     Warn,
-    #[serde(rename = "Error")]
+    #[serde(alias = "error", alias = "ERROR")]
     Error,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
 pub enum LogCategory {
-    #[serde(rename = "Git")]
+    #[serde(alias = "git", alias = "GIT")]
     Git,
-    #[serde(rename = "Account")]
+    #[serde(alias = "account", alias = "ACCOUNT", alias = "auth", alias = "Auth", alias = "AUTH")]
     Account,
-    #[serde(rename = "Remote")]
+    #[serde(alias = "remote", alias = "REMOTE")]
     Remote,
-    #[serde(rename = "Signing")]
+    #[serde(alias = "signing", alias = "SIGNING")]
     Signing,
-    #[serde(rename = "Activity")]
+    #[serde(alias = "activity", alias = "ACTIVITY")]
     Activity,
-    #[serde(rename = "Repo")]
+    #[serde(alias = "repo", alias = "REPO")]
     Repo,
-    #[serde(rename = "Terminal")]
+    #[serde(alias = "terminal", alias = "TERMINAL")]
     Terminal,
-    #[serde(rename = "App")]
+    #[serde(alias = "app", alias = "APP", alias = "system", alias = "System", alias = "SYSTEM")]
     App,
 }
 

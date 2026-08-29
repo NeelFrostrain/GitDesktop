@@ -194,6 +194,7 @@ pub fn list_branches(repo_path: &str) -> Result<Vec<crate::git::status::BranchIn
     let branches = repo.branches(None)?;
 
     let mut result = Vec::new();
+    let mut seen_names = std::collections::HashSet::new();
     let head_branch_name = match repo.head() {
         Ok(h) => h.shorthand().unwrap_or("").to_string(),
         Err(_) => "".to_string(),
@@ -202,11 +203,17 @@ pub fn list_branches(repo_path: &str) -> Result<Vec<crate::git::status::BranchIn
     for branch_res in branches {
         let (branch, branch_type) = branch_res?;
         let name = branch.name()?.unwrap_or("").to_string();
-        if name.is_empty() {
+        if name.is_empty() || name.ends_with("/HEAD") || name.ends_with("\\HEAD") {
             continue;
         }
 
         let is_remote = branch_type == git2::BranchType::Remote;
+        let key = (name.clone(), is_remote);
+        if seen_names.contains(&key) {
+            continue;
+        }
+        seen_names.insert(key);
+
         let is_current = !is_remote && name == head_branch_name;
 
         result.push(crate::git::status::BranchInfo {

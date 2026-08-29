@@ -126,8 +126,8 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
             key={account.id}
             className={`p-3.5 rounded-sm border transition-all ${
               isActive
-                ? 'bg-base-2 border-commito-coral/40 shadow-sm ring-1 ring-commito-coral/20'
-                : 'bg-base-1 border-border hover:border-text-muted/30'
+                ? 'bg-base-2 border-border-strong shadow-sm'
+                : 'bg-base-1 border-border hover:border-border-strong'
             }`}
           >
             <div className="flex items-center justify-between gap-3">
@@ -215,14 +215,14 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="Display Name"
-                  className="flex-1 bg-base-0 border border-border rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+                  className="flex-1 bg-base-0 border border-border hover:border-border-strong rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-border-strong"
                 />
                 <input
                   type="email"
                   value={editEmail}
                   onChange={(e) => setEditEmail(e.target.value)}
                   placeholder="Email"
-                  className="flex-1 bg-base-0 border border-border rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-commito-coral"
+                  className="flex-1 bg-base-0 border border-border hover:border-border-strong rounded px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-border-strong"
                 />
                 <button
                   onClick={() => handleSaveAccountInfo(account.id)}

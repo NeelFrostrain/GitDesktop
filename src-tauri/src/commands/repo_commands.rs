@@ -37,17 +37,41 @@ fn get_git_credential_token(host: &str) -> Option<String> {
     None
 }
 
-fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
-    get_gitlab_client_for_account(None, server_override)
+async fn get_gitlab_client(server_override: Option<String>) -> Result<GitLabClient, AppError> {
+    get_gitlab_client_for_account(None, server_override).await
 }
 
-fn get_gitlab_client_for_account(
+async fn get_gitlab_client_for_account(
     account_id: Option<&str>,
     server_override: Option<String>,
 ) -> Result<GitLabClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
     let gitlab_acc = if let Some(id) = account_id {
         provider_accounts.iter().find(|a| a.id == id).cloned()
+    } else if let Some(ref server) = server_override {
+        let host = server
+            .trim_start_matches("https://")
+            .trim_start_matches("http://")
+            .trim_end_matches('/');
+        provider_accounts
+            .iter()
+            .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active && a.instance_url.contains(host))
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.instance_url.contains(host))
+            })
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && a.is_active)
+            })
+            .or_else(|| {
+                provider_accounts
+                    .iter()
+                    .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Gitlab)
+            })
+            .cloned()
     } else {
         provider_accounts
             .iter()
@@ -64,7 +88,7 @@ fn get_gitlab_client_for_account(
     let mut instance_url = None;
 
     if let Some(ref acc) = gitlab_acc {
-        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token(&acc.id).await {
             if !tok.trim().is_empty() {
                 gitlab_token = Some(tok);
                 instance_url = Some(acc.instance_url.clone());
@@ -114,11 +138,11 @@ fn get_gitlab_client_for_account(
     GitLabClient::new(server_url, token, None)
 }
 
-fn get_github_client() -> Result<GitHubClient, AppError> {
-    get_github_client_for_account(None)
+async fn get_github_client() -> Result<GitHubClient, AppError> {
+    get_github_client_for_account(None).await
 }
 
-fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHubClient, AppError> {
+async fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHubClient, AppError> {
     let provider_accounts = crate::domain::accounts::token_store::list_accounts();
     let gh_acc = if let Some(id) = account_id {
         provider_accounts.iter().find(|a| a.id == id).cloned()
@@ -137,7 +161,7 @@ fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHubClien
     let mut github_token = None;
 
     if let Some(ref acc) = gh_acc {
-        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_token(&acc.id) {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token(&acc.id).await {
             if !tok.trim().is_empty() {
                 github_token = Some(tok);
             }
@@ -258,7 +282,7 @@ pub async fn fetch_user_repositories(
     let target_acc_id = target_acc.as_ref().map(|a| a.id.as_str());
 
     if resolved_provider == "github" {
-        let client = get_github_client_for_account(target_acc_id)?;
+        let client = get_github_client_for_account(target_acc_id).await?;
         let mut repos = client.fetch_repos(p).await?;
         if let Some(ref q) = search {
             let query = q.trim().to_lowercase();
@@ -278,7 +302,7 @@ pub async fn fetch_user_repositories(
     }
 
     // GitLab path
-    let client = get_gitlab_client_for_account(target_acc_id, server_url)?;
+    let client = get_gitlab_client_for_account(target_acc_id, server_url).await?;
     let paged = client.fetch_projects(p).await?;
     let mut items: Vec<UnifiedRepo> = paged
         .items
@@ -339,11 +363,21 @@ pub async fn get_open_merge_requests(
         }
     }
 
+    if clean_project_id.is_empty()
+        || clean_project_id == "1"
+        || clean_project_id == "origin"
+        || (is_github && !clean_project_id.contains('/'))
+    {
+        return Err(AppError::Validation(
+            "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
+        ));
+    }
+
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.get_open_pull_requests(&clean_project_id).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.get_open_merge_requests(&clean_project_id).await
     }
 }
@@ -381,8 +415,18 @@ pub async fn create_merge_request(
         }
     }
 
+    if clean_project_id.is_empty()
+        || clean_project_id == "1"
+        || clean_project_id == "origin"
+        || (is_github && !clean_project_id.contains('/'))
+    {
+        return Err(AppError::Validation(
+            "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
+        ));
+    }
+
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client
             .create_pull_request(
                 &clean_project_id,
@@ -393,7 +437,7 @@ pub async fn create_merge_request(
             )
             .await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client
             .create_merge_request(&clean_project_id, &source_branch, &target_branch, &title)
             .await
@@ -435,7 +479,7 @@ pub async fn update_merge_request(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client
             .update_pull_request(
                 &clean_project_id,
@@ -447,7 +491,7 @@ pub async fn update_merge_request(
             )
             .await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client
             .update_merge_request(
                 &clean_project_id,
@@ -504,10 +548,10 @@ pub async fn get_pull_request_comments(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.get_pull_request_comments(&clean_project_id, mr_id).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.get_merge_request_comments(&clean_project_id, mr_id).await
     }
 }
@@ -543,10 +587,10 @@ pub async fn add_pull_request_comment(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.add_pull_request_comment(&clean_project_id, mr_id, &body).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.add_merge_request_comment(&clean_project_id, mr_id, &body).await
     }
 }
@@ -583,10 +627,10 @@ pub async fn edit_pull_request_comment(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.edit_pull_request_comment(&clean_project_id, comment_id, &body).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.edit_merge_request_comment(&clean_project_id, mr_id, comment_id, &body).await
     }
 }
@@ -622,10 +666,10 @@ pub async fn delete_pull_request_comment(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.delete_pull_request_comment(&clean_project_id, comment_id).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.delete_merge_request_comment(&clean_project_id, mr_id, comment_id).await
     }
 }
@@ -665,7 +709,7 @@ pub async fn merge_pull_request(
     }
 
     if is_github {
-        let client = get_github_client()?;
+        let client = get_github_client().await?;
         client.merge_pull_request(
             &clean_project_id,
             mr_id,
@@ -674,7 +718,7 @@ pub async fn merge_pull_request(
             commit_message.as_deref(),
         ).await
     } else {
-        let client = get_gitlab_client(server_url)?;
+        let client = get_gitlab_client(server_url).await?;
         client.merge_merge_request(
             &clean_project_id,
             mr_id,
@@ -709,7 +753,7 @@ pub async fn publish_repository(
             .await?;
         (repo, tok)
     } else {
-        let client = get_gitlab_client(server_url.clone())?;
+        let client = get_gitlab_client(server_url.clone()).await?;
         let project = client
             .create_project(&name, is_private, description.as_deref())
             .await?;
@@ -767,7 +811,7 @@ pub async fn publish_repository(
 
 #[command]
 pub fn log_action_cmd(level: String, category: String, message: String, details: Option<String>) {
-    let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+    let timestamp = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
     let details_str = match details {
         Some(d) if !d.trim().is_empty() => format!(" | Details: {}", d.trim()),
         _ => "".to_string(),
@@ -844,6 +888,28 @@ pub async fn show_in_explorer_cmd(repo_path: String) -> Result<(), AppError> {
         std::process::Command::new("xdg-open")
             .arg(&repo_path)
             .spawn()?;
+    }
+    Ok(())
+}
+
+#[command]
+pub async fn open_in_browser_cmd(url: String) -> Result<(), AppError> {
+    #[cfg(target_os = "windows")]
+    {
+        crate::git::command::silent_command("cmd")
+            .arg("/c")
+            .arg("start")
+            .arg("")
+            .arg(&url)
+            .spawn()?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open").arg(&url).spawn()?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open").arg(&url).spawn()?;
     }
     Ok(())
 }
@@ -1088,16 +1154,23 @@ pub async fn get_gitlab_activity_cmd(
     project_paths: Vec<String>,
     limit: Option<usize>,
 ) -> Result<Vec<crate::activity::local::ActivityEvent>, AppError> {
-    let accounts = keyring::list_accounts();
+    let accounts = crate::domain::accounts::token_store::list_accounts();
     let account = accounts
         .into_iter()
         .find(|a| a.id == account_id)
-        .or_else(|| keyring::get_active_account());
+        .or_else(|| {
+            let accounts = crate::domain::accounts::token_store::list_accounts();
+            accounts.into_iter().find(|a| a.is_active)
+        });
 
     if let Some(acct) = account {
+        let token = crate::domain::accounts::token_store::get_valid_token(&acct.id)
+            .await?
+            .unwrap_or_default();
+
         let events = crate::activity::gitlab::get_gitlab_activity(
-            acct.server_url,
-            acct.token,
+            acct.instance_url,
+            token,
             project_paths,
             limit.unwrap_or(20),
         )
@@ -1113,6 +1186,32 @@ pub async fn get_gitlab_activity_cmd(
     } else {
         Ok(Vec::new())
     }
+}
+
+#[command]
+pub async fn get_contributions_calendar_cmd(
+    account_id: Option<String>,
+    repo_paths: Vec<String>,
+) -> Result<crate::activity::contributions::ContributionCalendar, AppError> {
+    let res = crate::activity::contributions::get_contributions_calendar(
+        account_id.clone(),
+        repo_paths.clone(),
+    )
+    .await?;
+
+    crate::log_debug!(
+        crate::core::logging::LogCategory::Activity,
+        format!("Generated contribution calendar (total: {} contributions across {} weeks)", res.total_contributions, res.weeks.len());
+        meta: serde_json::json!({
+            "account_id": account_id,
+            "total_contributions": res.total_contributions,
+            "active_days": res.active_days_count,
+            "longest_streak": res.longest_streak,
+            "current_streak": res.current_streak
+        })
+    );
+
+    Ok(res)
 }
 
 #[command]

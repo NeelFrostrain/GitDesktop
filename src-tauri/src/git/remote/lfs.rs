@@ -202,3 +202,99 @@ pub fn unlock_lfs_file(repo_path: &str, path: &str, force: bool) -> Result<(), A
     }
     Ok(())
 }
+
+pub fn install_lfs(repo_path: &str) -> Result<(), AppError> {
+    let output = silent_git_command()
+        .arg("lfs")
+        .arg("install")
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to install Git LFS hooks: {}",
+            stderr.trim()
+        )));
+    }
+    Ok(())
+}
+
+pub fn lfs_pull(repo_path: &str) -> Result<String, AppError> {
+    let output = silent_git_command()
+        .arg("lfs")
+        .arg("pull")
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to pull LFS objects: {}",
+            stderr.trim()
+        )));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub fn lfs_fetch(repo_path: &str, remote: Option<&str>) -> Result<String, AppError> {
+    let mut cmd = silent_git_command();
+    cmd.arg("lfs").arg("fetch");
+    if let Some(r) = remote {
+        cmd.arg(r);
+    }
+    cmd.arg("--all");
+    let output = cmd.current_dir(repo_path).output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to fetch LFS objects: {}",
+            stderr.trim()
+        )));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub fn lfs_push(repo_path: &str, remote: Option<&str>) -> Result<String, AppError> {
+    let mut cmd = silent_git_command();
+    cmd.arg("lfs").arg("push");
+    let r = remote.unwrap_or("origin");
+    cmd.arg(r).arg("--all");
+    let output = cmd.current_dir(repo_path).output()?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!(
+            "Failed to push LFS objects: {}",
+            stderr.trim()
+        )));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub fn list_tracked_patterns(repo_path: &str) -> Result<Vec<String>, AppError> {
+    let output = silent_git_command()
+        .arg("lfs")
+        .arg("track")
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        return Ok(Vec::new());
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut patterns = Vec::new();
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with("Listing tracked patterns") || trimmed.is_empty() {
+            continue;
+        }
+        let pattern_part = trimmed.split('(').next().unwrap_or(trimmed).trim();
+        if !pattern_part.is_empty() {
+            patterns.push(pattern_part.to_string());
+        }
+    }
+    Ok(patterns)
+}

@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   LOG_LEVEL_TERMINAL_COLOR,
   LOG_LEVEL_TERMINAL_TAG,
 } from './colorMap';
 import { LogEntry, LogLevel } from './types';
-import { useAppLogStore } from './logStore';
+import { useAppLogStore, printLogToConsole } from './logStore';
 
 describe('colorMap', () => {
   it('defines terminal-specific colors for all 5 log levels', () => {
@@ -61,5 +61,31 @@ describe('logStore', () => {
     expect(resetFilter.categories).toEqual([]);
     expect(resetFilter.levels).toEqual([]);
     expect(resetFilter.search).toBe('');
+  });
+
+  it('prints formatted logs to browser console', () => {
+    const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    printLogToConsole({
+      id: 'test-info',
+      at: new Date().toISOString(),
+      level: 'Info',
+      category: 'Git',
+      message: 'Fetched latest refs',
+    });
+    expect(infoSpy).toHaveBeenCalled();
+
+    printLogToConsole({
+      id: 'test-err',
+      at: new Date().toISOString(),
+      level: 'Error',
+      category: 'Account',
+      message: 'Token expired',
+    });
+    expect(errorSpy).toHaveBeenCalled();
+
+    infoSpy.mockRestore();
+    errorSpy.mockRestore();
   });
 });

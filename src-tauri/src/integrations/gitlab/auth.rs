@@ -126,27 +126,42 @@ impl AuthProvider for GitLabAuthProvider {
             .form(&params)
             .send()
             .await
-            .map_err(|e| AppError::Auth(format!("Token refresh request failed: {}", e)))?;
+            .map_err(|e| AppError::Auth(format!("GitLab token refresh request failed: {}", e)))?;
 
         if !resp.status().is_success() {
-            return Err(AppError::Auth("Failed to refresh GitLab token".to_string()));
+            let status = resp.status();
+            let body_text = resp.text().await.unwrap_or_default();
+            crate::log_error!(
+                crate::core::logging::LogCategory::Account,
+                format!("GitLab OAuth refresh failed with status {}: {}", status, body_text);
+                meta: serde_json::json!({ "account_id": account.id, "status": status.as_u16(), "body": body_text })
+            );
+            return Err(AppError::Auth(format!("Failed to refresh GitLab token ({}): {}", status, body_text)));
         }
 
         let token_resp: GitLabOAuthTokenResponse = resp
             .json()
             .await
-            .map_err(|e| AppError::Auth(e.to_string()))?;
+            .map_err(|e| AppError::Auth(format!("Failed to parse GitLab token refresh response: {}", e)))?;
 
         let now = chrono::Utc::now().timestamp();
         let mut updated = account.clone();
         updated.expires_at = token_resp.expires_in.map(|exp| now + exp);
         updated.token_status = TokenStatus::Valid;
 
+        let new_refresh = token_resp.refresh_token.as_deref().or(Some(refresh_token));
+
         crate::domain::accounts::token_store::save_account(
             updated.clone(),
             &token_resp.access_token,
-            token_resp.refresh_token.as_deref(),
+            new_refresh,
         )?;
+
+        crate::log_info!(
+            crate::core::logging::LogCategory::Account,
+            format!("Successfully refreshed GitLab access token for account {}", account.id);
+            meta: serde_json::json!({ "account_id": account.id, "handle": account.handle })
+        );
 
         Ok(updated)
     }
@@ -271,6 +286,7 @@ impl GitLabAuthProvider {
             token_status: TokenStatus::Valid,
             scopes,
             expires_at,
+            refresh_token_expires_at: None,
         };
 
         crate::domain::accounts::token_store::save_account(

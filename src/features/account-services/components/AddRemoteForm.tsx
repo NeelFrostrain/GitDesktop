@@ -75,7 +75,7 @@ export const AddRemoteForm: React.FC<AddRemoteFormProps> = ({ repoPath }) => {
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Name (e.g. upstream)"
-            className="w-full bg-base-1 border border-border rounded-sm px-3 py-1.5 text-xs font-mono text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
+            className="w-full bg-base-1 border border-border hover:border-border-strong rounded-sm px-3 py-1.5 text-xs font-mono text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong"
             required
           />
         </div>
@@ -86,7 +86,7 @@ export const AddRemoteForm: React.FC<AddRemoteFormProps> = ({ repoPath }) => {
             value={url}
             onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="Remote Git URL (HTTPS or SSH)"
-            className="flex-1 bg-base-1 border border-border rounded-sm px-3 py-1.5 text-xs font-mono text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral"
+            className="flex-1 bg-base-1 border border-border hover:border-border-strong rounded-sm px-3 py-1.5 text-xs font-mono text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong"
             required
           />
           <button

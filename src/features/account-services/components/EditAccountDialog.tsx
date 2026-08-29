@@ -110,7 +110,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="relative w-11 h-11 rounded-sm overflow-hidden border border-border hover:border-commito-coral/60 transition cursor-pointer shrink-0 group"
+              className="relative w-11 h-11 rounded-sm overflow-hidden border border-border hover:border-border-strong transition cursor-pointer shrink-0 group"
               title="Click to upload custom picture"
             >
               <UserAvatar
@@ -166,7 +166,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="e.g. Neel Frostrain"
-              className="w-full bg-base-1 border border-border focus:border-commito-coral rounded-sm px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
+              className="w-full bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
               required
             />
             <p className="text-[10.5px] text-text-muted">
@@ -185,7 +185,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               value={commitEmail}
               onChange={(e) => setCommitEmail(e.target.value)}
               placeholder="e.g. neelofficial0812@gmail.com"
-              className="w-full bg-base-1 border border-border focus:border-commito-coral rounded-sm px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
+              className="w-full bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
             />
             <p className="text-[10.5px] text-text-muted">
               Used for Git commit authorship (`user.email`) when this account is active.
@@ -203,7 +203,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               value={avatarUrl}
               onChange={(e) => setAvatarUrl(e.target.value)}
               placeholder="https://... or leave empty for initials"
-              className="w-full bg-base-1 border border-border focus:border-commito-coral rounded-sm px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
+              className="w-full bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
             />
             <p className="text-[10.5px] text-text-muted">
               Leave blank to use provider initials fallback (e.g. NF).

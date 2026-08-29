@@ -1,9 +1,9 @@
-import React, { useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { X, Users } from 'lucide-react';
-import { useAccountServicesStore } from './store/accountStore';
-import { AccountsTab } from './tabs/AccountsTab';
-import { AddAccountTab } from './tabs/AddAccountTab';
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
+import { X, Users } from "lucide-react";
+import { useAccountServicesStore } from "./store/accountStore";
+import { AccountsTab } from "./tabs/AccountsTab";
+import { AddAccountTab } from "./tabs/AddAccountTab";
 
 /**
  * Clean, modern modal dialog for managing multiple Git provider accounts
@@ -22,12 +22,12 @@ export const AccountServicesModal: React.FC = () => {
   // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isModalOpen) {
+      if (e.key === "Escape" && isModalOpen) {
         setIsModalOpen(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, setIsModalOpen]);
 
   if (!isModalOpen) return null;
@@ -52,9 +52,9 @@ export const AccountServicesModal: React.FC = () => {
         {/* Clean Modal Header */}
         <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Users className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 min-w-0">
               <h2
                 id="account-services-modal-title"
@@ -82,11 +82,11 @@ export const AccountServicesModal: React.FC = () => {
 
         {/* Modal Content Body */}
         <div className="p-4 overflow-y-auto flex-1 bg-base-0">
-          {activeTab === 'accounts' && <AccountsTab />}
-          {activeTab === 'add' && <AddAccountTab />}
+          {activeTab === "accounts" && <AccountsTab />}
+          {activeTab === "add" && <AddAccountTab />}
         </div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };

@@ -94,4 +94,15 @@ export class SystemService {
   static async renameFile(repoPath: string, oldPath: string, newPath: string): Promise<void> {
     return invoke('rename_file_cmd', { repoPath, oldPath, newPath });
   }
+
+  /**
+   * Opens an external web URL in the user's default browser.
+   */
+  static async openInBrowser(url: string): Promise<void> {
+    try {
+      await invoke('open_in_browser_cmd', { url });
+    } catch {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  }
 }

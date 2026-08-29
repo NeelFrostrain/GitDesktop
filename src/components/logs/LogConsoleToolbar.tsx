@@ -38,7 +38,7 @@ export const LogConsoleToolbar: React.FC<LogConsoleToolbarProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search logs..."
-            className="w-full pl-8 pr-3 py-1 bg-base-0 border border-border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-commito-coral/50 font-sans"
+            className="w-full pl-8 pr-3 py-1 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none focus:border-border-strong font-sans"
           />
         </div>
       </div>
