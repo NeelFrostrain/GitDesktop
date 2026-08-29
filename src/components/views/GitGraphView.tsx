@@ -418,7 +418,7 @@ export const GitGraphView: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-base-0 select-none overflow-hidden font-sans">
       {/* Top Header Control Toolbar */}
-      <div className="h-10 px-3 bg-base-0 border-b border-border flex items-center justify-between gap-3 shrink-0 text-xs select-none z-10">
+      <div className="h-10 px-1.5 bg-base-0 border-b border-border flex items-center justify-between gap-3 shrink-0 text-xs select-none z-10">
         {/* Left: Filter Controls */}
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           {/* Branch Dropdown */}
