@@ -175,18 +175,16 @@ function DirtyWarningBanner() {
 function ProgressBar({ isPulling }: { isPulling: boolean }) {
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30 overflow-hidden rounded-b-sm"
+      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black/40 overflow-hidden rounded-b-sm pointer-events-none"
       role="progressbar"
       aria-label={isPulling ? 'Pull progress' : 'Push progress'}
     >
       <div
-        className={`h-full animate-[progress_1.2s_ease-in-out_infinite] ${
-          isPulling ? 'bg-blue-300' : 'bg-orange-300'
+        className={`h-full animate-progress-indeterminate ${
+          isPulling
+            ? 'bg-gradient-to-r from-blue-400 via-sky-200 to-blue-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]'
+            : 'bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]'
         }`}
-        style={{
-          width: '60%',
-          transformOrigin: 'left',
-        }}
       />
     </div>
   );

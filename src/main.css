@@ -671,3 +671,24 @@ body,
   animation: aiThinkingGlow 2s ease-in-out infinite;
 }
 
+/* Progress Bar indeterminate sliding wave */
+@keyframes progressIndeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.75);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+  }
+}
+
+.animate-progress-indeterminate {
+  animation: progressIndeterminate 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  width: 100%;
+  transform-origin: center;
+  will-change: transform;
+}
+
+
