@@ -10,6 +10,8 @@ import {
   Cpu,
   Check,
   ArrowUp,
+  Terminal,
+  FileCode,
   Zap,
   Sparkles,
   Loader2,
