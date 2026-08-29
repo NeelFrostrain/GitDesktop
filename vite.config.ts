@@ -30,7 +30,7 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'es2021',
+    target: 'es2022',
     minify: 'esbuild',
     cssMinify: true,
     sourcemap: false,

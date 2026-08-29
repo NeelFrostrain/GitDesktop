@@ -5,7 +5,6 @@ import {
   Trash2,
   Paperclip,
   RotateCcw,
-  Loader2,
   Settings,
   ChevronDown,
   Cpu,
@@ -14,6 +13,9 @@ import {
   Terminal,
   FileCode,
   Zap,
+  Sparkles,
+  GitBranch,
+  GitCommit,
 } from 'lucide-react';
 import { useAiAgentStore } from '../store/useAiAgentStore';
 import { ChatMessageItem } from './ChatMessageItem';
@@ -93,8 +95,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
   const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
   const activeModelObj = MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
 
-  const [panelWidth, setPanelWidth] = useState<number>(getStoredWidth);
-  const [isDragging, setIsDragging] = useState(false);
+  const [panelWidth] = useState<number>(getStoredWidth);
   const [inputVal, setInputVal] = useState('');
   const [isSessionMenuOpen, setIsSessionMenuOpen] = useState(false);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
@@ -142,48 +143,6 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
   }, []);
 
   if (!isOpen) return null;
-
-  const handleMouseDownResize = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-
-    const startX = e.clientX;
-    const startWidth = panelWidth;
-    let latestWidth = startWidth;
-    let rafId: number | null = null;
-
-    const handleMouseMove = (moveEvent: MouseEvent) => {
-      if (rafId !== null) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        const deltaX = startX - moveEvent.clientX; // Moving left increases width of right sidebar
-        const maxW = Math.min(1100, window.innerWidth - 80);
-        const newWidth = Math.max(340, Math.min(maxW, startWidth + deltaX));
-        latestWidth = newWidth;
-        setPanelWidth(newWidth);
-      });
-    };
-
-    const handleMouseUp = () => {
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
-      setIsDragging(false);
-      try {
-        localStorage.setItem('ai_agent_panel_width', latestWidth.toString());
-      } catch {}
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
-    };
-
-    document.addEventListener('mousemove', handleMouseMove, { passive: true });
-    document.addEventListener('mouseup', handleMouseUp);
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
-  };
 
   const handleSend = async () => {
     if (!inputVal.trim() || isThinking) return;
@@ -406,7 +365,61 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
       </div>
 
       {/* Main Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-base-3 min-h-0">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3 scrollbar-thin scrollbar-thumb-base-3 min-h-0">
+        {/* Empty Welcome State */}
+        {(!activeSession?.messages || activeSession.messages.length === 0) && (
+          <div className="h-full flex flex-col items-center justify-center text-center p-4 select-none space-y-4 my-auto">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-commito-coral/25 via-purple-500/20 to-blue-500/20 border border-commito-coral/40 flex items-center justify-center shadow-[0_0_20px_rgba(224,86,56,0.25)]">
+              <Sparkles className="w-6 h-6 text-commito-coral animate-pulse" />
+            </div>
+
+            <div className="space-y-1 max-w-[280px]">
+              <h3 className="text-sm font-bold text-text-primary tracking-tight">
+                GitLab Desktop AI Assistant
+              </h3>
+              <p className="text-[11px] text-text-muted leading-relaxed">
+                Powered by Gemini models to analyze your git repository, explain diffs, draft commits, and resolve merge conflicts.
+              </p>
+            </div>
+
+            {/* Capability Badges */}
+            <div className="grid grid-cols-2 gap-2 w-full max-w-[320px] text-left pt-2">
+              <div className="p-2 rounded-lg bg-base-1/60 border border-border/80 text-[10.5px]">
+                <div className="font-semibold text-text-primary flex items-center gap-1 mb-0.5">
+                  <FileCode className="w-3 h-3 text-commito-coral" />
+                  <span>Explain Diffs</span>
+                </div>
+                <div className="text-text-muted text-[9.5px]">Instant summary of modified files</div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-base-1/60 border border-border/80 text-[10.5px]">
+                <div className="font-semibold text-text-primary flex items-center gap-1 mb-0.5">
+                  <GitCommit className="w-3 h-3 text-emerald-400" />
+                  <span>Smart Commits</span>
+                </div>
+                <div className="text-text-muted text-[9.5px]">Conventional commit generation</div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-base-1/60 border border-border/80 text-[10.5px]">
+                <div className="font-semibold text-text-primary flex items-center gap-1 mb-0.5">
+                  <Terminal className="w-3 h-3 text-sky-400" />
+                  <span>Git Actions</span>
+                </div>
+                <div className="text-text-muted text-[9.5px]">Run safe terminal commands</div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-base-1/60 border border-border/80 text-[10.5px]">
+                <div className="font-semibold text-text-primary flex items-center gap-1 mb-0.5">
+                  <GitBranch className="w-3 h-3 text-purple-400" />
+                  <span>Branch Advice</span>
+                </div>
+                <div className="text-text-muted text-[9.5px]">Rebase, stash & conflict tips</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Message Items */}
         {activeSession?.messages.map((msg, idx) => (
           <ChatMessageItem
             key={msg.id}
@@ -415,19 +428,36 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
           />
         ))}
 
-        {/* Thinking Indicator */}
+        {/* Futuristic Glowing Thinking Indicator */}
         {isThinking && (
-          <div className="flex items-center gap-2 p-2.5 bg-base-1/50 border border-border/70 rounded-sm">
-            <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
-            <span className="text-xs text-text-muted font-medium flex-1">Thinking...</span>
+          <div className="ai-thinking-card rounded-xl border border-commito-coral/30 bg-gradient-to-r from-base-1/90 via-base-1/70 to-base-2/60 p-3 shadow-md backdrop-blur-xs flex items-center justify-between gap-3 animate-in fade-in select-none">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-commito-coral/30 to-purple-600/30 border border-commito-coral/40 flex items-center justify-center shadow-[0_0_10px_rgba(224,86,56,0.3)] shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-commito-coral animate-spin" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[11.5px] font-bold text-text-primary flex items-center gap-1.5">
+                  <span>AI is thinking & reasoning</span>
+                  <span className="inline-flex gap-0.5">
+                    <span className="w-1 h-1 bg-commito-coral rounded-full animate-bounce [animation-delay:0ms]" />
+                    <span className="w-1 h-1 bg-commito-coral rounded-full animate-bounce [animation-delay:150ms]" />
+                    <span className="w-1 h-1 bg-commito-coral rounded-full animate-bounce [animation-delay:300ms]" />
+                  </span>
+                </div>
+                <div className="text-[10px] text-text-muted font-mono truncate">
+                  Analyzing repository context & preparing response...
+                </div>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={() => cancelRequest()}
-              title="Cancel request"
-              className="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-base-2 border border-border/60 hover:border-commito-coral/50 hover:bg-commito-coral/10 text-text-muted hover:text-commito-coral transition text-[10px] font-medium cursor-pointer select-none"
+              title="Stop response generation"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md bg-base-2 hover:bg-commito-coral/15 border border-border/80 hover:border-commito-coral/40 text-text-muted hover:text-commito-coral transition text-[11px] font-medium cursor-pointer shrink-0 active:scale-95"
             >
               <X className="w-3 h-3" />
-              Stop
+              <span>Stop</span>
             </button>
           </div>
         )}

@@ -415,21 +415,24 @@ export const useGitStore = create<GitState>((set, get) => ({
     const prevStatus = get().status;
     const { stagedFiles: currentStaged, hasInitializedStaging } = get();
 
-    // Fast check: if status hasn't changed at all and staging is already initialized, skip redundant store update
+    // Fast fingerprint check: build a single string from all file paths/statuses and compare.
+    // This is O(N) but uses a single string join + one comparison, avoiding per-file object access.
     if (hasInitializedStaging && prevStatus && status) {
-      const isSame =
-        prevStatus.current_branch === status.current_branch &&
+      const prevBranch = prevStatus.current_branch;
+      const nextBranch = status.current_branch;
+      const branchSame = prevBranch === nextBranch;
+      const metaSame =
         prevStatus.ahead === status.ahead &&
         prevStatus.behind === status.behind &&
         prevStatus.is_clean === status.is_clean &&
-        prevStatus.has_conflicts === status.has_conflicts &&
-        prevStatus.files.length === status.files.length &&
-        prevStatus.files.every((f, i) => {
-          const f2 = status.files[i];
-          return f2 && f.path === f2.path && f.status === f2.status && f.staged === f2.staged;
-        });
+        prevStatus.has_conflicts === status.has_conflicts;
 
-      if (isSame) return;
+      if (branchSame && metaSame && prevStatus.files.length === status.files.length) {
+        // Build a compact fingerprint string and compare in one shot
+        const prevFp = prevStatus.files.map((f) => `${f.path}|${f.status}|${f.staged}`).join(',');
+        const nextFp = status.files.map((f) => `${f.path}|${f.status}|${f.staged}`).join(',');
+        if (prevFp === nextFp) return;
+      }
     }
 
     const allFilePaths = status ? status.files.map((f) => f.path) : [];
@@ -466,9 +469,15 @@ export const useGitStore = create<GitState>((set, get) => ({
       statusVersion: state.statusVersion + 1,
     }));
 
-    get()
-      .loadBranchStashes()
-      .catch(() => {});
+    // Only reload branch stashes when the branch itself has changed — avoids a Git IPC
+    // call on every poll cycle when the user is sitting on the same branch.
+    const prevBranch = prevStatus?.current_branch;
+    const nextBranch = status?.current_branch;
+    if (prevBranch !== nextBranch) {
+      get()
+        .loadBranchStashes()
+        .catch(() => {});
+    }
   },
 
   setBranches: (branches) => set({ branches }),

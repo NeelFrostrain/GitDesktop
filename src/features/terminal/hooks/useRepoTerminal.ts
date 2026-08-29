@@ -190,8 +190,7 @@ export function useRepoTerminal(
     };
 
     fitAndRefresh();
-    const fitTimer1 = setTimeout(fitAndRefresh, 40);
-    const fitTimer2 = setTimeout(fitAndRefresh, 120);
+    const fitTimer = setTimeout(fitAndRefresh, 80);
 
     let isEffectActive = true;
 
@@ -432,7 +431,7 @@ export function useRepoTerminal(
             inputBufferRef.current.slice(0, cursorPosRef.current) +
             inputBufferRef.current.slice(cursorPosRef.current + 1);
           auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
-          setTimeout(() => calculateCursorPositionRef.current(), 0);
+          // No explicit cursor recalc here — onCursorMove handles it
         }
       } else if (data.length === 1 && data.charCodeAt(0) >= 32) {
         // Printable character
@@ -442,7 +441,7 @@ export function useRepoTerminal(
           inputBufferRef.current.slice(cursorPosRef.current);
         cursorPosRef.current += 1;
         auto.updateSuggestions(inputBufferRef.current, cursorPosRef.current);
-        setTimeout(() => calculateCursorPositionRef.current(), 0);
+        // No explicit cursor recalc here — onCursorMove handles it
       }
 
       // Forward keystroke to backend PTY
@@ -451,8 +450,15 @@ export function useRepoTerminal(
 
     onDataDisposableRef.current = onDataDisposable;
 
+    // Throttle cursor-move DOM queries to one per animation frame (rAF) so that
+    // rapid typing doesn't schedule a querySelector call per character.
+    let cursorRafId: number | null = null;
     const onCursorMoveDisposable = terminal.onCursorMove(() => {
-      calculateCursorPositionRef.current();
+      if (cursorRafId !== null) return;
+      cursorRafId = requestAnimationFrame(() => {
+        cursorRafId = null;
+        calculateCursorPositionRef.current();
+      });
     });
 
     // Resize observer
@@ -472,8 +478,8 @@ export function useRepoTerminal(
 
     return () => {
       isEffectActive = false;
-      clearTimeout(fitTimer1);
-      clearTimeout(fitTimer2);
+      clearTimeout(fitTimer);
+      if (cursorRafId !== null) cancelAnimationFrame(cursorRafId);
       onDataDisposable.dispose();
       onCursorMoveDisposable.dispose();
       resizeObserver.disconnect();

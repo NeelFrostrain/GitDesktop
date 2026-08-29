@@ -191,10 +191,10 @@ pub async fn accounts_start_oauth(
                                     .map(|(_, v)| v.to_string());
 
                                 if let Some(err_msg) = error_opt {
-                                    let html_err = format!(
-                                        concat!(
+                                    let html_err = concat!(
                                             "HTTP/1.1 200 OK\r\n",
                                             "Content-Type: text/html; charset=utf-8\r\n",
+                                            "Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'\r\n",
                                             "Connection: close\r\n\r\n",
                                             "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Authentication Error</title><style>",
                                             "* {{ box-sizing: border-box; margin: 0; padding: 0; }}",
@@ -203,9 +203,7 @@ pub async fn accounts_start_oauth(
                                             "h1 {{ font-size: 20px; color: #ef4444; margin-bottom: 8px; }}",
                                             "p {{ font-size: 13px; color: #b3b0b8; line-height: 1.5; margin-bottom: 20px; }}",
                                             ".btn-return {{ display: inline-flex; align-items: center; justify-content: center; width: 100%; padding: 10px 16px; background: #dc2626; color: #ffffff; font-size: 13px; font-weight: 600; border: none; border-radius: 6px; cursor: pointer; }}",
-                                            "</style></head><body><div class=\"auth-card\"><h1>Authentication Failed</h1><p>{}</p><button class=\"btn-return\" onclick=\"window.close()\"><span>Close Window</span></button></div></body></html>"
-                                        ),
-                                        err_msg
+                                            "</style></head><body><div class=\"auth-card\"><h1>Authentication Failed</h1><p>Please return to Git Desktop and try again.</p></div></body></html>"
                                     );
                                     let _ = stream.write_all(html_err.as_bytes()).await;
                                     let _ = stream.flush().await;
@@ -291,34 +289,17 @@ pub async fn accounts_exchange_oauth_code(
     provider: String,
     code: String,
     state: Option<String>,
-    instance_url: Option<String>,
+    _instance_url: Option<String>,
 ) -> Result<ProviderAccount, AppError> {
     let prov = provider.to_lowercase();
-    let (target_url, verifier, redirect_uri) = if let Some(ref s) = state {
-        if let Some(session) = oauth_pkce::take_pkce_session(s) {
-            (session.instance_url, session.verifier, Some(session.redirect_uri))
-        } else {
-            (
-                instance_url.unwrap_or_else(|| match prov.as_str() {
-                    "github" => "https://github.com".to_string(),
-                    "bitbucket" => "https://bitbucket.org".to_string(),
-                    _ => "https://gitlab.com".to_string(),
-                }),
-                String::new(),
-                None,
-            )
-        }
-    } else {
-        (
-            instance_url.unwrap_or_else(|| match prov.as_str() {
-                "github" => "https://github.com".to_string(),
-                "bitbucket" => "https://bitbucket.org".to_string(),
-                _ => "https://gitlab.com".to_string(),
-            }),
-            String::new(),
-            None,
-        )
-    };
+    let state = state
+        .filter(|value| !value.trim().is_empty())
+        .ok_or_else(|| AppError::Validation("Missing OAuth state".to_string()))?;
+    let session = oauth_pkce::take_valid_pkce_session(&state, &prov)
+        .ok_or_else(|| AppError::Validation("Invalid, expired, or mismatched OAuth state".to_string()))?;
+    let target_url = session.instance_url;
+    let verifier = session.verifier;
+    let redirect_uri = Some(session.redirect_uri);
 
     let account = match prov.as_str() {
         "github" => {

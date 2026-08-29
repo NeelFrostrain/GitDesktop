@@ -32,7 +32,7 @@ pub fn list_submodules(repo_path: &str) -> Result<Vec<SubmoduleInfo>, AppError> 
             let status_char = parts[0].chars().next().unwrap_or(' ');
             let sha = parts[0].trim_start_matches(['-', '+', 'U']).to_string();
             let path = parts[1].to_string();
-            let name = path.split('/').last().unwrap_or(&path).to_string();
+            let name = path.split('/').next_back().unwrap_or(&path).to_string();
 
             let is_dirty = status_char == '+';
             let is_initialized = status_char != '-';

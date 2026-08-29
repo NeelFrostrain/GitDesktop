@@ -179,7 +179,7 @@ pub fn list_ssh_keys() -> Result<Vec<SshKeyInfo>, AppError> {
         if output.status.success() {
             let stdout = String::from_utf8_lossy(&output.stdout);
             for line in stdout.lines() {
-                let parts: Vec<&str> = line.trim().split_whitespace().collect();
+                let parts: Vec<&str> = line.split_whitespace().collect();
                 if parts.len() >= 2 {
                     let key_type = parts[0].to_string();
                     let public_key = parts[1].to_string();

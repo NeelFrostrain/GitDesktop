@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserCheck, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ConfigHeaderProps {
   onClose: () => void;

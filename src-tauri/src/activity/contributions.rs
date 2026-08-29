@@ -85,9 +85,8 @@ fn format_relative_date(timestamp: i64) -> String {
     let now = Utc::now().timestamp();
     let diff = now - timestamp;
 
-    if diff < 0 {
-        "just now".to_string()
-    } else if diff < 60 {
+    // Treat negative diff (clock skew, future commits) the same as < 60s
+    if diff < 60 {
         "just now".to_string()
     } else if diff < 3600 {
         let mins = diff / 60;
@@ -108,8 +107,11 @@ fn date_time_from_ts(timestamp: i64) -> chrono::DateTime<Utc> {
     chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_else(Utc::now)
 }
 
+/// Return type alias to satisfy clippy::type_complexity
+type CalendarGrid = (Vec<ContributionWeek>, HashMap<String, (usize, usize)>, NaiveDate, NaiveDate);
+
 /// Generate base calendar grid ending on the current week's Saturday (80 weeks to seamlessly fill wide screens)
-fn generate_empty_calendar_grid() -> (Vec<ContributionWeek>, HashMap<String, (usize, usize)>, NaiveDate, NaiveDate) {
+fn generate_empty_calendar_grid() -> CalendarGrid {
     let today = Local::now().date_naive();
     
     // We want the calendar to end on the upcoming or current Saturday
@@ -206,11 +208,9 @@ fn scan_local_repos_commits(
         
         // Also walk all local branches to find user commits across branches
         if let Ok(branches) = repo.branches(Some(git2::BranchType::Local)) {
-            for branch_res in branches {
-                if let Ok((branch, _)) = branch_res {
-                    if let Some(target) = branch.get().target() {
-                        let _ = revwalk.push(target);
-                    }
+            for (branch, _) in branches.flatten() {
+                if let Some(target) = branch.get().target() {
+                    let _ = revwalk.push(target);
                 }
             }
         }

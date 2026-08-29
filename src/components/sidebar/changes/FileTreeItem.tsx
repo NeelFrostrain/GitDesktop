@@ -188,7 +188,7 @@ export const getStatusBadge = (statusStr?: string) => {
   if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/25 shrink-0"
         title="Deleted"
       >
         D
@@ -198,7 +198,7 @@ export const getStatusBadge = (statusStr?: string) => {
   if (statusUpper.includes('RENAME')) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/25 shrink-0"
         title="Renamed"
       >
         R
@@ -207,7 +207,7 @@ export const getStatusBadge = (statusStr?: string) => {
   }
   return (
     <span
-      className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/25 shrink-0"
+      className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/25 shrink-0"
       title="Modified"
     >
       M

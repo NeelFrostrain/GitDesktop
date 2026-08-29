@@ -618,6 +618,7 @@ pub async fn list_releases_cmd(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn create_release_cmd(
     app: tauri::AppHandle,
     repo_path: String,
@@ -716,6 +717,7 @@ pub async fn create_release_cmd(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn update_release_cmd(
     app: tauri::AppHandle,
     repo_path: String,

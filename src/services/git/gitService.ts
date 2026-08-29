@@ -8,8 +8,6 @@ import {
   CommitDetails,
   PullResult,
   RemoteInfo,
-  LfsFile,
-  LfsLock,
   WorktreeInfo,
   StashEntry,
   TagInfo,

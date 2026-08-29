@@ -37,9 +37,9 @@ pub fn get_file_blame(repo_path: &str, file_path: &str) -> Result<Vec<BlameLine>
     let mut line_count = 0;
 
     for line in stdout.lines() {
-        if line.starts_with('\t') {
+        if let Some(content_str) = line.strip_prefix('\t') {
             line_count += 1;
-            let content = line[1..].to_string();
+            let content = content_str.to_string();
             let short_sha = if current_sha.len() >= 7 {
                 current_sha[..7].to_string()
             } else {

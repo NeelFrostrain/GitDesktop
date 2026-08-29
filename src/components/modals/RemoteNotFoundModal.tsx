@@ -12,8 +12,6 @@ export const RemoteNotFoundModal: React.FC = () => {
     isRemoteNotFoundModalOpen,
     setIsRemoteNotFoundModalOpen,
     setIsPublishRepoModalOpen,
-    status,
-    setStatus,
   } = useGitStore();
 
   const handleClose = useCallback(() => {

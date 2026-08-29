@@ -50,13 +50,11 @@ pub fn get_history(repo_id: &str, limit: u32, offset: u32) -> Result<Vec<History
     let reader = BufReader::new(file);
 
     let mut entries: Vec<HistoryEntry> = Vec::new();
-    for line in reader.lines() {
-        if let Ok(l) = line {
-            let trimmed = l.trim();
-            if !trimmed.is_empty() {
-                if let Ok(entry) = serde_json::from_str::<HistoryEntry>(trimmed) {
-                    entries.push(entry);
-                }
+    for l in reader.lines().map_while(Result::ok) {
+        let trimmed = l.trim();
+        if !trimmed.is_empty() {
+            if let Ok(entry) = serde_json::from_str::<HistoryEntry>(trimmed) {
+                entries.push(entry);
             }
         }
     }

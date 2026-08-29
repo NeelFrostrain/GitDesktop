@@ -88,7 +88,7 @@ export const ContributionCommitList: React.FC = () => {
             <div
               key={commit.id}
               onClick={() => handleOpenRepo(commit.repo_path, commit.repo_name)}
-              className="group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
+              className="group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
             >
               {/* Left: Commit info */}
               <div className="flex items-center gap-3 min-w-0 flex-1">

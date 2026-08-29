@@ -5,7 +5,6 @@ import {
   Layers,
   Check,
   Flame,
-  Activity,
   FolderGit2,
   Calendar as CalendarIcon,
   Zap,

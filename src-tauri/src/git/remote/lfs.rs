@@ -48,13 +48,9 @@ pub fn list_lfs_files(repo_path: &str) -> Result<Vec<LfsFile>, AppError> {
         let parts: Vec<&str> = line.split_whitespace().collect();
         if parts.len() >= 3 {
             let oid = parts[0].to_string();
-            let mode_or_marker = parts[1];
+            let _mode_or_marker = parts[1];
             let path = parts[2..].join(" ");
-            let size = if mode_or_marker.starts_with('-') || mode_or_marker.starts_with('*') {
-                0
-            } else {
-                0
-            };
+            let size = 0;
             files.push(LfsFile { path, oid, size });
         } else if parts.len() >= 2 {
             files.push(LfsFile {

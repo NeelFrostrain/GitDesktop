@@ -1,5 +1,6 @@
 use crate::core::logging::model::{LogEntry, LogFilter};
 use sha2::{Digest, Sha256};
+use std::collections::VecDeque;
 use std::fs::{self, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::{Path, PathBuf};
@@ -29,12 +30,18 @@ pub fn safe_repo_id(repo_id: &str) -> String {
         .collect();
 
     let name = sanitized.trim_matches('_');
-    let short_name = if name.len() > 24 {
-        &name[name.len() - 24..]
+    let short_name = if name.chars().count() > 24 {
+        name.chars()
+            .rev()
+            .take(24)
+            .collect::<String>()
+            .chars()
+            .rev()
+            .collect::<String>()
     } else if name.is_empty() {
-        "repo"
+        "repo".to_string()
     } else {
-        name
+        name.to_string()
     };
 
     format!("{}_{}", short_name, short_hash)
@@ -117,10 +124,10 @@ fn prune_file(path: &Path, keep_last: usize) {
     };
 
     let reader = BufReader::new(file);
-    let mut lines: Vec<String> = reader.lines().filter_map(|l| l.ok()).collect();
+    let mut lines: VecDeque<String> = reader.lines().map_while(Result::ok).collect();
 
     if lines.len() > keep_last {
-        let trimmed: Vec<String> = lines.split_off(lines.len() - keep_last);
+        let trimmed = lines.split_off(lines.len() - keep_last);
         if let Ok(mut out) = fs::File::create(path) {
             for l in trimmed {
                 let _ = writeln!(out, "{}", l);
@@ -141,21 +148,21 @@ fn read_entries_from_file(path: &Path) -> Vec<LogEntry> {
     };
 
     let reader = BufReader::new(file);
-    let mut entries = Vec::new();
+    let mut entries = VecDeque::with_capacity(MAX_LOG_ENTRIES);
 
-    for line in reader.lines() {
-        if let Ok(l) = line {
-            let trimmed = l.trim();
-            if !trimmed.is_empty() {
-                if let Ok(entry) = serde_json::from_str::<LogEntry>(trimmed) {
-                    entries.push(entry);
+    for l in reader.lines().map_while(Result::ok) {
+        let trimmed = l.trim();
+        if !trimmed.is_empty() {
+            if let Ok(entry) = serde_json::from_str::<LogEntry>(trimmed) {
+                if entries.len() == MAX_LOG_ENTRIES {
+                    entries.pop_front();
                 }
+                entries.push_back(entry);
             }
         }
     }
 
-    entries.reverse(); // Newest first
-    entries
+    entries.into_iter().rev().collect()
 }
 
 /// Queries logs from disk matching the filter, paginated.
@@ -166,8 +173,9 @@ pub fn query_logs(filter: &LogFilter, limit: usize, offset: usize) -> Vec<LogEnt
     };
 
     let all_entries = if filter.this_repo_only.unwrap_or(false) && filter.repo_id.is_some() {
-        let repo_id = filter.repo_id.as_ref().unwrap();
-        read_entries_from_file(&get_repo_log_path(repo_id))
+        read_entries_from_file(&get_repo_log_path(
+            filter.repo_id.as_deref().unwrap_or_default(),
+        ))
     } else {
         read_entries_from_file(&get_global_log_path())
     };
@@ -293,5 +301,11 @@ mod tests {
         assert!(!safe.contains(':'));
         assert!(!safe.contains('/'));
         assert!(!safe.contains('\\'));
+    }
+
+    #[test]
+    fn test_safe_repo_id_supports_unicode() {
+        let safe = safe_repo_id("C:/Projects/日本語日本語日本語日本語日本語");
+        assert!(!safe.is_empty());
     }
 }

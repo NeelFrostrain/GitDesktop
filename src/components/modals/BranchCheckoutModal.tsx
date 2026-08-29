@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { AlertTriangle, ArrowRightLeft, Archive, Trash2, X, Loader2 } from 'lucide-react';
+import { ArrowRightLeft, Archive, Trash2, X, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';

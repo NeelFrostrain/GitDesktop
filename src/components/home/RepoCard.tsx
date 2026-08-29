@@ -225,7 +225,7 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         <div
           onClick={handleCardClick}
           onContextMenu={handleContextMenu}
-          className={`group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-3 select-none animate-in fade-in duration-150 shadow-2xs overflow-hidden ${
+          className={`group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out cursor-pointer flex items-center justify-between gap-3 select-none animate-in fade-in duration-150 shadow-2xs overflow-hidden ${
             repo.pinned ? 'border-border-strong bg-base-1/80' : ''
           }`}
         >

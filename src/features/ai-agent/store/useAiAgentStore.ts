@@ -261,7 +261,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         title: 'Terminal Output Attached (TOON)',
         message: 'Attached recent terminal commands encoded in low-token TOON format.',
       });
-    } catch (err: unknown) {
+    } catch {
       useToastStore.getState().showToast({
         type: 'error',
         title: 'Terminal Read Failed',
@@ -767,7 +767,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           title: 'Executing in Terminal',
           message: `Sent: ${command.slice(0, 48)}`,
         });
-      } catch (err) {
+      } catch {
         useToastStore.getState().showToast({
           type: 'info',
           title: 'Terminal Dispatched',
@@ -783,8 +783,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       // 4. Clean up ANSI color codes and command echo
+      // eslint-disable-next-line no-control-regex
       let cleanOutput = capturedOutput
+        // eslint-disable-next-line no-control-regex
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+        // eslint-disable-next-line no-control-regex
         .replace(/\x1b\].*?\x07/g, '')
         .replace(/\r/g, '')
         .trim();
@@ -890,7 +893,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           await new Promise((resolve) => setTimeout(resolve, 400));
         }
       }
-    } catch (err) {
+    } catch {
       useToastStore.getState().showToast({
         type: 'info',
         title: 'Terminal Dispatched',
@@ -907,8 +910,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // 5. Clean output
+    // eslint-disable-next-line no-control-regex
     const cleanOutput = capturedOutput
+      // eslint-disable-next-line no-control-regex
       .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+      // eslint-disable-next-line no-control-regex
       .replace(/\x1b\].*?\x07/g, '')
       .replace(/\r/g, '')
       .trim();

@@ -9,8 +9,6 @@ import {
   User,
   LogOut,
   Home,
-  FolderGit2,
-  GitBranch,
   Settings,
   Users,
   Plus,
@@ -34,7 +32,6 @@ export const Titlebar: React.FC = () => {
     setAccounts,
     activeRepoPath,
     setActiveRepoPath,
-    status,
     setStatus,
     setBranches,
     currentNavView,
@@ -50,9 +47,6 @@ export const Titlebar: React.FC = () => {
   const activeRepoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository'
     : null;
-  const currentBranch = status?.current_branch || 'main';
-  const uncommittedCount = status?.files?.length || 0;
-  const isClean = status?.is_clean ?? uncommittedCount === 0;
 
   useEffect(() => {
     const checkMaximized = async () => {

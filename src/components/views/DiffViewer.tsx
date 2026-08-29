@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { FileText, Binary, HardDrive, Clock, ChevronRight, FileCode } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { DiffResult, CommitDetails } from '../../types/git';
@@ -128,6 +128,19 @@ export const DiffViewer: React.FC = () => {
     };
   }, [activeRepoPath, selectedFile, activeTab, setError]);
 
+  const fetchCommitFileDiff = useCallback(async (sha: string, filePath: string) => {
+    if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
+    setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
+    try {
+      const res = await GitService.getCommitFileDiff(activeRepoPath, sha, filePath);
+      setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
+    } catch (err: unknown) {
+      setError(toAppError(err, 'GIT_ERROR'));
+    } finally {
+      setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
+    }
+  }, [activeRepoPath, expandedHistoryFiles, setError]);
+
   // Fetch commit details when selected commit changes in History tab
   useEffect(() => {
     if (!activeRepoPath || !selectedCommitSha || activeTab !== 'history') {
@@ -150,20 +163,7 @@ export const DiffViewer: React.FC = () => {
       })
       .catch((err: unknown) => setError(toAppError(err, 'GIT_ERROR')))
       .finally(() => setIsLoading(false));
-  }, [activeRepoPath, selectedCommitSha, activeTab, setError]);
-
-  const fetchCommitFileDiff = async (sha: string, filePath: string) => {
-    if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
-    setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
-    try {
-      const res = await GitService.getCommitFileDiff(activeRepoPath, sha, filePath);
-      setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
-    } catch (err: unknown) {
-      setError(toAppError(err, 'GIT_ERROR'));
-    } finally {
-      setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
-    }
-  };
+  }, [activeRepoPath, selectedCommitSha, activeTab, setError, fetchCommitFileDiff]);
 
   const toggleFileExpansion = (filePath: string) => {
     const nextState = !openFiles[filePath];

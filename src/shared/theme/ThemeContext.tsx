@@ -11,7 +11,8 @@ export type ThemePresetId =
   | 'carbon-orange'
   | 'espresso-terracotta'
   | 'github-dark'
-  | 'antigravity-dark';
+  | 'antigravity-dark'
+  | 'codex-graphite';
 
 export interface ThemeDefinition {
   id: ThemePresetId;
@@ -182,63 +183,6 @@ const THEME_PRESETS: Record<ThemePresetId, ThemeDefinition> = {
       '--brand-commito-coral-hover': '#8fbcbb',
       '--scrollbar-thumb': 'rgba(216, 222, 233, 0.15)',
       '--scrollbar-thumb-hover': 'rgba(216, 222, 233, 0.3)',
-    },
-    'github-dark': {
-      id: 'github-dark',
-      name: 'GitHub Dark',
-      isDark: true,
-      description: 'Classic GitHub Desktop charcoal with primer-blue controls and diff accents',
-      variables: {
-        '--surface': '#161b22',
-        '--surface-subtle': '#0d1117',
-        '--surface-elevated': '#21262d',
-        '--surface-hover': '#30363d',
-        '--surface-active': '#388bfd26',
-        '--border': '#30363d',
-        '--border-subtle': '#21262d',
-        '--border-strong': '#6e7681',
-        '--text': '#f0f6fc',
-        '--text-subtle': '#c9d1d9',
-        '--text-muted': '#8b949e',
-        '--text-faint': '#484f58',
-        '--accent': '#1f6feb',
-        '--accent-hover': '#388bfd',
-        '--accent-active': '#1158c7',
-        '--focus-ring': '#388bfd',
-        '--brand-commito-coral': '#1f6feb',
-        '--brand-commito-coral-hover': '#388bfd',
-        '--scrollbar-thumb': 'rgba(110, 118, 129, 0.25)',
-        '--scrollbar-thumb-hover': 'rgba(110, 118, 129, 0.45)',
-      },
-    },
-
-    'antigravity-dark': {
-      id: 'antigravity-dark',
-      name: 'Antigravity Studio',
-      isDark: true,
-      description: 'IDE dark matte slate matching terminal buffers and VS Code chrome',
-      variables: {
-        '--surface': '#18181b',
-        '--surface-subtle': '#131313',
-        '--surface-elevated': '#1f1f23',
-        '--surface-hover': '#2a2a30',
-        '--surface-active': '#382221',
-        '--border': '#27272a',
-        '--border-subtle': '#1e1e22',
-        '--border-strong': '#3f3f46',
-        '--text': '#e6e4e8',
-        '--text-subtle': '#b3b0b8',
-        '--text-muted': '#85818c',
-        '--text-faint': '#5c5863',
-        '--accent': '#38bdf8',
-        '--accent-hover': '#7dd3fc',
-        '--accent-active': '#0284c7',
-        '--focus-ring': '#38bdf8',
-        '--brand-commito-coral': '#e05638',
-        '--brand-commito-coral-hover': '#f06344',
-        '--scrollbar-thumb': 'rgba(255, 255, 255, 0.12)',
-        '--scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.25)',
-      },
     },
   },
 
@@ -413,6 +357,35 @@ const THEME_PRESETS: Record<ThemePresetId, ThemeDefinition> = {
       '--brand-commito-coral-hover': '#f06344',
       '--scrollbar-thumb': 'rgba(255, 255, 255, 0.12)',
       '--scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.25)',
+    },
+  },
+
+  'codex-graphite': {
+    id: 'codex-graphite',
+    name: 'Codex Graphite',
+    isDark: true,
+    description: 'Near-black graphite workspace with quiet gray hierarchy and a cool blue focus accent',
+    variables: {
+      '--surface': '#161616',
+      '--surface-subtle': '#101010',
+      '--surface-elevated': '#1d1d1d',
+      '--surface-hover': '#272727',
+      '--surface-active': '#2d2d2d',
+      '--border': '#303030',
+      '--border-subtle': '#242424',
+      '--border-strong': '#454545',
+      '--text': '#f0f0f0',
+      '--text-subtle': '#c8c8c8',
+      '--text-muted': '#969696',
+      '--text-faint': '#646464',
+      '--accent': '#6ea8fe',
+      '--accent-hover': '#8bb9ff',
+      '--accent-active': '#4f8de8',
+      '--focus-ring': '#6ea8fe',
+      '--brand-commito-coral': '#6ea8fe',
+      '--brand-commito-coral-hover': '#8bb9ff',
+      '--scrollbar-thumb': 'rgba(255, 255, 255, 0.16)',
+      '--scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.28)',
     },
   },
 };

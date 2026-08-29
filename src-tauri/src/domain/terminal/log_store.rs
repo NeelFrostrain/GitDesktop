@@ -5,6 +5,20 @@ use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::Path;
 
+fn validate_session_id(session_id: &str) -> Result<(), AppError> {
+    if session_id.is_empty()
+        || session_id.len() > 128
+        || !session_id
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(AppError::Validation(
+            "Invalid terminal session ID".to_string(),
+        ));
+    }
+    Ok(())
+}
+
 pub fn get_repo_logs_dir(repo_id: &str) -> std::path::PathBuf {
     let mut dir = get_logs_dir();
     dir.push(safe_repo_id(repo_id));
@@ -100,6 +114,7 @@ pub fn list_log_sessions(repo_id: &str) -> Result<Vec<LogSessionSummary>, AppErr
 }
 
 pub fn get_log_session(repo_id: &str, session_id: &str) -> Result<String, AppError> {
+    validate_session_id(session_id)?;
     let dir = get_repo_logs_dir(repo_id);
     let file_path = dir.join(format!("{}.log", session_id));
 
@@ -119,6 +134,7 @@ pub fn export_log_session(
     session_id: &str,
     dest_path: &str,
 ) -> Result<(), AppError> {
+    validate_session_id(session_id)?;
     let dir = get_repo_logs_dir(repo_id);
     let src_path = dir.join(format!("{}.log", session_id));
 
@@ -160,7 +176,7 @@ pub fn cleanup_old_sessions(repo_id: &str, keep_count: usize) {
         }
 
         // Sort descending by modified time
-        files.sort_by(|a, b| b.1.cmp(&a.1));
+        files.sort_by_key(|b| std::cmp::Reverse(b.1));
 
         if files.len() > keep_count {
             for (path, _) in &files[keep_count..] {

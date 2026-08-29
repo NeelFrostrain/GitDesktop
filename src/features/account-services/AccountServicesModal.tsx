@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Users } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useAccountServicesStore } from './store/accountStore';
 import { AccountsTab } from './tabs/AccountsTab';
 import { AddAccountTab } from './tabs/AddAccountTab';

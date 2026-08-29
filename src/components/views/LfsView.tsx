@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Lock,
   Unlock,
@@ -13,9 +13,7 @@ import {
   Search,
   Copy,
   Check,
-  CheckCircle2,
   Database,
-  ExternalLink,
   Loader2,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
@@ -23,7 +21,7 @@ import { useToastStore } from '../../store/useToastStore';
 import { useLogStore } from '../../store/useLogStore';
 import { LfsFile, LfsLock } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
-import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { toAppError } from '../../shared/utils/errorUtils';
 import { getFileIcon } from '../sidebar/changes/FileTreeItem';
 
 const PRESET_PATTERNS = [
@@ -56,17 +54,7 @@ export const LfsView: React.FC = () => {
   const [isOperating, setIsOperating] = useState<string | null>(null);
   const [copiedOid, setCopiedOid] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!activeRepoPath) return;
-
-    GitService.checkLfsInstalled()
-      .then((installed) => setIsLfsInstalled(installed))
-      .catch(() => setIsLfsInstalled(false));
-
-    loadLfsData();
-  }, [activeRepoPath]);
-
-  const loadLfsData = async () => {
+  const loadLfsData = useCallback(async () => {
     if (!activeRepoPath) return;
     setIsLoading(true);
 
@@ -85,7 +73,17 @@ export const LfsView: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [activeRepoPath]);
+
+  useEffect(() => {
+    if (!activeRepoPath) return;
+
+    GitService.checkLfsInstalled()
+      .then((installed) => setIsLfsInstalled(installed))
+      .catch(() => setIsLfsInstalled(false));
+
+    loadLfsData();
+  }, [activeRepoPath, loadLfsData]);
 
   const handleInstallLfs = async () => {
     if (!activeRepoPath) return;
@@ -120,27 +118,6 @@ export const LfsView: React.FC = () => {
         message: output
           ? output.slice(0, 100)
           : 'All LFS pointers downloaded to local working tree.',
-      });
-      loadLfsData();
-    } catch (err: unknown) {
-      setError(toAppError(err, 'LFS_ERROR'));
-    } finally {
-      setIsOperating(null);
-    }
-  };
-
-  const handleLfsFetch = async () => {
-    if (!activeRepoPath) return;
-    setIsOperating('fetch');
-    try {
-      const output = await GitService.lfsFetch(activeRepoPath);
-      useLogStore
-        .getState()
-        .addLog('success', 'Git LFS', `Fetched LFS objects: ${output || 'Complete'}`);
-      showToast({
-        type: 'info',
-        title: 'LFS Fetch Complete',
-        message: output ? output.slice(0, 100) : 'Fetched latest LFS metadata from remotes.',
       });
       loadLfsData();
     } catch (err: unknown) {

@@ -96,6 +96,8 @@ export const CommitPanel: React.FC = () => {
     return extractConciseBullets(fullAiReport);
   }, [fullAiReport]);
 
+  // Pre-fill existing key when the API key prompt becomes visible.
+  // getEffectiveValue is included so the effect never reads a stale settings closure.
   useEffect(() => {
     if (isApiKeyPrompt) {
       const existing = String(getEffectiveValue('ai.active_api_key') || '').trim();
@@ -103,8 +105,17 @@ export const CommitPanel: React.FC = () => {
         setNewApiKeyInput(existing);
       }
       setInlineError(null);
-      setTimeout(() => keyInputRef.current?.focus(), 50);
     }
+  }, [isApiKeyPrompt, getEffectiveValue]);
+
+  // Focus the key input on the next animation frame once the element is mounted.
+  // Using rAF avoids the fragile arbitrary-delay setTimeout anti-pattern.
+  useEffect(() => {
+    if (!isApiKeyPrompt) return;
+    const raf = requestAnimationFrame(() => {
+      keyInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
   }, [isApiKeyPrompt]);
 
   // Close dropdown on click outside or escape

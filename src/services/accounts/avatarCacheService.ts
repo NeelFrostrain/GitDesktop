@@ -241,7 +241,7 @@ class AvatarCacheService {
           await this.set(clean, dataUrl);
           return dataUrl;
         }
-      } catch (err: any) {
+      } catch {
         // Mark failed to avoid rapid retry loops
         this.markFailed(clean);
       }

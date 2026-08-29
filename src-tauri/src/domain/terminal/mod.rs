@@ -50,7 +50,7 @@ pub fn safe_repo_id(repo_id: &str) -> String {
         .replace('\\', "/")
         .trim_end_matches('/')
         .split('/')
-        .last()
+        .next_back()
         .unwrap_or("repo")
         .chars()
         .filter(|c| c.is_alphanumeric() || *c == '-' || *c == '_')

@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense, useState, useRef, useCallback } from 'react';
+import React, { useEffect, lazy, Suspense, useState, useRef, useCallback, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
@@ -407,8 +407,9 @@ export const App: React.FC = () => {
       })
       .catch(() => {});
 
-    // 1. Periodic background polling (every 2 seconds) for external file modifications
-    const intervalId = setInterval(syncStatus, 2000);
+    // 1. Periodic background polling (every 5 seconds) for external file modifications
+    // Focus/visibilitychange events handle the reactive same-session updates.
+    const intervalId = setInterval(syncStatus, 5000);
 
     // 2. Window focus & document visibility sync
     const handleFocus = () => syncStatus();
@@ -463,7 +464,8 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
-  const renderMainContent = () => {
+  // Memoized: only re-evaluates when the nav view actually changes, not on every App re-render
+  const mainContent = useMemo(() => {
     switch (currentNavView) {
       case 'files':
         return <FileBrowser />;
@@ -484,7 +486,7 @@ export const App: React.FC = () => {
       default:
         return <HomeDashboard />;
     }
-  };
+  }, [currentNavView]);
 
   const isHome = currentNavView === 'home';
 
@@ -497,8 +499,11 @@ export const App: React.FC = () => {
   );
   const sidebarWidthRef = useRef(sidebarWidth);
   const aiPanelWidthRef = useRef(aiPanelWidth);
-  sidebarWidthRef.current = sidebarWidth;
-  aiPanelWidthRef.current = aiPanelWidth;
+  // Sync width refs outside of render so mutations don't violate react-hooks/refs.
+  useEffect(() => {
+    sidebarWidthRef.current = sidebarWidth;
+    aiPanelWidthRef.current = aiPanelWidth;
+  });
 
   const onSidebarResize = useCallback((delta: number) => {
     setSidebarWidth((prev) => Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)));
@@ -539,11 +544,6 @@ export const App: React.FC = () => {
               <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden border-x border-b border-border/80 bg-base-0 shadow-2xs">
                 <HomeDashboard />
               </div>
-              {/* <PanelResizer
-                direction="horizontal"
-                onResize={onAiPanelResize}
-                onResizeEnd={onAiPanelResizeEnd}
-              /> */}
               <Suspense fallback={null}>
                 <AiAgentPanel width={aiPanelWidth} />
               </Suspense>
@@ -579,7 +579,7 @@ export const App: React.FC = () => {
                         </div>
                       }
                     >
-                      {renderMainContent()}
+                      {mainContent}
                     </Suspense>
                   </div>
                 </div>

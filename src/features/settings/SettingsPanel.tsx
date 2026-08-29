@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { X, RotateCcw, Sliders } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useSettingsStore } from './store/useSettingsStore';
-import { CATEGORY_METADATA, SETTINGS_SCHEMA, SettingDefinition } from './lib/settingsSchema';
+import { SETTINGS_SCHEMA, SettingDefinition } from './lib/settingsSchema';
 import { searchSettings } from './lib/fuzzySearch';
 import { CategoryTree } from './components/CategoryTree';
 import { SettingRow } from './components/SettingRow';
@@ -17,7 +17,6 @@ export const SettingsPanel: React.FC = () => {
     selectedCategory,
     selectedSubcategory,
     searchQuery,
-    resetAllSettings,
     loadSettings,
   } = useSettingsStore();
 
@@ -138,7 +137,6 @@ export const SettingsPanel: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const currentCategoryMeta = CATEGORY_METADATA[selectedCategory];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 select-none">

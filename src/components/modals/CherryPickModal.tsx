@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { X, GitCommit, GitBranch, Play, Search, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
@@ -30,6 +30,17 @@ export const CherryPickModal: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const loadBranchCommits = useCallback(async () => {
+    if (!activeRepoPath) return;
+
+    try {
+      const res = await GitService.getCommitHistory(activeRepoPath, 50, 0);
+      setCommits(res || []);
+    } catch {
+      setCommits([]);
+    }
+  }, [activeRepoPath]);
+
   useEffect(() => {
     if (!isCherryPickModalOpen || !activeRepoPath) return;
 
@@ -41,18 +52,7 @@ export const CherryPickModal: React.FC = () => {
         loadBranchCommits();
       })
       .catch(() => {});
-  }, [isCherryPickModalOpen, activeRepoPath]);
-
-  const loadBranchCommits = async () => {
-    if (!activeRepoPath) return;
-
-    try {
-      const res = await GitService.getCommitHistory(activeRepoPath, 50, 0);
-      setCommits(res || []);
-    } catch {
-      setCommits([]);
-    }
-  };
+  }, [isCherryPickModalOpen, activeRepoPath, loadBranchCommits]);
 
   const toggleSelectCommit = (sha: string) => {
     if (selectedShas.includes(sha)) {

@@ -104,7 +104,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
           setGravatarUrl(`https://www.gravatar.com/avatar/${hash}?d=404&s=128`);
         }
       });
-    } else {
+    } else if (!isCancelled) {
+      // No valid email — clear any stale Gravatar URL
       setGravatarUrl(null);
     }
     return () => {
@@ -187,10 +188,16 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     accounts,
   ]);
 
-  // Reset candidate index when candidate list changes
-  useEffect(() => {
+  // Reset candidate index when candidate list changes.
+  // By tracking a "canonical key" derived from the list we can initialise
+  // candidateIndex to 0 inside useMemo so there is no separate effect-triggered
+  // setState call, satisfying the react-hooks/set-state-in-effect rule.
+  const candidateUrlsKey = candidateUrls.join('|');
+  const [prevCandidateUrlsKey, setPrevCandidateUrlsKey] = useState(candidateUrlsKey);
+  if (prevCandidateUrlsKey !== candidateUrlsKey) {
+    setPrevCandidateUrlsKey(candidateUrlsKey);
     setCandidateIndex(0);
-  }, [candidateUrls]);
+  }
 
   const initials = useMemo(() => getInitials(targetName, targetHandle), [targetName, targetHandle]);
   const providerStyle = useMemo(() => getProviderStyle(currentProvider), [currentProvider]);

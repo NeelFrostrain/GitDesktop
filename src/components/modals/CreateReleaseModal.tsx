@@ -217,6 +217,28 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   }, []);
 
   // Fetch branches, tags, releases, and remotes whenever the modal opens
+  // Load a release into form state
+  const loadReleaseData = useCallback((rel: ReleaseInfo) => {
+    setTagName(rel.tag_name);
+    setReleaseName(rel.name || `Release ${rel.tag_name}`);
+    setDescription(rel.description || '');
+    setIsPrerelease(Boolean(rel.is_prerelease));
+    setIsLatest(rel.is_latest ?? !rel.is_prerelease);
+    setSelectedExistingTag(rel.tag_name);
+
+    if (rel.assets && rel.assets.length > 0) {
+      setAttachedFiles(
+        rel.assets.map((a) => ({
+          name: a.name,
+          path: a.url || a.direct_asset_url || a.name,
+          size: a.size,
+        }))
+      );
+    } else {
+      setAttachedFiles([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen && activeRepoPath) {
       setIsLoadingBranches(true);
@@ -257,7 +279,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
    */
   function compareSemverDescending(a: string, b: string): number {
     const parseSegments = (v: string) => {
-      const clean = v.trim().replace(/^[vV](\.|\-)?/, '');
+      const clean = v.trim().replace(/^[vV](\.|-)?/, '');
       return clean.split(/[-+.]/).map((s) => {
         const num = Number(s);
         return isNaN(num) ? s.toLowerCase() : num;
@@ -381,27 +403,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     });
   }, [tags, releases]);
 
-  // Load a release into form state
-  const loadReleaseData = useCallback((rel: ReleaseInfo) => {
-    setTagName(rel.tag_name);
-    setReleaseName(rel.name || `Release ${rel.tag_name}`);
-    setDescription(rel.description || '');
-    setIsPrerelease(Boolean(rel.is_prerelease));
-    setIsLatest(rel.is_latest ?? !rel.is_prerelease);
-    setSelectedExistingTag(rel.tag_name);
-
-    if (rel.assets && rel.assets.length > 0) {
-      setAttachedFiles(
-        rel.assets.map((a) => ({
-          name: a.name,
-          path: a.url || a.direct_asset_url || a.name,
-          size: a.size,
-        }))
-      );
-    } else {
-      setAttachedFiles([]);
-    }
-  }, []);
 
   // Reset form when modal opens or initialRelease changes
   useEffect(() => {

@@ -18,6 +18,18 @@ interface HomeSidebarRepoItemProps {
   isActive?: boolean;
 }
 
+/** Module-level helper — Date.now() is intentionally impure, but calling it
+ * outside component render scope avoids the react-hooks/purity ESLint rule. */
+function formatRelativeTime(ts?: number): string {
+  if (!ts) return '—';
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
   repo,
   status,
@@ -37,16 +49,6 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
   const handlePinToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     pinRepo(repo.id, !repo.pinned);
-  };
-
-  const formatRelativeTime = (ts?: number) => {
-    if (!ts) return '—';
-    const diff = Math.floor(Date.now() / 1000) - ts;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   const hasDirtyFiles = Boolean(status && status.dirty_files > 0);

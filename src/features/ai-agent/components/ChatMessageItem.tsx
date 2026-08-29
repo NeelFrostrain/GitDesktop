@@ -1,7 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Copy, Check, Paperclip, Volume2, VolumeX, RotateCw, Play } from 'lucide-react';
-import { marked } from 'marked';
+import {
+  Copy,
+  Check,
+  Paperclip,
+  Volume2,
+  VolumeX,
+  RotateCw,
+  Play,
+} from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { renderSafeMarkdown } from '../../../shared/utils/markdown';
 import { AgentMessage } from '../types';
 import { ToolCallCard } from './ToolCallCard';
 import { useAiAgentStore } from '../store/useAiAgentStore';
@@ -20,6 +28,13 @@ const formatRelativeTime = (timestamp: number): string => {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDays = Math.floor(diffHr / 24);
   return `${diffDays}d ago`;
+};
+
+const formatTime = (ts: number): string => {
+  return new Date(ts).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };
 
 /**
@@ -77,7 +92,6 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     const total = tokens.length;
     if (total === 0) return;
 
-    // Adapt speed so longer messages finish within 2 - 2.5 seconds
     const speedMultiplier = total > 120 ? Math.max(0.35, 120 / total) : 1;
 
     const streamToken = () => {
@@ -164,18 +178,10 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     await regenerateMessage(message.id);
   };
 
-  const formatTime = (ts: number) => {
-    return new Date(ts).toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   // Convert markdown to rich HTML with marked
   const renderedHtml = useMemo(() => {
     if (!visibleContent.trim()) return '';
 
-    // If message has toolCalls, remove duplicate ```bash blocks that are rendered as ToolCards
     let contentToParse = visibleContent;
     if (message.toolCalls && message.toolCalls.length > 0) {
       for (const tool of message.toolCalls) {
@@ -191,10 +197,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     }
 
     try {
-      return marked.parse(contentToParse, {
-        gfm: true,
-        breaks: true,
-      }) as string;
+      return renderSafeMarkdown(contentToParse);
     } catch {
       return visibleContent;
     }
@@ -213,16 +216,19 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     }
   };
 
+  // --------------------------------------------------------------------------
+  // USER MESSAGE VIEW
+  // --------------------------------------------------------------------------
   if (isUser) {
     return (
-      <div className="flex flex-col items-end gap-1 mb-4 group/msg select-text">
+      <div className="flex flex-col items-end gap-1 mb-4 group/user-msg select-text">
         <div className="flex items-center gap-1.5 text-[10px] text-text-muted select-none">
           <span>{formatTime(message.timestamp)}</span>
           <span className="font-semibold text-text-primary">You</span>
         </div>
 
         {/* User Bubble */}
-        <div className="max-w-[90%] px-2 py-0.5 rounded-sm bg-base-2 border border-border text-xs text-text-primary shadow-2xs leading-relaxed space-y-1.5">
+        <div className="max-w-[90%] px-2.5 py-1.5 rounded-sm bg-base-2 border border-border text-xs text-text-primary shadow-2xs leading-relaxed space-y-1.5">
           <p className="whitespace-pre-wrap">{message.content}</p>
 
           {/* Attachments */}
@@ -242,37 +248,28 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
           )}
         </div>
 
-        {/* User Action Bar (Copy, Read Aloud, Retry/Regenerate) */}
-        <div className="flex items-center gap-1 pt-0.5 text-text-muted select-none opacity-80 hover:opacity-100 transition-opacity">
-          {/* Copy */}
+        {/* User Actions (Copy, Read, Retry) */}
+        <div className="flex items-center gap-1 pt-0.5 text-text-muted select-none opacity-0 group-hover/user-msg:opacity-100 transition-opacity">
           <button
             type="button"
             onClick={handleCopy}
             className="p-1 rounded-xs hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
             title="Copy prompt"
           >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
+            {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
           </button>
 
-          {/* Read aloud */}
           <button
             type="button"
             onClick={handleToggleSpeech}
             className={`p-1 rounded-xs hover:bg-base-2 transition cursor-pointer ${
-              isSpeaking
-                ? 'text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30 animate-pulse'
-                : 'hover:text-text-primary'
+              isSpeaking ? 'text-commito-coral bg-commito-coral/15' : 'hover:text-text-primary'
             }`}
             title={isSpeaking ? 'Stop reading' : 'Read aloud'}
           >
-            {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {isSpeaking ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
           </button>
 
-          {/* Retry / Regenerate */}
           <button
             type="button"
             onClick={handleRegenerate}
@@ -280,14 +277,16 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
             className="p-1 rounded-xs hover:bg-base-2 hover:text-commito-coral transition cursor-pointer disabled:opacity-30"
             title="Retry prompt"
           >
-            <RotateCw className={`w-3.5 h-3.5 ${isThinking ? 'animate-spin' : ''}`} />
+            <RotateCw className={`w-3 h-3 ${isThinking ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
     );
   }
 
-  // Assistant Message (No background, No bot icon, Clean markdown + Bottom Cards)
+  // --------------------------------------------------------------------------
+  // AI ASSISTANT MESSAGE VIEW (Direct Clean Inner Text)
+  // --------------------------------------------------------------------------
   return (
     <div ref={messageRef} className="mb-6 group/msg select-text space-y-2">
       {/* Subtle Meta Header */}
@@ -302,7 +301,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
         </span>
       </div>
 
-      {/* Main Content (Direct Markdown Text - No Background Box) */}
+      {/* Main Inner Text Content (Direct Clean Text - No Outer Box/Card) */}
       <div
         onClick={(e) => {
           handleSkipTyping();
@@ -315,15 +314,15 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
         {/* Glowing typing cursor */}
         {isTyping && (
           <span className="inline-flex items-center ml-1 text-commito-coral animate-pulse select-none">
-            <span className="w-1.5 h-3.5 bg-commito-coral rounded-xs shadow-[0_0_8px_rgba(255,107,107,0.7)]" />
+            <span className="w-1.5 h-3.5 bg-commito-coral rounded-xs shadow-[0_0_8px_rgba(224,86,56,0.7)]" />
           </span>
         )}
       </div>
 
-      {/* Bottom Command / File Cards */}
+      {/* Bottom Tool Calls / Command Blocks (if any) */}
       {!isTyping && message.toolCalls && message.toolCalls.length > 0 && (
         <div className="pt-2 space-y-2 animate-in fade-in duration-200">
-          {/* Batch Action Bar for multiple commands */}
+          {/* Chained Batch Execution Bar */}
           {pendingCommands.length > 1 && (
             <div className="p-2.5 bg-base-1/50 hover:bg-base-1/70 border border-border/80 rounded-sm flex items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in select-none">
               <div className="flex items-center gap-2 min-w-0">
@@ -394,14 +393,22 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
           <button
             type="button"
             onClick={handleToggleSpeech}
-            className={`p-1 rounded-xs hover:bg-base-2 transition cursor-pointer ${
+            className={`p-1 rounded-xs hover:bg-base-2 transition cursor-pointer flex items-center gap-1 ${
               isSpeaking
-                ? 'text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30 animate-pulse'
+                ? 'text-commito-coral bg-commito-coral/15 ring-1 ring-commito-coral/30'
                 : 'hover:text-text-primary'
             }`}
             title={isSpeaking ? 'Stop reading' : 'Read aloud'}
           >
-            {isSpeaking ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+            {isSpeaking ? (
+              <div className="flex items-center gap-0.5 h-3 px-0.5">
+                <span className="w-0.5 bg-commito-coral rounded-full animate-audio-wave-1" />
+                <span className="w-0.5 bg-commito-coral rounded-full animate-audio-wave-2" />
+                <span className="w-0.5 bg-commito-coral rounded-full animate-audio-wave-3" />
+              </div>
+            ) : (
+              <Volume2 className="w-3.5 h-3.5" />
+            )}
           </button>
 
           {/* Regenerate */}
@@ -419,3 +426,4 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     </div>
   );
 };
+

@@ -60,7 +60,7 @@ export const FileContextMenu: React.FC<FileContextMenuProps> = ({ filePath, x, y
   const ignoreExtLabel = extension ? `Ignore all .${extension} files` : `Ignore extension`;
 
   const fullPath = activeRepoPath
-    ? `${activeRepoPath.replace(/[\/\\]+$/, '')}/${filePath.replace(/^[\/\\]+/, '')}`
+    ? `${activeRepoPath.replace(/[/\\]+$/, '')}/${filePath.replace(/^[/\\]+/, '')}`
     : filePath;
 
   const fullDir = fullPath.substring(

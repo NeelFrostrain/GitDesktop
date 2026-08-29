@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Archive, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -19,6 +19,17 @@ export const StashManagerView: React.FC = () => {
   const [selectedStashIndex, setSelectedStashIndex] = useState<number | null>(null);
   const [stashDiff, setStashDiff] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleViewDiff = useCallback(async (index: number) => {
+    if (!activeRepoPath) return;
+    setSelectedStashIndex(index);
+    try {
+      const diffStr = await GitService.getStashDiff(activeRepoPath, index);
+      setStashDiff(diffStr || '');
+    } catch {
+      setStashDiff('');
+    }
+  }, [activeRepoPath]);
 
   const loadStashes = async () => {
     if (!activeRepoPath) return;
@@ -103,17 +114,6 @@ export const StashManagerView: React.FC = () => {
       loadStashes();
     } catch (error: unknown) {
       setError(toAppError(error, 'STASH_ERROR'));
-    }
-  };
-
-  const handleViewDiff = async (index: number) => {
-    if (!activeRepoPath) return;
-    setSelectedStashIndex(index);
-    try {
-      const diffStr = await GitService.getStashDiff(activeRepoPath, index);
-      setStashDiff(diffStr || '');
-    } catch {
-      setStashDiff('');
     }
   };
 

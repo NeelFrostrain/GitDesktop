@@ -11,11 +11,6 @@ import {
   PackagePlus,
   ExternalLink,
   Database,
-  GitMerge,
-  GitCommit,
-  History,
-  FileDiff,
-  FileCode2,
   Settings2,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
@@ -42,11 +37,6 @@ export const Header: React.FC = () => {
     setIsCreateTagModalOpen,
     setIsCreateReleaseModalOpen,
     setEditingRelease,
-    setIsRebaseModalOpen,
-    setIsCherryPickModalOpen,
-    setIsReflogModalOpen,
-    setIsPatchModalOpen,
-    setIsRewriteModalOpen,
     setIsConfigModalOpen,
   } = useGitStore();
 

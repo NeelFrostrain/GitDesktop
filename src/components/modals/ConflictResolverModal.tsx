@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { X, AlertTriangle, CheckCircle2, FileText, Check, ArrowRight } from 'lucide-react';
+import { X, CheckCircle2, FileText, Check, ArrowRight } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
@@ -316,13 +316,13 @@ export const ConflictResolverModal: React.FC = () => {
                     &lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD (Current Change)
                   </div>
                   <div className="p-2 bg-base-1 rounded text-text-primary text-[11px]">
-                    // Working copy changes
+                    {'// Working copy changes'}
                   </div>
                   <div className="p-2 bg-base-3 border border-border rounded text-text-muted font-bold text-[11px]">
                     =======
                   </div>
                   <div className="p-2 bg-git-added-bg border border-git-added/40 rounded text-git-added text-[11px]">
-                    // Incoming branch changes
+                    {'// Incoming branch changes'}
                   </div>
                   <div className="p-2 bg-git-added-bg border border-git-added/40 rounded text-git-added font-bold text-[11px]">
                     &gt;&gt;&gt;&gt;&gt;&gt;&gt; incoming-branch

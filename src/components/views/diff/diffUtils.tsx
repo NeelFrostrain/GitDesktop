@@ -297,7 +297,7 @@ export function buildCustomDiffPatch(
 
     for (const item of hunk.lines) {
       const { line, originalIndex } = item;
-      const cleanContent = line.content.replace(/^[\+\-\s]/, '');
+      const cleanContent = line.content.replace(/^[+\-\s]/, '');
 
       if (line.line_type === 'addition') {
         if (selectedIndices.has(originalIndex)) {

@@ -98,7 +98,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       // 3. Immediately apply all CSS custom property overrides to document
       applyAllOverrides(appOverrides);
-    } catch (e) {
+    } catch {
       set({ isLoading: false });
     }
   },

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { X, Settings, FileCode, Save, Wrench, Plus } from 'lucide-react';
+import { X, FileCode, Save, Wrench, Plus } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitConfigItem } from '../../types/git';
