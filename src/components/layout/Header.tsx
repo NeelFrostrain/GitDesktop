@@ -222,7 +222,7 @@ export const Header: React.FC = () => {
               </button>
 
               {isMoreMenuOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-56 bg-[#19191d] border border-border-strong rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full left-0 mt-1.5 w-56 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
                   {/* Compact-only overflow tools (shown when toolbar is narrow) */}
                   {!isWide && (
                     <>
