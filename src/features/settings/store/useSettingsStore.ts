@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
-import { SETTINGS_SCHEMA, SettingCategory, SettingDefinition, SettingScope } from '../lib/settingsSchema';
+import {
+  SETTINGS_SCHEMA,
+  SettingCategory,
+  SettingDefinition,
+  SettingScope,
+} from '../lib/settingsSchema';
 import { applySettingToDom, removeSettingFromDom, applyAllOverrides } from '../lib/applyCssVar';
 
 interface SettingsState {
@@ -93,7 +98,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       // 3. Immediately apply all CSS custom property overrides to document
       applyAllOverrides(appOverrides);
-    } catch (e) {
+    } catch {
       set({ isLoading: false });
     }
   },

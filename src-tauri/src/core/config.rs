@@ -57,12 +57,11 @@ fn parse_env_file_for_key(path: &Path, target_key: &str) -> Option<String> {
             if k == target_key {
                 let mut v = v.trim();
                 // Strip outer quotes if any
-                if (v.starts_with('"') && v.ends_with('"'))
-                    || (v.starts_with('\'') && v.ends_with('\''))
+                if ((v.starts_with('"') && v.ends_with('"'))
+                    || (v.starts_with('\'') && v.ends_with('\'')))
+                    && v.len() >= 2
                 {
-                    if v.len() >= 2 {
-                        v = &v[1..v.len() - 1];
-                    }
+                    v = &v[1..v.len() - 1];
                 }
                 let res = v.trim().to_string();
                 if !res.is_empty() {

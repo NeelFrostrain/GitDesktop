@@ -1,36 +1,29 @@
-import React from "react";
-import {
-  GitCommit,
-  FolderGit2,
-  Calendar,
-  Clock,
-  X,
-  ExternalLink,
-} from "lucide-react";
-import { useContributionsStore } from "../../store/contributionsStore";
-import { openRepo } from "../../features/repos";
-import { useRepoStore } from "../../store/repoStore";
+import React, { useMemo } from 'react';
+import { FolderGit2, Calendar, Clock, X, ExternalLink } from 'lucide-react';
+import { useContributionsStore } from '../../store/contributionsStore';
+import { openRepo } from '../../features/repos';
+import { useRepoStore } from '../../store/repoStore';
+import { UserAvatar } from '../common/UserAvatar';
 
 export const ContributionCommitList: React.FC = () => {
-  const {
-    selectedDate,
-    setSelectedDate,
-    getRecentCommits,
-    getSelectedDayData,
-  } = useContributionsStore();
+  const calendar = useContributionsStore((s) => s.calendar);
+  const selectedDate = useContributionsStore((s) => s.selectedDate);
+  const setSelectedDate = useContributionsStore((s) => s.setSelectedDate);
+  const getRecentCommits = useContributionsStore((s) => s.getRecentCommits);
+  const getSelectedDayData = useContributionsStore((s) => s.getSelectedDayData);
   const repos = useRepoStore((s) => s.repos);
 
-  const commits = getRecentCommits(30);
-  const selectedDay = getSelectedDayData();
+  const commits = useMemo(() => getRecentCommits(30), [getRecentCommits, selectedDate, calendar]);
+  const selectedDay = useMemo(() => getSelectedDayData(), [getSelectedDayData, selectedDate, calendar]);
 
   const formatDateTitle = (dateStr: string) => {
     try {
-      const [y, m, d] = dateStr.split("-").map(Number);
+      const [y, m, d] = dateStr.split('-').map(Number);
       const date = new Date(y, m - 1, d);
-      return date.toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
       });
     } catch {
       return dateStr;
@@ -43,9 +36,7 @@ export const ContributionCommitList: React.FC = () => {
       return;
     }
     if (repoName) {
-      const found = repos.find(
-        (r) => r.name.toLowerCase() === repoName.toLowerCase(),
-      );
+      const found = repos.find((r) => r.name.toLowerCase() === repoName.toLowerCase());
       if (found) {
         openRepo(found.path);
       }
@@ -61,13 +52,13 @@ export const ContributionCommitList: React.FC = () => {
           <span className="text-xs font-semibold text-text-secondary tracking-tight truncate">
             {selectedDate ? (
               <>
-                Commits on{" "}
+                Commits on{' '}
                 <span className="text-text-primary font-semibold">
                   {formatDateTitle(selectedDate)}
                 </span>
                 <span className="ml-1.5 text-[11px] font-normal text-text-muted">
-                  ({selectedDay?.count || 0}{" "}
-                  {selectedDay?.count === 1 ? "contribution" : "contributions"})
+                  ({selectedDay?.count || 0}{' '}
+                  {selectedDay?.count === 1 ? 'contribution' : 'contributions'})
                 </span>
               </>
             ) : (
@@ -96,25 +87,27 @@ export const ContributionCommitList: React.FC = () => {
 
       {/* Commit Items List */}
       {commits.length > 0 ? (
-        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+        <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1 scrollbar-thin">
           {commits.map((commit) => (
             <div
               key={commit.id}
               onClick={() => handleOpenRepo(commit.repo_path, commit.repo_name)}
-              className="group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
+              className="group px-3.5 py-2 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out cursor-pointer flex items-center justify-between gap-3 select-none shadow-2xs"
             >
-              {/* Left: Commit info */}
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors shrink-0 shadow-2xs">
-                  <GitCommit className="w-4 h-4" />
-                </div>
+              {/* Left: Avatar + Commit Info */}
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <UserAvatar
+                  name={commit.author_name}
+                  email={commit.author_email}
+                  className="w-6 h-6 text-[9px] shrink-0"
+                />
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="text-xs font-semibold text-text-primary truncate tracking-tight">
                       {commit.message}
                     </p>
-                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted shrink-0">
+                    <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-commito-coral shrink-0">
                       {commit.short_sha}
                     </span>
                   </div>
@@ -127,7 +120,7 @@ export const ContributionCommitList: React.FC = () => {
                     <span>·</span>
                     <span className="truncate">{commit.author_name}</span>
                     <span>·</span>
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1 font-mono text-[10px]">
                       <Clock className="w-2.5 h-2.5 text-text-muted/80" />
                       {commit.relative_date}
                     </span>
@@ -156,7 +149,7 @@ export const ContributionCommitList: React.FC = () => {
           <p className="text-xs text-text-muted">
             {selectedDate
               ? `No local commit records found for ${formatDateTitle(selectedDate)}.`
-              : "No recent commit activity detected in local repositories."}
+              : 'No recent commit activity detected in local repositories.'}
           </p>
         </div>
       )}

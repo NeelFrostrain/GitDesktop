@@ -1,17 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { X, RotateCcw, Sliders } from "lucide-react";
-import { useSettingsStore } from "./store/useSettingsStore";
-import {
-  CATEGORY_METADATA,
-  SETTINGS_SCHEMA,
-  SettingDefinition,
-} from "./lib/settingsSchema";
-import { searchSettings } from "./lib/fuzzySearch";
-import { CategoryTree } from "./components/CategoryTree";
-import { SettingRow } from "./components/SettingRow";
-import { AiSettingsTab } from "./components/AiSettingsTab";
-import { SettingsSearchBar } from "./components/SettingsSearchBar";
-import { useGitStore } from "../../store/useGitStore";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { X } from 'lucide-react';
+import { useSettingsStore } from './store/useSettingsStore';
+import { SETTINGS_SCHEMA, SettingDefinition } from './lib/settingsSchema';
+import { searchSettings } from './lib/fuzzySearch';
+import { CategoryTree } from './components/CategoryTree';
+import { SettingRow } from './components/SettingRow';
+import { AiSettingsTab } from './components/AiSettingsTab';
+import { ThemeSelectorTab } from './components/ThemeSelectorTab';
+import { SettingsSearchBar } from './components/SettingsSearchBar';
+import { useGitStore } from '../../store/useGitStore';
 
 export const SettingsPanel: React.FC = () => {
   const {
@@ -20,7 +17,6 @@ export const SettingsPanel: React.FC = () => {
     selectedCategory,
     selectedSubcategory,
     searchQuery,
-    resetAllSettings,
     loadSettings,
   } = useSettingsStore();
 
@@ -29,7 +25,7 @@ export const SettingsPanel: React.FC = () => {
   const modalContainerRef = useRef<HTMLDivElement>(null);
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
-      const saved = localStorage.getItem("settings_sidebar_width");
+      const saved = localStorage.getItem('settings_sidebar_width');
       return saved ? Math.max(160, Math.min(360, parseInt(saved, 10))) : 200;
     } catch {
       return 200;
@@ -68,23 +64,23 @@ export const SettingsPanel: React.FC = () => {
       }
       setIsResizingSidebar(false);
       try {
-        localStorage.setItem("settings_sidebar_width", latestSidebarWidthRef.current.toString());
+        localStorage.setItem('settings_sidebar_width', latestSidebarWidthRef.current.toString());
       } catch {}
     };
 
-    document.addEventListener("mousemove", handleMouseMove, { passive: true });
-    document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = "col-resize";
+    document.addEventListener('mousemove', handleMouseMove, { passive: true });
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
 
     return () => {
       if (rafId !== null) {
         cancelAnimationFrame(rafId);
       }
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
   }, [isResizingSidebar]);
 
@@ -98,13 +94,13 @@ export const SettingsPanel: React.FC = () => {
     if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         closeSettings();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, closeSettings]);
 
   // Search matches
@@ -115,7 +111,7 @@ export const SettingsPanel: React.FC = () => {
 
   // Filter settings for active category / subcategory
   const activeSettings = useMemo(() => {
-    if (searchResults || selectedCategory === "ai") return [];
+    if (searchResults || selectedCategory === 'ai') return [];
 
     return SETTINGS_SCHEMA.filter((s) => {
       if (s.category !== selectedCategory) {
@@ -132,7 +128,7 @@ export const SettingsPanel: React.FC = () => {
   const groupedSettings = useMemo(() => {
     const map = new Map<string, SettingDefinition[]>();
     activeSettings.forEach((s) => {
-      const sub = s.subcategory || "General";
+      const sub = s.subcategory || 'General';
       if (!map.has(sub)) map.set(sub, []);
       map.get(sub)!.push(s);
     });
@@ -141,8 +137,6 @@ export const SettingsPanel: React.FC = () => {
 
   if (!isOpen) return null;
 
-  const currentCategoryMeta = CATEGORY_METADATA[selectedCategory];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 select-none">
       <div
@@ -150,13 +144,11 @@ export const SettingsPanel: React.FC = () => {
         className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans ring-1 ring-black/40"
       >
         {/* Header */}
-        <header className="h-9 px-3.5 bg-base-1/50 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
-          <h2 className="text-xs font-semibold text-text-primary">Settings</h2>
+        <header className="h-9 px-1.5 bg-base-1/50 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
+          <h2 className="text-xs font-semibold text-text-primary pl-1.5">Settings</h2>
 
           <div className="flex items-center gap-2">
-            <SettingsSearchBar
-              matchCount={searchResults ? searchResults.length : undefined}
-            />
+            <SettingsSearchBar matchCount={searchResults ? searchResults.length : undefined} />
             <button
               type="button"
               onClick={closeSettings}
@@ -179,7 +171,7 @@ export const SettingsPanel: React.FC = () => {
             onDoubleClick={() => setSidebarWidth(200)}
             title="Drag to resize • Double-click to reset"
             className={`w-1 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-              isResizingSidebar ? "bg-commito-coral" : "bg-transparent"
+              isResizingSidebar ? 'bg-commito-coral' : 'bg-transparent'
             }`}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
@@ -192,22 +184,19 @@ export const SettingsPanel: React.FC = () => {
               <div className="space-y-4">
                 <div className="border-b border-border/70 pb-3 flex items-center justify-between">
                   <div>
-                    <h3 className="text-xs font-bold text-text-primary">
-                      Search Results
-                    </h3>
+                    <h3 className="text-xs font-bold text-text-primary">Search Results</h3>
                     <p className="text-[11px] text-text-muted mt-0.5">
-                      Found {searchResults.length}{" "}
-                      {searchResults.length === 1 ? "setting" : "settings"}{" "}
-                      matching &quot;{searchQuery}&quot;
+                      Found {searchResults.length}{' '}
+                      {searchResults.length === 1 ? 'setting' : 'settings'} matching &quot;
+                      {searchQuery}&quot;
                     </p>
                   </div>
                 </div>
 
                 {searchResults.length === 0 ? (
                   <div className="p-12 text-center text-text-muted italic text-xs">
-                    No settings found matching &quot;{searchQuery}&quot;. Try
-                    searching for &quot;gemini&quot;, &quot;model&quot;, or
-                    &quot;api&quot;.
+                    No settings found matching &quot;{searchQuery}&quot;. Try searching for
+                    &quot;gemini&quot;, &quot;model&quot;, or &quot;api&quot;.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -230,8 +219,11 @@ export const SettingsPanel: React.FC = () => {
             ) : (
               /* 2. Category View Mode */
               <div className="space-y-4">
+                {/* Render dedicated AppearanceTab for theme selection */}
+                {selectedCategory === 'appearance' && <ThemeSelectorTab />}
+
                 {/* Render dedicated AiSettingsTab with multi-key pool */}
-                {selectedCategory === "ai" && <AiSettingsTab />}
+                {selectedCategory === 'ai' && <AiSettingsTab />}
 
                 {/* Subcategory sections (for other non-AI categories) */}
                 {groupedSettings.map(([subcategory, settings]) => {

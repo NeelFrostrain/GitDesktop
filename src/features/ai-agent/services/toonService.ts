@@ -218,7 +218,10 @@ export class ToonService {
 
     const cleanedOutput = output.trim();
     if (cleanedOutput) {
-      const outputLines = cleanedOutput.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const outputLines = cleanedOutput
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
       lines.push(`output[${outputLines.length}]:`);
       for (const line of outputLines.slice(0, 50)) {
         lines.push(`  ${escapeToonValue(line)}`);

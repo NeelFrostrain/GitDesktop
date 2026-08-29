@@ -188,13 +188,17 @@ export const RemoteIdentitySection: React.FC<RemoteIdentitySectionProps> = ({
               <div className="flex items-center gap-2.5 truncate">
                 <Unlink className="w-4 h-4 text-text-muted shrink-0" />
                 <div>
-                  <span className="font-semibold text-text-primary">Manual / Unlinked Identity</span>
+                  <span className="font-semibold text-text-primary">
+                    Manual / Unlinked Identity
+                  </span>
                   <div className="text-[10.5px] text-text-muted">
                     Set a custom Git name and email without cloud sync
                   </div>
                 </div>
               </div>
-              {selectedSyncAccount === 'custom' && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
+              {selectedSyncAccount === 'custom' && (
+                <Check className="w-4 h-4 text-commito-coral shrink-0" />
+              )}
             </button>
 
             <button

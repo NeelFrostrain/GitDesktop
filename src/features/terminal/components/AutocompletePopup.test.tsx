@@ -28,11 +28,7 @@ describe('AutocompletePopup Component', () => {
   it('renders all suggestion commands in full without truncation', () => {
     const onSelect = vi.fn();
     render(
-      <AutocompletePopup
-        suggestions={sampleSuggestions}
-        selectedIndex={0}
-        onSelect={onSelect}
-      />
+      <AutocompletePopup suggestions={sampleSuggestions} selectedIndex={0} onSelect={onSelect} />
     );
 
     expect(screen.getByText('status')).toBeTruthy();
@@ -44,11 +40,7 @@ describe('AutocompletePopup Component', () => {
   it('does NOT render redundant "COMMAND" text pills', () => {
     const onSelect = vi.fn();
     render(
-      <AutocompletePopup
-        suggestions={sampleSuggestions}
-        selectedIndex={0}
-        onSelect={onSelect}
-      />
+      <AutocompletePopup suggestions={sampleSuggestions} selectedIndex={0} onSelect={onSelect} />
     );
 
     expect(screen.queryByText('COMMAND')).toBeNull();
@@ -57,11 +49,7 @@ describe('AutocompletePopup Component', () => {
   it('highlights the selected index with active accent styling', () => {
     const onSelect = vi.fn();
     const { container } = render(
-      <AutocompletePopup
-        suggestions={sampleSuggestions}
-        selectedIndex={1}
-        onSelect={onSelect}
-      />
+      <AutocompletePopup suggestions={sampleSuggestions} selectedIndex={1} onSelect={onSelect} />
     );
 
     const buttons = container.querySelectorAll('button');
@@ -75,11 +63,7 @@ describe('AutocompletePopup Component', () => {
   it('calls onSelect when clicking a suggestion', () => {
     const onSelect = vi.fn();
     render(
-      <AutocompletePopup
-        suggestions={sampleSuggestions}
-        selectedIndex={0}
-        onSelect={onSelect}
-      />
+      <AutocompletePopup suggestions={sampleSuggestions} selectedIndex={0} onSelect={onSelect} />
     );
 
     const commitBtn = screen.getByText('commit');

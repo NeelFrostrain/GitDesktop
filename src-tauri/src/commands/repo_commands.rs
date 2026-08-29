@@ -5,6 +5,56 @@ use crate::error::AppError;
 use crate::git::remote;
 use tauri::command;
 use tauri_plugin_dialog::DialogExt;
+use std::path::{Component, Path, PathBuf};
+
+fn resolve_repo_path(repo_path: &str, user_path: &str, allow_missing: bool) -> Result<PathBuf, AppError> {
+    let root = std::fs::canonicalize(repo_path)
+        .map_err(|e| AppError::Filesystem(format!("Invalid repository path: {}", e)))?;
+    let relative = Path::new(user_path);
+
+    if relative.is_absolute()
+        || relative.components().any(|component| matches!(component, Component::ParentDir | Component::RootDir | Component::Prefix(_)))
+    {
+        return Err(AppError::Validation("Path must be a relative path inside the repository".to_string()));
+    }
+
+    let target = root.join(relative);
+    let mut current = root.clone();
+    for component in relative.components() {
+        if let Component::Normal(part) = component {
+            current.push(part);
+            if current.exists() && std::fs::symlink_metadata(&current)
+                .map_err(|e| AppError::Filesystem(format!("Failed to inspect path: {}", e)))?
+                .file_type()
+                .is_symlink()
+            {
+                return Err(AppError::Validation("Symbolic links are not supported for file operations".to_string()));
+            }
+        }
+    }
+
+    if allow_missing {
+        let mut existing_parent = target.parent().map(Path::to_path_buf).unwrap_or_else(|| root.clone());
+        while !existing_parent.exists() {
+            existing_parent = existing_parent.parent()
+                .map(Path::to_path_buf)
+                .ok_or_else(|| AppError::Validation("Path has no valid parent".to_string()))?;
+        }
+        let canonical_parent = std::fs::canonicalize(existing_parent)
+            .map_err(|e| AppError::Filesystem(format!("Failed to resolve destination parent: {}", e)))?;
+        if !canonical_parent.starts_with(&root) {
+            return Err(AppError::Validation("Path escapes the repository".to_string()));
+        }
+        Ok(target)
+    } else {
+        let canonical_target = std::fs::canonicalize(&target)
+            .map_err(|e| AppError::NotFound(format!("File does not exist: {}", e)))?;
+        if !canonical_target.starts_with(&root) {
+            return Err(AppError::Validation("Path escapes the repository".to_string()));
+        }
+        Ok(canonical_target)
+    }
+}
 
 fn get_git_credential_token(host: &str) -> Option<String> {
     let input = format!("protocol=https\nhost={}\n\n", host);
@@ -445,6 +495,7 @@ pub async fn create_merge_request(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn update_merge_request(
     project_id: String,
     mr_id: u64,
@@ -596,6 +647,7 @@ pub async fn add_pull_request_comment(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn edit_pull_request_comment(
     project_id: String,
     mr_id: u64,
@@ -636,6 +688,7 @@ pub async fn edit_pull_request_comment(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn delete_pull_request_comment(
     project_id: String,
     mr_id: u64,
@@ -675,6 +728,7 @@ pub async fn delete_pull_request_comment(
 }
 
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn merge_pull_request(
     project_id: String,
     mr_id: u64,
@@ -731,6 +785,7 @@ pub async fn merge_pull_request(
 
 /// Publish a local repo to GitLab or GitHub depending on active account provider.
 #[command]
+#[allow(clippy::too_many_arguments)]
 pub async fn publish_repository(
     repo_path: String,
     name: String,
@@ -1008,9 +1063,7 @@ pub async fn create_repository_cmd(opts: CreateRepoOptions) -> Result<String, Ap
                     "MPL-2.0" => format!(
                         "Mozilla Public License Version 2.0\n==================================\n\nCopyright (c) {year}\n\nThis Source Code Form is subject to the terms of the Mozilla Public\nLicense, v. 2.0. If a copy of the MPL was not distributed with this\nfile, You can obtain one at https://mozilla.org/MPL/2.0/.\n"
                     ),
-                    "Unlicense" => format!(
-                        "This is free and unencumbered software released into the public domain.\n\nAnyone is free to copy, modify, publish, use, compile, sell, or\ndistribute this software, either in source code form or as a compiled\nbinary, for any purpose, commercial or non-commercial, and by any\nmeans.\n\nIn jurisdictions that recognize copyright laws, the author or authors\nof this software dedicate any and all copyright interest in the\nsoftware to the public domain. We make this dedication for the benefit\nof the public at large and to the detriment of our heirs and\nsuccessors. We intend this dedication to be an overt act of\nrelinquishment in perpetuity of all present and future rights to this\nsoftware under copyright law.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR\nOTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,\nARISING FROM, OUT OF OR IN CONNECTION WITH THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\nFor more information, please refer to <https://unlicense.org>\n"
-                    ),
+                    "Unlicense" => "This is free and unencumbered software released into the public domain.\n\nAnyone is free to copy, modify, publish, use, compile, sell, or\ndistribute this software, either in source code form or as a compiled\nbinary, for any purpose, commercial or non-commercial, and by any\nmeans.\n\nIn jurisdictions that recognize copyright laws, the author or authors\nof this software dedicate any and all copyright interest in the\nsoftware to the public domain. We make this dedication for the benefit\nof the public at large and to the detriment of our heirs and\nsuccessors. We intend this dedication to be an overt act of\nrelinquishment in perpetuity of all present and future rights to this\nsoftware under copyright law.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\nEXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\nMERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.\nIN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR\nOTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,\nARISING FROM, OUT OF OR IN CONNECTION WITH THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n\nFor more information, please refer to <https://unlicense.org>\n".to_string(),
                     "CC0-1.0" => format!(
                         "Creative Commons Legal Code\n\nCC0 1.0 Universal (CC0 1.0) Public Domain Dedication\n\nCopyright (c) {year}\n\nThe person who associated a work with this deed has dedicated the work to\nthe public domain by waiving all of his or her rights to the work worldwide\nunder copyright law, including all related and neighboring rights, to the\nextent allowed by law.\n\nYou can copy, modify, distribute and perform the work, even for commercial\npurposes, all without asking permission.\n"
                     ),
@@ -1219,13 +1272,7 @@ pub async fn read_file_content_cmd(
     repo_path: String,
     file_path: String,
 ) -> Result<String, AppError> {
-    let full_path = std::path::Path::new(&repo_path).join(&file_path);
-    if !full_path.exists() {
-        return Err(AppError::NotFound(format!(
-            "File does not exist: {}",
-            full_path.display()
-        )));
-    }
+    let full_path = resolve_repo_path(&repo_path, &file_path, false)?;
     std::fs::read_to_string(&full_path)
         .map_err(|e| AppError::Unknown(format!("Failed to read file: {}", e)))
 }
@@ -1236,7 +1283,7 @@ pub async fn save_file_content_cmd(
     file_path: String,
     content: String,
 ) -> Result<(), AppError> {
-    let full_path = std::path::Path::new(&repo_path).join(&file_path);
+    let full_path = resolve_repo_path(&repo_path, &file_path, true)?;
     if let Some(parent) = full_path.parent() {
         std::fs::create_dir_all(parent)
             .map_err(|e| AppError::Unknown(format!("Failed to create parent directories: {}", e)))?;
@@ -1258,7 +1305,7 @@ pub async fn create_directory_cmd(
     repo_path: String,
     folder_path: String,
 ) -> Result<(), AppError> {
-    let full_path = std::path::Path::new(&repo_path).join(&folder_path);
+    let full_path = resolve_repo_path(&repo_path, &folder_path, true)?;
     std::fs::create_dir_all(&full_path)
         .map_err(|e| AppError::Unknown(format!("Failed to create directory: {}", e)))?;
     Ok(())
@@ -1270,15 +1317,8 @@ pub async fn rename_file_cmd(
     old_path: String,
     new_path: String,
 ) -> Result<(), AppError> {
-    let full_old = std::path::Path::new(&repo_path).join(&old_path);
-    let full_new = std::path::Path::new(&repo_path).join(&new_path);
-
-    if !full_old.exists() {
-        return Err(AppError::NotFound(format!(
-            "Source file does not exist: {}",
-            full_old.display()
-        )));
-    }
+    let full_old = resolve_repo_path(&repo_path, &old_path, false)?;
+    let full_new = resolve_repo_path(&repo_path, &new_path, true)?;
 
     if let Some(parent) = full_new.parent() {
         std::fs::create_dir_all(parent)
@@ -1302,13 +1342,7 @@ pub async fn delete_file_cmd(
     repo_path: String,
     file_path: String,
 ) -> Result<(), AppError> {
-    let full_path = std::path::Path::new(&repo_path).join(&file_path);
-    if !full_path.exists() {
-        return Err(AppError::NotFound(format!(
-            "File does not exist: {}",
-            full_path.display()
-        )));
-    }
+    let full_path = resolve_repo_path(&repo_path, &file_path, false)?;
 
     if full_path.is_dir() {
         std::fs::remove_dir_all(&full_path)

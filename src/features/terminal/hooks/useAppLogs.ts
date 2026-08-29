@@ -99,4 +99,4 @@ export function useAppLogs(repoId?: string | null) {
     page,
     setPage,
   };
-};
+}

@@ -11,6 +11,9 @@ export function useGitAutocomplete(repoPath: string | null) {
 
   const debounceTimerRef = useRef<number | null>(null);
   const lastQueryRef = useRef<string>('');
+  // Memoize client-side suggestion lookups: same prefix ⟹ O(1) cache hit.
+  // Cap at 128 entries to avoid unbounded growth in long-lived sessions.
+  const suggestionCacheRef = useRef<Map<string, AutocompleteSuggestion[]>>(new Map());
 
   const clearSuggestions = useCallback(() => {
     setSuggestions([]);
@@ -21,98 +24,74 @@ export function useGitAutocomplete(repoPath: string | null) {
 
   const computeClientSuggestions = useCallback(
     (line: string, cursorPos: number): AutocompleteSuggestion[] => {
+      const cacheKey = `${line}|${cursorPos}`;
+      const cache = suggestionCacheRef.current;
+      if (cache.has(cacheKey)) {
+        return cache.get(cacheKey)!;
+      }
+
       const slice = line.slice(0, cursorPos);
       const isNewToken = slice.endsWith(' ') || slice.endsWith('\t');
       const tokens = slice.trim().split(/\s+/).filter(Boolean);
 
+      let result: AutocompleteSuggestion[];
+
       if (tokens.length === 0) {
-        return [];
-      }
-
-      // Check if starting with git
-      if (tokens[0] !== 'git') {
-        if ('git'.startsWith(tokens[0])) {
-          return [
-            {
-              text: 'git',
-              value: 'git',
-              description: 'Git version control system',
-              kind: 'command',
-            },
-          ];
-        }
-        return [];
-      }
-
-      // Token index 1: git <command>
-      if (tokens.length === 1 && isNewToken) {
-        // Show all top git commands
-        return Object.entries(GIT_COMMAND_TREE).slice(0, 15).map(([cmd, def]) => ({
-          text: cmd,
-          value: cmd,
-          description: def.description,
-          kind: 'command',
-        }));
-      }
-
-      if (tokens.length === 2 && !isNewToken) {
+        result = [];
+      } else if (tokens[0] !== 'git') {
+        result = 'git'.startsWith(tokens[0])
+          ? [{ text: 'git', value: 'git', description: 'Git version control system', kind: 'command' }]
+          : [];
+      } else if (tokens.length === 1 && isNewToken) {
+        result = Object.entries(GIT_COMMAND_TREE)
+          .slice(0, 15)
+          .map(([cmd, def]) => ({ text: cmd, value: cmd, description: def.description, kind: 'command' }));
+      } else if (tokens.length === 2 && !isNewToken) {
         const prefix = tokens[1].toLowerCase();
-        return Object.entries(GIT_COMMAND_TREE)
+        result = Object.entries(GIT_COMMAND_TREE)
           .filter(([cmd]) => cmd.toLowerCase().startsWith(prefix))
-          .map(([cmd, def]) => ({
-            text: cmd,
-            value: cmd,
-            description: def.description,
-            kind: 'command',
-          }));
-      }
+          .map(([cmd, def]) => ({ text: cmd, value: cmd, description: def.description, kind: 'command' }));
+      } else {
+        const mainCmd = tokens[1]?.toLowerCase();
+        const cmdDef = GIT_COMMAND_TREE[mainCmd];
 
-      const mainCmd = tokens[1]?.toLowerCase();
-      const cmdDef = GIT_COMMAND_TREE[mainCmd];
+        if (!cmdDef) {
+          result = [];
+        } else {
+          const currentToken = isNewToken ? '' : tokens[tokens.length - 1] || '';
 
-      if (!cmdDef) {
-        return [];
-      }
-
-      const currentToken = isNewToken ? '' : tokens[tokens.length - 1] || '';
-
-      // Flags completion (e.g. - or --)
-      if (currentToken.startsWith('-')) {
-        const prefix = currentToken.toLowerCase();
-        return cmdDef.flags
-          .filter((f: GitFlag) => f.flag.toLowerCase().startsWith(prefix))
-          .map((f: GitFlag) => ({
-            text: f.flag,
-            value: f.flag,
-            description: f.description,
-            kind: 'flag',
-          }));
-      }
-
-      // Subcommands completion if available
-      if (cmdDef.subcommands && cmdDef.subcommands.length > 0) {
-        if (tokens.length === 2 && isNewToken) {
-          return cmdDef.subcommands.map((sub: string) => ({
-            text: sub,
-            value: sub,
-            description: `Subcommand for git ${mainCmd}`,
-            kind: 'subcommand',
-          }));
-        }
-        if (tokens.length === 3 && !isNewToken) {
-          const prefix = tokens[2].toLowerCase();
-          return cmdDef.subcommands
-            .filter((sub: string) => sub.toLowerCase().startsWith(prefix))
-            .map((sub: string) => ({
-              text: sub,
-              value: sub,
-              description: `Subcommand for git ${mainCmd}`,
-              kind: 'subcommand',
-            }));
+          if (currentToken.startsWith('-')) {
+            const prefix = currentToken.toLowerCase();
+            result = cmdDef.flags
+              .filter((f: GitFlag) => f.flag.toLowerCase().startsWith(prefix))
+              .map((f: GitFlag) => ({ text: f.flag, value: f.flag, description: f.description, kind: 'flag' }));
+          } else if (cmdDef.subcommands && cmdDef.subcommands.length > 0) {
+            if (tokens.length === 2 && isNewToken) {
+              result = cmdDef.subcommands.map((sub: string) => ({
+                text: sub, value: sub, description: `Subcommand for git ${mainCmd}`, kind: 'subcommand',
+              }));
+            } else if (tokens.length === 3 && !isNewToken) {
+              const prefix = tokens[2].toLowerCase();
+              result = cmdDef.subcommands
+                .filter((sub: string) => sub.toLowerCase().startsWith(prefix))
+                .map((sub: string) => ({
+                  text: sub, value: sub, description: `Subcommand for git ${mainCmd}`, kind: 'subcommand',
+                }));
+            } else {
+              result = [];
+            }
+          } else {
+            result = [];
+          }
         }
       }
 
-      return [];
+      // Store in cache; evict oldest entry if over the cap
+      if (cache.size >= 128) {
+        cache.delete(cache.keys().next().value!);
+      }
+      cache.set(cacheKey, result);
+      return result;
     },
     []
   );

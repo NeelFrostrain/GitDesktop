@@ -1,5 +1,13 @@
 import { invoke } from '@tauri-apps/api/core';
-import { SavedAccount, TokenInfo, GitLabUser, GitHubUser, UnifiedRepo, PagedResult, Provider } from '../../types/gitlab';
+import {
+  SavedAccount,
+  TokenInfo,
+  GitLabUser,
+  GitHubUser,
+  UnifiedRepo,
+  PagedResult,
+  Provider,
+} from '../../types/gitlab';
 import { ProviderAccount, AccountPatch, RemoteInfo } from '../../features/account-services/types';
 
 /**
@@ -49,7 +57,11 @@ export class AccountService {
   /**
    * Updates display name or email for a saved account.
    */
-  static async updateAccountInfo(accountId: string, name: string, email: string | null): Promise<void> {
+  static async updateAccountInfo(
+    accountId: string,
+    name: string,
+    email: string | null
+  ): Promise<void> {
     return invoke('update_account_info_cmd', { accountId, name, email });
   }
 
@@ -126,7 +138,10 @@ export class AccountService {
   /**
    * Sets active provider account, optionally scoping to the active repository path.
    */
-  static async setActiveProviderAccount(accountId: string, activeRepoPath?: string | null): Promise<void> {
+  static async setActiveProviderAccount(
+    accountId: string,
+    activeRepoPath?: string | null
+  ): Promise<void> {
     return invoke('accounts_set_active', {
       accountId,
       activeRepoPath: activeRepoPath || null,
@@ -160,7 +175,12 @@ export class AccountService {
   /**
    * Lists remote repositories for a provider account.
    */
-  static async listProviderRemotes(accountId: string, page = 1, perPage = 20, search = ''): Promise<RemoteInfo[]> {
+  static async listProviderRemotes(
+    accountId: string,
+    page = 1,
+    perPage = 20,
+    search = ''
+  ): Promise<RemoteInfo[]> {
     return invoke<RemoteInfo[]>('remotes_list', {
       accountId,
       page,

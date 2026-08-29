@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { ChevronRight, ChevronDown, Folder, FileText, RefreshCw, MousePointer, Copy } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronDown,
+  Folder,
+  FileText,
+  RefreshCw,
+  MousePointer,
+  Copy,
+} from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { GitService } from '../../services/git/gitService';
 
@@ -21,7 +29,12 @@ const SAMPLE_TREE: FileNode[] = [
   { name: 'Saved', path: 'Saved', is_dir: true },
   { name: '.dvignore', path: '.dvignore', is_dir: false, size: '2.5 KB' },
   { name: '.loreignore', path: '.loreignore', is_dir: false, size: '335 B' },
-  { name: 'NicolasN_BunnyMP.uproject', path: 'NicolasN_BunnyMP.uproject', is_dir: false, size: '625 B' },
+  {
+    name: 'NicolasN_BunnyMP.uproject',
+    path: 'NicolasN_BunnyMP.uproject',
+    is_dir: false,
+    size: '625 B',
+  },
   { name: 'README.md', path: 'README.md', is_dir: false, size: '26 B' },
 ];
 
@@ -33,8 +46,8 @@ export const FileBrowser: React.FC = () => {
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({
     '.diversion': false,
-    'Config': false,
-    'Content': true,
+    Config: false,
+    Content: true,
   });
   const [fileContent, setFileContent] = useState<string | null>(null);
 
@@ -175,7 +188,9 @@ export const FileBrowser: React.FC = () => {
               {fileContent ? (
                 <pre>{fileContent}</pre>
               ) : (
-                <div className="text-text-muted italic">File contents loading or preview not available...</div>
+                <div className="text-text-muted italic">
+                  File contents loading or preview not available...
+                </div>
               )}
             </div>
           </div>

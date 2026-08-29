@@ -16,7 +16,8 @@ export const RemoteRepositoriesTab: React.FC = () => {
         <div className="space-y-1">
           <h4 className="text-xs font-bold text-text-primary">No Active Repository</h4>
           <p className="text-[11px] text-text-muted max-w-sm mx-auto">
-            Open a local repository in Git Desktop to view and manage its remote URLs, fetch/push endpoints, and default remotes.
+            Open a local repository in Git Desktop to view and manage its remote URLs, fetch/push
+            endpoints, and default remotes.
           </p>
         </div>
       </div>
@@ -31,9 +32,7 @@ export const RemoteRepositoriesTab: React.FC = () => {
       <div>
         <h3 className="text-xs font-bold text-text-primary tracking-wider uppercase flex items-center gap-2">
           <span>CONFIGURED REMOTES</span>
-          <span className="text-[11px] text-text-muted font-mono font-normal">
-            ({repoName})
-          </span>
+          <span className="text-[11px] text-text-muted font-mono font-normal">({repoName})</span>
         </h3>
         <p className="text-xs text-text-muted mt-0.5">
           Manage remote repository targets and assign default push/pull remotes.
@@ -44,11 +43,7 @@ export const RemoteRepositoriesTab: React.FC = () => {
       {remotes.length > 0 ? (
         <div className="space-y-2.5 max-h-[280px] overflow-y-auto pr-1">
           {remotes.map((remote) => (
-            <RemoteRow
-              key={remote.name}
-              remote={remote}
-              repoPath={activeRepoPath}
-            />
+            <RemoteRow key={remote.name} remote={remote} repoPath={activeRepoPath} />
           ))}
         </div>
       ) : !isLoading ? (

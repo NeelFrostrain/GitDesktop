@@ -152,13 +152,7 @@ pub fn commit_changes(
 
     let signature = Signature::now(&name, &email)?;
 
-    let parent_commit = match repo.head() {
-        Ok(head) => match head.peel_to_commit() {
-            Ok(c) => Some(c),
-            Err(_) => None,
-        },
-        Err(_) => None,
-    };
+    let parent_commit = repo.head().ok().and_then(|h| h.peel_to_commit().ok());
 
     if !is_allow_empty {
         if let Some(ref parent) = parent_commit {
@@ -232,7 +226,7 @@ pub fn checkout_branch(repo_path: &str, branch_name: &str) -> Result<(), AppErro
 
     let mut opts = git2::build::CheckoutBuilder::new();
     opts.safe();
-    if let Err(_) = repo.checkout_tree(&object, Some(&mut opts)) {
+    if repo.checkout_tree(&object, Some(&mut opts)).is_err() {
         let mut force_opts = git2::build::CheckoutBuilder::new();
         force_opts.force();
         repo.checkout_tree(&object, Some(&mut force_opts))?;

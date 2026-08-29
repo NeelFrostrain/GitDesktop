@@ -5,20 +5,22 @@
 <!-- Metadata Row -->
 
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
-[![Status](https://img.shields.io/badge/status-ready-brightgreen)](#)
+[![Status](https://img.shields.io/badge/status-in%20development-yellow)](#)
 [![License](https://img.shields.io/badge/License-Proprietary%20%2F%20Private-darkred.svg)](#)
 [![Platform](https://img.shields.io/badge/platform-win%20%7C%20mac%20%7C%20linux-777777)](#-distribution)
-[![CI](https://img.shields.io/badge/CI-passing-2ea44f?logo=github-actions&logoColor=white)](#)
+[![Node](https://img.shields.io/badge/node-v20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Rust](https://img.shields.io/badge/rust-1.80%2B-orange?logo=rust)](https://www.rust-lang.org/)
 
 <!-- Tech Stack Row -->
 
 [![Tauri](https://img.shields.io/badge/Tauri-v2-24C8D8?logo=tauri&logoColor=white)](https://tauri.app/)
-[![Rust](https://img.shields.io/badge/Rust-1.80%2B-DEA584?logo=rust&logoColor=black)](https://www.rust-lang.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Zustand](https://img.shields.io/badge/Zustand-v5-4338CA)](https://github.com/pmndrs/zustand)
+[![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white)](https://eslint.org/)
+[![Prettier](https://img.shields.io/badge/Prettier-3.7-F7B93E?logo=prettier&logoColor=black)](https://prettier.io/)
 
 ---
 
@@ -97,17 +99,17 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 ## Feature Summary
 
-| Category                     | Features |
-| :--------------------------- | :------: |
-| **Commit-AI Engine**         |    6     |
-| **Repository & Workspaces**  |    8     |
-| **History & Rebase**         |    8     |
-| **Diff, Blame & Conflicts**  |    6     |
-| **Stash & Branching**        |    6     |
-| **Security & Authentication**|    5     |
-| **Terminal & Live Logs**     |    4     |
-| **Theming & Design Tokens**  |    5     |
-| **Total Features**           |  **48**  |
+| Category                      | Features |
+| :---------------------------- | :------: |
+| **Commit-AI Engine**          |    6     |
+| **Repository & Workspaces**   |    8     |
+| **History & Rebase**          |    8     |
+| **Diff, Blame & Conflicts**   |    6     |
+| **Stash & Branching**         |    6     |
+| **Security & Authentication** |    5     |
+| **Terminal & Live Logs**      |    4     |
+| **Theming & Design Tokens**   |    5     |
+| **Total Features**            |  **48**  |
 
 ---
 
@@ -190,29 +192,29 @@ src-tauri/src/git/
 
 ### Frontend
 
-| Library | Version | Purpose |
-| :--- | :--- | :--- |
-| **React** | 19.0 | Component rendering & reactive UI |
-| **TypeScript** | 5.8 | Full type safety |
-| **Vite** | 6.1 | Rapid bundler & HMR |
-| **Tailwind CSS** | 4.3 | High-performance CSS utility engine |
-| **Zustand** | 5.0 | Global state management stores |
-| **Monaco Editor** | 4.7 | Code diff & editor viewer |
-| **xterm.js** | 6.0 | Hardware-accelerated terminal emulator |
-| **Lucide React** | 0.475 | Clean icon set |
-| **TanStack Query** | 5.66 | Async query caching |
+| Library            | Version | Purpose                                |
+| :----------------- | :------ | :------------------------------------- |
+| **React**          | 19.0    | Component rendering & reactive UI      |
+| **TypeScript**     | 5.8     | Full type safety                       |
+| **Vite**           | 6.1     | Rapid bundler & HMR                    |
+| **Tailwind CSS**   | 4.3     | High-performance CSS utility engine    |
+| **Zustand**        | 5.0     | Global state management stores         |
+| **Monaco Editor**  | 4.7     | Code diff & editor viewer              |
+| **xterm.js**       | 6.0     | Hardware-accelerated terminal emulator |
+| **Lucide React**   | 0.475   | Clean icon set                         |
+| **TanStack Query** | 5.66    | Async query caching                    |
 
 ### Backend (Rust / Tauri)
 
-| Crate | Purpose |
-| :--- | :--- |
-| **tauri (v2)** | Lightweight native desktop shell & IPC |
-| **git2** | Native `libgit2` bindings for high-speed local git operations |
-| **keyring** | Native OS secure credential storage (Windows / macOS / Linux) |
-| **reqwest** | Async HTTP client for Groq AI API & cloud services |
-| **tokio** | Async runtime for non-blocking I/O and worker tasks |
-| **serde / serde_json** | High-speed data serialization |
-| **portable-pty** | Cross-platform pseudo-terminal manager for embedded shell |
+| Crate                  | Purpose                                                       |
+| :--------------------- | :------------------------------------------------------------ |
+| **tauri (v2)**         | Lightweight native desktop shell & IPC                        |
+| **git2**               | Native `libgit2` bindings for high-speed local git operations |
+| **keyring**            | Native OS secure credential storage (Windows / macOS / Linux) |
+| **reqwest**            | Async HTTP client for Groq AI API & cloud services            |
+| **tokio**              | Async runtime for non-blocking I/O and worker tasks           |
+| **serde / serde_json** | High-speed data serialization                                 |
+| **portable-pty**       | Cross-platform pseudo-terminal manager for embedded shell     |
 
 ---
 
@@ -220,44 +222,141 @@ src-tauri/src/git/
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v20+) or [Bun](https://bun.sh/)
-- [Rust toolchain](https://rustup.rs/) (1.80+)
-- Platform build dependencies:
+- **Node.js** (v20+) or **Bun** (v1.3+)
+- **Rust toolchain** (1.80+) — [Install here](https://rustup.rs/)
+- **Git** (v2.40+)
+- Platform-specific dependencies:
   - **Windows**: Visual Studio C++ Build Tools & WebView2 runtime
-  - **macOS**: Xcode Command Line Tools
+  - **macOS**: Xcode Command Line Tools (`xcode-select --install`)
   - **Linux (Ubuntu/Debian)**:
     ```bash
     sudo apt-get update && sudo apt-get install -y \
-      libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+      libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev \
+      libayatana-appindicator3-dev librsvg2-dev
     ```
 
-### Local Development
+### Installation & Setup
 
-1. **Install dependencies**:
+1. **Clone and install dependencies**:
+
    ```bash
-   npm install
-   # or
+   git clone <repo-url>
+   cd gitlab-desktop
+   
+   # Using Bun (recommended)
    bun install
+   
+   # OR using npm
+   npm install
    ```
 
-2. **Start Tauri dev environment**:
+2. **Start development server**:
+
    ```bash
-   npm run tauri dev
-   # or
-   bun run tauri dev
+   # Frontend + Tauri dev environment (hot reload)
+   bun run dev:app
+   
+   # OR individual commands:
+   bun run dev          # Vite dev server only (port 1420)
+   bun run tauri dev    # Tauri desktop app with Rust backend
    ```
 
-3. **Run frontend typechecking**:
+3. **Type checking & validation**:
+
    ```bash
-   npm run typecheck
-   # or
-   bun run typecheck
+   bun run typecheck    # TypeScript checking
+   bun run lint         # ESLint v9 with React & TypeScript rules
+   bun run format       # Prettier code formatting
+   bun run test         # Vitest unit tests
    ```
 
 4. **Verify Rust backend**:
+
    ```bash
    cargo check --manifest-path src-tauri/Cargo.toml
    ```
+
+---
+
+## Development Scripts
+
+| Script              | Command                   | Purpose                                      |
+| :------------------ | :------------------------ | :------------------------------------------- |
+| `dev`               | `vite`                    | Start Vite dev server (React frontend only) |
+| `dev:app`           | `tauri dev`               | Launch Tauri desktop app with hot reload    |
+| `build`             | `tsc && vite build`       | Production build (frontend bundle)          |
+| `build:app`         | `tauri build`             | Build desktop binary & installer            |
+| `typecheck`         | `tsc --noEmit`            | Check TypeScript without emitting           |
+| `test`              | `vitest run`              | Run all unit tests once                      |
+| `lint`              | `eslint --cache .`        | Lint TypeScript & React files                |
+| `format`            | `prettier --write .`      | Format code with Prettier                   |
+| `preview`           | `vite preview`            | Preview production build locally             |
+
+### Quick Start Examples
+
+```bash
+# Development workflow
+bun run dev:app              # Start desktop app with hot reload
+bun run format               # Auto-format all code
+bun run lint --fix           # Auto-fix lint issues
+
+# Testing & validation
+bun run test                 # Run vitest suite
+bun run typecheck            # TypeScript check only
+
+# Production
+bun run build:app            # Full production build
+```
+
+---
+
+## Code Quality & Standards
+
+### ESLint Configuration
+
+The project uses **ESLint v9** with TypeScript, React, and React Hooks support.
+
+- **Config file**: `eslint.config.js` (new flat config format)
+- **Target files**: `src/**/*.{js,jsx,ts,tsx}`
+- **Rules**: Recommended + React best practices + TypeScript strict mode
+- **Run**: `bun run lint` or `bun run lint --fix`
+
+**Key rules:**
+- ✅ Disables `react/react-in-jsx-scope` (React 17+ doesn't require it)
+- ✅ Warns on unused props (allow `_` prefix for intentional omissions)
+- ✅ Enforces React Hooks rules
+- ✅ Allows browser globals, Node.js globals, and React types
+- ✅ Caches results for faster subsequent runs (`.eslintcache`)
+
+### Prettier Configuration
+
+Code formatting with **Prettier v3.7**.
+
+- **Config file**: `.prettierrc.yaml`
+- **Ignore file**: `.prettierignore`
+- **Options**:
+  - 2-space indentation
+  - Single quotes
+  - Semicolons enabled
+  - LF line endings
+  - 100 character line width
+- **Run**: `bun run format`
+
+### TypeScript Configuration
+
+- **Config files**: `tsconfig.json`, `tsconfig.node.json`
+- **Version**: 5.8 (strict mode enabled)
+- **Target**: ES2021 (modern browsers + Node.js)
+
+### Vitest Configuration
+
+Unit testing framework for React components.
+
+- **Config file**: `vitest.config.ts`
+- **Environment**: jsdom (for DOM testing)
+- **Global test functions**: Enabled (no need to import `describe`, `it`, etc.)
+- **Coverage**: v8 provider (HTML reports)
+- **Run**: `bun run test`
 
 ---
 
@@ -276,11 +375,11 @@ The compiled binaries and installers will be output to `src-tauri/target/release
 
 ## Distribution
 
-| Platform | Package Format | Architecture | Status |
-| :--- | :--- | :--- | :--- |
-| **Windows** | NSIS Installer (`.exe`), `.msi` | x64 | **Stable** |
-| **macOS** | Disk Image (`.dmg`), App Bundle (`.app`) | Universal (Apple Silicon & Intel) | **Stable** |
-| **Linux** | AppImage (`.AppImage`), Debian Package (`.deb`) | x64 | **Stable** |
+| Platform    | Package Format                                  | Architecture                      | Status     |
+| :---------- | :---------------------------------------------- | :-------------------------------- | :--------- |
+| **Windows** | NSIS Installer (`.exe`), `.msi`                 | x64                               | **Stable** |
+| **macOS**   | Disk Image (`.dmg`), App Bundle (`.app`)        | Universal (Apple Silicon & Intel) | **Stable** |
+| **Linux**   | AppImage (`.AppImage`), Debian Package (`.deb`) | x64                               | **Stable** |
 
 Automated multi-platform builds are packaged via GitHub Actions workflows in `.github/workflows/`.
 

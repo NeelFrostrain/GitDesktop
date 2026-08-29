@@ -1,28 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  RotateCcw,
-  RefreshCw,
-  History,
-} from 'lucide-react';
+import { X, RotateCcw, RefreshCw, History } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { ReflogEntry } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
 
+function getActionStyle(action: string): { bg: string; text: string; border: string } {
+  const lower = action.toLowerCase();
+  if (lower.includes('commit')) {
+    return { bg: 'bg-emerald-500/15', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+  }
+  if (lower.includes('checkout') || lower.includes('branch')) {
+    return { bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30' };
+  }
+  if (lower.includes('rebase')) {
+    return { bg: 'bg-purple-500/15', text: 'text-purple-400', border: 'border-purple-500/30' };
+  }
+  if (lower.includes('reset')) {
+    return { bg: 'bg-rose-500/15', text: 'text-rose-400', border: 'border-rose-500/30' };
+  }
+  if (lower.includes('pull') || lower.includes('merge')) {
+    return { bg: 'bg-amber-500/15', text: 'text-amber-400', border: 'border-amber-500/30' };
+  }
+  return { bg: 'bg-base-2', text: 'text-text-secondary', border: 'border-border' };
+}
+
 /**
  * Modal dialogue for reviewing the repository's HEAD reflog entries and executing safe recovery resets.
  */
 export const ReflogModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isReflogModalOpen,
-    setIsReflogModalOpen,
-    setStatus,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isReflogModalOpen, setIsReflogModalOpen, setStatus, setError } =
+    useGitStore();
 
   const [reflogEntries, setReflogEntries] = useState<ReflogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,14 +60,20 @@ export const ReflogModal: React.FC = () => {
   const handleRestoreTarget = async (sha: string) => {
     if (!activeRepoPath) return;
 
-    if (!confirm(`CAUTION: Restore branch HEAD to ${sha.slice(0, 7)}? This will execute git reset --hard.`)) {
+    if (
+      !confirm(
+        `CAUTION: Restore branch HEAD to ${sha.slice(0, 7)}? This will execute git reset --hard.`
+      )
+    ) {
       return;
     }
 
     setIsSubmitting(true);
     try {
       await invoke('restore_reflog_target_cmd', { repoPath: activeRepoPath, sha, force: true });
-      useLogStore.getState().addLog('success', 'Git', `Restored branch HEAD to ${sha.slice(0, 7)} via Reflog`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Restored branch HEAD to ${sha.slice(0, 7)} via Reflog`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
@@ -112,7 +128,7 @@ export const ReflogModal: React.FC = () => {
         </div>
 
         {/* Reflog Timeline List */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2.5 bg-base-0">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-2 bg-base-0 scrollbar-thin">
           {isLoading ? (
             <div className="p-12 text-center text-text-muted italic flex items-center justify-center gap-2">
               <RefreshCw className="w-4 h-4 animate-spin text-commito-coral" />
@@ -123,43 +139,80 @@ export const ReflogModal: React.FC = () => {
               No reflog entries recorded
             </div>
           ) : (
-            reflogEntries.map((entry) => (
-              <div
-                key={entry.index + entry.sha}
-                className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-center justify-between hover:bg-base-2/70 transition shadow-xs"
-              >
-                <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
-                  <span className="px-2 py-0.5 bg-base-2 border border-border rounded font-mono text-[10px] text-commito-coral font-bold flex-shrink-0">
-                    HEAD@{`{${entry.index}}`}
-                  </span>
+            reflogEntries.map((entry, idx) => {
+              const actionStyle = getActionStyle(entry.action);
+              const isFirst = idx === 0;
+              const isLast = idx === reflogEntries.length - 1;
 
-                  <div className="min-w-0 truncate">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-text-primary">
-                        {entry.sha.slice(0, 7)}
+              return (
+                <div key={entry.index + entry.sha} className="flex items-stretch gap-2 group">
+                  {/* Visual Timeline Spine */}
+                  <div className="w-6 shrink-0 relative flex items-center justify-center">
+                    <svg width="24" height="100%" className="absolute inset-0 w-full h-full overflow-visible">
+                      {/* Vertical connector line */}
+                      <line
+                        x1="12"
+                        y1={isFirst ? '50%' : '0'}
+                        x2="12"
+                        y2={isLast ? '50%' : '100%'}
+                        stroke="#3b82f6"
+                        strokeWidth="2"
+                        strokeOpacity="0.6"
+                      />
+                      {/* Node Dot */}
+                      <circle
+                        cx="12"
+                        cy="50%"
+                        r={isFirst ? 5 : 4}
+                        fill={isFirst ? '#3b82f6' : '#111113'}
+                        stroke="#3b82f6"
+                        strokeWidth={isFirst ? 2 : 1.5}
+                      />
+                    </svg>
+                  </div>
+
+                  {/* Reflog Card */}
+                  <div className="flex-1 p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-center justify-between hover:bg-base-2/70 transition shadow-2xs min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-3">
+                      <span className="px-1.5 py-0.2 bg-base-2 border border-border rounded-xs font-mono text-[9.5px] text-commito-coral font-bold flex-shrink-0">
+                        HEAD@{`{${entry.index}}`}
                       </span>
-                      <h4 className="text-xs font-bold truncate text-text-primary">
-                        {entry.message}
-                      </h4>
+
+                      <span
+                        className={`px-1.5 py-0.2 rounded-xs border text-[9.5px] font-mono font-semibold uppercase tracking-wider shrink-0 ${actionStyle.bg} ${actionStyle.text} ${actionStyle.border}`}
+                      >
+                        {entry.action}
+                      </span>
+
+                      <div className="min-w-0 flex-1 truncate">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs font-bold text-text-primary">
+                            {entry.sha.slice(0, 7)}
+                          </span>
+                          <h4 className="text-xs font-bold truncate text-text-primary">
+                            {entry.message}
+                          </h4>
+                        </div>
+                        <div className="text-[11px] text-text-muted font-mono mt-0.5">
+                          {entry.date}
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-[11px] text-text-muted font-mono mt-0.5">
-                      action: {entry.action} • {entry.date}
-                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRestoreTarget(entry.sha)}
+                      disabled={isSubmitting}
+                      className="h-7 px-3 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs flex-shrink-0 cursor-pointer disabled:opacity-50 active:scale-98"
+                      title={`Restore HEAD to ${entry.sha.slice(0, 7)}`}
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Restore</span>
+                    </button>
                   </div>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => handleRestoreTarget(entry.sha)}
-                  disabled={isSubmitting}
-                  className="h-7 px-3 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs flex-shrink-0 cursor-pointer disabled:opacity-50 active:scale-98"
-                  title={`Restore HEAD to ${entry.sha.slice(0, 7)}`}
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  <span>Restore</span>
-                </button>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 

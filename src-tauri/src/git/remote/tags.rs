@@ -18,9 +18,8 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
     let mut tags = Vec::new();
     let tag_names = repo.tag_names(None).map_err(|e| AppError::Git(e.to_string()))?;
 
-    for name_opt in tag_names.iter() {
-        if let Some(name) = name_opt {
-            if let Ok(obj) = repo.revparse_single(name) {
+    for name in tag_names.iter().flatten() {
+        if let Ok(obj) = repo.revparse_single(name) {
                 let sha = obj.id().to_string();
                 let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
 
@@ -45,7 +44,6 @@ pub fn list_tags(repo_path: &str) -> Result<Vec<TagInfo>, AppError> {
                 }
             }
         }
-    }
 
     Ok(tags)
 }

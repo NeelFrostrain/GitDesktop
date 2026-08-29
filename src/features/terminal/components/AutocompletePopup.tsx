@@ -1,14 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  GitBranch,
-  Globe,
-  File,
-  Tag,
-  Flag,
-  Terminal,
-  Archive,
-  Layers,
-} from 'lucide-react';
+import { GitBranch, Globe, File, Tag, Flag, Terminal, Archive, Layers } from 'lucide-react';
 import { AutocompleteSuggestion, AutocompleteKind } from '../types';
 
 interface AutocompletePopupProps {
@@ -124,10 +115,11 @@ export const AutocompletePopup: React.FC<AutocompletePopupProps> = ({
               ref={isSelected ? selectedItemRef : null}
               type="button"
               onClick={() => onSelect(item)}
-              className={`w-full px-3 py-2 rounded-sm text-left flex items-center justify-between gap-3 text-xs transition cursor-pointer ${isSelected
-                ? 'bg-commito-coral/15 text-text-primary border-l-2 border-commito-coral font-medium shadow-xs'
-                : 'hover:bg-white/[0.04] text-text-secondary hover:text-text-primary border-l-2 border-transparent'
-                }`}
+              className={`w-full px-3 py-2 rounded-sm text-left flex items-center justify-between gap-3 text-xs transition cursor-pointer ${
+                isSelected
+                  ? 'bg-commito-coral/15 text-text-primary border-l-2 border-commito-coral font-medium shadow-xs'
+                  : 'hover:bg-white/[0.04] text-text-secondary hover:text-text-primary border-l-2 border-transparent'
+              }`}
             >
               <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 {getKindIcon(item.kind)}

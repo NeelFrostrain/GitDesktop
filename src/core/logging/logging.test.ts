@@ -1,8 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import {
-  LOG_LEVEL_TERMINAL_COLOR,
-  LOG_LEVEL_TERMINAL_TAG,
-} from './colorMap';
+import { LOG_LEVEL_TERMINAL_COLOR, LOG_LEVEL_TERMINAL_TAG } from './colorMap';
 import { LogEntry, LogLevel } from './types';
 import { useAppLogStore, printLogToConsole } from './logStore';
 

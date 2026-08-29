@@ -44,7 +44,9 @@ export const useSigningStore = create<SigningState>((set, get) => ({
       ]);
       set({ gpgKeys: gpg || [], sshKeys: ssh || [] });
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Git', `Failed to load signing keys: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Failed to load signing keys: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -56,7 +58,9 @@ export const useSigningStore = create<SigningState>((set, get) => ({
       const config = await invoke<SigningConfig>('signing_get_config_cmd', { repoPath });
       set({ config });
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Git', `Failed to load signing config: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Failed to load signing config: ${getErrorMessage(error)}`);
     }
   },
 
@@ -65,11 +69,13 @@ export const useSigningStore = create<SigningState>((set, get) => ({
     try {
       await invoke('signing_set_config_cmd', { repoPath, config });
       set({ config });
-      useLogStore.getState().addLog(
-        'info',
-        'Git',
-        `Commit signing ${config.enabled ? 'enabled' : 'disabled'} (${config.method.toUpperCase()}, ${config.scope} scope)`
-      );
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'Git',
+          `Commit signing ${config.enabled ? 'enabled' : 'disabled'} (${config.method.toUpperCase()}, ${config.scope} scope)`
+        );
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to save signing config: ${msg}`);

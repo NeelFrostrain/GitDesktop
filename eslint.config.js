@@ -1,0 +1,224 @@
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import reactRefreshPlugin from 'eslint-plugin-react-refresh';
+
+export default tseslint.config(
+  {
+    ignores: [
+      'dist',
+      'build',
+      'node_modules',
+      'target',
+      'src-tauri/target',
+      '.vscode',
+      '.idea',
+      '*.log',
+      '.eslintcache',
+    ],
+  },
+  // Config for Node.js files
+  {
+    files: ['eslint.config.js', 'vite.config.ts', 'vitest.config.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      globals: {
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+      },
+    },
+  },
+  // Config for source files
+  {
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+    ],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        // ── Browser globals ──────────────────────────────────────────────────
+        // Standard Web APIs available in Tauri's WebView (Chromium/WebKit).
+        // Listed explicitly to avoid a peer-dep on the `globals` package while
+        // still covering every API that appears in the codebase.
+        console: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        navigator: 'readonly',
+        location: 'readonly',
+        history: 'readonly',
+        // DOM types
+        HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        HTMLButtonElement: 'readonly',
+        HTMLCanvasElement: 'readonly',
+        HTMLFormElement: 'readonly',
+        HTMLSelectElement: 'readonly',
+        HTMLAnchorElement: 'readonly',
+        HTMLSpanElement: 'readonly',
+        HTMLImageElement: 'readonly',
+        SVGElement: 'readonly',
+        Element: 'readonly',
+        Node: 'readonly',
+        NodeList: 'readonly',
+        Event: 'readonly',
+        MouseEvent: 'readonly',
+        KeyboardEvent: 'readonly',
+        InputEvent: 'readonly',
+        FocusEvent: 'readonly',
+        DragEvent: 'readonly',
+        WheelEvent: 'readonly',
+        PointerEvent: 'readonly',
+        CustomEvent: 'readonly',
+        EventTarget: 'readonly',
+        EventListener: 'readonly',
+        // Web APIs
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        fetch: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
+        Headers: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        FileList: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        // Crypto
+        crypto: 'readonly',
+        CryptoKey: 'readonly',
+        SubtleCrypto: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+        // Storage
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        indexedDB: 'readonly',
+        IDBDatabase: 'readonly',
+        IDBOpenDBRequest: 'readonly',
+        IDBTransaction: 'readonly',
+        IDBObjectStore: 'readonly',
+        IDBIndex: 'readonly',
+        IDBCursor: 'readonly',
+        IDBKeyRange: 'readonly',
+        IDBRequest: 'readonly',
+        IDBVersionChangeEvent: 'readonly',
+        // Observers
+        ResizeObserver: 'readonly',
+        MutationObserver: 'readonly',
+        IntersectionObserver: 'readonly',
+        PerformanceObserver: 'readonly',
+        // Timers
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        queueMicrotask: 'readonly',
+        // Miscellaneous
+        React: 'readonly',
+        performance: 'readonly',
+        screen: 'readonly',
+        self: 'readonly',
+        globalThis: 'readonly',
+        structuredClone: 'readonly',
+        atob: 'readonly',
+        btoa: 'readonly',
+        alert: 'readonly',
+        confirm: 'readonly',
+        prompt: 'readonly',
+        getComputedStyle: 'readonly',
+        matchMedia: 'readonly',
+        MutationRecord: 'readonly',
+        ResizeObserverEntry: 'readonly',
+        DOMRect: 'readonly',
+        DOMRectReadOnly: 'readonly',
+        IntersectionObserverEntry: 'readonly',
+        Map: 'readonly',
+        Set: 'readonly',
+        WeakMap: 'readonly',
+        WeakSet: 'readonly',
+        Promise: 'readonly',
+        Symbol: 'readonly',
+        Proxy: 'readonly',
+        Reflect: 'readonly',
+        RegExp: 'readonly',
+        Error: 'readonly',
+        TypeError: 'readonly',
+        RangeError: 'readonly',
+        SyntaxError: 'readonly',
+        JSON: 'readonly',
+        Math: 'readonly',
+        Date: 'readonly',
+        Array: 'readonly',
+        Object: 'readonly',
+        String: 'readonly',
+        Number: 'readonly',
+        Boolean: 'readonly',
+        BigInt: 'readonly',
+        Infinity: 'readonly',
+        NaN: 'readonly',
+        undefined: 'readonly',
+        isNaN: 'readonly',
+        isFinite: 'readonly',
+        parseInt: 'readonly',
+        parseFloat: 'readonly',
+        encodeURIComponent: 'readonly',
+        decodeURIComponent: 'readonly',
+        encodeURI: 'readonly',
+        decodeURI: 'readonly',
+      },
+    },
+    plugins: {
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
+      'react-refresh': reactRefreshPlugin,
+    },
+    rules: {
+      ...js.configs.recommended.rules,
+      ...reactPlugin.configs.recommended.rules,
+      ...reactHooksPlugin.configs.recommended.rules,
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'warn',
+      'react-refresh/only-export-components': 'warn',
+      'no-unused-vars': 'off', // turned off in favor of @typescript-eslint/no-unused-vars
+      'no-undef': 'off', // turned off in favor of TypeScript's compiler type checking
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'warn',   // downgrade: surfaces but doesn't block
+      'no-empty': ['warn', { allowEmptyCatch: true }], // empty catch blocks are common in Tauri apps
+      // react-hooks/set-state-in-effect fires on the common pattern of resetting
+      // error/loading state at the top of an effect when its deps change. This is
+      // accepted React practice; downgrade to warn so it surfaces without blocking.
+      'react-hooks/set-state-in-effect': 'warn',
+      // react-hooks/purity, react-hooks/refs, and React Compiler rules:
+      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-hooks/immutability': 'warn',
+      // Apostrophes in JSX text: surface but don't block.
+      'react/no-unescaped-entities': 'warn',
+    },
+    settings: {
+      react: {
+        version: 'detect',
+      },
+    },
+  }
+);

@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Activity,
-  RefreshCw,
-  Clock,
-  Loader2,
-} from 'lucide-react';
+import { Activity, RefreshCw, Clock, Loader2 } from 'lucide-react';
 import { useActivityStore } from '../../store/activityStore';
 import { ActivityItem } from './ActivityItem';
 
@@ -69,7 +64,10 @@ export const ActivityFeed: React.FC = () => {
         /* Skeleton loading */
         <div className="space-y-2 py-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="p-3 bg-base-1 border border-border rounded-sm animate-pulse flex items-center gap-3">
+            <div
+              key={i}
+              className="p-3 bg-base-1 border border-border rounded-sm animate-pulse flex items-center gap-3"
+            >
               <div className="w-6 h-6 rounded-full bg-base-3 flex-shrink-0" />
               <div className="space-y-1 flex-1">
                 <div className="h-3 bg-base-3 rounded w-3/4" />

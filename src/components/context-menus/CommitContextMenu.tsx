@@ -30,12 +30,7 @@ interface CommitContextMenuProps {
  * Context menu for historical commit entries offering undo/soft-reset, amend,
  * checkout, revert, branching, tagging, cherry-picking, and remote web inspection.
  */
-export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
-  commit,
-  x,
-  y,
-  onClose,
-}) => {
+export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({ commit, x, y, onClose }) => {
   const {
     activeRepoPath,
     setStatus,
@@ -66,11 +61,13 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
       const undoneMsg = await invoke<string>('undo_commit_cmd', { repoPath: activeRepoPath });
       setCommitSummary(undoneMsg || commit.message);
       setActiveTab('changes');
-      useLogStore.getState().addLog(
-        'success',
-        'Git',
-        `Undone commit '${undoneMsg || commit.message}' — changes preserved in working directory`
-      );
+      useLogStore
+        .getState()
+        .addLog(
+          'success',
+          'Git',
+          `Undone commit '${undoneMsg || commit.message}' — changes preserved in working directory`
+        );
       const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
     } catch (error: unknown) {
@@ -83,7 +80,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   const handleAmendCommit = () => {
     setCommitSummary(commit.message);
     setActiveTab('changes');
-    useLogStore.getState().addLog('info', 'Git', `Prepared summary for commit amend: '${commit.message}'`);
+    useLogStore
+      .getState()
+      .addLog('info', 'Git', `Prepared summary for commit amend: '${commit.message}'`);
     onClose();
   };
 
@@ -91,7 +90,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   const handleResetToCommit = async () => {
     if (!activeRepoPath) return;
 
-    if (confirm(`Reset repository branch HEAD to commit ${commit.short_sha}? (${commit.message})`)) {
+    if (
+      confirm(`Reset repository branch HEAD to commit ${commit.short_sha}? (${commit.message})`)
+    ) {
       try {
         await invoke('restore_reflog_target_cmd', {
           repoPath: activeRepoPath,
@@ -99,7 +100,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
           force: false,
         });
 
-        useLogStore.getState().addLog('success', 'Git', `Reset branch HEAD to commit ${commit.short_sha}`);
+        useLogStore
+          .getState()
+          .addLog('success', 'Git', `Reset branch HEAD to commit ${commit.short_sha}`);
         const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
       } catch (error: unknown) {
@@ -115,7 +118,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
     try {
       await GitService.checkoutBranch(activeRepoPath, commit.sha);
-      useLogStore.getState().addLog('info', 'Git', `Checked out commit ${commit.short_sha} (Detached HEAD)`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Checked out commit ${commit.short_sha} (Detached HEAD)`);
       const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
     } catch (error: unknown) {
@@ -130,8 +135,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
 
     const repoStatus = useGitStore.getState().status;
     const isDirty = Boolean(
-      repoStatus &&
-        (!repoStatus.is_clean || (repoStatus.files && repoStatus.files.length > 0))
+      repoStatus && (!repoStatus.is_clean || (repoStatus.files && repoStatus.files.length > 0))
     );
 
     if (isDirty) {
@@ -193,7 +197,11 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
         await GitService.createBranch(activeRepoPath, branchName.trim(), commit.sha);
         useLogStore
           .getState()
-          .addLog('success', 'Git', `Created branch '${branchName.trim()}' from commit ${commit.short_sha}`);
+          .addLog(
+            'success',
+            'Git',
+            `Created branch '${branchName.trim()}' from commit ${commit.short_sha}`
+          );
         const res = await GitService.getRepoStatus(activeRepoPath);
         setStatus(res);
       } catch (error: unknown) {
@@ -217,7 +225,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
   // 8. Copy SHA
   const handleCopySha = () => {
     navigator.clipboard.writeText(commit.sha);
-    useLogStore.getState().addLog('info', 'System', `Copied commit SHA '${commit.sha}' to clipboard`);
+    useLogStore
+      .getState()
+      .addLog('info', 'System', `Copied commit SHA '${commit.sha}' to clipboard`);
     onClose();
   };
 
@@ -257,120 +267,120 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({
           style={{ left: `${adjustedX}px`, top: `${adjustedY}px` }}
           className="fixed z-[9999] w-60 bg-base-1 border border-border rounded-sm shadow-2xl py-1.5 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100"
         >
-      {/* Group 1: Commit Modifications */}
-      <div className="p-1 space-y-0.5">
-        <button
-          onClick={handleUndoCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left font-bold cursor-pointer"
-        >
-          <Undo2 className="w-3.5 h-3.5 text-commito-coral" />
-          <span>Undo commit (Soft Reset)</span>
-        </button>
+          {/* Group 1: Commit Modifications */}
+          <div className="p-1 space-y-0.5">
+            <button
+              onClick={handleUndoCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left font-bold cursor-pointer"
+            >
+              <Undo2 className="w-3.5 h-3.5 text-commito-coral" />
+              <span>Undo commit (Soft Reset)</span>
+            </button>
 
-        <button
-          onClick={handleAmendCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <Edit3 className="w-3.5 h-3.5 text-commito-coral" />
-          <span>Amend commit...</span>
-        </button>
+            <button
+              onClick={handleAmendCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-commito-coral" />
+              <span>Amend commit...</span>
+            </button>
 
-        <button
-          onClick={handleRevertCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-git-removed" />
-          <span>Revert commit</span>
-        </button>
-      </div>
+            <button
+              onClick={handleRevertCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-git-removed" />
+              <span>Revert commit</span>
+            </button>
+          </div>
 
-      <div className="h-px bg-border my-1" />
+          <div className="h-px bg-border my-1" />
 
-      {/* Group 2: Branching & Navigation */}
-      <div className="p-1 space-y-0.5">
-        <button
-          onClick={handleCheckoutCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Checkout commit</span>
-        </button>
+          {/* Group 2: Branching & Navigation */}
+          <div className="p-1 space-y-0.5">
+            <button
+              onClick={handleCheckoutCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Checkout commit</span>
+            </button>
 
-        <button
-          onClick={handleResetToCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
-          <span>Reset HEAD to commit...</span>
-        </button>
+            <button
+              onClick={handleResetToCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Reset HEAD to commit...</span>
+            </button>
 
-        <button
-          onClick={handleCreateBranchFromCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
-          <span>Create branch from commit</span>
-        </button>
+            <button
+              onClick={handleCreateBranchFromCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
+              <span>Create branch from commit</span>
+            </button>
 
-        <button
-          onClick={handleCreateTag}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <Tag className="w-3.5 h-3.5 text-amber-400" />
-          <span>Create Tag...</span>
-        </button>
+            <button
+              onClick={handleCreateTag}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <Tag className="w-3.5 h-3.5 text-amber-400" />
+              <span>Create Tag...</span>
+            </button>
 
-        <button
-          onClick={handleCherryPickCommit}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Cherry-pick commit...</span>
-        </button>
-      </div>
+            <button
+              onClick={handleCherryPickCommit}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <GitCommit className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Cherry-pick commit...</span>
+            </button>
+          </div>
 
-      <div className="h-px bg-border my-1" />
+          <div className="h-px bg-border my-1" />
 
-      {/* Group 3: Copying & Web View */}
-      <div className="p-1 space-y-0.5">
-        <button
-          onClick={handleCopySha}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <Copy className="w-3.5 h-3.5 text-text-muted" />
-          <span>Copy SHA</span>
-        </button>
+          {/* Group 3: Copying & Web View */}
+          <div className="p-1 space-y-0.5">
+            <button
+              onClick={handleCopySha}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5 text-text-muted" />
+              <span>Copy SHA</span>
+            </button>
 
-        <button
-          onClick={handleCopyTag}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <Copy className="w-3.5 h-3.5 text-text-muted" />
-          <span>Copy commit message</span>
-        </button>
+            <button
+              onClick={handleCopyTag}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5 text-text-muted" />
+              <span>Copy commit message</span>
+            </button>
 
-        <button
-          onClick={handleViewOnRemote}
-          className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
-        >
-          <ExternalLink className="w-3.5 h-3.5 text-github-dark-accent" />
-          <span>Open in remote</span>
-        </button>
-      </div>
-    </div>,
-    document.body
-  )}
+            <button
+              onClick={handleViewOnRemote}
+              className="w-full px-2.5 py-1.5 rounded-sm hover:bg-base-2 text-text-primary flex items-center gap-2.5 transition text-left cursor-pointer"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-github-dark-accent" />
+              <span>Open in remote</span>
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
 
-  {isTagModalOpen && (
-    <CreateTagModal
-      isOpen={isTagModalOpen}
-      targetCommitSha={commit.sha}
-      onClose={() => {
-        setIsTagModalOpen(false);
-        onClose();
-      }}
-    />
-  )}
-</>
-);
+      {isTagModalOpen && (
+        <CreateTagModal
+          isOpen={isTagModalOpen}
+          targetCommitSha={commit.sha}
+          onClose={() => {
+            setIsTagModalOpen(false);
+            onClose();
+          }}
+        />
+      )}
+    </>
+  );
 };

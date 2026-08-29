@@ -49,7 +49,11 @@ export const GIT_COMMAND_TREE: GitCommandTree = {
     subcommands: [],
     flags: [
       { flag: '-m', description: 'Use the given message as commit message', takesValue: true },
-      { flag: '--message', description: 'Use the given message as commit message', takesValue: true },
+      {
+        flag: '--message',
+        description: 'Use the given message as commit message',
+        takesValue: true,
+      },
       { flag: '-a', description: 'Automatically stage modified and deleted files' },
       { flag: '--all', description: 'Automatically stage modified and deleted files' },
       { flag: '--amend', description: 'Amend previous commit' },
@@ -188,7 +192,10 @@ export const GIT_COMMAND_TREE: GitCommandTree = {
       { flag: '--soft', description: 'Do not touch index or working tree (keeps staged changes)' },
       { flag: '--mixed', description: 'Resets index but not working tree (default)' },
       { flag: '--hard', description: 'Resets index and working tree (discards all changes)' },
-      { flag: '--keep', description: 'Resets index and updates files that differ between commit and HEAD' },
+      {
+        flag: '--keep',
+        description: 'Resets index and updates files that differ between commit and HEAD',
+      },
     ],
   },
   stash: {
@@ -325,14 +332,34 @@ export const GIT_COMMAND_TREE: GitCommandTree = {
   },
   lfs: {
     description: 'Git Large File Storage (LFS) extension',
-    subcommands: ['track', 'untrack', 'ls-files', 'locks', 'lock', 'unlock', 'push', 'pull', 'fetch', 'prune'],
-    flags: [
-      { flag: '--all', description: 'Act on all LFS files' },
+    subcommands: [
+      'track',
+      'untrack',
+      'ls-files',
+      'locks',
+      'lock',
+      'unlock',
+      'push',
+      'pull',
+      'fetch',
+      'prune',
     ],
+    flags: [{ flag: '--all', description: 'Act on all LFS files' }],
   },
   submodule: {
     description: 'Initialize, update or inspect submodules',
-    subcommands: ['add', 'status', 'init', 'deinit', 'update', 'set-branch', 'set-url', 'summary', 'foreach', 'sync'],
+    subcommands: [
+      'add',
+      'status',
+      'init',
+      'deinit',
+      'update',
+      'set-branch',
+      'set-url',
+      'summary',
+      'foreach',
+      'sync',
+    ],
     flags: [
       { flag: '--init', description: 'Initialize submodules if not already initialized' },
       { flag: '--recursive', description: 'Traverse submodules recursively' },
@@ -342,15 +369,17 @@ export const GIT_COMMAND_TREE: GitCommandTree = {
   reflog: {
     description: 'Manage reflog information',
     subcommands: ['show', 'expire', 'delete', 'exists'],
-    flags: [
-      { flag: '-n', description: 'Limit number of entries to show', takesValue: true },
-    ],
+    flags: [{ flag: '-n', description: 'Limit number of entries to show', takesValue: true }],
   },
   clone: {
     description: 'Clone a repository into a new directory',
     subcommands: [],
     flags: [
-      { flag: '--depth', description: 'Create shallow clone with given history depth', takesValue: true },
+      {
+        flag: '--depth',
+        description: 'Create shallow clone with given history depth',
+        takesValue: true,
+      },
       { flag: '--branch', description: 'Point HEAD to given branch after clone', takesValue: true },
       { flag: '-b', description: 'Point HEAD to given branch', takesValue: true },
       { flag: '--recurse-submodules', description: 'Initialize and clone submodules' },

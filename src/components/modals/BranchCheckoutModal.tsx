@@ -1,17 +1,10 @@
-import React, { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import {
-  AlertTriangle,
-  ArrowRightLeft,
-  Archive,
-  Trash2,
-  X,
-  Loader2,
-} from "lucide-react";
-import { useGitStore } from "../../store/useGitStore";
-import { useLogStore } from "../../store/useLogStore";
-import { GitService } from "../../services/git/gitService";
-import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
+import React, { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { ArrowRightLeft, Archive, Trash2, X, Loader2 } from 'lucide-react';
+import { useGitStore } from '../../store/useGitStore';
+import { useLogStore } from '../../store/useLogStore';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 
 interface BranchCheckoutModalProps {
   isOpen: boolean;
@@ -50,7 +43,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      await invoke("create_stash_cmd", {
+      await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Auto-stash before checkout to ${targetBranch}`,
         includeUntracked: true,
@@ -59,32 +52,28 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
       try {
-        await invoke("pop_stash_cmd", {
+        await invoke('pop_stash_cmd', {
           repoPath: activeRepoPath,
           index: 0,
         });
         useLogStore
           .getState()
-          .addLog(
-            "success",
-            "Git",
-            `Switched to '${targetBranch}' and brought changes along`,
-          );
+          .addLog('success', 'Git', `Switched to '${targetBranch}' and brought changes along`);
       } catch (popErr: unknown) {
         const popMsg = getErrorMessage(popErr);
         useLogStore
           .getState()
           .addLog(
-            "warning",
-            "Git",
-            `Switched to '${targetBranch}', but stash pop had conflicts: ${popMsg}`,
+            'warning',
+            'Git',
+            `Switched to '${targetBranch}', but stash pop had conflicts: ${popMsg}`
           );
       }
 
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, "CHECKOUT_ERROR"));
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -96,7 +85,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     if (!activeRepoPath) return;
     setIsProcessing(true);
     try {
-      await invoke("create_stash_cmd", {
+      await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Saved changes on ${currentBranch} before checkout`,
         includeUntracked: true,
@@ -107,14 +96,14 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
       useLogStore
         .getState()
         .addLog(
-          "info",
-          "Git",
-          `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`,
+          'info',
+          'Git',
+          `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`
         );
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, "CHECKOUT_ERROR"));
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -128,13 +117,11 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
     try {
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
-      useLogStore
-        .getState()
-        .addLog("warning", "Git", `Force checked out '${targetBranch}'`);
+      useLogStore.getState().addLog('warning', 'Git', `Force checked out '${targetBranch}'`);
       await refreshRepoStatus();
       onSuccess();
     } catch (error: unknown) {
-      setError(toAppError(error, "CHECKOUT_ERROR"));
+      setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
       onClose();
@@ -156,11 +143,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
               </h3>
               <span className="text-border hidden sm:inline">•</span>
               <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
-                <span className="text-text-secondary">{currentBranch}</span>{" "}
-                <span className="text-text-muted">→</span>{" "}
-                <span className="text-commito-coral font-bold">
-                  {targetBranch}
-                </span>
+                <span className="text-text-secondary">{currentBranch}</span>{' '}
+                <span className="text-text-muted">→</span>{' '}
+                <span className="text-commito-coral font-bold">{targetBranch}</span>
               </span>
             </div>
           </div>
@@ -178,12 +163,9 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
         {/* Content Body with 3 Action Choices */}
         <div className="p-4 sm:p-5 space-y-3 bg-base-0 overflow-y-auto">
           <p className="text-xs text-text-secondary leading-relaxed">
-            You have{" "}
-            <span className="font-bold text-text-primary">
-              {uncommittedCount}
-            </span>{" "}
+            You have <span className="font-bold text-text-primary">{uncommittedCount}</span>{' '}
             uncommitted file change
-            {uncommittedCount === 1 ? "" : "s"}. Choose how to handle them:
+            {uncommittedCount === 1 ? '' : 's'}. Choose how to handle them:
           </p>
 
           {/* Option 1: Bring Changes */}
@@ -204,7 +186,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 </span>
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Stashes your modifications, checks out{" "}
+                Stashes your modifications, checks out{' '}
                 <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
                   {targetBranch}
                 </span>
@@ -228,10 +210,10 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Leave Changes on {currentBranch}
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Saves your changes in a stash associated with{" "}
+                Saves your changes in a stash associated with{' '}
                 <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
                   {currentBranch}
-                </span>{" "}
+                </span>{' '}
                 so you can resume later.
               </p>
             </div>
@@ -252,8 +234,7 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
                 Discard Changes & Force Checkout
               </div>
               <p className="text-[11.5px] text-text-muted mt-1 leading-relaxed">
-                Permanently overwrites and discards local modifications when
-                switching to{" "}
+                Permanently overwrites and discards local modifications when switching to{' '}
                 <span className="font-mono text-text-primary font-semibold px-1 py-0.2 bg-base-2 border border-border rounded-xs text-[11px]">
                   {targetBranch}
                 </span>

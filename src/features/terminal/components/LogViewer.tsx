@@ -7,15 +7,8 @@ import { useAppLogs } from '../hooks/useAppLogs';
 
 export const LogViewer: React.FC = () => {
   const { isLogViewerOpen, activeLogRepoId, closeLogViewer } = useTerminalStore();
-  const {
-    logs,
-    filter,
-    setFilter,
-    isLoading,
-    refresh,
-    exportLogs,
-    clearAllLogs,
-  } = useAppLogs(activeLogRepoId);
+  const { logs, filter, setFilter, isLoading, refresh, exportLogs, clearAllLogs } =
+    useAppLogs(activeLogRepoId);
 
   if (!isLogViewerOpen) return null;
 
@@ -86,9 +79,7 @@ export const LogViewer: React.FC = () => {
               </p>
             </div>
           ) : (
-            logs.map((entry) => (
-              <LogViewerEntry key={entry.id} entry={entry} />
-            ))
+            logs.map((entry) => <LogViewerEntry key={entry.id} entry={entry} />)
           )}
         </div>
 

@@ -68,7 +68,7 @@ impl AuthProvider for GitLabAuthProvider {
         let client_id = self.get_client_id();
         let redirect_uri = self.get_redirect_uri();
         let raw_scopes = self.get_scopes();
-        let formatted_scopes = raw_scopes.replace(',', "+").replace(' ', "+");
+        let formatted_scopes = raw_scopes.replace([',', ' '], "+");
 
         let (state, challenge, _verifier) =
             oauth_pkce::generate_pkce_session("gitlab", clean_url, &redirect_uri);

@@ -58,7 +58,11 @@ export const LogConsoleHeader: React.FC<LogConsoleHeaderProps> = ({
           className="px-2.5 py-1 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-semibold text-text-primary flex items-center gap-1.5 transition cursor-pointer"
           title="Copy visible logs to clipboard"
         >
-          {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-text-muted" />}
+          {copied ? (
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+          ) : (
+            <Copy className="w-3.5 h-3.5 text-text-muted" />
+          )}
           <span>{copied ? 'Copied' : 'Copy'}</span>
         </button>
 

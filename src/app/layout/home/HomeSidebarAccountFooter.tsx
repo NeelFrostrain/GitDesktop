@@ -25,7 +25,9 @@ export const HomeSidebarAccountFooter: React.FC = () => {
           iconClassName="w-3 h-3"
         />
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium text-text-primary truncate leading-none">{displayName}</p>
+          <p className="text-[11px] font-medium text-text-primary truncate leading-none">
+            {displayName}
+          </p>
           <p className="text-[10px] text-text-faint truncate font-mono mt-0.5">{handle}</p>
         </div>
         <Settings className="w-3 h-3 text-text-faint opacity-0 group-hover:opacity-100 transition flex-shrink-0" />

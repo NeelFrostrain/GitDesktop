@@ -1,11 +1,5 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from "react";
-import { createPortal } from "react-dom";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   Loader2,
@@ -26,25 +20,25 @@ import {
   ExternalLink,
   Calendar,
   FileText,
-} from "lucide-react";
-import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { listen } from "@tauri-apps/api/event";
-import { useGitStore } from "../../store/useGitStore";
-import { useToastStore } from "../../store/useToastStore";
-import { useLogStore } from "../../store/useLogStore";
-import { useRemoteStore } from "../../store/remoteStore";
-import { useSettingsStore } from "../../features/settings/store/useSettingsStore";
-import { ReleaseService } from "../../services/git/releaseService";
-import { GitService } from "../../services/git/gitService";
-import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
-import { formatBranchDropdownOptions } from "../../shared/utils/branchUtils";
-import { Dropdown } from "../common/Dropdown";
-import { Tabs } from "../common/Tabs";
-import { MarkdownPreview } from "../common/MarkdownPreview";
-import { Button } from "../common/Button";
-import { ConfirmDialog } from "../common/ConfirmDialog";
-import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
-import { ReleaseInfo } from "../../types/git";
+} from 'lucide-react';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { listen } from '@tauri-apps/api/event';
+import { useGitStore } from '../../store/useGitStore';
+import { useToastStore } from '../../store/useToastStore';
+import { useLogStore } from '../../store/useLogStore';
+import { useRemoteStore } from '../../store/remoteStore';
+import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
+import { ReleaseService } from '../../services/git/releaseService';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
+import { Dropdown } from '../common/Dropdown';
+import { Tabs } from '../common/Tabs';
+import { MarkdownPreview } from '../common/MarkdownPreview';
+import { Button } from '../common/Button';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { ReleaseInfo } from '../../types/git';
 
 export interface CreateReleaseModalProps {
   isOpen: boolean;
@@ -59,7 +53,7 @@ interface AttachedFile {
   size?: number;
 }
 
-type ReleaseStage = "idle" | "pushing" | "uploading" | "finishing" | "done";
+type ReleaseStage = 'idle' | 'pushing' | 'uploading' | 'finishing' | 'done';
 
 export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   isOpen,
@@ -67,38 +61,30 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   initialRelease,
   onSuccess,
 }) => {
-  const {
-    activeRepoPath,
-    branches,
-    status,
-    tags,
-    releases,
-    setTags,
-    setReleases,
-    setBranches,
-  } = useGitStore();
+  const { activeRepoPath, branches, status, tags, releases, setTags, setReleases, setBranches } =
+    useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
-  const [tagSource, setTagSource] = useState<"new" | "existing">(
-    initialRelease ? "existing" : "new",
+  const [tagSource, setTagSource] = useState<'new' | 'existing'>(
+    initialRelease ? 'existing' : 'new'
   );
-  const [tagName, setTagName] = useState("");
-  const [selectedExistingTag, setSelectedExistingTag] = useState("");
-  const [releaseName, setReleaseName] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
+  const [tagName, setTagName] = useState('');
+  const [selectedExistingTag, setSelectedExistingTag] = useState('');
+  const [releaseName, setReleaseName] = useState('');
+  const [description, setDescription] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
   const [pushImmediately, setPushImmediately] = useState(true);
   const [isPrerelease, setIsPrerelease] = useState(false);
   const [isLatest, setIsLatest] = useState(true);
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [selectedRemote, setSelectedRemote] = useState("origin");
-  const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
+  const [selectedRemote, setSelectedRemote] = useState('origin');
+  const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [currentStage, setCurrentStage] = useState<ReleaseStage>("idle");
-  const [stageMessage, setStageMessage] = useState<string>("");
+  const [currentStage, setCurrentStage] = useState<ReleaseStage>('idle');
+  const [stageMessage, setStageMessage] = useState<string>('');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,7 +95,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   // Resizable panel width state
   const [leftPanelWidth, setLeftPanelWidth] = useState<number>(() => {
     try {
-      const saved = localStorage.getItem("release_modal_left_width");
+      const saved = localStorage.getItem('release_modal_left_width');
       return saved ? Math.max(300, Math.min(650, parseInt(saved, 10))) : 420;
     } catch {
       return 420;
@@ -128,40 +114,34 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     const handleMouseMove = (e: MouseEvent) => {
       if (!modalContainerRef.current) return;
       const modalRect = modalContainerRef.current.getBoundingClientRect();
-      const newWidth = Math.max(
-        300,
-        Math.min(modalRect.width - 340, e.clientX - modalRect.left),
-      );
+      const newWidth = Math.max(300, Math.min(modalRect.width - 340, e.clientX - modalRect.left));
       setLeftPanelWidth(newWidth);
     };
 
     const handleMouseUp = () => {
       setIsResizingLeft(false);
       try {
-        localStorage.setItem(
-          "release_modal_left_width",
-          leftPanelWidth.toString(),
-        );
+        localStorage.setItem('release_modal_left_width', leftPanelWidth.toString());
       } catch {}
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = "col-resize";
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'col-resize';
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
   }, [isResizingLeft, leftPanelWidth]);
 
   // Check if current selection is an existing release
   const activeExistingRelease = useMemo(() => {
     if (initialRelease) return initialRelease;
-    if (tagSource === "existing" && selectedExistingTag) {
+    if (tagSource === 'existing' && selectedExistingTag) {
       return releases.find((r) => r.tag_name === selectedExistingTag) || null;
     }
     return null;
@@ -171,28 +151,24 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
   // Track unsaved dirty form changes
   const isDirty = useMemo(() => {
-    if (tagSource === "new") {
+    if (tagSource === 'new') {
       return (
-        tagName.trim() !== "" ||
-        releaseName.trim() !== "" ||
-        description.trim() !== "" ||
+        tagName.trim() !== '' ||
+        releaseName.trim() !== '' ||
+        description.trim() !== '' ||
         attachedFiles.length > 0
       );
     } else {
       if (activeExistingRelease) {
         return (
-          releaseName !== (activeExistingRelease.name || "") ||
-          description !== (activeExistingRelease.description || "") ||
+          releaseName !== (activeExistingRelease.name || '') ||
+          description !== (activeExistingRelease.description || '') ||
           isPrerelease !== Boolean(activeExistingRelease.is_prerelease) ||
           isLatest !== Boolean(activeExistingRelease.is_latest) ||
           attachedFiles.length !== (activeExistingRelease.assets?.length || 0)
         );
       }
-      return (
-        releaseName.trim() !== "" ||
-        description.trim() !== "" ||
-        attachedFiles.length > 0
-      );
+      return releaseName.trim() !== '' || description.trim() !== '' || attachedFiles.length > 0;
     }
   }, [
     tagSource,
@@ -205,11 +181,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     activeExistingRelease,
   ]);
 
-  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } =
-    useUnsavedChangesGuard({
-      isDirty,
-      onClose,
-    });
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose,
+  });
 
   // Listen to Tauri release progress events
   useEffect(() => {
@@ -220,16 +195,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       current_file?: string;
       file_index?: number;
       total_files?: number;
-    }>("release:progress", (event) => {
+    }>('release:progress', (event) => {
       const { stage, message } = event.payload;
-      if (stage === "pushing") {
-        setCurrentStage("pushing");
-      } else if (stage === "uploading") {
-        setCurrentStage("uploading");
-      } else if (stage === "publishing") {
-        setCurrentStage("uploading");
-      } else if (stage === "finishing") {
-        setCurrentStage("finishing");
+      if (stage === 'pushing') {
+        setCurrentStage('pushing');
+      } else if (stage === 'uploading') {
+        setCurrentStage('uploading');
+      } else if (stage === 'publishing') {
+        setCurrentStage('uploading');
+      } else if (stage === 'finishing') {
+        setCurrentStage('finishing');
       }
       setStageMessage(message);
     }).then((fn) => {
@@ -242,6 +217,28 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   }, []);
 
   // Fetch branches, tags, releases, and remotes whenever the modal opens
+  // Load a release into form state
+  const loadReleaseData = useCallback((rel: ReleaseInfo) => {
+    setTagName(rel.tag_name);
+    setReleaseName(rel.name || `Release ${rel.tag_name}`);
+    setDescription(rel.description || '');
+    setIsPrerelease(Boolean(rel.is_prerelease));
+    setIsLatest(rel.is_latest ?? !rel.is_prerelease);
+    setSelectedExistingTag(rel.tag_name);
+
+    if (rel.assets && rel.assets.length > 0) {
+      setAttachedFiles(
+        rel.assets.map((a) => ({
+          name: a.name,
+          path: a.url || a.direct_asset_url || a.name,
+          size: a.size,
+        }))
+      );
+    } else {
+      setAttachedFiles([]);
+    }
+  }, []);
+
   useEffect(() => {
     if (isOpen && activeRepoPath) {
       setIsLoadingBranches(true);
@@ -264,12 +261,9 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         .then((rList) => {
           if (rList && rList.length > 0) {
             setReleases(rList);
-            const targetTag =
-              initialRelease?.tag_name ||
-              selectedExistingTag ||
-              rList[0]?.tag_name;
+            const targetTag = initialRelease?.tag_name || selectedExistingTag || rList[0]?.tag_name;
             const updatedRel = rList.find((r) => r.tag_name === targetTag);
-            if (updatedRel && (tagSource === "existing" || initialRelease)) {
+            if (updatedRel && (tagSource === 'existing' || initialRelease)) {
               loadReleaseData(updatedRel);
             }
           }
@@ -285,7 +279,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
    */
   function compareSemverDescending(a: string, b: string): number {
     const parseSegments = (v: string) => {
-      const clean = v.trim().replace(/^[vV](\.|\-)?/, "");
+      const clean = v.trim().replace(/^[vV](\.|-)?/, '');
       return clean.split(/[-+.]/).map((s) => {
         const num = Number(s);
         return isNaN(num) ? s.toLowerCase() : num;
@@ -303,7 +297,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       if (pA === undefined) return 1;
       if (pB === undefined) return -1;
 
-      if (typeof pA === "number" && typeof pB === "number") {
+      if (typeof pA === 'number' && typeof pB === 'number') {
         if (pA !== pB) return pB - pA; // Descending
       } else {
         const strA = String(pA);
@@ -374,27 +368,22 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     return items.map(({ name, sha, message, release }) => {
       let badge: string | undefined = undefined;
       if (release?.is_latest) {
-        badge = "Latest";
+        badge = 'Latest';
       } else if (release?.is_prerelease) {
-        badge = "Pre-release";
-      } else if (
-        release?.web_url ||
-        (release?.assets && release.assets.length > 0)
-      ) {
-        badge = "Release";
+        badge = 'Pre-release';
+      } else if (release?.web_url || (release?.assets && release.assets.length > 0)) {
+        badge = 'Release';
       } else if (sha) {
         badge = sha.slice(0, 7);
       }
 
       const hasCustomName =
-        release?.name &&
-        release.name !== name &&
-        !release.name.startsWith(`Release ${name}`);
+        release?.name && release.name !== name && !release.name.startsWith(`Release ${name}`);
       const label = hasCustomName ? `${name} — ${release!.name}` : name;
       const description = release?.description
-        ? release.description.split("\n")[0].slice(0, 55)
+        ? release.description.split('\n')[0].slice(0, 55)
         : message
-          ? message.split("\n")[0].slice(0, 55)
+          ? message.split('\n')[0].slice(0, 55)
           : undefined;
 
       return {
@@ -414,27 +403,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     });
   }, [tags, releases]);
 
-  // Load a release into form state
-  const loadReleaseData = useCallback((rel: ReleaseInfo) => {
-    setTagName(rel.tag_name);
-    setReleaseName(rel.name || `Release ${rel.tag_name}`);
-    setDescription(rel.description || "");
-    setIsPrerelease(Boolean(rel.is_prerelease));
-    setIsLatest(rel.is_latest ?? !rel.is_prerelease);
-    setSelectedExistingTag(rel.tag_name);
-
-    if (rel.assets && rel.assets.length > 0) {
-      setAttachedFiles(
-        rel.assets.map((a) => ({
-          name: a.name,
-          path: a.url || a.direct_asset_url || a.name,
-          size: a.size,
-        })),
-      );
-    } else {
-      setAttachedFiles([]);
-    }
-  }, []);
 
   // Reset form when modal opens or initialRelease changes
   useEffect(() => {
@@ -442,23 +410,23 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       setError(null);
       setIsSubmitting(false);
       setIsDeleting(false);
-      setCurrentStage("idle");
-      setStageMessage("");
-      setActiveTab("write");
+      setCurrentStage('idle');
+      setStageMessage('');
+      setActiveTab('write');
       setAttachedFiles([]);
 
       if (initialRelease) {
-        setTagSource("existing");
+        setTagSource('existing');
         loadReleaseData(initialRelease);
       } else {
-        setTagSource("new");
-        setTagName("");
-        setReleaseName("");
-        setDescription("");
+        setTagSource('new');
+        setTagName('');
+        setReleaseName('');
+        setDescription('');
         setIsPrerelease(false);
         setIsLatest(true);
 
-        const defaultTag = tagOptions[0]?.value || tags[0]?.name || "";
+        const defaultTag = tagOptions[0]?.value || tags[0]?.name || '';
         if (defaultTag) {
           setSelectedExistingTag(defaultTag);
         }
@@ -467,7 +435,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           status?.current_branch ||
           branches.find((b) => b.is_current)?.name ||
           branches[0]?.name ||
-          "main";
+          'main';
         setSelectedBranch(current);
       }
 
@@ -494,16 +462,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
   // When in existing mode, automatically sync active release notes and assets when releases or selectedExistingTag updates
   useEffect(() => {
-    if (!isOpen || tagSource !== "existing") return;
-    const targetTag =
-      selectedExistingTag ||
-      (tagOptions.length > 0 ? tagOptions[0].value : null);
+    if (!isOpen || tagSource !== 'existing') return;
+    const targetTag = selectedExistingTag || (tagOptions.length > 0 ? tagOptions[0].value : null);
     if (targetTag) {
       const matched = releases.find((r) => r.tag_name === targetTag);
       if (matched) {
         setTagName(matched.tag_name);
         setReleaseName(matched.name || `Release ${matched.tag_name}`);
-        setDescription(matched.description || "");
+        setDescription(matched.description || '');
         setIsPrerelease(Boolean(matched.is_prerelease));
         setIsLatest(matched.is_latest ?? !matched.is_prerelease);
         if (matched.assets && matched.assets.length > 0) {
@@ -512,7 +478,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               name: a.name,
               path: a.url || a.direct_asset_url || a.name,
               size: a.size,
-            })),
+            }))
           );
         } else {
           setAttachedFiles([]);
@@ -531,41 +497,40 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   }, [remotes]);
 
   const formatFileSize = (bytes?: number) => {
-    if (!bytes && bytes !== 0) return "";
+    if (!bytes && bytes !== 0) return '';
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024)
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
   const getFileIcon = (fileName: string) => {
     const lower = fileName.toLowerCase();
     if (
-      lower.endsWith(".zip") ||
-      lower.endsWith(".tar") ||
-      lower.endsWith(".gz") ||
-      lower.endsWith(".7z") ||
-      lower.endsWith(".rar")
+      lower.endsWith('.zip') ||
+      lower.endsWith('.tar') ||
+      lower.endsWith('.gz') ||
+      lower.endsWith('.7z') ||
+      lower.endsWith('.rar')
     ) {
       return <Archive className="w-3.5 h-3.5 text-amber-400 shrink-0" />;
     }
     if (
-      lower.endsWith(".exe") ||
-      lower.endsWith(".msi") ||
-      lower.endsWith(".dmg") ||
-      lower.endsWith(".appimage") ||
-      lower.endsWith(".deb") ||
-      lower.endsWith(".rpm")
+      lower.endsWith('.exe') ||
+      lower.endsWith('.msi') ||
+      lower.endsWith('.dmg') ||
+      lower.endsWith('.appimage') ||
+      lower.endsWith('.deb') ||
+      lower.endsWith('.rpm')
     ) {
       return <Package className="w-3.5 h-3.5 text-commito-coral shrink-0" />;
     }
     if (
-      lower.endsWith(".js") ||
-      lower.endsWith(".json") ||
-      lower.endsWith(".ts") ||
-      lower.endsWith(".py") ||
-      lower.endsWith(".rs")
+      lower.endsWith('.js') ||
+      lower.endsWith('.json') ||
+      lower.endsWith('.ts') ||
+      lower.endsWith('.py') ||
+      lower.endsWith('.rs')
     ) {
       return <FileCode className="w-3.5 h-3.5 text-blue-400 shrink-0" />;
     }
@@ -577,14 +542,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       const selected = await openDialog({
         multiple: true,
         directory: false,
-        title: "Select Release Binaries & Assets to Attach",
+        title: 'Select Release Binaries & Assets to Attach',
       });
 
       if (selected) {
         const filePaths = Array.isArray(selected) ? selected : [selected];
         const newFiles: AttachedFile[] = filePaths.map((p) => ({
           path: p,
-          name: p.split(/[/\\]/).pop() || "asset",
+          name: p.split(/[/\\]/).pop() || 'asset',
         }));
 
         setAttachedFiles((prev) => {
@@ -641,15 +606,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   const handleGenerateNotesFromCommits = async () => {
     if (!activeRepoPath || isGeneratingAi || isSubmitting) return;
 
-    const effectiveTag =
-      (tagSource === "new" ? tagName : selectedExistingTag).trim() || "v1.0.0";
+    const effectiveTag = (tagSource === 'new' ? tagName : selectedExistingTag).trim() || 'v1.0.0';
     setIsGeneratingAi(true);
 
     try {
       // Find previous tag in semver descending order
-      const sortedTags = [...tags].sort((a, b) =>
-        compareSemverDescending(a.name, b.name),
-      );
+      const sortedTags = [...tags].sort((a, b) => compareSemverDescending(a.name, b.name));
       const currIdx = sortedTags.findIndex((t) => t.name === effectiveTag);
       let prevTag: string | undefined = undefined;
       if (currIdx !== -1 && currIdx + 1 < sortedTags.length) {
@@ -663,18 +625,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
       const { getEffectiveValue } = useSettingsStore.getState();
       let activeApiKey = String(
-        getEffectiveValue("ai.active_api_key") ||
-          getEffectiveValue("ai.gemini_api_key") ||
-          "",
+        getEffectiveValue('ai.active_api_key') || getEffectiveValue('ai.gemini_api_key') || ''
       ).trim();
       if (!activeApiKey) {
         const rawKeys =
-          getEffectiveValue("ai.gemini_api_keys") ||
-          getEffectiveValue("ai.google_api_keys") ||
-          getEffectiveValue("ai.groq_api_keys");
+          getEffectiveValue('ai.gemini_api_keys') ||
+          getEffectiveValue('ai.google_api_keys') ||
+          getEffectiveValue('ai.groq_api_keys');
         if (Array.isArray(rawKeys) && rawKeys.length > 0) {
           activeApiKey = String(rawKeys[0]).trim();
-        } else if (typeof rawKeys === "string" && rawKeys.trim()) {
+        } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
           try {
             const parsed = JSON.parse(rawKeys);
             if (Array.isArray(parsed) && parsed.length > 0) {
@@ -685,46 +645,37 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           }
         }
       }
-      const selectedModel = String(
-        getEffectiveValue("ai.model") || "gemini-2.5-flash-lite",
-      );
+      const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
 
       const result = await ReleaseService.generateAiReleaseNotes(
         activeRepoPath,
         effectiveTag,
         prevTag,
-        tagSource === "new" ? selectedBranch || undefined : undefined,
+        tagSource === 'new' ? selectedBranch || undefined : undefined,
         activeApiKey || undefined,
-        selectedModel || undefined,
+        selectedModel || undefined
       );
 
       if (result) {
         if (result.notes) {
           setDescription(result.notes);
         }
-        if (
-          result.title &&
-          (!releaseName.trim() || releaseName.startsWith("Release "))
-        ) {
+        if (result.title && (!releaseName.trim() || releaseName.startsWith('Release '))) {
           setReleaseName(result.title);
         }
 
         useToastStore.getState().showToast({
-          type: "success",
-          title: "Release Notes Generated",
+          type: 'success',
+          title: 'Release Notes Generated',
           message: `Analyzed ${result.commits_analyzed} commits (${prevTag ? `${prevTag} → ${effectiveTag}` : effectiveTag}) using ${result.model_used}`,
         });
       }
     } catch (err: unknown) {
       // Graceful fallback to local commit log in Keep-a-Changelog format
       try {
-        const cleanVer = effectiveTag.replace(/^v/i, "");
+        const cleanVer = effectiveTag.replace(/^v/i, '');
         const today = new Date().toISOString().slice(0, 10);
-        const history = await GitService.getCommitHistory(
-          activeRepoPath,
-          25,
-          0,
-        );
+        const history = await GitService.getCommitHistory(activeRepoPath, 25, 0);
         if (history && history.length > 0) {
           const addedList: string[] = [];
           const fixList: string[] = [];
@@ -733,56 +684,43 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
           history.forEach((c) => {
             const msg = c.message.trim();
-            if (
-              msg.startsWith("Merge branch") ||
-              msg.startsWith("Merge pull request")
-            )
-              return;
-            const summary = msg.split("\n")[0];
+            if (msg.startsWith('Merge branch') || msg.startsWith('Merge pull request')) return;
+            const summary = msg.split('\n')[0];
             if (highlights.length < 4) highlights.push(summary);
 
             const lower = summary.toLowerCase();
-            if (lower.startsWith("feat")) {
-              const clean = summary.replace(/^feat(\([^)]+\))?:\s*/i, "");
-              addedList.push(
-                `- Added **${clean}** (\`${c.short_sha}\`): ${summary}`,
-              );
-            } else if (lower.startsWith("fix")) {
-              const clean = summary.replace(/^fix(\([^)]+\))?:\s*/i, "");
-              fixList.push(
-                `- Fixed **${clean}** (\`${c.short_sha}\`): ${summary}`,
-              );
+            if (lower.startsWith('feat')) {
+              const clean = summary.replace(/^feat(\([^)]+\))?:\s*/i, '');
+              addedList.push(`- Added **${clean}** (\`${c.short_sha}\`): ${summary}`);
+            } else if (lower.startsWith('fix')) {
+              const clean = summary.replace(/^fix(\([^)]+\))?:\s*/i, '');
+              fixList.push(`- Fixed **${clean}** (\`${c.short_sha}\`): ${summary}`);
             } else {
               changeList.push(`- **${summary}** (\`${c.short_sha}\`)`);
             }
           });
 
           const subtitle =
-            highlights.length > 0
-              ? highlights.join(" · ")
-              : `Release ${effectiveTag}`;
+            highlights.length > 0 ? highlights.join(' · ') : `Release ${effectiveTag}`;
           let generated = `## [${cleanVer}] - ${today} — \`${subtitle}\`\n\n`;
           if (addedList.length > 0)
-            generated += `### Added\n\n${addedList.slice(0, 10).join("\n")}\n\n`;
-          if (fixList.length > 0)
-            generated += `### Fixed\n\n${fixList.slice(0, 8).join("\n")}\n\n`;
+            generated += `### Added\n\n${addedList.slice(0, 10).join('\n')}\n\n`;
+          if (fixList.length > 0) generated += `### Fixed\n\n${fixList.slice(0, 8).join('\n')}\n\n`;
           if (changeList.length > 0)
-            generated += `### Changed\n\n${changeList.slice(0, 8).join("\n")}\n\n`;
+            generated += `### Changed\n\n${changeList.slice(0, 8).join('\n')}\n\n`;
 
           setDescription(generated.trim());
           useToastStore.getState().showToast({
-            type: "info",
-            title: "Changelog Loaded",
+            type: 'info',
+            title: 'Changelog Loaded',
             message: `Loaded ${history.length} commits into release notes`,
           });
         }
       } catch {
         useToastStore.getState().showToast({
-          type: "error",
-          title: "Notes Generation Failed",
-          message:
-            getErrorMessage(err) ||
-            "Could not generate release notes from commits",
+          type: 'error',
+          title: 'Notes Generation Failed',
+          message: getErrorMessage(err) || 'Could not generate release notes from commits',
         });
       }
     } finally {
@@ -791,15 +729,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
   };
 
   const handleDeleteRelease = async () => {
-    const targetTag =
-      tagSource === "new" ? tagName.trim() : selectedExistingTag.trim();
+    const targetTag = tagSource === 'new' ? tagName.trim() : selectedExistingTag.trim();
     if (!activeRepoPath || !targetTag || isDeleting || isSubmitting) return;
 
-    if (
-      !window.confirm(
-        `Are you sure you want to delete the release for tag "${targetTag}"?`,
-      )
-    ) {
+    if (!window.confirm(`Are you sure you want to delete the release for tag "${targetTag}"?`)) {
       return;
     }
 
@@ -807,19 +740,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     setError(null);
 
     try {
-      await ReleaseService.deleteRelease(
-        activeRepoPath,
-        targetTag,
-        true,
-        selectedRemote || null,
-      );
+      await ReleaseService.deleteRelease(activeRepoPath, targetTag, true, selectedRemote || null);
 
-      useLogStore
-        .getState()
-        .addLog("info", "Git", `Deleted release '${targetTag}'`);
+      useLogStore.getState().addLog('info', 'Git', `Deleted release '${targetTag}'`);
       useToastStore.getState().showToast({
-        type: "success",
-        title: "Release Deleted",
+        type: 'success',
+        title: 'Release Deleted',
         message: `Successfully deleted release '${targetTag}'`,
       });
 
@@ -833,9 +759,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       onClose();
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(
-        appErr.message || getErrorMessage(err) || "Failed to delete release",
-      );
+      setError(appErr.message || getErrorMessage(err) || 'Failed to delete release');
     } finally {
       setIsDeleting(false);
     }
@@ -845,24 +769,23 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     e.preventDefault();
     if (!activeRepoPath || isSubmitting) return;
 
-    const finalTag =
-      tagSource === "new" ? tagName.trim() : selectedExistingTag.trim();
+    const finalTag = tagSource === 'new' ? tagName.trim() : selectedExistingTag.trim();
     const finalTitle = releaseName.trim() || `Release ${finalTag}`;
     const finalDesc = description.trim();
     const filePaths = attachedFiles.map((f) => f.path);
 
     if (!finalTag) {
-      setError("A valid tag name is required for this release.");
+      setError('A valid tag name is required for this release.');
       return;
     }
 
     setIsSubmitting(true);
     setError(null);
-    setCurrentStage("pushing");
+    setCurrentStage('pushing');
     setStageMessage(
       pushImmediately
         ? `Publishing release and syncing tag '${finalTag}' with remote...`
-        : `Saving local release tag '${finalTag}'...`,
+        : `Saving local release tag '${finalTag}'...`
     );
 
     try {
@@ -876,19 +799,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           selectedRemote || null,
           isLatest,
           isPrerelease,
-          filePaths,
+          filePaths
         );
 
         useLogStore
           .getState()
-          .addLog(
-            "success",
-            "Git",
-            `Updated release '${finalTitle}' (${finalTag})`,
-          );
+          .addLog('success', 'Git', `Updated release '${finalTitle}' (${finalTag})`);
         useToastStore.getState().showToast({
-          type: "success",
-          title: "Release Updated",
+          type: 'success',
+          title: 'Release Updated',
           message: `Successfully updated release '${finalTitle}' for tag ${finalTag}`,
         });
       } else {
@@ -897,30 +816,26 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           finalTag,
           finalTitle,
           finalDesc,
-          tagSource === "new" ? selectedBranch || null : null,
+          tagSource === 'new' ? selectedBranch || null : null,
           pushImmediately,
           selectedRemote || null,
           isLatest,
           isPrerelease,
-          filePaths,
+          filePaths
         );
 
         useLogStore
           .getState()
-          .addLog(
-            "success",
-            "Git",
-            `Created release '${finalTitle}' (${finalTag})`,
-          );
+          .addLog('success', 'Git', `Created release '${finalTitle}' (${finalTag})`);
         useToastStore.getState().showToast({
-          type: "success",
-          title: "Release Published",
-          message: `Successfully created release '${finalTitle}'${pushImmediately ? " on remote" : ""}`,
+          type: 'success',
+          title: 'Release Published',
+          message: `Successfully created release '${finalTitle}'${pushImmediately ? ' on remote' : ''}`,
         });
       }
 
-      setCurrentStage("done");
-      setStageMessage("Release saved successfully!");
+      setCurrentStage('done');
+      setStageMessage('Release saved successfully!');
 
       // Refresh releases & tags in store
       const updatedReleases = await ReleaseService.listReleases(activeRepoPath);
@@ -933,57 +848,54 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
       onClose();
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(
-        appErr.message || getErrorMessage(err) || "Failed to save release",
-      );
-      setCurrentStage("idle");
+      setError(appErr.message || getErrorMessage(err) || 'Failed to save release');
+      setCurrentStage('idle');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape" && !isSubmitting && !isDeleting) {
+    if (e.key === 'Escape' && !isSubmitting && !isDeleting) {
       requestClose();
     }
   };
 
   const getStageColorClasses = (stage: ReleaseStage) => {
     switch (stage) {
-      case "pushing":
+      case 'pushing':
         return {
-          badge: "text-sky-400 bg-sky-500/15 border-sky-500/35",
-          spinner: "text-sky-400",
+          badge: 'text-sky-400 bg-sky-500/15 border-sky-500/35',
+          spinner: 'text-sky-400',
         };
-      case "uploading":
+      case 'uploading':
         return {
-          badge: "text-amber-400 bg-amber-500/15 border-amber-500/35",
-          spinner: "text-amber-400",
+          badge: 'text-amber-400 bg-amber-500/15 border-amber-500/35',
+          spinner: 'text-amber-400',
         };
-      case "finishing":
+      case 'finishing':
         return {
-          badge: "text-purple-400 bg-purple-500/15 border-purple-500/35",
-          spinner: "text-purple-400",
+          badge: 'text-purple-400 bg-purple-500/15 border-purple-500/35',
+          spinner: 'text-purple-400',
         };
-      case "done":
+      case 'done':
         return {
-          badge: "text-emerald-400 bg-emerald-500/15 border-emerald-500/35",
-          spinner: "text-emerald-400",
+          badge: 'text-emerald-400 bg-emerald-500/15 border-emerald-500/35',
+          spinner: 'text-emerald-400',
         };
       default:
         return {
-          badge:
-            "text-commito-coral bg-commito-coral/15 border-commito-coral/30",
-          spinner: "text-commito-coral",
+          badge: 'text-commito-coral bg-commito-coral/15 border-commito-coral/30',
+          spinner: 'text-commito-coral',
         };
     }
   };
 
   const getSubmitButtonLabel = () => {
     if (isEditingExistingRelease) {
-      return pushImmediately ? "Save & Push Update" : "Save Changes";
+      return pushImmediately ? 'Save & Push Update' : 'Save Changes';
     }
-    return pushImmediately ? "Publish Release" : "Save Local Release";
+    return pushImmediately ? 'Publish Release' : 'Save Local Release';
   };
 
   if (!isOpen) return null;
@@ -1019,7 +931,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               >
                 {isEditingExistingRelease ? (
                   <span>
-                    Manage Release{" "}
+                    Manage Release{' '}
                     <span className="font-mono text-commito-coral font-bold">
                       {activeExistingRelease?.tag_name}
                     </span>
@@ -1060,10 +972,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         />
 
         {/* Split 2-Column Form Body (Resizable) */}
-        <form
-          onSubmit={handleSubmit}
-          className="flex-1 flex flex-row min-h-0 overflow-hidden"
-        >
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-row min-h-0 overflow-hidden">
           {/* Left Resizable Column: Metadata, Tag, Assets, Toggles */}
           <div
             style={{ width: `${leftPanelWidth}px` }}
@@ -1078,31 +987,26 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     <span className="text-commito-coral font-bold">*</span>
                   </label>
 
-                  <Tabs<"new" | "existing">
+                  <Tabs<'new' | 'existing'>
                     tabs={[
-                      { id: "new", label: "New Tag" },
+                      { id: 'new', label: 'New Tag' },
                       {
-                        id: "existing",
-                        label: "Existing Tag",
+                        id: 'existing',
+                        label: 'Existing Tag',
                         badge: tags.length > 0 ? tags.length : undefined,
-                        badgeVariant: "amber",
+                        badgeVariant: 'amber',
                       },
                     ]}
                     activeTab={tagSource}
                     onChange={(t) => {
                       setTagSource(t);
                       setError(null);
-                      if (t === "existing") {
+                      if (t === 'existing') {
                         const tagToSelect =
-                          selectedExistingTag ||
-                          tagOptions[0]?.value ||
-                          tags[0]?.name ||
-                          "";
+                          selectedExistingTag || tagOptions[0]?.value || tags[0]?.name || '';
                         if (tagToSelect) {
                           setSelectedExistingTag(tagToSelect);
-                          const existingRel = releases.find(
-                            (r) => r.tag_name === tagToSelect,
-                          );
+                          const existingRel = releases.find((r) => r.tag_name === tagToSelect);
                           if (existingRel) {
                             loadReleaseData(existingRel);
                           } else {
@@ -1110,10 +1014,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                             setAttachedFiles([]);
                           }
                         }
-                      } else if (t === "new") {
-                        setTagName("");
-                        setReleaseName("");
-                        setDescription("");
+                      } else if (t === 'new') {
+                        setTagName('');
+                        setReleaseName('');
+                        setDescription('');
                         setIsLatest(true);
                         setIsPrerelease(false);
                         setAttachedFiles([]);
@@ -1124,7 +1028,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   />
                 </div>
 
-                {tagSource === "new" ? (
+                {tagSource === 'new' ? (
                   /* New Tag & Branch Inputs */
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="relative">
@@ -1146,11 +1050,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         value={selectedBranch}
                         onChange={(val) => setSelectedBranch(val)}
                         disabled={isSubmitting}
-                        placeholder={
-                          isLoadingBranches
-                            ? "Loading branches..."
-                            : "Target Branch..."
-                        }
+                        placeholder={isLoadingBranches ? 'Loading branches...' : 'Target Branch...'}
                         size="md"
                       />
                     </div>
@@ -1164,9 +1064,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         value={selectedExistingTag}
                         onChange={(val) => {
                           setSelectedExistingTag(val);
-                          const existingRel = releases.find(
-                            (r) => r.tag_name === val,
-                          );
+                          const existingRel = releases.find((r) => r.tag_name === val);
                           if (existingRel) {
                             loadReleaseData(existingRel);
                           } else {
@@ -1186,7 +1084,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         </div>
                         <button
                           type="button"
-                          onClick={() => setTagSource("new")}
+                          onClick={() => setTagSource('new')}
                           className="h-6 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white text-[11px] font-semibold rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
                         >
                           <Plus className="w-3 h-3" />
@@ -1207,7 +1105,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                               {activeExistingRelease.tag_name}
                             </div>
                             <div className="text-[10.5px] text-text-muted truncate">
-                              {activeExistingRelease.name || "Untitled Release"}
+                              {activeExistingRelease.name || 'Untitled Release'}
                             </div>
                           </div>
                         </div>
@@ -1255,20 +1153,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     {initialRelease?.tag_name}
                   </span>
                 </div>
-                <span className="text-[10px] font-mono text-text-muted">
-                  Target Tag
-                </span>
+                <span className="text-[10px] font-mono text-text-muted">Target Tag</span>
               </div>
             )}
 
             {/* Section 2: Release Title Input */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-text-primary block">
-                Release Title
-              </label>
+              <label className="text-xs font-semibold text-text-primary block">Release Title</label>
               <input
                 type="text"
-                placeholder={`e.g. Release ${tagName || selectedExistingTag || "v1.0.0"}`}
+                placeholder={`e.g. Release ${tagName || selectedExistingTag || 'v1.0.0'}`}
                 value={releaseName}
                 onChange={(e) => setReleaseName(e.target.value)}
                 disabled={isSubmitting || isDeleting}
@@ -1287,7 +1181,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   {attachedFiles.length > 0 && (
                     <span className="px-1.5 py-0.5 text-[10px] font-bold font-mono bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs whitespace-nowrap shrink-0 leading-none">
                       {attachedFiles.length} file
-                      {attachedFiles.length > 1 ? "s" : ""}
+                      {attachedFiles.length > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
@@ -1311,15 +1205,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 onClick={handleChooseFiles}
                 className={`border border-dashed rounded-xs p-3 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 ${
                   isDraggingOver
-                    ? "border-commito-coral bg-commito-coral/10"
-                    : "border-border hover:border-commito-coral/60 bg-base-0/60 hover:bg-base-0"
+                    ? 'border-commito-coral bg-commito-coral/10'
+                    : 'border-border hover:border-commito-coral/60 bg-base-0/60 hover:bg-base-0'
                 }`}
               >
                 <UploadCloud className="w-4.5 h-4.5 text-text-muted transition" />
                 <div className="text-[11.5px] text-text-secondary">
                   <span className="font-semibold text-text-primary hover:underline">
                     Choose files
-                  </span>{" "}
+                  </span>{' '}
                   or drag & drop
                 </div>
                 <p className="text-[10px] text-text-muted font-mono">
@@ -1386,23 +1280,19 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
               {/* Option 1: Push Immediately Toggle */}
               <div
-                onClick={() =>
-                  !isSubmitting &&
-                  !isDeleting &&
-                  setPushImmediately(!pushImmediately)
-                }
+                onClick={() => !isSubmitting && !isDeleting && setPushImmediately(!pushImmediately)}
                 className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
                   pushImmediately
-                    ? "bg-commito-coral/5 border-commito-coral/35 shadow-2xs"
-                    : "bg-base-1/50 border-border hover:bg-base-1"
+                    ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
                       pushImmediately
-                        ? "bg-commito-coral/15 text-commito-coral border border-commito-coral/30"
-                        : "bg-base-0 text-text-muted border border-border"
+                        ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
+                        : 'bg-base-0 text-text-muted border border-border'
                     }`}
                   >
                     <Upload className="w-3 h-3" />
@@ -1421,13 +1311,13 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 <div
                   className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
                     pushImmediately
-                      ? "bg-commito-coral border-commito-coral"
-                      : "bg-base-2 border-border"
+                      ? 'bg-commito-coral border-commito-coral'
+                      : 'bg-base-2 border-border'
                   }`}
                 >
                   <div
                     className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
-                      pushImmediately ? "translate-x-3" : "translate-x-0"
+                      pushImmediately ? 'translate-x-3' : 'translate-x-0'
                     }`}
                   />
                 </div>
@@ -1445,16 +1335,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 }}
                 className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
                   isLatest
-                    ? "bg-emerald-500/5 border-emerald-500/35 shadow-2xs"
-                    : "bg-base-1/50 border-border hover:bg-base-1"
+                    ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
                       isLatest
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                        : "bg-base-0 text-text-muted border border-border"
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                        : 'bg-base-0 text-text-muted border border-border'
                     }`}
                   >
                     <Sparkles className="w-3 h-3" />
@@ -1477,14 +1367,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 {/* Custom Toggle Switch */}
                 <div
                   className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
-                    isLatest
-                      ? "bg-emerald-500 border-emerald-500"
-                      : "bg-base-2 border-border"
+                    isLatest ? 'bg-emerald-500 border-emerald-500' : 'bg-base-2 border-border'
                   }`}
                 >
                   <div
                     className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
-                      isLatest ? "translate-x-3" : "translate-x-0"
+                      isLatest ? 'translate-x-3' : 'translate-x-0'
                     }`}
                   />
                 </div>
@@ -1502,16 +1390,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 }}
                 className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
                   isPrerelease
-                    ? "bg-purple-500/5 border-purple-500/35 shadow-2xs"
-                    : "bg-base-1/50 border-border hover:bg-base-1"
+                    ? 'bg-purple-500/5 border-purple-500/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div
                     className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
                       isPrerelease
-                        ? "bg-purple-500/15 text-purple-300 border border-purple-500/30"
-                        : "bg-base-0 text-text-muted border border-border"
+                        ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                        : 'bg-base-0 text-text-muted border border-border'
                     }`}
                   >
                     <FlaskConical className="w-3 h-3" />
@@ -1534,14 +1422,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 {/* Custom Toggle Switch */}
                 <div
                   className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
-                    isPrerelease
-                      ? "bg-purple-500 border-purple-500"
-                      : "bg-base-2 border-border"
+                    isPrerelease ? 'bg-purple-500 border-purple-500' : 'bg-base-2 border-border'
                   }`}
                 >
                   <div
                     className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
-                      isPrerelease ? "translate-x-3" : "translate-x-0"
+                      isPrerelease ? 'translate-x-3' : 'translate-x-0'
                     }`}
                   />
                 </div>
@@ -1563,9 +1449,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             onDoubleClick={() => setLeftPanelWidth(420)}
             title="Drag to resize • Double-click to reset"
             className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-              isResizingLeft
-                ? "bg-commito-coral"
-                : "bg-transparent border-r border-border"
+              isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
             }`}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
@@ -1579,15 +1463,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   <FileText className="w-3.5 h-3.5 text-commito-coral" />
                   <span>Release Notes & Changelog</span>
                 </label>
-                <Tabs<"write" | "preview">
+                <Tabs<'write' | 'preview'>
                   tabs={[
                     {
-                      id: "write",
-                      label: "Write",
+                      id: 'write',
+                      label: 'Write',
                     },
                     {
-                      id: "preview",
-                      label: "Preview",
+                      id: 'preview',
+                      label: 'Preview',
                     },
                   ]}
                   activeTab={activeTab}
@@ -1620,7 +1504,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
             {/* Editor / Preview Body */}
             <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
-              {activeTab === "write" ? (
+              {activeTab === 'write' ? (
                 <textarea
                   placeholder="Describe this release, new features, bugfixes, breaking changes, and contributor mentions... (Markdown supported)"
                   value={description}
@@ -1641,11 +1525,8 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             {/* Footer info bar for markdown */}
             <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
               <span>
-                {description.length} characters •{" "}
-                {description.trim()
-                  ? description.trim().split(/\s+/).length
-                  : 0}{" "}
-                words
+                {description.length} characters •{' '}
+                {description.trim() ? description.trim().split(/\s+/).length : 0} words
               </span>
               <span>Markdown & GFM supported</span>
             </div>
@@ -1660,9 +1541,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 const colors = getStageColorClasses(currentStage);
                 return (
                   <div className="flex items-center gap-2 min-w-0 text-xs animate-in fade-in duration-100">
-                    <Loader2
-                      className={`w-3.5 h-3.5 animate-spin ${colors.spinner} shrink-0`}
-                    />
+                    <Loader2 className={`w-3.5 h-3.5 animate-spin ${colors.spinner} shrink-0`} />
                     <div className="flex items-center gap-1.5 min-w-0 font-mono text-[11px]">
                       <span
                         className={`font-bold uppercase text-[9.5px] px-1.5 py-0.2 rounded-xs border ${colors.badge} shrink-0 shadow-2xs`}
@@ -1673,7 +1552,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         className="text-text-muted truncate font-mono text-[11px]"
                         title={stageMessage}
                       >
-                        {stageMessage || "Publishing release..."}
+                        {stageMessage || 'Publishing release...'}
                       </span>
                     </div>
                   </div>
@@ -1687,9 +1566,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 onClick={handleDeleteRelease}
                 disabled={isSubmitting || isDeleting}
                 isLoading={isDeleting}
-                leftIcon={
-                  !isDeleting ? <Trash2 className="w-3.5 h-3.5" /> : undefined
-                }
+                leftIcon={!isDeleting ? <Trash2 className="w-3.5 h-3.5" /> : undefined}
                 title="Permanently delete this release and remove release tag"
               >
                 Delete Release
@@ -1715,9 +1592,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               onClick={handleSubmit}
               disabled={isSubmitting || isDeleting}
               isLoading={isSubmitting}
-              leftIcon={
-                !isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined
-              }
+              leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
               className="min-w-[130px]"
             >
               {getSubmitButtonLabel()}
@@ -1733,11 +1608,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         description="You have unsaved changes in this release. If you leave now, your notes, files, and tag configurations will be lost."
         discardText="Discard Changes"
         saveText={
-          tagSource === "new"
-            ? tagName.trim()
-              ? "Save & Push"
-              : undefined
-            : "Save Changes"
+          tagSource === 'new' ? (tagName.trim() ? 'Save & Push' : undefined) : 'Save Changes'
         }
         cancelText="Keep Editing"
         isSaving={isSubmitting}
@@ -1748,6 +1619,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         onCancel={cancelDiscard}
       />
     </div>,
-    document.body,
+    document.body
   );
 };

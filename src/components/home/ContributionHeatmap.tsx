@@ -1,40 +1,37 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import {
   RefreshCw,
   ChevronDown,
   Layers,
   Check,
   Flame,
-  Activity,
   FolderGit2,
   Calendar as CalendarIcon,
   Zap,
-} from "lucide-react";
-import { useContributionsStore } from "../../store/contributionsStore";
-import { useAccountServicesStore } from "../../features/account-services";
-import { ContributionCommitList } from "./ContributionCommitList";
-import { UserAvatar } from "../common/UserAvatar";
+} from 'lucide-react';
+import { useContributionsStore } from '../../store/contributionsStore';
+import { useAccountServicesStore } from '../../features/account-services';
+import { ContributionCommitList } from './ContributionCommitList';
+import { UserAvatar } from '../common/UserAvatar';
 
 // Authentic contribution colors with Level 0 harmonized to bg-base-1
 const LEVEL_CLASSES = [
-  "bg-base-2/50 border-border hover:border-border-strong", // 0 (empty)
-  "bg-[#0e4429] border-[#0e4429] hover:border-[#146c3e]", // 1 (1-2)
-  "bg-[#006d32] border-[#006d32] hover:border-[#008f42]", // 2 (3-5)
-  "bg-[#26a641] border-[#26a641] hover:border-[#38c858]", // 3 (6-9)
-  "bg-[#39d353] border-[#39d353] hover:brightness-110 shadow-xs shadow-[#39d353]/30", // 4 (10+)
+  'bg-base-2/50 border-border hover:border-border-strong', // 0 (empty)
+  'bg-[#0e4429] border-[#0e4429] hover:border-[#146c3e]', // 1 (1-2)
+  'bg-[#006d32] border-[#006d32] hover:border-[#008f42]', // 2 (3-5)
+  'bg-[#26a641] border-[#26a641] hover:border-[#38c858]', // 3 (6-9)
+  'bg-[#39d353] border-[#39d353] hover:brightness-110 shadow-xs shadow-[#39d353]/30', // 4 (10+)
 ];
 
 export const ContributionHeatmap: React.FC = () => {
-  const {
-    calendar,
-    selectedAccountId,
-    selectedDate,
-    isLoading,
-    setSelectedAccountId,
-    setSelectedDate,
-    loadContributions,
-    refresh,
-  } = useContributionsStore();
+  const calendar = useContributionsStore((s) => s.calendar);
+  const selectedAccountId = useContributionsStore((s) => s.selectedAccountId);
+  const selectedDate = useContributionsStore((s) => s.selectedDate);
+  const isLoading = useContributionsStore((s) => s.isLoading);
+  const setSelectedAccountId = useContributionsStore((s) => s.setSelectedAccountId);
+  const setSelectedDate = useContributionsStore((s) => s.setSelectedDate);
+  const loadContributions = useContributionsStore((s) => s.loadContributions);
+  const refresh = useContributionsStore((s) => s.refresh);
 
   const accounts = useAccountServicesStore((s) => s.accounts);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -55,37 +52,33 @@ export const ContributionHeatmap: React.FC = () => {
   // Auto-scroll to the current week (far right) on mount & calendar change
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollLeft =
-        scrollContainerRef.current.scrollWidth;
+      scrollContainerRef.current.scrollLeft = scrollContainerRef.current.scrollWidth;
     }
   }, [calendar]);
 
   // Dismiss dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        accountMenuRef.current &&
-        !accountMenuRef.current.contains(e.target as Node)
-      ) {
+      if (accountMenuRef.current && !accountMenuRef.current.contains(e.target as Node)) {
         setIsAccountMenuOpen(false);
       }
     };
-    window.addEventListener("mousedown", handleClickOutside);
-    return () => window.removeEventListener("mousedown", handleClickOutside);
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const formatTooltipDate = (dateStr: string) => {
     try {
-      const [y, m, d] = dateStr.split("-").map(Number);
+      const [y, m, d] = dateStr.split('-').map(Number);
       const date = new Date(y, m - 1, d);
-      const monthName = date.toLocaleDateString("en-US", { month: "short" });
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
       const day = date.getDate();
       const year = date.getFullYear();
 
-      let suffix = "th";
-      if (day === 1 || day === 21 || day === 31) suffix = "st";
-      else if (day === 2 || day === 22) suffix = "nd";
-      else if (day === 3 || day === 23) suffix = "rd";
+      let suffix = 'th';
+      if (day === 1 || day === 21 || day === 31) suffix = 'st';
+      else if (day === 2 || day === 22) suffix = 'nd';
+      else if (day === 3 || day === 23) suffix = 'rd';
 
       return `${monthName} ${day}${suffix}, ${year}`;
     } catch {
@@ -94,18 +87,18 @@ export const ContributionHeatmap: React.FC = () => {
   };
 
   const getActiveAccountLabel = () => {
-    if (selectedAccountId === "all") return "All Accounts (Merged)";
-    if (selectedAccountId === "local") return "Local Git Repos";
+    if (selectedAccountId === 'all') return 'All Accounts (Merged)';
+    if (selectedAccountId === 'local') return 'Local Git Repos';
     const found = accounts.find((a) => a.id === selectedAccountId);
     if (found) return found.display_name || found.handle;
-    return calendar?.account_handle || "All Accounts";
+    return calendar?.account_handle || 'All Accounts';
   };
 
   const getActiveAccountProvider = () => {
-    if (selectedAccountId === "all") return "all";
-    if (selectedAccountId === "local") return "local";
+    if (selectedAccountId === 'all') return 'all';
+    if (selectedAccountId === 'local') return 'local';
     const found = accounts.find((a) => a.id === selectedAccountId);
-    return found?.provider || "gitlab";
+    return found?.provider || 'gitlab';
   };
 
   return (
@@ -125,11 +118,9 @@ export const ContributionHeatmap: React.FC = () => {
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-xs bg-base-1 border border-border text-commito-coral">
                 {calendar
                   ? `${calendar.total_contributions.toLocaleString()} contributions`
-                  : "0 contributions"}
+                  : '0 contributions'}
               </span>
-              {isLoading && (
-                <RefreshCw className="w-3 h-3 text-commito-coral animate-spin" />
-              )}
+              {isLoading && <RefreshCw className="w-3 h-3 text-commito-coral animate-spin" />}
             </div>
 
             {/* Sub-KPIs (Streaks & Active Days) */}
@@ -175,13 +166,13 @@ export const ContributionHeatmap: React.FC = () => {
               onClick={() => setIsAccountMenuOpen((v) => !v)}
               className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-2 cursor-pointer select-none shadow-2xs text-xs font-medium ${
                 isAccountMenuOpen
-                  ? "bg-base-2 border-border-strong text-text-primary"
-                  : "bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border hover:border-border-strong text-text-primary"
+                  ? 'bg-base-2 border-border-strong text-text-primary'
+                  : 'bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border hover:border-border-strong text-text-primary'
               }`}
             >
-              {selectedAccountId === "all" ? (
+              {selectedAccountId === 'all' ? (
                 <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-              ) : selectedAccountId === "local" ? (
+              ) : selectedAccountId === 'local' ? (
                 <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
               ) : (
                 <UserAvatar
@@ -190,12 +181,10 @@ export const ContributionHeatmap: React.FC = () => {
                   className="w-4 h-4 rounded-sm border border-border shrink-0"
                 />
               )}
-              <span className="truncate max-w-[150px]">
-                {getActiveAccountLabel()}
-              </span>
+              <span className="truncate max-w-[150px]">{getActiveAccountLabel()}</span>
               <ChevronDown
                 className={`w-3 h-3 text-text-muted transition-transform duration-150 ml-0.5 shrink-0 ${
-                  isAccountMenuOpen ? "rotate-180 text-commito-coral" : ""
+                  isAccountMenuOpen ? 'rotate-180 text-commito-coral' : ''
                 }`}
               />
             </button>
@@ -207,20 +196,20 @@ export const ContributionHeatmap: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedAccountId("all");
+                      setSelectedAccountId('all');
                       setIsAccountMenuOpen(false);
                     }}
                     className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
-                      selectedAccountId === "all"
-                        ? "bg-base-2 text-text-primary font-semibold"
-                        : "text-text-secondary hover:text-text-primary hover:bg-base-2"
+                      selectedAccountId === 'all'
+                        ? 'bg-base-2 text-text-primary font-semibold'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <Layers className="w-3.5 h-3.5 text-commito-coral" />
                       <span>All Accounts (Merged)</span>
                     </div>
-                    {selectedAccountId === "all" && (
+                    {selectedAccountId === 'all' && (
                       <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                     )}
                   </button>
@@ -228,20 +217,20 @@ export const ContributionHeatmap: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedAccountId("local");
+                      setSelectedAccountId('local');
                       setIsAccountMenuOpen(false);
                     }}
                     className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
-                      selectedAccountId === "local"
-                        ? "bg-base-2 text-text-primary font-semibold"
-                        : "text-text-secondary hover:text-text-primary hover:bg-base-2"
+                      selectedAccountId === 'local'
+                        ? 'bg-base-2 text-text-primary font-semibold'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
                       <span>Local Git Repos Only</span>
                     </div>
-                    {selectedAccountId === "local" && (
+                    {selectedAccountId === 'local' && (
                       <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                     )}
                   </button>
@@ -266,8 +255,8 @@ export const ContributionHeatmap: React.FC = () => {
                             }}
                             className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
                               isSelected
-                                ? "bg-base-2 text-text-primary font-semibold"
-                                : "text-text-secondary hover:text-text-primary hover:bg-base-2"
+                                ? 'bg-base-2 text-text-primary font-semibold'
+                                : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
@@ -306,7 +295,7 @@ export const ContributionHeatmap: React.FC = () => {
             title="Refresh commit and contribution data"
           >
             <RefreshCw
-              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-commito-coral" : ""}`}
+              className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-commito-coral' : ''}`}
             />
           </button>
         </div>
@@ -319,28 +308,20 @@ export const ContributionHeatmap: React.FC = () => {
           ref={scrollContainerRef}
           className="overflow-x-auto pb-2 focus:outline-none"
           style={{
-            scrollbarWidth: "thin",
-            scrollbarColor: "var(--border) transparent",
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'var(--border) transparent',
           }}
         >
           <div className="min-w-fit flex gap-2.5">
             {/* Left Column: Weekday labels aligned with 7 day rows */}
             <div className="flex flex-col gap-[3px] pt-[20px] text-[9.5px] text-text-muted font-medium select-none pr-1 shrink-0">
-              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                Sun
-              </span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">Sun</span>
               <span className="h-[10.5px] leading-[10.5px]">Mon</span>
-              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                Tue
-              </span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">Tue</span>
               <span className="h-[10.5px] leading-[10.5px]">Wed</span>
-              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                Thu
-              </span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">Thu</span>
               <span className="h-[10.5px] leading-[10.5px]">Fri</span>
-              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                Sat
-              </span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">Sat</span>
             </div>
 
             {/* Matrix Columns */}
@@ -364,14 +345,11 @@ export const ContributionHeatmap: React.FC = () => {
               {/* Heatmap Columns with Small Crisp Squares */}
               <div className="flex gap-[3px]">
                 {calendar?.weeks.map((week, wIdx) => (
-                  <div
-                    key={week.first_day || wIdx}
-                    className="flex flex-col gap-[3px] shrink-0"
-                  >
+                  <div key={week.first_day || wIdx} className="flex flex-col gap-[3px] shrink-0">
                     {week.days.map((day) => {
                       const isSelected = selectedDate === day.date;
                       const levelClass = day.is_future
-                        ? "bg-base-0/30 border-transparent opacity-20 cursor-not-allowed"
+                        ? 'bg-base-0/30 border-transparent opacity-20 cursor-not-allowed'
                         : LEVEL_CLASSES[day.level] || LEVEL_CLASSES[0];
 
                       return (
@@ -384,8 +362,7 @@ export const ContributionHeatmap: React.FC = () => {
                           }}
                           onMouseEnter={(e) => {
                             if (!day.is_future) {
-                              const rect =
-                                e.currentTarget.getBoundingClientRect();
+                              const rect = e.currentTarget.getBoundingClientRect();
                               setHoveredDay({
                                 date: day.date,
                                 count: day.count,
@@ -397,8 +374,8 @@ export const ContributionHeatmap: React.FC = () => {
                           onMouseLeave={() => setHoveredDay(null)}
                           className={`w-[10.5px] h-[10.5px] rounded-2xs border transition-all duration-75 cursor-pointer ${levelClass} ${
                             isSelected
-                              ? "ring-2 ring-commito-coral ring-offset-1 ring-offset-surface scale-125 z-10"
-                              : "hover:ring-1 hover:ring-text-primary/70 hover:scale-110"
+                              ? 'ring-2 ring-commito-coral ring-offset-1 ring-offset-surface scale-125 z-10'
+                              : 'hover:ring-1 hover:ring-text-primary/70 hover:scale-110'
                           }`}
                         />
                       );
@@ -413,18 +390,18 @@ export const ContributionHeatmap: React.FC = () => {
         {/* Heatmap Footer Bar: Active Account & Scale */}
         <div className="mt-2.5 pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-[11px] text-text-muted font-sans">
           <div className="flex items-center gap-2">
-            {getActiveAccountProvider() === "all" ? (
+            {getActiveAccountProvider() === 'all' ? (
               <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-            ) : getActiveAccountProvider() === "local" ? (
+            ) : getActiveAccountProvider() === 'local' ? (
               <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
             ) : (
               <span
                 className={`text-[8.5px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border shrink-0 ${
-                  getActiveAccountProvider() === "github"
-                    ? "text-purple-400 bg-purple-950/40 border-purple-800/40"
-                    : getActiveAccountProvider() === "bitbucket"
-                      ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
-                      : "text-commito-coral bg-commito-coral/10 border-commito-coral/30"
+                  getActiveAccountProvider() === 'github'
+                    ? 'text-purple-400 bg-purple-950/40 border-purple-800/40'
+                    : getActiveAccountProvider() === 'bitbucket'
+                      ? 'text-blue-400 bg-blue-950/40 border-blue-800/40'
+                      : 'text-commito-coral bg-commito-coral/10 border-commito-coral/30'
                 }`}
               >
                 {getActiveAccountProvider()}
@@ -470,16 +447,12 @@ export const ContributionHeatmap: React.FC = () => {
         >
           {hoveredDay.count > 0 ? (
             <span>
-              <strong className="text-commito-coral font-semibold">
-                {hoveredDay.count}
-              </strong>{" "}
-              {hoveredDay.count === 1 ? "contribution" : "contributions"} on{" "}
+              <strong className="text-commito-coral font-semibold">{hoveredDay.count}</strong>{' '}
+              {hoveredDay.count === 1 ? 'contribution' : 'contributions'} on{' '}
               {formatTooltipDate(hoveredDay.date)}
             </span>
           ) : (
-            <span>
-              No contributions on {formatTooltipDate(hoveredDay.date)}
-            </span>
+            <span>No contributions on {formatTooltipDate(hoveredDay.date)}</span>
           )}
           {/* Tooltip caret */}
           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-surface-elevated" />

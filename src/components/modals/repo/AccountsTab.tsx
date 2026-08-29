@@ -44,7 +44,9 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
         const u = await AccountService.getCurrentGitLabUser();
         if (u) setUser(gitLabUserToUnified(u));
       }
-      useLogStore.getState().addLog('success', 'Auth', `Updated profile info for account '${accountId}'.`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Auth', `Updated profile info for account '${accountId}'.`);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       setError(toAppError(error, 'AUTH_ERROR'));
@@ -72,7 +74,9 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
         const u = await AccountService.getCurrentGitLabUser();
         if (u) setUser(gitLabUserToUnified(u));
       }
-      useLogStore.getState().addLog('success', 'Auth', `Switched active account to '${accountId}'.`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Auth', `Switched active account to '${accountId}'.`);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       setError(toAppError(error, 'AUTH_ERROR'));
@@ -109,7 +113,8 @@ export const AccountsTab: React.FC<AccountsTabProps> = ({ accounts, onRefreshAcc
         <User className="w-12 h-12 text-text-muted mb-3 opacity-40" />
         <h4 className="text-sm font-semibold text-text-primary mb-1">No Accounts Connected</h4>
         <p className="text-xs text-text-muted max-w-sm mb-4">
-          Add a GitLab or GitHub account to clone repositories, view merge requests, and manage remotes.
+          Add a GitLab or GitHub account to clone repositories, view merge requests, and manage
+          remotes.
         </p>
       </div>
     );

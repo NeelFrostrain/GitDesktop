@@ -90,7 +90,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
   };
 
   return (
-    <div className="h-8 bg-base-1 border-b border-border px-2.5 flex items-center justify-between flex-shrink-0 select-none text-xs">
+    <div className="h-8 bg-base-1 border-b border-border px-1 flex items-center justify-between flex-shrink-0 select-none text-xs">
       {/* Left: Tabs + Repo & Branch info */}
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Sleek Segmented Switcher */}
@@ -148,8 +148,8 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
               gitProgress.status === 'completed'
                 ? 'bg-git-added-bg border-git-added/30 text-git-added'
                 : gitProgress.status === 'error'
-                ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
-                : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
+                  ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
+                  : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
             }`}
           >
             {gitProgress.status === 'completed' ? (
@@ -161,10 +161,10 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
               {gitProgress.status === 'completed'
                 ? 'Git ready'
                 : gitProgress.status === 'error'
-                ? 'Git install failed'
-                : gitProgress.status === 'extracting'
-                ? 'Installing git...'
-                : `Git ${gitProgress.percentage.toFixed(0)}%`}
+                  ? 'Git install failed'
+                  : gitProgress.status === 'extracting'
+                    ? 'Installing git...'
+                    : `Git ${gitProgress.percentage.toFixed(0)}%`}
             </span>
           </div>
         )}

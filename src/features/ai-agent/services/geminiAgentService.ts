@@ -67,32 +67,53 @@ export class GeminiAgentService {
       `- Always provide the full updated file contents when creating or writing files so they can be saved directly.`,
       `- Keep your explanations clean, well-formatted with markdown, and concise.`,
       `- Note: Context, git states, and terminal outputs are encoded in TOON (Token-Oriented Object Notation, https://github.com/toon-format/toon) for ultra-low token consumption. Tables are written as name[N]{cols}: with row values.`,
-      repoContextPrompt ? `\n--- ACTIVE REPOSITORY STATE (TOON FORMAT) ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---` : '',
+      repoContextPrompt
+        ? `\n--- ACTIVE REPOSITORY STATE (TOON FORMAT) ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---`
+        : '',
       systemInstruction,
     ]
       .filter(Boolean)
       .join('\n\n');
 
-    // Build Gemini contents array from conversation history
+    // Build Gemini contents array from conversation history with strictly alternating user/model
     const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
     for (const msg of messages) {
       if (msg.role === 'system') continue;
 
-      let partText = msg.content;
+      let partText = msg.content || '';
 
       // Append any message attachments (like diffs, terminal logs, status) formatted with TOON
       if (msg.attachments && msg.attachments.length > 0) {
         const attachmentTexts = msg.attachments
           .map((a) => ToonService.formatAttachmentForPrompt(a))
           .join('\n\n');
-        partText = `${partText}\n\n${attachmentTexts}`;
+        partText = partText ? `${partText}\n\n${attachmentTexts}` : attachmentTexts;
       }
 
-      contents.push({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: partText }],
-      });
+      if (!partText.trim()) continue;
+
+      const role: 'user' | 'model' = msg.role === 'user' ? 'user' : 'model';
+
+      const lastContent = contents[contents.length - 1];
+      if (lastContent && lastContent.role === role) {
+        // Merge adjacent messages of the same role into a single multi-part turn
+        lastContent.parts[0].text += `\n\n${partText}`;
+      } else {
+        contents.push({
+          role,
+          parts: [{ text: partText }],
+        });
+      }
+    }
+
+    // Gemini API requires the conversation contents to start with role 'user'
+    while (contents.length > 0 && contents[0].role !== 'user') {
+      contents.shift();
+    }
+
+    if (contents.length === 0) {
+      throw new Error('No user prompt found to regenerate.');
     }
 
     const payload = {
@@ -222,7 +243,10 @@ export class GeminiAgentService {
     while ((match = codeBlockRegex.exec(text)) !== null) {
       const lang = (match[1] || '').toLowerCase().trim();
       const codeSnippet = match[2].trim();
-      const lines = codeSnippet.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const lines = codeSnippet
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
       const isShellLang = ['bash', 'sh', 'shell', 'git', 'cmd', 'powershell', 'zsh'].includes(lang);
       const isGitOrShellCommand = lines.some(
         (l) =>

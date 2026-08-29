@@ -244,7 +244,7 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
   serverUrl?: string;
 } | null {
   if (!remoteUrl) return null;
-  let clean = remoteUrl.trim().replace(/\.git\/?$/, '');
+  const clean = remoteUrl.trim().replace(/\.git\/?$/, '');
 
   // 1. Match HTTPS/HTTP format: https://github.com/owner/repo or https://gitlab.com/group/project
   if (clean.startsWith('http://') || clean.startsWith('https://')) {
@@ -271,7 +271,10 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
         let host = stripped.substring(0, slashIdx);
         if (host.includes('@')) host = host.split('@')[1];
         if (host.includes(':')) host = host.split(':')[0];
-        const projectPath = stripped.substring(slashIdx + 1).replace(/^\/+/, '').replace(/\/+$/, '');
+        const projectPath = stripped
+          .substring(slashIdx + 1)
+          .replace(/^\/+/, '')
+          .replace(/\/+$/, '');
         const isGitHub = host.toLowerCase().includes('github');
         const isGitLab = host.toLowerCase().includes('gitlab');
         const provider = isGitHub ? 'github' : isGitLab ? 'gitlab' : 'unknown';

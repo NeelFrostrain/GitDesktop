@@ -50,7 +50,9 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
         return { events: combined };
       });
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'System', `Failed to load local activity: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'System', `Failed to load local activity: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoadingLocal: false });
     }
@@ -84,7 +86,13 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
         });
       }
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'System', `Failed to load remote GitLab activity: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog(
+          'warning',
+          'System',
+          `Failed to load remote GitLab activity: ${getErrorMessage(error)}`
+        );
     } finally {
       set({ isLoadingRemote: false });
     }
@@ -94,6 +102,8 @@ export const useActivityStore = create<ActivityStoreState>((set, get) => ({
     // 1. Instant local load
     await get().loadLocal();
     // 2. Async remote load in background
-    get().loadRemote().catch(() => {});
+    get()
+      .loadRemote()
+      .catch(() => {});
   },
 }));

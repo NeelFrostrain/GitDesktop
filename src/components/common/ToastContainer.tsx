@@ -55,9 +55,7 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 mb-0.5">
           {toast.title && (
-            <h4 className="text-xs font-semibold leading-tight text-text-primary">
-              {toast.title}
-            </h4>
+            <h4 className="text-xs font-semibold leading-tight text-text-primary">{toast.title}</h4>
           )}
           {toast.count && toast.count > 1 && (
             <span className="px-1 py-0.2 rounded-xs bg-base-1 border border-border text-[9.5px] font-mono font-bold text-text-muted">
@@ -66,9 +64,7 @@ const ToastCard: React.FC<{ toast: ToastItem; onClose: () => void }> = ({ toast,
           )}
         </div>
 
-        <p className="text-[11px] text-text-muted leading-relaxed break-words">
-          {toast.message}
-        </p>
+        <p className="text-[11px] text-text-muted leading-relaxed break-words">{toast.message}</p>
 
         {toast.actionLabel && toast.onAction && (
           <button

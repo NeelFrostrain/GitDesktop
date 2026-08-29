@@ -135,7 +135,7 @@ pub fn get_mingit_executable() -> PathBuf {
         if mingw_path.exists() {
             return mingw_path;
         }
-        return cmd_path;
+        cmd_path
     }
 
     #[cfg(not(target_os = "windows"))]

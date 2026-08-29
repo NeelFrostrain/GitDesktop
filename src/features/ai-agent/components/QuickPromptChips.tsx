@@ -14,34 +14,40 @@ const PROMPT_TEMPLATES = [
   {
     icon: Sparkles,
     label: 'Explain Changes',
-    prompt: 'Please analyze my working tree and staged changes and explain what was modified and why.',
+    prompt:
+      'Please analyze my working tree and staged changes and explain what was modified and why.',
     attachDiff: true,
   },
   {
     icon: GitCommit,
     label: 'Draft Commit',
-    prompt: 'Generate a conventional commit message (type, scope, title, and bulleted summary) based on my current changes.',
+    prompt:
+      'Generate a conventional commit message (type, scope, title, and bulleted summary) based on my current changes.',
     attachDiff: true,
   },
   {
     icon: GitBranch,
     label: 'Branch Strategy',
-    prompt: 'How should I organize my branches and PRs for this feature safely without losing work?',
+    prompt:
+      'How should I organize my branches and PRs for this feature safely without losing work?',
   },
   {
     icon: AlertTriangle,
     label: 'Resolve Conflicts',
-    prompt: 'I have git conflicts or diverged branches. What is the safest step-by-step procedure to resolve them?',
+    prompt:
+      'I have git conflicts or diverged branches. What is the safest step-by-step procedure to resolve them?',
   },
   {
     icon: Archive,
     label: 'Stash & Switch',
-    prompt: 'How do I safely stash all untracked and modified work, switch to main, pull latest changes, and restore my stash?',
+    prompt:
+      'How do I safely stash all untracked and modified work, switch to main, pull latest changes, and restore my stash?',
   },
   {
     icon: Search,
     label: 'Review History',
-    prompt: 'Review my recent commits and check if everything looks consistent and ready for code review.',
+    prompt:
+      'Review my recent commits and check if everything looks consistent and ready for code review.',
   },
 ];
 
@@ -49,7 +55,7 @@ export const QuickPromptChips: React.FC = () => {
   const { sendMessage, attachWorkingDiff } = useAiAgentStore();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const handlePromptClick = async (tpl: typeof PROMPT_TEMPLATES[0]) => {
+  const handlePromptClick = async (tpl: (typeof PROMPT_TEMPLATES)[0]) => {
     if (tpl.attachDiff) {
       await attachWorkingDiff();
     }

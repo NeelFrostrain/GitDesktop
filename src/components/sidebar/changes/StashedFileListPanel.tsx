@@ -13,12 +13,8 @@ import { useGitStore } from '../../../store/useGitStore';
 
 export const StashedFileListPanel: React.FC = () => {
   const [fileFilter, setFileFilter] = useState('');
-  const {
-    stashFiles,
-    selectedStashFile,
-    setSelectedStashFile,
-    setIsViewingStashedChanges,
-  } = useGitStore();
+  const { stashFiles, selectedStashFile, setSelectedStashFile, setIsViewingStashedChanges } =
+    useGitStore();
 
   const filteredFiles = (stashFiles || []).filter((f) =>
     f.path.toLowerCase().includes(fileFilter.toLowerCase().trim())
@@ -105,9 +101,13 @@ export const StashedFileListPanel: React.FC = () => {
           filteredFiles.map((file) => {
             const isSelected = selectedStashFile === file.path;
             const fileName = file.path.split(/[\\/]/).pop() || file.path;
-            const dirPath = file.path.includes('/') || file.path.includes('\\')
-              ? file.path.substring(0, Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\')))
-              : '';
+            const dirPath =
+              file.path.includes('/') || file.path.includes('\\')
+                ? file.path.substring(
+                    0,
+                    Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\'))
+                  )
+                : '';
 
             return (
               <button
@@ -122,7 +122,9 @@ export const StashedFileListPanel: React.FC = () => {
                 title={file.path}
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
-                  <FileText className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-commito-coral' : 'text-text-muted'}`} />
+                  <FileText
+                    className={`w-3.5 h-3.5 shrink-0 ${isSelected ? 'text-commito-coral' : 'text-text-muted'}`}
+                  />
                   <div className="min-w-0 truncate">
                     <span className="truncate block font-mono text-[11.5px] leading-tight">
                       {fileName}

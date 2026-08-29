@@ -15,7 +15,10 @@ import { ChangesHeaderContextMenu } from '../../context-menus/ChangesHeaderConte
 
 export const ChangesPanel: React.FC = () => {
   const [fileFilter, setFileFilter] = useState('');
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [viewMode, setViewMode] = useState<ChangesViewMode>(() => {
     try {
       return (localStorage.getItem('git_changes_view_mode') as ChangesViewMode) || 'tree';
@@ -80,7 +83,7 @@ export const ChangesPanel: React.FC = () => {
 
         {/* Selection Count Checkbox Row + View Toggles */}
         <div
-          className="flex items-center justify-between px-[10px] py-0.5 rounded-sm text-xs select-none"
+          className="flex items-center justify-between px-1 py-0.5 rounded-sm text-xs select-none"
           onContextMenu={(e) => {
             e.preventDefault();
             setContextMenu({ x: e.clientX, y: e.clientY });
@@ -126,7 +129,11 @@ export const ChangesPanel: React.FC = () => {
                   ? 'text-commito-coral hover:text-commito-coral/90 hover:bg-base-2/80'
                   : 'text-text-muted hover:text-text hover:bg-base-2/80'
               }`}
-              title={viewMode === 'tree' ? 'Tree View (Click for List View)' : 'List View (Click for Tree View)'}
+              title={
+                viewMode === 'tree'
+                  ? 'Tree View (Click for List View)'
+                  : 'List View (Click for Tree View)'
+              }
             >
               {viewMode === 'tree' ? (
                 <FolderTree className="w-3.5 h-3.5" />
@@ -172,4 +179,3 @@ export const ChangesPanel: React.FC = () => {
     </div>
   );
 };
-

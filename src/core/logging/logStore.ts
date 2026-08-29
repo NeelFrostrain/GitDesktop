@@ -51,7 +51,8 @@ export function printLogToConsole(entry: LogEntry): void {
   const formattedTime = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
   const prefix = `[${formattedTime}] [${entry.category}]`;
   const message = entry.message;
-  const meta = entry.metadata && Object.keys(entry.metadata).length > 0 ? entry.metadata : undefined;
+  const meta =
+    entry.metadata && Object.keys(entry.metadata).length > 0 ? entry.metadata : undefined;
 
   switch (normLevel) {
     case 'error':
@@ -168,8 +169,12 @@ export const useAppLogStore = create<LogStoreState>((set, get) => ({
       const activeFilter = filter ?? get().filter;
       const entries = await invoke<LogEntry[]>('logs_query', {
         filter: {
-          categories: activeFilter.categories && activeFilter.categories.length > 0 ? activeFilter.categories : null,
-          levels: activeFilter.levels && activeFilter.levels.length > 0 ? activeFilter.levels : null,
+          categories:
+            activeFilter.categories && activeFilter.categories.length > 0
+              ? activeFilter.categories
+              : null,
+          levels:
+            activeFilter.levels && activeFilter.levels.length > 0 ? activeFilter.levels : null,
           repo_id: activeFilter.repo_id || null,
           search: activeFilter.search ? activeFilter.search.trim() : null,
           this_repo_only: activeFilter.this_repo_only ?? false,
@@ -201,8 +206,12 @@ export const useAppLogStore = create<LogStoreState>((set, get) => ({
 
       await invoke('logs_export', {
         filter: {
-          categories: activeFilter.categories && activeFilter.categories.length > 0 ? activeFilter.categories : null,
-          levels: activeFilter.levels && activeFilter.levels.length > 0 ? activeFilter.levels : null,
+          categories:
+            activeFilter.categories && activeFilter.categories.length > 0
+              ? activeFilter.categories
+              : null,
+          levels:
+            activeFilter.levels && activeFilter.levels.length > 0 ? activeFilter.levels : null,
           repo_id: activeFilter.repo_id || null,
           search: activeFilter.search ? activeFilter.search.trim() : null,
           this_repo_only: activeFilter.this_repo_only ?? false,

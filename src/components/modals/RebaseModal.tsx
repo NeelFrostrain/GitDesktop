@@ -70,9 +70,7 @@ export const RebaseModal: React.FC = () => {
 
   const handleActionChange = (index: number, actionStr: string) => {
     const action = actionStr as RebaseCommitAction;
-    setCommitPlan((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, action } : item))
-    );
+    setCommitPlan((prev) => prev.map((item, i) => (i === index ? { ...item, action } : item)));
   };
 
   const handleMoveCommit = (index: number, direction: 'up' | 'down') => {
@@ -101,7 +99,11 @@ export const RebaseModal: React.FC = () => {
 
       useLogStore
         .getState()
-        .addLog('success', 'Git', `Rebased ${status?.current_branch || 'current branch'} onto ${targetBranch}`);
+        .addLog(
+          'success',
+          'Git',
+          `Rebased ${status?.current_branch || 'current branch'} onto ${targetBranch}`
+        );
       setIsRebaseModalOpen(false);
     } catch (err: unknown) {
       const errorMsg = getErrorMessage(err);
@@ -163,7 +165,11 @@ export const RebaseModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        <form id="rebase-form" onSubmit={handleExecuteRebase} className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden">
+        <form
+          id="rebase-form"
+          onSubmit={handleExecuteRebase}
+          className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden"
+        >
           {/* Target Branch Selector */}
           <div className="flex items-center gap-3 p-3.5 bg-base-2 border border-border rounded-sm">
             <GitBranch className="w-4 h-4 text-emerald-400 flex-shrink-0" />

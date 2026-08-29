@@ -8,7 +8,8 @@ describe('AvatarCacheService', () => {
 
   it('stores and retrieves avatar in memory cache synchronously', async () => {
     const testUrl = 'https://avatars.example.com/user1.png';
-    const fakeDataUrl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const fakeDataUrl =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
     expect(avatarCache.getSync(testUrl)).toBeNull();
 

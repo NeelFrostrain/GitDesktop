@@ -10,7 +10,7 @@ pub async fn logs_query(
     offset: Option<u32>,
 ) -> Result<Vec<LogEntry>, AppError> {
     let f = filter.unwrap_or_default();
-    let l = limit.unwrap_or(100) as usize;
+    let l = limit.unwrap_or(100).min(1_000) as usize;
     let o = offset.unwrap_or(0) as usize;
 
     tokio::task::spawn_blocking(move || Ok(store::query_logs(&f, l, o)))
@@ -23,7 +23,7 @@ pub async fn logs_export(filter: Option<LogFilter>, dest_path: String) -> Result
     let f = filter.unwrap_or_default();
 
     tokio::task::spawn_blocking(move || {
-        store::export_logs(&f, &dest_path).map_err(|e| AppError::Unknown(e))
+        store::export_logs(&f, &dest_path).map_err(AppError::Unknown)
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?
@@ -32,7 +32,7 @@ pub async fn logs_export(filter: Option<LogFilter>, dest_path: String) -> Result
 #[command]
 pub async fn logs_clear(repo_id: Option<String>) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || {
-        store::clear_logs(repo_id.as_deref()).map_err(|e| AppError::Unknown(e))
+        store::clear_logs(repo_id.as_deref()).map_err(AppError::Unknown)
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?

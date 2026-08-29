@@ -21,6 +21,7 @@ pub struct PkceSession {
 }
 
 const PKCE_CHARS: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
+const PKCE_SESSION_TTL_SECONDS: i64 = 10 * 60;
 
 pub fn generate_pkce_session(
     provider: &str,
@@ -67,7 +68,6 @@ pub fn generate_pkce_session(
     (state, challenge, verifier)
 }
 
-
 pub fn take_pkce_session(state: &str) -> Option<PkceSession> {
     if let Ok(mut storage) = get_storage().lock() {
         storage.remove(state)
@@ -76,3 +76,12 @@ pub fn take_pkce_session(state: &str) -> Option<PkceSession> {
     }
 }
 
+pub fn take_valid_pkce_session(state: &str, provider: &str) -> Option<PkceSession> {
+    let session = take_pkce_session(state)?;
+    let is_fresh = chrono::Utc::now().timestamp() - session.created_at <= PKCE_SESSION_TTL_SECONDS;
+    if is_fresh && session.provider.eq_ignore_ascii_case(provider) {
+        Some(session)
+    } else {
+        None
+    }
+}

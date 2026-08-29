@@ -188,7 +188,7 @@ export const getStatusBadge = (statusStr?: string) => {
   if (statusUpper.includes('DELETE') || statusUpper.includes('REMOVE')) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-rose-500/10 text-rose-400 border border-rose-500/25 shrink-0"
         title="Deleted"
       >
         D
@@ -198,7 +198,7 @@ export const getStatusBadge = (statusStr?: string) => {
   if (statusUpper.includes('RENAME')) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-sky-500/10 text-sky-400 border border-sky-500/25 shrink-0"
         title="Renamed"
       >
         R
@@ -207,7 +207,7 @@ export const getStatusBadge = (statusStr?: string) => {
   }
   return (
     <span
-      className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/25 shrink-0"
+      className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/25 shrink-0"
       title="Modified"
     >
       M
@@ -223,15 +223,18 @@ interface FileTreeNodeProps {
   onOpenFileContext: (filePath: string, x: number, y: number) => void;
 }
 
-export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
+export const FileTreeNode: React.FC<FileTreeNodeProps> = React.memo(({
   node,
   expandedFolders,
   onToggleFolder,
   onOpenFolderContext,
   onOpenFileContext,
 }) => {
-  const { selectedFile, setSelectedFile, stagedFiles, toggleStageFile, toggleStageFiles } =
-    useGitStore();
+  const selectedFile = useGitStore((s) => s.selectedFile);
+  const setSelectedFile = useGitStore((s) => s.setSelectedFile);
+  const stagedFiles = useGitStore((s) => s.stagedFiles);
+  const toggleStageFile = useGitStore((s) => s.toggleStageFile);
+  const toggleStageFiles = useGitStore((s) => s.toggleStageFiles);
 
   if (node.isFolder) {
     const isExpanded = expandedFolders[node.path] ?? true;
@@ -271,10 +274,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
           </button>
 
           {/* Folder Staging Checkbox */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center shrink-0"
-          >
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
             <Checkbox
               checked={isAllStaged}
               indeterminate={isIndeterminate}
@@ -296,7 +296,11 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
             {parts.map((p, idx) => (
               <React.Fragment key={idx}>
                 {idx > 0 && <span className="text-text-faint/50 font-mono text-[10px]">/</span>}
-                <span className={idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'}>
+                <span
+                  className={
+                    idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'
+                  }
+                >
                   {p}
                 </span>
               </React.Fragment>
@@ -352,14 +356,8 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
     >
       <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
         {/* File Checkbox */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center shrink-0"
-        >
-          <Checkbox
-            checked={isStaged}
-            onChange={() => toggleStageFile(file.path)}
-          />
+        <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
+          <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
         </div>
 
         {/* Dynamic File Type Icon */}
@@ -375,4 +373,4 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
       {getStatusBadge(file.status)}
     </div>
   );
-};
+});

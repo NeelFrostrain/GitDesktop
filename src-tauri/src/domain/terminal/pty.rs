@@ -3,7 +3,6 @@ use super::{
     TerminalSessionInfo,
 };
 use crate::error::AppError;
-use chrono::Utc;
 use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -73,7 +72,7 @@ pub fn open_session(
     // Clean up old log sessions beyond the retention limit (e.g. 20)
     cleanup_old_sessions(repo_id, 20);
 
-    let session_id = Utc::now().format("%Y%m%d_%H%M%S").to_string();
+    let session_id = uuid::Uuid::new_v4().to_string();
 
     let pty_system = native_pty_system();
     let pty_pair = pty_system

@@ -72,7 +72,8 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
   }, [searchQuery]);
 
   const currentAcc = activeAccount || accounts[0] || null;
-  const currentHandle = currentAcc?.handle?.replace(/^@/, '') || currentAcc?.display_name || 'Account';
+  const currentHandle =
+    currentAcc?.handle?.replace(/^@/, '') || currentAcc?.display_name || 'Account';
   const currentProvider = (currentAcc?.provider || 'github').toLowerCase();
 
   // Clear stale data immediately whenever the active account or provider changes
@@ -95,7 +96,9 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
       setPagedData(res);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
-      useLogStore.getState().addLog('error', 'Remote', `Failed to fetch remote repositories: ${msg}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Remote', `Failed to fetch remote repositories: ${msg}`);
       setError(toAppError(error, 'REMOTE_FETCH_ERROR'));
       setPagedData({ items: [], page: 1, total_pages: 1 });
     } finally {
@@ -124,7 +127,9 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
       ? `${parentPath.replace(/[/\\]+$/, '')}\\${repoName}`
       : repoName;
 
-    useLogStore.getState().addLog('info', 'Git', `Initiating clone for '${repo.name}' into '${targetFolder}'...`);
+    useLogStore
+      .getState()
+      .addLog('info', 'Git', `Initiating clone for '${repo.name}' into '${targetFolder}'...`);
 
     try {
       const cloneUrl = repo.http_url_to_repo || repo.ssh_url_to_repo;
@@ -132,7 +137,11 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
 
       useLogStore
         .getState()
-        .addLog('success', 'Git', `Successfully cloned repository '${repo.name}' to '${finalPath}'`);
+        .addLog(
+          'success',
+          'Git',
+          `Successfully cloned repository '${repo.name}' to '${finalPath}'`
+        );
 
       await addRepo(finalPath);
       await openRepo(finalPath);
@@ -189,7 +198,8 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
         <div className="space-y-1">
           <h4 className="text-xs font-bold text-text-primary">No Connected Accounts Found</h4>
           <p className="text-[11.5px] text-text-muted max-w-sm mx-auto">
-            Connect your GitHub, GitLab, or Bitbucket account to browse, search, and clone all your private and public repositories in one click.
+            Connect your GitHub, GitLab, or Bitbucket account to browse, search, and clone all your
+            private and public repositories in one click.
           </p>
         </div>
         <button
@@ -378,7 +388,8 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
         <div className="flex items-center gap-2 min-w-0 truncate pr-2">
           <Folder className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
           <span className="truncate">
-            Clones into: <span className="font-mono text-text-primary font-semibold">{parentPath}</span>
+            Clones into:{' '}
+            <span className="font-mono text-text-primary font-semibold">{parentPath}</span>
           </span>
         </div>
         <button

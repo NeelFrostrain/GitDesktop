@@ -9,8 +9,6 @@ import {
   User,
   LogOut,
   Home,
-  FolderGit2,
-  GitBranch,
   Settings,
   Users,
   Plus,
@@ -34,7 +32,6 @@ export const Titlebar: React.FC = () => {
     setAccounts,
     activeRepoPath,
     setActiveRepoPath,
-    status,
     setStatus,
     setBranches,
     currentNavView,
@@ -50,9 +47,6 @@ export const Titlebar: React.FC = () => {
   const activeRepoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository'
     : null;
-  const currentBranch = status?.current_branch || 'main';
-  const uncommittedCount = status?.files?.length || 0;
-  const isClean = status?.is_clean ?? (uncommittedCount === 0);
 
   useEffect(() => {
     const checkMaximized = async () => {
@@ -100,7 +94,7 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.minimizeWindow();
     } catch {
-      await appWindow.minimize().catch(() => { });
+      await appWindow.minimize().catch(() => {});
     }
   };
 
@@ -111,7 +105,7 @@ export const Titlebar: React.FC = () => {
       const isNowMaximized = await SystemService.toggleMaximizeWindow();
       setIsMaximized(isNowMaximized);
     } catch {
-      await appWindow.toggleMaximize().catch(() => { });
+      await appWindow.toggleMaximize().catch(() => {});
       const maximized = await appWindow.isMaximized().catch(() => false);
       setIsMaximized(maximized);
     }
@@ -123,9 +117,27 @@ export const Titlebar: React.FC = () => {
     try {
       await SystemService.closeWindow();
     } catch {
-      await appWindow.close().catch(() => { });
+      await appWindow.close().catch(() => {});
     }
   };
+
+  const titlebarRef = React.useRef<HTMLElement>(null);
+
+  // Native mousedown → startDragging must fire inside the real pointer-down
+  // event. React's synthetic event layer is enough to break Tauri's context.
+  useEffect(() => {
+    const el = titlebarRef.current;
+    if (!el) return;
+    const handleNativeDrag = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest('button, input, select, a, [role="button"], .titlebar-no-drag')) return;
+      // startDragging must be called synchronously here — no await
+      appWindow.startDragging().catch(() => {});
+    };
+    el.addEventListener('mousedown', handleNativeDrag);
+    return () => el.removeEventListener('mousedown', handleNativeDrag);
+  }, [appWindow]);
 
   const handleSignOut = async () => {
     try {
@@ -143,76 +155,30 @@ export const Titlebar: React.FC = () => {
 
   return (
     <header
+      ref={titlebarRef}
       data-tauri-drag-region
-      className="titlebar-drag h-10 bg-base-0 border-b border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
+      onDoubleClick={handleToggleMaximize}
+      className="titlebar-drag h-10 bg-base-0 border-y border-border/80 shadow-2xs flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
-      {/* Left: App Icon + Current Open Repo Details */}
-      <div data-tauri-drag-region className="flex items-center gap-2.5 min-w-0">
+      {/* Left: App Icon + Clean Title */}
+      <div data-tauri-drag-region className="flex items-center gap-2 min-w-0 pointer-events-none">
         <div className="flex items-center gap-2 pointer-events-none flex-shrink-0">
-          <img src="/app-icon.png" alt="Git Desktop" className="w-5 h-5 rounded-sm object-contain shadow-xs" />
+          <img
+            src="/app-icon.png"
+            alt="Git Desktop"
+            className="w-4 h-4 rounded-sm object-contain shadow-xs"
+          />
         </div>
-
-        {activeRepoName && currentNavView !== 'home' ? (
-          <div data-tauri-drag-region className="flex items-center gap-2 min-w-0">
-            <div className="h-3.5 w-px bg-border/70 flex-shrink-0" />
-
-            {/* Repo Name */}
-            <div
-              data-tauri-drag-region
-              className="flex items-center gap-1.5 min-w-0"
-              title={`Repository: ${activeRepoName}\nPath: ${activeRepoPath}`}
-            >
-              <FolderGit2 className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
-              <span className="font-semibold text-xs text-text truncate max-w-[160px]">
-                {activeRepoName}
-              </span>
-            </div>
-
-            {/* Active Branch Chip */}
-            <div
-              data-tauri-drag-region
-              className="h-5 px-1.5 inline-flex items-center gap-1 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono text-text-subtle flex-shrink-0"
-              title={`Branch: ${currentBranch}`}
-            >
-              <GitBranch className="w-3 h-3 text-commito-coral flex-shrink-0" />
-              <span className="truncate max-w-[120px]">{currentBranch}</span>
-            </div>
-
-            {/* Status Indicator Chip (Clean / Modified) */}
-            <div
-              data-tauri-drag-region
-              className={`h-5 px-1.5 inline-flex items-center gap-1 rounded-sm text-[10.5px] font-mono font-medium border flex-shrink-0 ${isClean
-                ? 'bg-git-added/10 text-git-added border-git-added/25'
-                : 'bg-git-modified/10 text-git-modified border-git-modified/25'
-                }`}
-              title={isClean ? 'Working directory clean' : `${uncommittedCount} modified files in working directory`}
-            >
-              <span>{isClean ? 'clean' : `${uncommittedCount} modified`}</span>
-            </div>
-
-            {/* Ahead / Behind Counts Chip */}
-            {Boolean(status?.ahead || status?.behind) && (
-              <div
-                data-tauri-drag-region
-                className="h-5 px-1.5 inline-flex items-center gap-1.5 rounded-sm bg-base-2 border border-border/70 text-[10.5px] font-mono flex-shrink-0"
-              >
-                {Boolean(status?.ahead) && (
-                  <span className="text-git-ahead" title={`${status?.ahead} commits ahead of remote`}>
-                    ↑{status?.ahead}
-                  </span>
-                )}
-                {Boolean(status?.behind) && (
-                  <span className="text-git-behind" title={`${status?.behind} commits behind remote`}>
-                    ↓{status?.behind}
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div data-tauri-drag-region className="flex items-center gap-2">
-            <div className="h-3.5 w-px bg-border/70" />
-            <span className="text-xs text-text-muted font-medium">Git Desktop</span>
+        <span className="text-xs font-semibold text-text-primary tracking-tight">Git Desktop</span>
+        {activeRepoName && currentNavView !== 'home' && (
+          <div
+            data-tauri-drag-region
+            className="flex items-center gap-1.5 min-w-0 text-text-muted text-xs"
+          >
+            <span className="text-border-strong">/</span>
+            <span className="text-text-secondary truncate max-w-[220px] font-medium">
+              {activeRepoName}
+            </span>
           </div>
         )}
       </div>
@@ -250,8 +216,9 @@ export const Titlebar: React.FC = () => {
               iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
-              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${isProfileOpen ? 'rotate-180 text-commito-coral' : ''
-                }`}
+              className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
+                isProfileOpen ? 'rotate-180 text-commito-coral' : ''
+              }`}
             />
           </button>
 
@@ -263,11 +230,14 @@ export const Titlebar: React.FC = () => {
                   {user?.name || user?.username || 'Guest'}
                 </div>
                 {user?.username && user.name && (
-                  <div className="text-[11px] text-text-muted font-mono truncate">@{user.username}</div>
+                  <div className="text-[11px] text-text-muted font-mono truncate">
+                    @{user.username}
+                  </div>
                 )}
                 {totalAccountsCount > 0 && (
                   <div className="text-[10px] text-text-faint mt-0.5">
-                    {totalAccountsCount} account{totalAccountsCount > 1 ? 's' : ''} saved
+                    {totalAccountsCount} account
+                    {totalAccountsCount > 1 ? 's' : ''} saved
                   </div>
                 )}
               </div>

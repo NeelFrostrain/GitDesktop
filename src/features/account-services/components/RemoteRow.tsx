@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Globe,
-  Check,
-  Edit2,
-  Trash2,
-  Star,
-  Loader2,
-  Key,
-} from 'lucide-react';
+import { Globe, Check, Edit2, Trash2, Star, Loader2, Key } from 'lucide-react';
 import { RemoteInfo } from '../types';
 import { useRemoteServicesStore } from '../store/remoteStore';
 import { useAccountServicesStore } from '../store/accountStore';
@@ -69,9 +61,7 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
         {/* Remote Name & Default Badge */}
         <div className="flex items-center gap-2">
           <Globe className="w-4 h-4 text-gitlab-teal flex-shrink-0" />
-          <span className="font-bold text-xs text-text-primary font-mono">
-            {remote.name}
-          </span>
+          <span className="font-bold text-xs text-text-primary font-mono">{remote.name}</span>
           {remote.is_default && (
             <span className="px-2 py-0.5 rounded-full bg-gitlab-teal/20 border border-gitlab-teal/40 text-gitlab-teal text-[10px] font-bold">
               Default
@@ -129,7 +119,11 @@ export const RemoteRow: React.FC<RemoteRowProps> = ({ remote, repoPath }) => {
             disabled={isSaving}
             className="px-2.5 py-1 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold transition flex items-center gap-1 cursor-pointer"
           >
-            {isSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+            {isSaving ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Check className="w-3 h-3" />
+            )}
             <span>Save</span>
           </button>
         </div>

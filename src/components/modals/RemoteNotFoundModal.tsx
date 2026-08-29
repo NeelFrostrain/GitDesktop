@@ -12,8 +12,6 @@ export const RemoteNotFoundModal: React.FC = () => {
     isRemoteNotFoundModalOpen,
     setIsRemoteNotFoundModalOpen,
     setIsPublishRepoModalOpen,
-    status,
-    setStatus,
   } = useGitStore();
 
   const handleClose = useCallback(() => {
@@ -69,7 +67,8 @@ export const RemoteNotFoundModal: React.FC = () => {
           </div>
           <div className="space-y-1">
             <p className="text-[11.5px] text-text-secondary leading-relaxed font-normal">
-              The repository does not seem to exist anymore. You may not have access, or it may have been deleted or renamed on the remote server.
+              The repository does not seem to exist anymore. You may not have access, or it may have
+              been deleted or renamed on the remote server.
             </p>
           </div>
         </div>

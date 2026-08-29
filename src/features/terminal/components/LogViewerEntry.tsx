@@ -113,8 +113,9 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
       <button
         type="button"
         onClick={() => hasDetails && setIsExpanded(!isExpanded)}
-        className={`w-full px-3 py-2 bg-base-2/60 hover:bg-base-2 text-left flex items-center justify-between gap-3 transition select-none ${hasDetails ? 'cursor-pointer' : 'cursor-default'
-          }`}
+        className={`w-full px-3 py-2 bg-base-2/60 hover:bg-base-2 text-left flex items-center justify-between gap-3 transition select-none ${
+          hasDetails ? 'cursor-pointer' : 'cursor-default'
+        }`}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {hasDetails ? (
@@ -134,17 +135,13 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
             </span>
           </div>
 
-          <span className="font-sans text-text-primary truncate font-medium">
-            {entry.message}
-          </span>
+          <span className="font-sans text-text-primary truncate font-medium">{entry.message}</span>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0 text-[11px]">
           {getLevelBadge(entry.level)}
 
-          <span className="text-text-muted font-mono text-[10px]">
-            {formattedTime}
-          </span>
+          <span className="text-text-muted font-mono text-[10px]">{formattedTime}</span>
 
           <button
             type="button"
@@ -152,11 +149,7 @@ export const LogViewerEntry: React.FC<LogViewerEntryProps> = ({
             title="Copy log entry"
             className="p-1 text-text-muted hover:text-text-primary hover:bg-base-3 rounded border border-border/60 transition cursor-pointer"
           >
-            {copied ? (
-              <Check className="w-3 h-3 text-git-added" />
-            ) : (
-              <Copy className="w-3 h-3" />
-            )}
+            {copied ? <Check className="w-3 h-3 text-git-added" /> : <Copy className="w-3 h-3" />}
           </button>
         </div>
       </button>

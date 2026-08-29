@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { useAppLogStore, LogLevel as CoreLogLevel, LogCategory as CoreLogCategory } from '../core/logging';
+import {
+  useAppLogStore,
+  LogLevel as CoreLogLevel,
+  LogCategory as CoreLogCategory,
+} from '../core/logging';
 
 /**
  * Log severity levels.
@@ -10,14 +14,7 @@ export type LogLevel = 'info' | 'success' | 'warning' | 'error';
  * Functional subsystem categories for log events.
  */
 export type LogCategory =
-  | 'Git'
-  | 'Auth'
-  | 'Repo'
-  | 'System'
-  | 'Git LFS'
-  | 'Merge Request'
-  | 'Worktree'
-  | 'Remote';
+  'Git' | 'Auth' | 'Repo' | 'System' | 'Git LFS' | 'Merge Request' | 'Worktree' | 'Remote';
 
 /**
  * User-visible structured log entry.
@@ -98,13 +95,9 @@ export const useLogStore = create<LogState>((set, get) => ({
     // Forward to central app logging bus
     const coreLevel = mapToCoreLevel(level);
     const coreCategory = mapToCoreCategory(category);
-    useAppLogStore.getState().addLog(
-      coreLevel,
-      coreCategory,
-      message,
-      undefined,
-      details ? { details } : undefined
-    );
+    useAppLogStore
+      .getState()
+      .addLog(coreLevel, coreCategory, message, undefined, details ? { details } : undefined);
 
     const updated = [newEntry, ...get().logs].slice(0, 200);
     set({ logs: updated });

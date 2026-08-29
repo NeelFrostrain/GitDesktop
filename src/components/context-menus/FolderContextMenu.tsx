@@ -1,15 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  RotateCcw,
-  CheckSquare,
-  Square,
-  FolderX,
-  Copy,
-  FolderOpen,
-  Code,
-} from 'lucide-react';
+import { RotateCcw, CheckSquare, Square, FolderX, Copy, FolderOpen, Code } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore } from '../../store/repoStore';
@@ -90,10 +82,15 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
       for (const filePath of childFiles) {
         await GitService.discardFileChanges(activeRepoPath, filePath);
       }
-      useLogStore.getState().addLog('info', 'Git', `Discarded changes in folder '${folderPath}' (${count} files)`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Discarded changes in folder '${folderPath}' (${count} files)`);
       const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-      useRepoStore.getState().refreshStatus(activeRepoPath).catch(() => {});
+      useRepoStore
+        .getState()
+        .refreshStatus(activeRepoPath)
+        .catch(() => {});
     } catch (error: unknown) {
       setError(toAppError(error, 'DISCARD_FOLDER_ERROR'));
     }
@@ -113,7 +110,10 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
 
       const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
-      useRepoStore.getState().refreshStatus(activeRepoPath).catch(() => {});
+      useRepoStore
+        .getState()
+        .refreshStatus(activeRepoPath)
+        .catch(() => {});
     } catch (error: unknown) {
       setError(toAppError(error, 'GITIGNORE_ERROR'));
     }
@@ -123,13 +123,17 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   // 4. Copy paths
   const handleCopyFullPath = () => {
     navigator.clipboard.writeText(fullPath);
-    useLogStore.getState().addLog('info', 'System', `Copied folder path '${fullPath}' to clipboard`);
+    useLogStore
+      .getState()
+      .addLog('info', 'System', `Copied folder path '${fullPath}' to clipboard`);
     onClose();
   };
 
   const handleCopyRelativePath = () => {
     navigator.clipboard.writeText(folderPath);
-    useLogStore.getState().addLog('info', 'System', `Copied relative folder path '${folderPath}' to clipboard`);
+    useLogStore
+      .getState()
+      .addLog('info', 'System', `Copied relative folder path '${folderPath}' to clipboard`);
     onClose();
   };
 
@@ -139,7 +143,9 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
       await SystemService.showInExplorer(fullPath);
       useLogStore.getState().addLog('info', 'System', `Opened file manager at '${fullPath}'`);
     } catch (error: unknown) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open Explorer: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'System', `Failed to open Explorer: ${getErrorMessage(error)}`);
     }
     onClose();
   };
@@ -147,9 +153,13 @@ export const FolderContextMenu: React.FC<FolderContextMenuProps> = ({
   const handleOpenVSCode = async () => {
     try {
       await SystemService.openInVSCode(fullPath);
-      useLogStore.getState().addLog('info', 'System', `Opened folder '${folderPath}' in Visual Studio Code`);
+      useLogStore
+        .getState()
+        .addLog('info', 'System', `Opened folder '${folderPath}' in Visual Studio Code`);
     } catch (error: unknown) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open VS Code: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'System', `Failed to open VS Code: ${getErrorMessage(error)}`);
     }
     onClose();
   };

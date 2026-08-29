@@ -72,7 +72,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none animate-in fade-in duration-150 font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -215,12 +215,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
             <Button type="button" variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="coral"
-              size="sm"
-              isLoading={isSaving}
-            >
+            <Button type="submit" variant="coral" size="sm" isLoading={isSaving}>
               Save Changes
             </Button>
           </div>

@@ -47,7 +47,8 @@ export const AccountsTab: React.FC = () => {
           <div className="space-y-1">
             <div className="text-xs font-bold text-text-primary">No Accounts Connected</div>
             <p className="text-[11px] text-text-muted max-w-xs mx-auto">
-              Connect your GitHub, GitLab, or Bitbucket account to sync repositories and commit seamlessly.
+              Connect your GitHub, GitLab, or Bitbucket account to sync repositories and commit
+              seamlessly.
             </p>
           </div>
           <Button

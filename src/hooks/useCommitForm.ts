@@ -41,9 +41,7 @@ export function useCommitForm() {
     commitOptions.bypassHooks || commitOptions.signOff || commitOptions.allowEmpty
   );
 
-  const canCommit = Boolean(
-    commitSummary.trim() && stagedFiles.length > 0
-  );
+  const canCommit = Boolean(commitSummary.trim() && stagedFiles.length > 0);
 
   const handleCommit = async () => {
     if (!activeRepoPath || !commitSummary.trim() || stagedFiles.length === 0) return;

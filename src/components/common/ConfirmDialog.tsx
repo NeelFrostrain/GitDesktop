@@ -111,9 +111,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
                 {title}
               </h2>
               <span className="text-border">•</span>
-              <span className="text-[10.5px] text-text-muted truncate">
-                {subtitle}
-              </span>
+              <span className="text-[10.5px] text-text-muted truncate">{subtitle}</span>
             </div>
           </div>
 
@@ -130,10 +128,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
         {/* Body Content */}
         <div className="p-3.5 flex flex-col gap-2 bg-base-0">
-          <p
-            id="confirm-dialog-desc"
-            className="text-xs text-text-secondary leading-relaxed"
-          >
+          <p id="confirm-dialog-desc" className="text-xs text-text-secondary leading-relaxed">
             {description}
           </p>
         </div>

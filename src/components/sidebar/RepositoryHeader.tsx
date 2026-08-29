@@ -1,20 +1,19 @@
-import React, { useState } from "react";
-import { ChevronsUpDown, FolderGit2 } from "lucide-react";
-import { useGitStore } from "../../store/useGitStore";
-import { RepoDrawer } from "../layout/RepoDrawer";
-import { Tabs } from "../common/Tabs";
+import React, { useState } from 'react';
+import { ChevronsUpDown, FolderGit2 } from 'lucide-react';
+import { useGitStore } from '../../store/useGitStore';
+import { RepoDrawer } from '../layout/RepoDrawer';
+import { Tabs } from '../common/Tabs';
 
 export const RepositoryHeader: React.FC = () => {
-  const { activeRepoPath, status, branches, activeTab, setActiveTab } =
-    useGitStore();
+  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
   const [isRepoDrawerOpen, setIsRepoDrawerOpen] = useState(false);
 
   const activeRepoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).pop() || "Repository"
-    : "No Repository";
+    ? activeRepoPath.split(/[/\\]/).pop() || 'Repository'
+    : 'No Repository';
 
   const branchCount = branches.length || 1;
-  const currentBranch = status?.current_branch || "main";
+  const currentBranch = status?.current_branch || 'main';
   const fileCount = status?.files?.length || 0;
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
@@ -30,7 +29,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-full h-8.5 px-2.5 rounded-md border border-border bg-base-1/70 hover:bg-base-2 hover:border-border-strong active:bg-base-3 flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs group outline-none text-left"
+            className="w-full h-8.5 px-2.5 rounded-sm border border-border bg-base-1/70 hover:bg-base-2 hover:border-border-strong active:bg-base-3 flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs group outline-none text-left"
             title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}\nClick to switch repository`}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -47,7 +46,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-border-strong hover:bg-base-2/60 rounded-md flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
+            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-border-strong hover:bg-base-2/60 rounded-sm flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
           >
             <div className="flex items-center gap-2 text-xs text-text-muted min-w-0">
               <FolderGit2 className="w-3.5 h-3.5 text-text-faint group-hover:text-commito-coral transition-colors shrink-0" />
@@ -61,17 +60,17 @@ export const RepositoryHeader: React.FC = () => {
 
         {/* Bottom Row: Full-width Changes / History Tabs */}
         <div className="h-7.5">
-          <Tabs<"changes" | "history">
+          <Tabs<'changes' | 'history'>
             tabs={[
               {
-                id: "changes",
-                label: "Changes",
+                id: 'changes',
+                label: 'Changes',
                 badge: fileCount,
-                badgeVariant: "coral",
+                badgeVariant: 'coral',
               },
               {
-                id: "history",
-                label: "History",
+                id: 'history',
+                label: 'History',
               },
             ]}
             activeTab={activeTab}
@@ -85,10 +84,7 @@ export const RepositoryHeader: React.FC = () => {
       </div>
 
       {/* Slide-over Drawer from the left */}
-      <RepoDrawer
-        isOpen={isRepoDrawerOpen}
-        onClose={() => setIsRepoDrawerOpen(false)}
-      />
+      <RepoDrawer isOpen={isRepoDrawerOpen} onClose={() => setIsRepoDrawerOpen(false)} />
     </>
   );
 };

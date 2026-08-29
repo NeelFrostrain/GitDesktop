@@ -96,6 +96,8 @@ export const CommitPanel: React.FC = () => {
     return extractConciseBullets(fullAiReport);
   }, [fullAiReport]);
 
+  // Pre-fill existing key when the API key prompt becomes visible.
+  // getEffectiveValue is included so the effect never reads a stale settings closure.
   useEffect(() => {
     if (isApiKeyPrompt) {
       const existing = String(getEffectiveValue('ai.active_api_key') || '').trim();
@@ -103,8 +105,17 @@ export const CommitPanel: React.FC = () => {
         setNewApiKeyInput(existing);
       }
       setInlineError(null);
-      setTimeout(() => keyInputRef.current?.focus(), 50);
     }
+  }, [isApiKeyPrompt, getEffectiveValue]);
+
+  // Focus the key input on the next animation frame once the element is mounted.
+  // Using rAF avoids the fragile arbitrary-delay setTimeout anti-pattern.
+  useEffect(() => {
+    if (!isApiKeyPrompt) return;
+    const raf = requestAnimationFrame(() => {
+      keyInputRef.current?.focus();
+    });
+    return () => cancelAnimationFrame(raf);
   }, [isApiKeyPrompt]);
 
   // Close dropdown on click outside or escape
@@ -183,7 +194,8 @@ export const CommitPanel: React.FC = () => {
     setInlineError(null);
     try {
       await setSettingValue('ai.active_api_key', key);
-      const existing = getEffectiveValue('ai.gemini_api_keys') || getEffectiveValue('ai.google_api_keys');
+      const existing =
+        getEffectiveValue('ai.gemini_api_keys') || getEffectiveValue('ai.google_api_keys');
       let list: string[] = [];
       if (Array.isArray(existing)) {
         list = [...existing];
@@ -213,9 +225,7 @@ export const CommitPanel: React.FC = () => {
       );
 
       const options =
-        res.title_options && res.title_options.length > 0
-          ? res.title_options
-          : [res.summary];
+        res.title_options && res.title_options.length > 0 ? res.title_options : [res.summary];
 
       setNewApiKeyInput('');
       setIsApiKeyPrompt(false);
@@ -256,7 +266,7 @@ export const CommitPanel: React.FC = () => {
   };
 
   return (
-    <div className="relative p-2.5 border-t border-border bg-base-1 flex-shrink-0 select-none">
+    <div className="relative p-2 border-t border-border bg-base-1 flex-shrink-0 select-none">
       {/* Dropdown Menu (Floats upwards above the button, precisely fits sidebar width) */}
       {isOpen && (
         <div
@@ -310,7 +320,8 @@ export const CommitPanel: React.FC = () => {
           {isApiKeyPrompt ? (
             <div className="flex flex-col gap-2.5 animate-in fade-in duration-100 font-sans text-xs">
               <p className="text-[11px] text-text-muted leading-relaxed">
-                Enter your free Google Gemini API key to generate commit titles and technical reports with Commit-AI.
+                Enter your free Google Gemini API key to generate commit titles and technical
+                reports with Commit-AI.
               </p>
 
               {/* Guide Box */}
@@ -331,7 +342,10 @@ export const CommitPanel: React.FC = () => {
                 </div>
                 <ol className="list-decimal list-inside text-text-muted text-[10.5px] space-y-0.5 pl-0.5">
                   <li>Sign in to Google AI Studio (free &amp; instant)</li>
-                  <li>Click &quot;Create API Key&quot; &amp; copy your <code className="font-mono text-commito-coral">AIza...</code></li>
+                  <li>
+                    Click &quot;Create API Key&quot; &amp; copy your{' '}
+                    <code className="font-mono text-commito-coral">AIza...</code>
+                  </li>
                   <li>Paste below and click Save &amp; Generate</li>
                 </ol>
               </div>
@@ -409,10 +423,11 @@ export const CommitPanel: React.FC = () => {
                       key={idx}
                       onClick={() => setSelectedTitleIndex(idx)}
                       onDoubleClick={() => handleApplyAiSelection(opt)}
-                      className={`p-2.5 rounded-sm cursor-pointer flex items-start gap-2 transition text-xs select-none bg-base-0 border ${isSelected
-                        ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
-                        : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
-                        }`}
+                      className={`p-2.5 rounded-sm cursor-pointer flex items-start gap-2 transition text-xs select-none bg-base-0 border ${
+                        isSelected
+                          ? 'border-commito-coral ring-1 ring-commito-coral/50 text-text-primary font-medium shadow-xs'
+                          : 'border-border hover:border-border-strong text-text-secondary hover:text-text-primary'
+                      }`}
                     >
                       <span className="text-[10px] font-mono font-bold text-commito-coral mt-0.5 flex-shrink-0">
                         {idx + 1}.
@@ -445,10 +460,11 @@ export const CommitPanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('report')}
-                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'report'
-                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
-                      }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                      descriptionMode === 'report'
+                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                    }`}
                     title="Include rich technical report in commit description"
                   >
                     <FileText className="w-3 h-3 flex-shrink-0" />
@@ -458,10 +474,11 @@ export const CommitPanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('bullets')}
-                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'bullets'
-                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
-                      }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                      descriptionMode === 'bullets'
+                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                    }`}
                     title="Include concise bullet points in commit description"
                   >
                     <ListFilter className="w-3 h-3 flex-shrink-0" />
@@ -471,10 +488,11 @@ export const CommitPanel: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setDescriptionMode('none')}
-                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${descriptionMode === 'none'
-                      ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
-                      : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
-                      }`}
+                    className={`flex-1 py-1 px-1 rounded-xs text-[10.5px] font-medium flex items-center justify-center gap-1 transition cursor-pointer whitespace-nowrap ${
+                      descriptionMode === 'none'
+                        ? 'bg-commito-coral/20 text-commito-coral font-semibold shadow-2xs border border-commito-coral/40'
+                        : 'text-text-muted hover:text-text-primary hover:bg-base-2 border border-transparent'
+                    }`}
                     title="No commit description (summary only)"
                   >
                     <Ban className="w-3 h-3 flex-shrink-0" />
@@ -575,12 +593,16 @@ export const CommitPanel: React.FC = () => {
           {/* Primary Commit Action Button */}
           <Button
             type="button"
-            variant={canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0 ? 'coral' : 'secondary'}
+            variant={
+              canCommit && !isSelectingAi && !isApiKeyPrompt && count > 0 ? 'coral' : 'secondary'
+            }
             size="md"
             onClick={onExecuteCommit}
             disabled={!canCommit || isCommitting || isSelectingAi || isApiKeyPrompt || count === 0}
             isLoading={isCommitting}
-            leftIcon={!isCommitting ? <GitCommit className="w-3.5 h-3.5 flex-shrink-0" /> : undefined}
+            leftIcon={
+              !isCommitting ? <GitCommit className="w-3.5 h-3.5 flex-shrink-0" /> : undefined
+            }
             className="w-full justify-center"
           >
             <span>
@@ -599,20 +621,22 @@ export const CommitPanel: React.FC = () => {
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${isOpen
-          ? 'bg-base-2 text-text-primary border-border-strong'
-          : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
-          }`}
+        className={`w-full py-2 px-3 rounded-sm text-xs font-semibold flex items-center justify-between transition cursor-pointer border shadow-xs ${
+          isOpen
+            ? 'bg-base-2 text-text-primary border-border-strong'
+            : 'bg-base-1 hover:bg-base-2 text-text-primary border-border hover:border-border-strong'
+        }`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <GitCommit className="w-3.5 h-3.5 flex-shrink-0 text-commito-coral" />
           <span className="truncate">Initialize commit</span>
           {count > 0 && (
             <span
-              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none border ${isOpen
-                ? 'bg-white/20 border-white/30 text-white'
-                : 'bg-base-0 border-border text-text-muted'
-                }`}
+              className={`inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold leading-none border ${
+                isOpen
+                  ? 'bg-white/20 border-white/30 text-white'
+                  : 'bg-base-0 border-border text-text-muted'
+              }`}
             >
               {count}
             </span>
@@ -620,8 +644,9 @@ export const CommitPanel: React.FC = () => {
         </div>
 
         <ChevronUp
-          className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${isOpen ? 'rotate-180 text-white' : 'text-text-muted'
-            }`}
+          className={`w-3.5 h-3.5 transition-transform duration-200 flex-shrink-0 ${
+            isOpen ? 'rotate-180 text-white' : 'text-text-muted'
+          }`}
         />
       </button>
     </div>

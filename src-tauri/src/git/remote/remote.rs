@@ -278,9 +278,8 @@ pub fn list_remotes(repo_path: &str) -> Result<Vec<RemoteInfo>, AppError> {
 
     let mut remotes = Vec::new();
 
-    for name_opt in remotes_str.iter() {
-        if let Some(name) = name_opt {
-            if let Ok(remote) = repo.find_remote(name) {
+    for name in remotes_str.iter().flatten() {
+        if let Ok(remote) = repo.find_remote(name) {
                 let url = remote.url().unwrap_or("").to_string();
                 let push_url = remote.pushurl().map(|s| s.to_string());
                 let is_default = name == "origin";
@@ -299,7 +298,6 @@ pub fn list_remotes(repo_path: &str) -> Result<Vec<RemoteInfo>, AppError> {
                 });
             }
         }
-    }
 
     Ok(remotes)
 }

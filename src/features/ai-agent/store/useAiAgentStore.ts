@@ -50,6 +50,7 @@ interface AiAgentState {
   // Messaging & Execution
   sendMessage: (content: string) => Promise<void>;
   regenerateMessage: (assistantMsgId: string) => Promise<void>;
+  cancelRequest: () => void;
   executeToolCall: (toolCallId: string, runInTerminal?: boolean) => Promise<void>;
   executeAllToolCallsChained: (messageId: string) => Promise<void>;
   rejectToolCall: (toolCallId: string) => void;
@@ -88,8 +89,7 @@ if (!initialActiveId || !initialSessions.some((s) => s.id === initialActiveId)) 
 export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   isOpen: false,
   status: 'idle',
-  securityMode:
-    (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
+  securityMode: (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
   error: null,
   sessions: initialSessions,
   activeSessionId: initialActiveId,
@@ -102,6 +102,10 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       localStorage.setItem('ai_agent_security_mode', mode);
     } catch {}
     set({ securityMode: mode });
+  },
+
+  cancelRequest: () => {
+    set({ status: 'idle', error: null });
   },
 
   createSession: (repoPath) => {
@@ -146,9 +150,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     set((state) => {
       const updated = state.sessions.filter((s) => s.id !== sessionId);
       const nextActiveId =
-        state.activeSessionId === sessionId
-          ? updated[0]?.id || null
-          : state.activeSessionId;
+        state.activeSessionId === sessionId ? updated[0]?.id || null : state.activeSessionId;
       saveStoredSessions(updated, nextActiveId);
       return {
         sessions: updated,
@@ -259,7 +261,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         title: 'Terminal Output Attached (TOON)',
         message: 'Attached recent terminal commands encoded in low-token TOON format.',
       });
-    } catch (err: unknown) {
+    } catch {
       useToastStore.getState().showToast({
         type: 'error',
         title: 'Terminal Read Failed',
@@ -332,11 +334,18 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        if (Array.isArray(parsed))
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
         else keyPool = [rawKeys.trim()];
       } catch {
         keyPool = [rawKeys.trim()];
@@ -398,11 +407,13 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         };
       });
 
-      useLogStore.getState().addLog(
-        'info',
-        'System',
-        `[AI-Agent] Agent responded using ${response.modelUsed} (${response.toolCalls.length} tool suggestions)`
-      );
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'System',
+          `[AI-Agent] Agent responded using ${response.modelUsed} (${response.toolCalls.length} tool suggestions)`
+        );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       const errorAssistantMessage: AgentMessage = {
@@ -446,10 +457,18 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     if (msgIndex === -1) return;
 
     const targetMsg = currentSession.messages[msgIndex];
-    const historyBefore =
-      targetMsg.role === 'user'
-        ? currentSession.messages.slice(0, msgIndex + 1)
-        : currentSession.messages.slice(0, msgIndex);
+    let historyBefore: AgentMessage[] = [];
+
+    if (targetMsg.role === 'user') {
+      historyBefore = currentSession.messages.slice(0, msgIndex + 1);
+    } else {
+      // If regenerating an assistant response, slice up to this response
+      historyBefore = currentSession.messages.slice(0, msgIndex);
+      // If this was the first message in session, treat it as a prompt to evaluate
+      if (historyBefore.length === 0) {
+        historyBefore = [{ ...targetMsg, role: 'user' }];
+      }
+    }
 
     if (historyBefore.length === 0) return;
 
@@ -476,15 +495,27 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     const selectedModel = String(settings.getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
 
     let keyPool: string[] = [];
-    if (rawKeys) {
+    if (Array.isArray(rawKeys)) {
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
+    } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
-        else keyPool = [rawKeys.trim()];
+        if (Array.isArray(parsed)) {
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
+        } else {
+          keyPool = [rawKeys.trim()];
+        }
       } catch {
         keyPool = [rawKeys.trim()];
       }
     }
+
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
       keyPool.unshift(activeKey.trim());
     }
@@ -659,7 +690,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       try {
-        await SystemService.saveFileContent(activeRepo, targetTool.filePath, targetTool.fileContent);
+        await SystemService.saveFileContent(
+          activeRepo,
+          targetTool.filePath,
+          targetTool.fileContent
+        );
         // Refresh git status to reflect changed / created files
         const st = await GitService.getRepoStatus(activeRepo).catch(() => null);
         if (st) useGitStore.getState().setStatus(st);
@@ -748,7 +783,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           title: 'Executing in Terminal',
           message: `Sent: ${command.slice(0, 48)}`,
         });
-      } catch (err) {
+      } catch {
         useToastStore.getState().showToast({
           type: 'info',
           title: 'Terminal Dispatched',
@@ -764,8 +799,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       // 4. Clean up ANSI color codes and command echo
+      // eslint-disable-next-line no-control-regex
       let cleanOutput = capturedOutput
+        // eslint-disable-next-line no-control-regex
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+        // eslint-disable-next-line no-control-regex
         .replace(/\x1b\].*?\x07/g, '')
         .replace(/\r/g, '')
         .trim();
@@ -812,9 +850,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // Extract commands list
-    const commandsList = pendingCommands
-      .map((t) => t.command!.trim())
-      .filter(Boolean);
+    const commandsList = pendingCommands.map((t) => t.command!.trim()).filter(Boolean);
 
     const executedIds = new Set(pendingCommands.map((t) => t.id));
 
@@ -829,9 +865,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
                 return {
                   ...m,
                   toolCalls: m.toolCalls.map((t): AgentToolCall =>
-                    executedIds.has(t.id)
-                      ? { ...t, status: 'success', executedAt: Date.now() }
-                      : t
+                    executedIds.has(t.id) ? { ...t, status: 'success', executedAt: Date.now() } : t
                   ),
                 };
               }
@@ -875,7 +909,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           await new Promise((resolve) => setTimeout(resolve, 400));
         }
       }
-    } catch (err) {
+    } catch {
       useToastStore.getState().showToast({
         type: 'info',
         title: 'Terminal Dispatched',
@@ -892,8 +926,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // 5. Clean output
-    let cleanOutput = capturedOutput
+    // eslint-disable-next-line no-control-regex
+    const cleanOutput = capturedOutput
+      // eslint-disable-next-line no-control-regex
       .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
+      // eslint-disable-next-line no-control-regex
       .replace(/\x1b\].*?\x07/g, '')
       .replace(/\r/g, '')
       .trim();

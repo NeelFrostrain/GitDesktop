@@ -14,7 +14,12 @@ vi.mock('../../../services/git/gitService', () => ({
     getStashFileDiff: vi.fn().mockResolvedValue({
       file_path: 'd.tsx',
       lines: [
-        { line_type: 'addition', old_line_num: null, new_line_num: 1, content: 'export const hello = true;' },
+        {
+          line_type: 'addition',
+          old_line_num: null,
+          new_line_num: 1,
+          content: 'export const hello = true;',
+        },
       ],
       is_binary: false,
       is_large_file: false,

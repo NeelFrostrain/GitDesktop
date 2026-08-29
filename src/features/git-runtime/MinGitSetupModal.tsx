@@ -1,5 +1,13 @@
 import React from 'react';
-import { Download, CheckCircle, AlertTriangle, Terminal, X, RefreshCw, HardDrive } from 'lucide-react';
+import {
+  Download,
+  CheckCircle,
+  AlertTriangle,
+  Terminal,
+  X,
+  RefreshCw,
+  HardDrive,
+} from 'lucide-react';
 import { useGitRuntime } from './useGitRuntime';
 
 interface MinGitSetupModalProps {
@@ -8,14 +16,8 @@ interface MinGitSetupModalProps {
 }
 
 export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onClose }) => {
-  const {
-    runtimeInfo,
-    isLoading,
-    isInstalling,
-    progress,
-    installMinGit,
-    checkStatus,
-  } = useGitRuntime();
+  const { runtimeInfo, isLoading, isInstalling, progress, installMinGit, checkStatus } =
+    useGitRuntime();
 
   if (!isOpen) return null;
 
@@ -81,18 +83,24 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
                 <div className="flex justify-between">
                   <span>Type:</span>
                   <span className="text-text-primary">
-                    {runtimeInfo.is_portable_mingit ? 'Portable MinGit (Bundled)' : 'System Installed Git'}
+                    {runtimeInfo.is_portable_mingit
+                      ? 'Portable MinGit (Bundled)'
+                      : 'System Installed Git'}
                   </span>
                 </div>
                 {runtimeInfo.executable_path && (
-                  <div className="truncate text-text-faint text-[10px]" title={runtimeInfo.executable_path}>
+                  <div
+                    className="truncate text-text-faint text-[10px]"
+                    title={runtimeInfo.executable_path}
+                  >
                     {runtimeInfo.executable_path}
                   </div>
                 )}
               </div>
             ) : (
               <p className="text-text-muted text-xs leading-relaxed">
-                Git CLI is not detected in your system PATH. The application's GUI features will work normally, but terminal commands require Git.
+                Git CLI is not detected in your system PATH. The application's GUI features will
+                work normally, but terminal commands require Git.
               </p>
             )}
           </div>
@@ -104,7 +112,10 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
               <span>Portable MinGit (Git for Windows)</span>
             </div>
             <p className="text-text-muted text-xs leading-relaxed">
-              Official lightweight standalone Git (~25 MB download). Does not require administrator privileges and automatically enables <code className="text-text-primary font-mono bg-base-3 px-1 rounded">git</code> inside the terminal on any PC.
+              Official lightweight standalone Git (~25 MB download). Does not require administrator
+              privileges and automatically enables{' '}
+              <code className="text-text-primary font-mono bg-base-3 px-1 rounded">git</code> inside
+              the terminal on any PC.
             </p>
           </div>
 
@@ -113,7 +124,9 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
             <div className="space-y-2 p-3.5 rounded-sm bg-base-2 border border-border animate-in fade-in duration-100">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-text-primary">{progress.message}</span>
-                <span className="text-commito-coral font-mono">{progress.percentage.toFixed(0)}%</span>
+                <span className="text-commito-coral font-mono">
+                  {progress.percentage.toFixed(0)}%
+                </span>
               </div>
               <div className="w-full h-2 rounded-full bg-base-3 overflow-hidden">
                 <div
@@ -153,7 +166,9 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
               className="px-4 py-1.5 rounded-sm bg-commito-coral hover:bg-commito-coralHover text-white font-medium shadow-xs transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Download className={`w-3.5 h-3.5 ${isInstalling ? 'animate-bounce' : ''}`} />
-              <span>{runtimeInfo?.mingit_installed ? 'Reinstall MinGit' : 'Download MinGit (~25MB)'}</span>
+              <span>
+                {runtimeInfo?.mingit_installed ? 'Reinstall MinGit' : 'Download MinGit (~25MB)'}
+              </span>
             </button>
           </div>
         </div>

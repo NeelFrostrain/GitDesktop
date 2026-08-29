@@ -428,9 +428,8 @@ pub async fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError
         release_map.insert(r.tag_name.clone(), r);
     }
 
-    for name_opt in tag_names.iter() {
-        if let Some(tag_name) = name_opt {
-            if let Ok(obj) = repo.revparse_single(tag_name) {
+    for tag_name in tag_names.iter().flatten() {
+        if let Ok(obj) = repo.revparse_single(tag_name) {
                 let sha = obj.id().to_string();
                 let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
 
@@ -535,7 +534,6 @@ pub async fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError
                 }
             }
         }
-    }
 
     let mut releases: Vec<ReleaseInfo> = release_map.into_values().collect();
 
@@ -559,6 +557,7 @@ pub async fn list_releases(repo_path: &str) -> Result<Vec<ReleaseInfo>, AppError
 }
 
 /// Creates a new release and associated annotated tag, optionally pushing to remote.
+#[allow(clippy::too_many_arguments)]
 pub fn create_release(
     repo_path: &str,
     tag_name: &str,
@@ -647,6 +646,7 @@ pub fn create_release(
 }
 
 /// Updates an existing release title and changelog notes by forcing tag update.
+#[allow(clippy::too_many_arguments)]
 pub fn update_release(
     repo_path: &str,
     tag_name: &str,
@@ -725,8 +725,7 @@ pub fn update_release(
 /// Helper to extract (host, owner/group, repo_name) from remote URL
 pub fn parse_remote_url_parts(url: &str) -> Option<(String, String, String)> {
     let clean = url.trim().trim_end_matches(".git");
-    if clean.starts_with("git@") {
-        let after_at = &clean["git@".len()..];
+    if let Some(after_at) = clean.strip_prefix("git@") {
         if let Some((host, path)) = after_at.split_once(':') {
             let path_clean = path.trim_start_matches('/');
             if let Some((owner, repo)) = path_clean.split_once('/') {
@@ -842,6 +841,7 @@ pub fn find_token_for_host(repo_path: &str, host: &str) -> Option<String> {
 
 /// Publishes a release to GitHub / GitLab platform API if connected account credentials exist,
 /// configuring latest status and uploading attached release assets with real-time stage progress.
+#[allow(clippy::too_many_arguments)]
 pub async fn publish_release_to_remote_api(
     app_handle: Option<&tauri::AppHandle>,
     repo_path: &str,

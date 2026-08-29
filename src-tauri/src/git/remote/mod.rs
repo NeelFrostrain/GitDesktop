@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 pub mod lfs;
 pub mod releases;
 pub mod remote;

@@ -142,7 +142,7 @@ pub async fn get_gitlab_activity(
 
     for proj in project_paths {
         let encoded_proj = urlencoding::encode(&proj);
-        let repo_name = proj.split('/').last().unwrap_or(&proj).to_string();
+        let repo_name = proj.split('/').next_back().unwrap_or(&proj).to_string();
 
         // 1. Fetch recent events
         let events_url = format!(
@@ -252,7 +252,7 @@ pub async fn get_gitlab_activity(
         }
     }
 
-    events.sort_by(|a, b| b.at.cmp(&a.at));
+    events.sort_by_key(|b| std::cmp::Reverse(b.at));
     if events.len() > limit && limit > 0 {
         events.truncate(limit);
     }
@@ -283,7 +283,7 @@ fn format_relative_date(timestamp: i64) -> String {
         format!("{} day{} ago", days, if days == 1 { "" } else { "s" })
     } else {
         let dt =
-            chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_else(|| chrono::Utc::now());
+            chrono::DateTime::from_timestamp(timestamp, 0).unwrap_or_else(chrono::Utc::now);
         dt.format("%b %d, %Y").to_string()
     }
 }

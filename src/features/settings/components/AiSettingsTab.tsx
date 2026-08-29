@@ -88,10 +88,7 @@ export const AiSettingsTab: React.FC = () => {
   // Close model dropdown on outside click
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (
-        modelDropdownRef.current &&
-        !modelDropdownRef.current.contains(e.target as Node)
-      ) {
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(e.target as Node)) {
         setIsModelDropdownOpen(false);
       }
     };
@@ -107,7 +104,7 @@ export const AiSettingsTab: React.FC = () => {
     appOverrides['ai.google_api_keys'] ||
     appOverrides['ai.groq_api_keys'];
   const activeKey = String(
-    appOverrides['ai.active_api_key'] || appOverrides['ai.gemini_api_key'] || '',
+    appOverrides['ai.active_api_key'] || appOverrides['ai.gemini_api_key'] || ''
   );
   const selectedModel = String(appOverrides['ai.model'] || 'gemini-2.5-flash-lite');
 
@@ -121,12 +118,18 @@ export const AiSettingsTab: React.FC = () => {
 
     // 1. Try from settings store
     if (Array.isArray(rawGeminiKeys)) {
-      list = rawGeminiKeys.map(String).map((s) => s.trim()).filter(Boolean);
+      list = rawGeminiKeys
+        .map(String)
+        .map((s) => s.trim())
+        .filter(Boolean);
     } else if (typeof rawGeminiKeys === 'string' && rawGeminiKeys.trim()) {
       try {
         const parsed = JSON.parse(rawGeminiKeys);
         if (Array.isArray(parsed)) {
-          list = parsed.map(String).map((s) => s.trim()).filter(Boolean);
+          list = parsed
+            .map(String)
+            .map((s) => s.trim())
+            .filter(Boolean);
         } else {
           list = [rawGeminiKeys.trim()];
         }
@@ -142,7 +145,10 @@ export const AiSettingsTab: React.FC = () => {
         if (local) {
           const parsed = JSON.parse(local);
           if (Array.isArray(parsed)) {
-            list = parsed.map(String).map((s) => s.trim()).filter(Boolean);
+            list = parsed
+              .map(String)
+              .map((s) => s.trim())
+              .filter(Boolean);
           }
         }
       } catch {}
@@ -216,7 +222,7 @@ export const AiSettingsTab: React.FC = () => {
   const handleRemoveKey = async (index: number) => {
     const targetKey = keysList[index];
     const updatedList = keysList.filter((_, i) => i !== index);
-    const nextActive = activeKey === targetKey ? (updatedList[0] || '') : activeKey;
+    const nextActive = activeKey === targetKey ? updatedList[0] || '' : activeKey;
     await savePool(updatedList, nextActive);
 
     showToast({
@@ -280,8 +286,9 @@ export const AiSettingsTab: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-text-muted mt-1 leading-relaxed max-w-xl">
-                Generates intelligent conventional commit titles, scope tags, and deep technical summaries
-                powered by Google Gemini Flash Lite models with high speed and free quotas.
+                Generates intelligent conventional commit titles, scope tags, and deep technical
+                summaries powered by Google Gemini Flash Lite models with high speed and free
+                quotas.
               </p>
             </div>
 
@@ -343,7 +350,9 @@ export const AiSettingsTab: React.FC = () => {
                 </button>
               </div>
               {newKeyError && (
-                <span className="text-[11px] text-git-removed font-medium pl-0.5">{newKeyError}</span>
+                <span className="text-[11px] text-git-removed font-medium pl-0.5">
+                  {newKeyError}
+                </span>
               )}
             </div>
 
@@ -390,7 +399,11 @@ export const AiSettingsTab: React.FC = () => {
                           className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer"
                           title={isVisible ? 'Hide Key' : 'Reveal Key'}
                         >
-                          {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-text-muted" />}
+                          {isVisible ? (
+                            <EyeOff className="w-3.5 h-3.5" />
+                          ) : (
+                            <Eye className="w-3.5 h-3.5 text-text-muted" />
+                          )}
                         </button>
                         <button
                           type="button"
@@ -418,7 +431,9 @@ export const AiSettingsTab: React.FC = () => {
                 })
               ) : (
                 <div className="p-4 rounded-sm border border-dashed border-border bg-base-0/30 text-center space-y-1">
-                  <p className="font-semibold text-xs text-text-primary">No Google Gemini API Keys Configured</p>
+                  <p className="font-semibold text-xs text-text-primary">
+                    No Google Gemini API Keys Configured
+                  </p>
                   <p className="text-[11px] text-text-muted">
                     Add a free API key from{' '}
                     <button
@@ -444,9 +459,7 @@ export const AiSettingsTab: React.FC = () => {
             <h3 className="font-semibold text-xs text-text-primary">
               Google Gemini Model Selection
             </h3>
-            <span className="text-[10.5px] text-text-muted font-mono">
-              Diff analysis engine
-            </span>
+            <span className="text-[10.5px] text-text-muted font-mono">Diff analysis engine</span>
           </div>
 
           <div className="relative" ref={modelDropdownRef}>
@@ -520,9 +533,7 @@ export const AiSettingsTab: React.FC = () => {
                         <p className="text-[10.5px] text-text-muted mt-0.5 leading-relaxed">
                           {m.desc}
                         </p>
-                        <p className="text-[10px] font-mono text-text-muted/80 mt-1">
-                          {m.id}
-                        </p>
+                        <p className="text-[10px] font-mono text-text-muted/80 mt-1">{m.id}</p>
                       </div>
 
                       {isSelected && (

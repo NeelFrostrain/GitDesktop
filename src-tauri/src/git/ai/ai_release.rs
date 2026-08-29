@@ -127,8 +127,6 @@ fn clean_commit_message(msg: &str) -> Option<(String, String)> {
             "fix"
         } else if prefix.starts_with("perf") {
             "performance"
-        } else if prefix.starts_with("refactor") || prefix.starts_with("style") || prefix.starts_with("chore") || prefix.starts_with("docs") {
-            "improvement"
         } else {
             "improvement"
         };
@@ -170,9 +168,8 @@ fn clean_commit_message(msg: &str) -> Option<(String, String)> {
     Some((category.to_string(), capitalized))
 }
 
-/// Parses semver tag into numerical tuple (major, minor, patch, remaining)
 fn parse_semver_tag(s: &str) -> (u32, u32, u32, &str) {
-    let clean = s.trim_start_matches(|c: char| c == 'v' || c == 'V' || c == '@');
+    let clean = s.trim_start_matches(['v', 'V', '@']);
     let mut parts = clean.split('.');
     let major = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
     let minor = parts.next().and_then(|p| p.parse::<u32>().ok()).unwrap_or(0);
@@ -205,10 +202,8 @@ fn get_commits_for_release(
 ) -> Result<(Vec<CommitSummaryItem>, Option<String>), AppError> {
     let mut all_tags: Vec<String> = Vec::new();
     if let Ok(tag_names) = repo.tag_names(None) {
-        for name_opt in tag_names.iter() {
-            if let Some(t_name) = name_opt {
-                all_tags.push(t_name.to_string());
-            }
+        for t_name in tag_names.iter().flatten() {
+            all_tags.push(t_name.to_string());
         }
     }
 
@@ -269,45 +264,44 @@ fn get_commits_for_release(
     let mut commits = Vec::new();
     let max_commits = 100;
 
-    for oid_res in revwalk {
-        if let Ok(oid) = oid_res {
-            if let Ok(commit) = repo.find_commit(oid) {
-                let sha = oid.to_string();
-                let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
-                let summary = commit.summary().unwrap_or("").to_string();
-                let body = commit.body().unwrap_or("").to_string();
-                let author = commit.author().name().unwrap_or("Contributor").to_string();
+    for oid in revwalk.flatten() {
+        if let Ok(commit) = repo.find_commit(oid) {
+            let sha = oid.to_string();
+            let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
+            let summary = commit.summary().unwrap_or("").to_string();
+            let body = commit.body().unwrap_or("").to_string();
+            let author = commit.author().name().unwrap_or("Contributor").to_string();
 
-                let mut files_list = Vec::new();
-                if let Ok(parent) = commit.parent(0) {
-                    if let (Ok(p_tree), Ok(c_tree)) = (parent.tree(), commit.tree()) {
-                        if let Ok(diff) = repo.diff_tree_to_tree(Some(&p_tree), Some(&c_tree), None) {
-                            let _ = diff.foreach(
-                                &mut |delta, _| {
-                                    if let Some(path) = delta.new_file().path() {
-                                        if let Some(s) = path.to_str() {
-                                            let file_name = s.split(['/', '\\']).last().unwrap_or(s);
-                                            files_list.push(file_name.to_string());
-                                        }
+            let mut files_list = Vec::new();
+            if let Ok(parent) = commit.parent(0) {
+                if let (Ok(p_tree), Ok(c_tree)) = (parent.tree(), commit.tree()) {
+                    if let Ok(diff) = repo.diff_tree_to_tree(Some(&p_tree), Some(&c_tree), None) {
+                        let _ = diff.foreach(
+                            &mut |delta, _| {
+                                if let Some(path) = delta.new_file().path() {
+                                    if let Some(s) = path.to_str() {
+                                        let file_name = s.split(['/', '\\']).next_back().unwrap_or(s);
+                                        files_list.push(file_name.to_string());
                                     }
-                                    true
-                                },
-                                None,
-                                None,
-                                None,
-                            );
-                        }
+                                }
+                                true
+                            },
+                            None,
+                            None,
+                            None,
+                        );
                     }
                 }
+            }
 
-                let files = if !files_list.is_empty() {
-                    files_list.dedup();
-                    files_list[..files_list.len().min(3)].join(", ")
-                } else {
-                    String::new()
-                };
+            let files = if !files_list.is_empty() {
+                files_list.dedup();
+                files_list[..files_list.len().min(3)].join(", ")
+            } else {
+                String::new()
+            };
 
-                commits.push(CommitSummaryItem {
+            commits.push(CommitSummaryItem {
                     sha,
                     short_sha,
                     summary,
@@ -316,9 +310,8 @@ fn get_commits_for_release(
                     files,
                 });
 
-                if commits.len() >= max_commits {
-                    break;
-                }
+            if commits.len() >= max_commits {
+                break;
             }
         }
     }
@@ -328,20 +321,18 @@ fn get_commits_for_release(
         if let Ok(mut fallback_walk) = repo.revwalk() {
             let _ = fallback_walk.set_sorting(Sort::TIME);
             if fallback_walk.push_head().is_ok() {
-                for oid_res in fallback_walk.take(25) {
-                    if let Ok(oid) = oid_res {
-                        if let Ok(commit) = repo.find_commit(oid) {
-                            let sha = oid.to_string();
-                            let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
-                            commits.push(CommitSummaryItem {
-                                sha,
-                                short_sha,
-                                summary: commit.summary().unwrap_or("").to_string(),
-                                body: commit.body().unwrap_or("").to_string(),
-                                author: commit.author().name().unwrap_or("Contributor").to_string(),
-                                files: String::new(),
-                            });
-                        }
+                for oid in fallback_walk.take(25).flatten() {
+                    if let Ok(commit) = repo.find_commit(oid) {
+                        let sha = oid.to_string();
+                        let short_sha = if sha.len() >= 7 { sha[..7].to_string() } else { sha.clone() };
+                        commits.push(CommitSummaryItem {
+                            sha,
+                            short_sha,
+                            summary: commit.summary().unwrap_or("").to_string(),
+                            body: commit.body().unwrap_or("").to_string(),
+                            author: commit.author().name().unwrap_or("Contributor").to_string(),
+                            files: String::new(),
+                        });
                     }
                 }
             }
@@ -357,7 +348,7 @@ fn build_local_heuristic_changelog(
     _from_tag: Option<&str>,
     commits: &[CommitSummaryItem],
 ) -> (String, String) {
-    let clean_version = target_tag.trim_start_matches(|c: char| c == 'v' || c == 'V');
+    let clean_version = target_tag.trim_start_matches(['v', 'V']);
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
 
     let mut added: Vec<String> = Vec::new();
@@ -542,7 +533,7 @@ pub async fn generate_ai_release_notes(
         }
     }
 
-    let clean_version = target_tag.trim_start_matches(|c: char| c == 'v' || c == 'V');
+    let clean_version = target_tag.trim_start_matches(['v', 'V']);
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
     let compare_info = resolved_from_tag
         .as_ref()

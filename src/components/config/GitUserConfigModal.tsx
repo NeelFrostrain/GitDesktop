@@ -63,7 +63,11 @@ export const GitUserConfigModal: React.FC = () => {
       >
         <ConfigHeader onClose={handleClose} repoName={activeRepoName} />
 
-        <form id="git-user-config-form" onSubmit={handleSave} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <form
+          id="git-user-config-form"
+          onSubmit={handleSave}
+          className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0"
+        >
           {modalError && (
             <div className="p-2.5 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2 text-xs text-git-removed animate-in fade-in">
               <AlertCircle className="w-4 h-4 text-git-removed shrink-0 mt-0.5" />
@@ -88,17 +92,15 @@ export const GitUserConfigModal: React.FC = () => {
                 <GitCommit className="w-3 h-3 text-commito-coral" />
                 <span>Author Identity & Commit Preview</span>
               </label>
-              {isManualMode && (
-                allAvailableAccounts.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleSyncAccountChange(allAvailableAccounts[0].id)}
-                    className="text-[11px] text-commito-coral hover:text-commito-coralLight font-semibold flex items-center gap-1 cursor-pointer transition"
-                  >
-                    <LinkIcon className="w-3 h-3" />
-                    <span>Sync with Account</span>
-                  </button>
-                )
+              {isManualMode && allAvailableAccounts.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleSyncAccountChange(allAvailableAccounts[0].id)}
+                  className="text-[11px] text-commito-coral hover:text-commito-coralLight font-semibold flex items-center gap-1 cursor-pointer transition"
+                >
+                  <LinkIcon className="w-3 h-3" />
+                  <span>Sync with Account</span>
+                </button>
               )}
             </div>
 
@@ -147,9 +149,10 @@ export const GitUserConfigModal: React.FC = () => {
               {/* Live Commit Header Box Preview */}
               <div className="p-2.5 bg-base-2/70 border border-border/80 rounded-xs space-y-1 font-mono text-[11px] shadow-2xs">
                 <div className="text-[11px] text-text-secondary truncate">
-                  Author:{' '}
-                  <span className="text-text-primary font-bold">{name || 'Your Name'}</span>{' '}
-                  <span className="text-commito-coral">&lt;{email || 'your-email@example.com'}&gt;</span>
+                  Author: <span className="text-text-primary font-bold">{name || 'Your Name'}</span>{' '}
+                  <span className="text-commito-coral">
+                    &lt;{email || 'your-email@example.com'}&gt;
+                  </span>
                 </div>
               </div>
             </div>

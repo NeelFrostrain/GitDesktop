@@ -46,5 +46,4 @@ describe('Sidebar Component', () => {
     const commitBtn = screen.getByText(/commit.*to main/i);
     expect(commitBtn.closest('button')?.disabled).toBe(false);
   });
-
 });

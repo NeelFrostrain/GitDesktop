@@ -7,13 +7,7 @@ import { FolderContextMenu } from '../../context-menus/FolderContextMenu';
 import { ChangesEmptySpaceContextMenu } from '../../context-menus/ChangesEmptySpaceContextMenu';
 import { CreateItemModal } from '../../modals/CreateItemModal';
 import { SystemService } from '../../../services/system/systemService';
-import {
-  buildFileTree,
-  FileTreeNode,
-  getStatusBadge,
-  getFileIcon,
-  TreeItem,
-} from './FileTreeItem';
+import { buildFileTree, FileTreeNode, getStatusBadge, getFileIcon, TreeItem } from './FileTreeItem';
 
 export type ChangesViewMode = 'tree' | 'list';
 
@@ -34,14 +28,8 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
   expandAllTrigger = 0,
   collapseAllTrigger = 0,
 }) => {
-  const {
-    activeRepoPath,
-    status,
-    selectedFile,
-    setSelectedFile,
-    stagedFiles,
-    toggleStageFile,
-  } = useGitStore();
+  const { activeRepoPath, status, selectedFile, setSelectedFile, stagedFiles, toggleStageFile } =
+    useGitStore();
 
   const [fileContextMenu, setFileContextMenu] = useState<{
     filePath: string;
@@ -203,7 +191,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
           e.preventDefault();
           setEmptySpaceContextMenu({ x: e.clientX, y: e.clientY });
         }}
-        className="flex-1 overflow-y-auto overflow-x-hidden p-1.5 space-y-0.5 scrollbar-thin scrollbar-thumb-base-3 min-w-0"
+        className="flex-1 overflow-y-auto overflow-x-hidden space-y-0.5 scrollbar-thin scrollbar-thumb-base-3 min-w-0"
       >
         {viewMode === 'tree' ? (
           /* Tree View */
@@ -232,7 +220,10 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
               const fileName = file.path.split(/[\\/]/).pop() || file.path;
               const dirPath =
                 file.path.includes('/') || file.path.includes('\\')
-                  ? file.path.substring(0, Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\')))
+                  ? file.path.substring(
+                      0,
+                      Math.max(file.path.lastIndexOf('/'), file.path.lastIndexOf('\\'))
+                    )
                   : '';
 
               return (
@@ -243,7 +234,11 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                     e.preventDefault();
                     e.stopPropagation();
                     setSelectedFile(file.path);
-                    setFileContextMenu({ filePath: file.path, x: e.clientX, y: e.clientY });
+                    setFileContextMenu({
+                      filePath: file.path,
+                      x: e.clientX,
+                      y: e.clientY,
+                    });
                   }}
                   className={`w-full px-3 py-1.5 flex items-center justify-between gap-2 border-l-2 text-xs transition cursor-pointer select-none ${
                     isSelected
@@ -323,4 +318,3 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
     </>
   );
 };
-

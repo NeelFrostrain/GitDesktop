@@ -1,14 +1,7 @@
 export type LogLevel = 'Debug' | 'Info' | 'Success' | 'Warn' | 'Error';
 
 export type LogCategory =
-  | 'Git'
-  | 'Account'
-  | 'Remote'
-  | 'Signing'
-  | 'Activity'
-  | 'Repo'
-  | 'Terminal'
-  | 'App';
+  'Git' | 'Account' | 'Remote' | 'Signing' | 'Activity' | 'Repo' | 'Terminal' | 'App';
 
 export interface LogEntry {
   id: string;

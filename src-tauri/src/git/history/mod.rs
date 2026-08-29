@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 pub mod blame;
 pub mod cherry_pick;
 pub mod history;

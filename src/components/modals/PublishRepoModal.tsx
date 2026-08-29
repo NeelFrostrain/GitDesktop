@@ -26,13 +26,8 @@ import { Checkbox } from '../common/Checkbox';
 import { getErrorMessage } from '../../shared/utils/errorUtils';
 
 export const PublishRepoModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isPublishRepoModalOpen,
-    setIsPublishRepoModalOpen,
-    setStatus,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isPublishRepoModalOpen, setIsPublishRepoModalOpen, setStatus, setError } =
+    useGitStore();
 
   const { accounts, activeAccount } = useAccounts();
   const { openModalWithTab } = useAccountServicesStore();
@@ -86,10 +81,7 @@ export const PublishRepoModal: React.FC = () => {
   // Click outside listener for custom dropdowns
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        accountDropdownRef.current &&
-        !accountDropdownRef.current.contains(e.target as Node)
-      ) {
+      if (accountDropdownRef.current && !accountDropdownRef.current.contains(e.target as Node)) {
         setIsAccountDropdownOpen(false);
       }
       if (
@@ -175,8 +167,7 @@ export const PublishRepoModal: React.FC = () => {
   ]);
 
   const currentAccount = accounts.find((a) => a.id === selectedAccountId);
-  const selectedNamespace =
-    namespaces.find((ns) => ns.id === selectedNamespaceId) || namespaces[0];
+  const selectedNamespace = namespaces.find((ns) => ns.id === selectedNamespaceId) || namespaces[0];
 
   // Validation
   const hasInvalidChars = /[/\\:*?"<>|]/.test(name);
@@ -256,10 +247,7 @@ export const PublishRepoModal: React.FC = () => {
     if (!currentAccount) return;
     setIsReauthenticating(true);
     try {
-      await AccountService.startProviderOAuth(
-        currentAccount.provider,
-        currentAccount.instance_url
-      );
+      await AccountService.startProviderOAuth(currentAccount.provider, currentAccount.instance_url);
     } catch (err: unknown) {
       setLocalError(getErrorMessage(err));
       setIsReauthenticating(false);
@@ -285,8 +273,8 @@ export const PublishRepoModal: React.FC = () => {
       const effectiveNamespace = isCustomWorkspace
         ? customWorkspaceSlug.trim() || null
         : selectedNamespaceId !== 'personal'
-        ? selectedNamespaceId
-        : null;
+          ? selectedNamespaceId
+          : null;
 
       const result = await GitService.publishRepository({
         repoPath: activeRepoPath,
@@ -341,7 +329,10 @@ export const PublishRepoModal: React.FC = () => {
               <Upload className="w-3.5 h-3.5" />
             </div>
             <div className="flex items-center gap-2 min-w-0">
-              <h3 id="publish-repo-modal-title" className="text-xs font-bold text-text-primary leading-none truncate">
+              <h3
+                id="publish-repo-modal-title"
+                className="text-xs font-bold text-text-primary leading-none truncate"
+              >
                 Publish Repository
               </h3>
               {defaultRepoName && (
@@ -374,7 +365,8 @@ export const PublishRepoModal: React.FC = () => {
             <div className="space-y-1">
               <h4 className="text-sm font-bold text-text-primary">No Connected Accounts Found</h4>
               <p className="text-xs text-text-muted max-w-sm mx-auto">
-                Connect your GitHub, GitLab, or Bitbucket account to publish your local repositories with one click.
+                Connect your GitHub, GitLab, or Bitbucket account to publish your local repositories
+                with one click.
               </p>
             </div>
             <button
@@ -391,339 +383,117 @@ export const PublishRepoModal: React.FC = () => {
           </div>
         ) : (
           <>
-            <form id="publish-repo-form" onSubmit={handlePublish} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1">
-            {localError && (
-              <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm space-y-2 text-xs text-git-removed animate-in fade-in">
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-git-removed shrink-0 mt-0.5" />
-                  <div className="leading-snug flex-1 font-medium">{localError}</div>
-                </div>
-                {localError.toLowerCase().includes('no token found') && currentAccount && (
-                  <div className="pt-1 flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={handleReauthenticate}
-                      disabled={isReauthenticating}
-                      className="px-3 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-60"
-                    >
-                      {isReauthenticating ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <LogIn className="w-3.5 h-3.5" />
-                      )}
-                      <span>
-                        {isReauthenticating
-                          ? 'Opening Browser...'
-                          : `Re-authenticate with ${currentAccount.provider === 'github' ? 'GitHub' : currentAccount.provider === 'bitbucket' ? 'Bitbucket' : 'GitLab'}`}
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* 1. Account Dropdown Selector */}
-            <div className="space-y-1.5" ref={accountDropdownRef}>
-              <div className="flex items-center justify-between">
-                <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
-                  Publish to Account
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsPublishRepoModalOpen(false);
-                    openModalWithTab('add');
-                  }}
-                  className="text-[10.5px] text-commito-coral hover:text-commito-coralLight font-semibold flex items-center gap-1 cursor-pointer transition"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Add Another Account</span>
-                </button>
-              </div>
-
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isPublishing) {
-                      setIsNamespaceDropdownOpen(false);
-                      setIsAccountDropdownOpen(!isAccountDropdownOpen);
-                    }
-                  }}
-                  disabled={isPublishing}
-                  className={`w-full h-9 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
-                    isAccountDropdownOpen
-                      ? 'border-border-strong bg-base-2'
-                      : 'border-border hover:border-border-strong hover:bg-base-1/90'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 truncate min-w-0">
-                    {currentAccount ? (
-                      <>
-                        <UserAvatar
-                          url={currentAccount.avatar_url}
-                          name={currentAccount.display_name || currentAccount.handle}
-                          provider={currentAccount.provider}
-                          className="w-5.5 h-5.5 rounded-xs shrink-0 ring-1 ring-border/60"
-                          iconClassName="w-3 h-3"
-                        />
-                        <span className="font-bold text-text-primary truncate">
-                          {currentAccount.display_name || currentAccount.handle}
-                        </span>
-                        {getProviderBadge(currentAccount.provider)}
-                        <span className="text-[11px] text-text-muted font-mono truncate hidden sm:inline">
-                          {currentAccount.handle}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-text-muted italic">Select an account...</span>
-                    )}
-                  </div>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
-                      isAccountDropdownOpen ? 'rotate-180 text-commito-coral' : ''
-                    }`}
-                  />
-                </button>
-
-                {/* Account Dropdown Menu */}
-                {isAccountDropdownOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
-                    {accounts.map((acc) => {
-                      const isSelected = selectedAccountId === acc.id;
-                      return (
-                        <button
-                          key={acc.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedAccountId(acc.id);
-                            setIsAccountDropdownOpen(false);
-                          }}
-                          className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
-                            isSelected
-                              ? 'bg-commito-coral/15 text-commito-coral font-bold'
-                              : 'hover:bg-base-1 text-text-primary'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
-                            <UserAvatar
-                              url={acc.avatar_url}
-                              name={acc.display_name || acc.handle}
-                              provider={acc.provider}
-                              className="w-5.5 h-5.5 rounded-xs ring-1 ring-border/60 shrink-0"
-                              iconClassName="w-3 h-3"
-                            />
-                            <div className="truncate min-w-0">
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span className="font-bold truncate">
-                                  {acc.display_name || acc.handle}
-                                </span>
-                                {getProviderBadge(acc.provider)}
-                              </div>
-                              <div className="text-[10.5px] text-text-muted font-mono truncate">
-                                {acc.handle}
-                              </div>
-                            </div>
-                          </div>
-                          {isSelected && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
-                        </button>
-                      );
-                    })}
-
-                    <div className="border-t border-border/70 my-1" />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAccountDropdownOpen(false);
-                        setIsPublishRepoModalOpen(false);
-                        openModalWithTab('add');
-                      }}
-                      className="w-full px-3 py-1.5 text-left text-[11px] text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-semibold"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Connect Another Account...</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* 2. Repository Name Input */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-text-secondary flex items-center justify-between">
-                <span>
-                  Repository Name <span className="text-commito-coral">*</span>
-                </span>
-                {hasInvalidChars && (
-                  <span className="text-[10.5px] text-git-removed font-normal">
-                    Contains invalid characters
-                  </span>
-                )}
-              </label>
-              <input
-                type="text"
-                placeholder="e.g. my-awesome-project"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                disabled={isPublishing}
-                className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs ${
-                  hasInvalidChars
-                    ? 'border-git-removed focus:border-danger ring-1 ring-git-removed/20'
-                    : 'border-border hover:border-border-strong focus:border-border-strong'
-                }`}
-                required
-              />
-            </div>
-
-            {/* 3. Repository Description */}
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-text-secondary block">
-                Description <span className="text-text-faint text-[10px] font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Short description of your project..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                disabled={isPublishing}
-                className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
-              />
-            </div>
-
-            {/* 4. Keep this code private Checkbox */}
-            <div
-              onClick={() => {
-                if (!isPublishing) setIsPrivate(!isPrivate);
-              }}
-              className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-start gap-2.5 cursor-pointer shadow-2xs select-none transition group"
+            <form
+              id="publish-repo-form"
+              onSubmit={handlePublish}
+              className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1"
             >
-              <div className="mt-0.5 pointer-events-none">
-                <Checkbox
-                  checked={isPrivate}
-                  onChange={(val) => setIsPrivate(val)}
-                  disabled={isPublishing}
-                  size="md"
-                />
-              </div>
-              <div className="text-xs text-text-primary cursor-pointer leading-tight flex-1">
-                <div className="font-semibold flex items-center gap-1.5 group-hover:text-text-primary">
-                  <Lock className="w-3 h-3 text-text-secondary" />
-                  <span>Keep this code private</span>
+              {localError && (
+                <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm space-y-2 text-xs text-git-removed animate-in fade-in">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-git-removed shrink-0 mt-0.5" />
+                    <div className="leading-snug flex-1 font-medium">{localError}</div>
+                  </div>
+                  {localError.toLowerCase().includes('no token found') && currentAccount && (
+                    <div className="pt-1 flex items-center justify-end">
+                      <button
+                        type="button"
+                        onClick={handleReauthenticate}
+                        disabled={isReauthenticating}
+                        className="px-3 py-1 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-98 disabled:opacity-60"
+                      >
+                        {isReauthenticating ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <LogIn className="w-3.5 h-3.5" />
+                        )}
+                        <span>
+                          {isReauthenticating
+                            ? 'Opening Browser...'
+                            : `Re-authenticate with ${currentAccount.provider === 'github' ? 'GitHub' : currentAccount.provider === 'bitbucket' ? 'Bitbucket' : 'GitLab'}`}
+                        </span>
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <div className="text-[10.5px] text-text-muted mt-0.5">
-                  {isPrivate
-                    ? 'Only you and authorized collaborators will have access.'
-                    : 'Anyone on the internet can see and clone public repositories.'}
-                </div>
-              </div>
-            </div>
+              )}
 
-            {/* 5. Custom Organization / Group / Workspace Dropdown */}
-            <div className="space-y-1" ref={namespaceDropdownRef}>
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold text-text-secondary flex items-center gap-1.5">
-                  <Building2 className="w-3 h-3 text-text-muted" />
-                  <span>{getNamespaceLabel()}</span>
-                </label>
-                {isLoadingNamespaces ? (
-                  <span className="text-[10px] text-text-muted flex items-center gap-1 font-normal">
-                    <Loader2 className="w-2.5 h-2.5 animate-spin" />
-                    <span>Loading...</span>
-                  </span>
-                ) : isCustomWorkspace ? (
-                  <button
-                    type="button"
-                    onClick={() => setIsCustomWorkspace(false)}
-                    className="text-[10.5px] text-commito-coral hover:text-commito-coralLight font-medium cursor-pointer"
-                  >
-                    Select from list
-                  </button>
-                ) : (
+              {/* 1. Account Dropdown Selector */}
+              <div className="space-y-1.5" ref={accountDropdownRef}>
+                <div className="flex items-center justify-between">
+                  <label className="text-[10.5px] font-bold uppercase tracking-wider text-text-faint">
+                    Publish to Account
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
-                      setIsNamespaceDropdownOpen(false);
-                      setIsCustomWorkspace(true);
+                      setIsPublishRepoModalOpen(false);
+                      openModalWithTab('add');
                     }}
-                    className="text-[10.5px] text-text-muted hover:text-commito-coral font-medium cursor-pointer"
+                    className="text-[10.5px] text-commito-coral hover:text-commito-coralLight font-semibold flex items-center gap-1 cursor-pointer transition"
                   >
-                    Custom workspace...
+                    <Plus className="w-3 h-3" />
+                    <span>Add Another Account</span>
                   </button>
-                )}
-              </div>
-
-              {isCustomWorkspace ? (
-                <div className="space-y-1">
-                  <input
-                    type="text"
-                    placeholder="e.g. your-workspace-slug"
-                    value={customWorkspaceSlug}
-                    onChange={(e) => setCustomWorkspaceSlug(e.target.value)}
-                    disabled={isPublishing}
-                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs"
-                  />
-                  <p className="text-[10.5px] text-text-muted">
-                    Enter the exact Bitbucket workspace slug identifier from bitbucket.org/&lt;workspace&gt;.
-                  </p>
                 </div>
-              ) : (
+
                 <div className="relative">
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isPublishing && !isLoadingNamespaces) {
-                        setIsAccountDropdownOpen(false);
-                        setIsNamespaceDropdownOpen(!isNamespaceDropdownOpen);
+                      if (!isPublishing) {
+                        setIsNamespaceDropdownOpen(false);
+                        setIsAccountDropdownOpen(!isAccountDropdownOpen);
                       }
                     }}
-                    disabled={isPublishing || isLoadingNamespaces}
-                    className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
-                      isNamespaceDropdownOpen
+                    disabled={isPublishing}
+                    className={`w-full h-9 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
+                      isAccountDropdownOpen
                         ? 'border-border-strong bg-base-2'
                         : 'border-border hover:border-border-strong hover:bg-base-1/90'
-                    } ${isLoadingNamespaces ? 'opacity-70 cursor-wait' : ''}`}
+                    }`}
                   >
-                    <div className="flex items-center gap-2 truncate min-w-0">
-                      {selectedNamespace?.avatar_url ? (
-                        <img
-                          src={selectedNamespace.avatar_url}
-                          alt=""
-                          className="w-4 h-4 rounded-xs shrink-0 object-cover"
-                        />
-                      ) : selectedNamespace?.kind === 'personal' ? (
-                        <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                    <div className="flex items-center gap-2.5 truncate min-w-0">
+                      {currentAccount ? (
+                        <>
+                          <UserAvatar
+                            url={currentAccount.avatar_url}
+                            name={currentAccount.display_name || currentAccount.handle}
+                            provider={currentAccount.provider}
+                            className="w-5.5 h-5.5 rounded-xs shrink-0 ring-1 ring-border/60"
+                            iconClassName="w-3 h-3"
+                          />
+                          <span className="font-bold text-text-primary truncate">
+                            {currentAccount.display_name || currentAccount.handle}
+                          </span>
+                          {getProviderBadge(currentAccount.provider)}
+                          <span className="text-[11px] text-text-muted font-mono truncate hidden sm:inline">
+                            {currentAccount.handle}
+                          </span>
+                        </>
                       ) : (
-                        <Users className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                      )}
-                      <span className="font-medium text-text-primary truncate">
-                        {selectedNamespace?.name || 'Select organization...'}
-                      </span>
-                      {selectedNamespace?.kind && selectedNamespace.kind !== 'personal' && (
-                        <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
-                          {selectedNamespace.kind}
-                        </span>
+                        <span className="text-text-muted italic">Select an account...</span>
                       )}
                     </div>
                     <ChevronDown
                       className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
-                        isNamespaceDropdownOpen ? 'rotate-180 text-commito-coral' : ''
+                        isAccountDropdownOpen ? 'rotate-180 text-commito-coral' : ''
                       }`}
                     />
                   </button>
 
-                  {/* Organization Dropdown Menu */}
-                  {isNamespaceDropdownOpen && (
-                    <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
-                      {namespaces.map((ns) => {
-                        const isSelected = selectedNamespaceId === ns.id;
+                  {/* Account Dropdown Menu */}
+                  {isAccountDropdownOpen && (
+                    <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-56 overflow-y-auto">
+                      {accounts.map((acc) => {
+                        const isSelected = selectedAccountId === acc.id;
                         return (
                           <button
-                            key={ns.id}
+                            key={acc.id}
                             type="button"
                             onClick={() => {
-                              setSelectedNamespaceId(ns.id);
-                              setIsNamespaceDropdownOpen(false);
+                              setSelectedAccountId(acc.id);
+                              setIsAccountDropdownOpen(false);
                             }}
                             className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
                               isSelected
@@ -732,34 +502,28 @@ export const PublishRepoModal: React.FC = () => {
                             }`}
                           >
                             <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
-                              {ns.avatar_url ? (
-                                <img
-                                  src={ns.avatar_url}
-                                  alt=""
-                                  className="w-4.5 h-4.5 rounded-xs shrink-0 object-cover"
-                                />
-                              ) : ns.kind === 'personal' ? (
-                                <User className="w-4 h-4 text-text-muted shrink-0" />
-                              ) : (
-                                <Users className="w-4 h-4 text-text-muted shrink-0" />
-                              )}
+                              <UserAvatar
+                                url={acc.avatar_url}
+                                name={acc.display_name || acc.handle}
+                                provider={acc.provider}
+                                className="w-5.5 h-5.5 rounded-xs ring-1 ring-border/60 shrink-0"
+                                iconClassName="w-3 h-3"
+                              />
                               <div className="truncate min-w-0">
                                 <div className="flex items-center gap-1.5 truncate">
-                                  <span className="font-semibold truncate">{ns.name}</span>
-                                  {ns.kind && ns.kind !== 'personal' && (
-                                    <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
-                                      {ns.kind}
-                                    </span>
-                                  )}
+                                  <span className="font-bold truncate">
+                                    {acc.display_name || acc.handle}
+                                  </span>
+                                  {getProviderBadge(acc.provider)}
                                 </div>
-                                {ns.description && (
-                                  <div className="text-[10.5px] text-text-muted truncate">
-                                    {ns.description}
-                                  </div>
-                                )}
+                                <div className="text-[10.5px] text-text-muted font-mono truncate">
+                                  {acc.handle}
+                                </div>
                               </div>
                             </div>
-                            {isSelected && <Check className="w-4 h-4 text-commito-coral shrink-0" />}
+                            {isSelected && (
+                              <Check className="w-4 h-4 text-commito-coral shrink-0" />
+                            )}
                           </button>
                         );
                       })}
@@ -769,20 +533,257 @@ export const PublishRepoModal: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => {
-                          setIsNamespaceDropdownOpen(false);
-                          setIsCustomWorkspace(true);
+                          setIsAccountDropdownOpen(false);
+                          setIsPublishRepoModalOpen(false);
+                          openModalWithTab('add');
                         }}
                         className="w-full px-3 py-1.5 text-left text-[11px] text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-semibold"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Enter Custom Workspace Slug...</span>
+                        <span>Connect Another Account...</span>
                       </button>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
 
+              {/* 2. Repository Name Input */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-text-secondary flex items-center justify-between">
+                  <span>
+                    Repository Name <span className="text-commito-coral">*</span>
+                  </span>
+                  {hasInvalidChars && (
+                    <span className="text-[10.5px] text-git-removed font-normal">
+                      Contains invalid characters
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. my-awesome-project"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={isPublishing}
+                  className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs ${
+                    hasInvalidChars
+                      ? 'border-git-removed focus:border-danger ring-1 ring-git-removed/20'
+                      : 'border-border hover:border-border-strong focus:border-border-strong'
+                  }`}
+                  required
+                />
+              </div>
+
+              {/* 3. Repository Description */}
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-text-secondary block">
+                  Description{' '}
+                  <span className="text-text-faint text-[10px] font-normal">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="Short description of your project..."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isPublishing}
+                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                />
+              </div>
+
+              {/* 4. Keep this code private Checkbox */}
+              <div
+                onClick={() => {
+                  if (!isPublishing) setIsPrivate(!isPrivate);
+                }}
+                className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-start gap-2.5 cursor-pointer shadow-2xs select-none transition group"
+              >
+                <div className="mt-0.5 pointer-events-none">
+                  <Checkbox
+                    checked={isPrivate}
+                    onChange={(val) => setIsPrivate(val)}
+                    disabled={isPublishing}
+                    size="md"
+                  />
+                </div>
+                <div className="text-xs text-text-primary cursor-pointer leading-tight flex-1">
+                  <div className="font-semibold flex items-center gap-1.5 group-hover:text-text-primary">
+                    <Lock className="w-3 h-3 text-text-secondary" />
+                    <span>Keep this code private</span>
+                  </div>
+                  <div className="text-[10.5px] text-text-muted mt-0.5">
+                    {isPrivate
+                      ? 'Only you and authorized collaborators will have access.'
+                      : 'Anyone on the internet can see and clone public repositories.'}
+                  </div>
+                </div>
+              </div>
+
+              {/* 5. Custom Organization / Group / Workspace Dropdown */}
+              <div className="space-y-1" ref={namespaceDropdownRef}>
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-semibold text-text-secondary flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3 text-text-muted" />
+                    <span>{getNamespaceLabel()}</span>
+                  </label>
+                  {isLoadingNamespaces ? (
+                    <span className="text-[10px] text-text-muted flex items-center gap-1 font-normal">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      <span>Loading...</span>
+                    </span>
+                  ) : isCustomWorkspace ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomWorkspace(false)}
+                      className="text-[10.5px] text-commito-coral hover:text-commito-coralLight font-medium cursor-pointer"
+                    >
+                      Select from list
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsNamespaceDropdownOpen(false);
+                        setIsCustomWorkspace(true);
+                      }}
+                      className="text-[10.5px] text-text-muted hover:text-commito-coral font-medium cursor-pointer"
+                    >
+                      Custom workspace...
+                    </button>
+                  )}
+                </div>
+
+                {isCustomWorkspace ? (
+                  <div className="space-y-1">
+                    <input
+                      type="text"
+                      placeholder="e.g. your-workspace-slug"
+                      value={customWorkspaceSlug}
+                      onChange={(e) => setCustomWorkspaceSlug(e.target.value)}
+                      disabled={isPublishing}
+                      className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono placeholder:text-text-faint focus:outline-none transition shadow-2xs"
+                    />
+                    <p className="text-[10.5px] text-text-muted">
+                      Enter the exact Bitbucket workspace slug identifier from
+                      bitbucket.org/&lt;workspace&gt;.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!isPublishing && !isLoadingNamespaces) {
+                          setIsAccountDropdownOpen(false);
+                          setIsNamespaceDropdownOpen(!isNamespaceDropdownOpen);
+                        }
+                      }}
+                      disabled={isPublishing || isLoadingNamespaces}
+                      className={`w-full h-8.5 px-3 bg-base-1 border rounded-sm text-xs text-text-primary flex items-center justify-between transition cursor-pointer shadow-2xs focus:outline-none ${
+                        isNamespaceDropdownOpen
+                          ? 'border-border-strong bg-base-2'
+                          : 'border-border hover:border-border-strong hover:bg-base-1/90'
+                      } ${isLoadingNamespaces ? 'opacity-70 cursor-wait' : ''}`}
+                    >
+                      <div className="flex items-center gap-2 truncate min-w-0">
+                        {selectedNamespace?.avatar_url ? (
+                          <img
+                            src={selectedNamespace.avatar_url}
+                            alt=""
+                            className="w-4 h-4 rounded-xs shrink-0 object-cover"
+                          />
+                        ) : selectedNamespace?.kind === 'personal' ? (
+                          <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                        ) : (
+                          <Users className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                        )}
+                        <span className="font-medium text-text-primary truncate">
+                          {selectedNamespace?.name || 'Select organization...'}
+                        </span>
+                        {selectedNamespace?.kind && selectedNamespace.kind !== 'personal' && (
+                          <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
+                            {selectedNamespace.kind}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown
+                        className={`w-3.5 h-3.5 text-text-muted transition-transform duration-200 ml-2 shrink-0 ${
+                          isNamespaceDropdownOpen ? 'rotate-180 text-commito-coral' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Organization Dropdown Menu */}
+                    {isNamespaceDropdownOpen && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-base-0 border border-border-strong rounded-sm shadow-2xl z-50 py-1 space-y-0.5 animate-in fade-in zoom-in-95 duration-100 max-h-52 overflow-y-auto">
+                        {namespaces.map((ns) => {
+                          const isSelected = selectedNamespaceId === ns.id;
+                          return (
+                            <button
+                              key={ns.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedNamespaceId(ns.id);
+                                setIsNamespaceDropdownOpen(false);
+                              }}
+                              className={`w-full px-3 py-2 text-left text-xs flex items-center justify-between transition cursor-pointer ${
+                                isSelected
+                                  ? 'bg-commito-coral/15 text-commito-coral font-bold'
+                                  : 'hover:bg-base-1 text-text-primary'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 truncate min-w-0 pr-2">
+                                {ns.avatar_url ? (
+                                  <img
+                                    src={ns.avatar_url}
+                                    alt=""
+                                    className="w-4.5 h-4.5 rounded-xs shrink-0 object-cover"
+                                  />
+                                ) : ns.kind === 'personal' ? (
+                                  <User className="w-4 h-4 text-text-muted shrink-0" />
+                                ) : (
+                                  <Users className="w-4 h-4 text-text-muted shrink-0" />
+                                )}
+                                <div className="truncate min-w-0">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <span className="font-semibold truncate">{ns.name}</span>
+                                    {ns.kind && ns.kind !== 'personal' && (
+                                      <span className="text-[9px] uppercase px-1 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-mono shrink-0">
+                                        {ns.kind}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {ns.description && (
+                                    <div className="text-[10.5px] text-text-muted truncate">
+                                      {ns.description}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <Check className="w-4 h-4 text-commito-coral shrink-0" />
+                              )}
+                            </button>
+                          );
+                        })}
+
+                        <div className="border-t border-border/70 my-1" />
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsNamespaceDropdownOpen(false);
+                            setIsCustomWorkspace(true);
+                          }}
+                          className="w-full px-3 py-1.5 text-left text-[11px] text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-semibold"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Enter Custom Workspace Slug...</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </form>
 
             {/* Pinned Bottom Footer Actions */}

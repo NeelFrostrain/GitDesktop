@@ -331,7 +331,7 @@ impl BitbucketAuthProvider {
             .or(user_data.nickname)
             .or_else(|| user_data.account_id.clone())
             .unwrap_or_else(|| {
-                let u = user_data.uuid.replace('{', "").replace('}', "");
+                let u = user_data.uuid.replace(['{', '}'], "");
                 if u.is_empty() {
                     "bitbucket_user".to_string()
                 } else {
@@ -348,7 +348,7 @@ impl BitbucketAuthProvider {
             .unwrap_or_default();
 
         let clean_uuid = if !user_data.uuid.is_empty() {
-            user_data.uuid.replace('{', "").replace('}', "")
+            user_data.uuid.replace(['{', '}'], "")
         } else {
             raw_handle.clone()
         };

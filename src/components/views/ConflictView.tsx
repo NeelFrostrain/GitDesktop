@@ -17,7 +17,8 @@ export const ConflictView: React.FC = () => {
         </div>
         <div>
           <h4 className="text-xs font-bold text-orange-200">
-            Merge Conflicts Detected ({conflictFiles.length} file{conflictFiles.length > 1 ? 's' : ''})
+            Merge Conflicts Detected ({conflictFiles.length} file
+            {conflictFiles.length > 1 ? 's' : ''})
           </h4>
           <p className="text-[11px] text-orange-300/80">
             Resolve conflicts in your editor or select a file below to inspect line changes.

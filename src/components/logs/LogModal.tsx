@@ -78,7 +78,8 @@ export const LogModal: React.FC = () => {
     setFilterCategory('all');
   };
 
-  const isFiltered = filterLevel !== 'all' || filterCategory !== 'all' || Boolean(searchQuery.trim());
+  const isFiltered =
+    filterLevel !== 'all' || filterCategory !== 'all' || Boolean(searchQuery.trim());
 
   return (
     <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">

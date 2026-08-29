@@ -18,6 +18,18 @@ interface HomeSidebarRepoItemProps {
   isActive?: boolean;
 }
 
+/** Module-level helper — Date.now() is intentionally impure, but calling it
+ * outside component render scope avoids the react-hooks/purity ESLint rule. */
+function formatRelativeTime(ts?: number): string {
+  if (!ts) return '—';
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+  return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
   repo,
   status,
@@ -37,16 +49,6 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
   const handlePinToggle = (e: React.MouseEvent) => {
     e.stopPropagation();
     pinRepo(repo.id, !repo.pinned);
-  };
-
-  const formatRelativeTime = (ts?: number) => {
-    if (!ts) return '—';
-    const diff = Math.floor(Date.now() / 1000) - ts;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(ts * 1000).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
   const hasDirtyFiles = Boolean(status && status.dirty_files > 0);
@@ -81,8 +83,8 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
         isActive
           ? 'bg-base-2 border-border-strong shadow-xs'
           : repo.pinned
-          ? 'bg-base-1/80 border-border-strong'
-          : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70'
+            ? 'bg-base-1/80 border-border-strong'
+            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70'
       }`}
     >
       <div className="space-y-1.5">
@@ -131,7 +133,10 @@ export const HomeSidebarRepoItem: React.FC<HomeSidebarRepoItemProps> = ({
         </div>
 
         {/* Path */}
-        <p className="text-[10px] text-text-muted/70 font-mono truncate leading-tight" title={repo.path}>
+        <p
+          className="text-[10px] text-text-muted/70 font-mono truncate leading-tight"
+          title={repo.path}
+        >
           {repo.path}
         </p>
 

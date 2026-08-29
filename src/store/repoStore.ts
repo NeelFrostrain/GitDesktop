@@ -38,7 +38,10 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 
       // Trigger contribution calendar sync
       import('./contributionsStore').then((m) => {
-        m.useContributionsStore.getState().loadContributions().catch(() => {});
+        m.useContributionsStore
+          .getState()
+          .loadContributions()
+          .catch(() => {});
       });
 
       // Fetch statuses in parallel (fast local git2 inspection)
@@ -48,7 +51,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         });
       }
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Repo', `Failed to list known repos: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Repo', `Failed to list known repos: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -62,7 +67,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         statuses: { ...state.statuses, [path]: status },
       }));
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Repo', `Failed to get status for '${path}': ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Repo', `Failed to get status for '${path}': ${getErrorMessage(error)}`);
     }
   },
 
@@ -99,7 +106,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       await invoke('pin_repo_cmd', { id, pinned });
       await get().loadRepos();
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Repo', `Failed to pin repo: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Repo', `Failed to pin repo: ${getErrorMessage(error)}`);
     }
   },
 
@@ -142,7 +151,9 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
         });
       }
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Git', `Could not inspect repo on open: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Could not inspect repo on open: ${getErrorMessage(error)}`);
     }
 
     // Touch last_opened_at timestamp in backend registry

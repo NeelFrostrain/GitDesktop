@@ -1,0 +1,12 @@
+node_modules
+dist
+build
+.git
+.vscode
+.idea
+*.log
+package-lock.json
+bun.lockb
+target
+src-tauri/target
+public

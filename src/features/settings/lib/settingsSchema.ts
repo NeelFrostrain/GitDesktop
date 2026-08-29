@@ -1,5 +1,5 @@
 export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
-export type SettingCategory = 'ai';
+export type SettingCategory = 'appearance' | 'ai';
 
 export type SettingScope = 'app' | 'repo';
 
@@ -30,6 +30,11 @@ export const CATEGORY_METADATA: Record<
   SettingCategory,
   { label: string; icon: string; subcategories: string[] }
 > = {
+  appearance: {
+    label: 'Appearance & Themes',
+    icon: 'Palette',
+    subcategories: ['Color Theme', 'UI Scale', 'Fonts'],
+  },
   ai: {
     label: 'AI & Commit-AI',
     icon: 'Sparkles',
@@ -39,12 +44,91 @@ export const CATEGORY_METADATA: Record<
 
 export const SETTINGS_SCHEMA: SettingDefinition[] = [
   // ==========================================
+  // APPEARANCE & THEMES
+  // ==========================================
+  {
+    id: 'app.theme',
+    label: 'Color Theme',
+    description: 'Choose your preferred visual theme for the application.',
+    category: 'appearance',
+    subcategory: 'Color Theme',
+    type: 'select',
+    options: [
+      { label: '🔥 Commito Dark', value: 'commito-dark' },
+      { label: '⚙️ Zinc Dark', value: 'neutral-dark' },
+      { label: '💚 OLED Black', value: 'oled-pure' },
+      { label: '🌙 Tokyo Night', value: 'tokyo-night' },
+      { label: '❄️ Nordic Slate', value: 'nord-slate' },
+      { label: '☀️ Paper Light', value: 'clean-light' },
+      { label: '✨ Obsidian Spark', value: 'obsidian-spark' },
+      { label: '🔥 Carbon Flame', value: 'carbon-orange' },
+      { label: '🌅 Warm Terracotta', value: 'espresso-terracotta' },
+      { label: '🐙 GitHub Dark', value: 'github-dark' },
+      { label: '💫 Antigravity Studio', value: 'antigravity-dark' },
+    ],
+    default: 'commito-dark',
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'app.ui_scale',
+    label: 'UI Scale',
+    description: 'Adjust the overall UI density (100% = comfortable, 90% = compact).',
+    category: 'appearance',
+    subcategory: 'UI Scale',
+    type: 'number',
+    cssVar: '--app-ui-scale',
+    min: 80,
+    max: 120,
+    step: 5,
+    unit: '%',
+    default: 100,
+    scope: 'app',
+  },
+  {
+    id: 'app.font_family',
+    label: 'UI Font Family',
+    description: 'Select the font family used throughout the interface.',
+    category: 'appearance',
+    subcategory: 'Fonts',
+    type: 'select',
+    cssVar: '--app-font-family',
+    options: [
+      { label: 'Inter (Default)', value: 'Inter' },
+      { label: 'Segoe UI', value: 'Segoe UI' },
+      { label: 'SF Pro Display', value: 'SF Pro Display' },
+      { label: 'Roboto', value: 'Roboto' },
+      { label: 'System Font Stack', value: 'system' },
+    ],
+    default: 'Inter',
+    scope: 'app',
+  },
+  {
+    id: 'app.terminal_font',
+    label: 'Terminal Font Family',
+    description: 'Monospace font used in terminal and code viewers.',
+    category: 'appearance',
+    subcategory: 'Fonts',
+    type: 'select',
+    cssVar: '--app-terminal-font-family',
+    options: [
+      { label: 'JetBrains Mono (Default)', value: 'JetBrains Mono' },
+      { label: 'Fira Code', value: 'Fira Code' },
+      { label: 'Cascadia Code', value: 'Cascadia Code' },
+      { label: 'Monaco', value: 'Monaco' },
+      { label: 'Menlo', value: 'Menlo' },
+    ],
+    default: 'JetBrains Mono',
+    scope: 'app',
+  },
+  // ==========================================
   // AI & COMMIT-AI
   // ==========================================
   {
     id: 'ai.active_api_key',
     label: 'Google Gemini API Key',
-    description: 'Active Google Gemini API Key (AIza...) from aistudio.google.com used for AI commit analysis.',
+    description:
+      'Active Google Gemini API Key (AIza...) from aistudio.google.com used for AI commit analysis.',
     category: 'ai',
     subcategory: 'API Keys & Providers',
     type: 'text',
@@ -65,7 +149,8 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
   {
     id: 'ai.model',
     label: 'Commit-AI Model',
-    description: 'The Google Gemini model used for analyzing diffs and generating conventional commit messages.',
+    description:
+      'The Google Gemini model used for analyzing diffs and generating conventional commit messages.',
     category: 'ai',
     subcategory: 'Model Configuration',
     type: 'select',

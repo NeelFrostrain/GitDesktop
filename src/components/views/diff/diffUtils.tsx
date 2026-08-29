@@ -297,7 +297,7 @@ export function buildCustomDiffPatch(
 
     for (const item of hunk.lines) {
       const { line, originalIndex } = item;
-      const cleanContent = line.content.replace(/^[\+\-\s]/, '');
+      const cleanContent = line.content.replace(/^[+\-\s]/, '');
 
       if (line.line_type === 'addition') {
         if (selectedIndices.has(originalIndex)) {
@@ -333,10 +333,7 @@ export function buildCustomDiffPatch(
 
   if (patchedHunkStrings.length === 0) return null;
 
-  const patchHeader = [
-    `--- a/${normalizedPath}`,
-    `+++ b/${normalizedPath}`,
-  ].join('\n');
+  const patchHeader = [`--- a/${normalizedPath}`, `+++ b/${normalizedPath}`].join('\n');
 
   return `${patchHeader}\n${patchedHunkStrings.join('\n')}\n`;
 }

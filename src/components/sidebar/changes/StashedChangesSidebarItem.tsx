@@ -3,7 +3,8 @@ import { Layers, ChevronRight } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 
 export const StashedChangesSidebarItem: React.FC = () => {
-  const { currentBranchStash, stashFiles, isViewingStashedChanges, setIsViewingStashedChanges } = useGitStore();
+  const { currentBranchStash, stashFiles, isViewingStashedChanges, setIsViewingStashedChanges } =
+    useGitStore();
 
   if (!currentBranchStash) return null;
 
@@ -22,7 +23,9 @@ export const StashedChangesSidebarItem: React.FC = () => {
         title={`Stashed changes on this branch (${currentBranchStash.date}). Click to inspect or restore.`}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <Layers className={`w-3.5 h-3.5 flex-shrink-0 ${isViewingStashedChanges ? 'text-white' : 'text-commito-coral'}`} />
+          <Layers
+            className={`w-3.5 h-3.5 flex-shrink-0 ${isViewingStashedChanges ? 'text-white' : 'text-commito-coral'}`}
+          />
           <span className="truncate tracking-tight font-medium text-xs">Stashed Changes</span>
           {count > 0 && (
             <span

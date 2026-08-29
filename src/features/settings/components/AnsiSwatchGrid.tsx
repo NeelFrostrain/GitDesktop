@@ -34,8 +34,11 @@ export const AnsiSwatchGrid: React.FC = () => {
             return (
               <div
                 key={item.id}
-                className={`relative p-2 rounded-sm border bg-base-2/80 transition flex items-center justify-between gap-2 group ${modified ? 'border-commito-coral/50 shadow-xs' : 'border-border/80 hover:border-border-strong'
-                  }`}
+                className={`relative p-2 rounded-sm border bg-base-2/80 transition flex items-center justify-between gap-2 group ${
+                  modified
+                    ? 'border-commito-coral/50 shadow-xs'
+                    : 'border-border/80 hover:border-border-strong'
+                }`}
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="relative flex-shrink-0">
@@ -83,11 +86,10 @@ export const AnsiSwatchGrid: React.FC = () => {
   return (
     <div className="p-4 bg-base-1 rounded-sm border border-border space-y-5">
       <div>
-        <h4 className="text-sm font-semibold text-text-primary">
-          Terminal ANSI Color Palette
-        </h4>
+        <h4 className="text-sm font-semibold text-text-primary">Terminal ANSI Color Palette</h4>
         <p className="text-xs text-text-muted mt-0.5">
-          Customizable 16-color ANSI spectrum applied across terminal commands, Git CLI output, and shell sessions.
+          Customizable 16-color ANSI spectrum applied across terminal commands, Git CLI output, and
+          shell sessions.
         </p>
       </div>
 

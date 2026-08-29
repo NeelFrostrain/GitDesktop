@@ -33,7 +33,8 @@ describe('UserAvatar Component', () => {
 
   it('renders cached image synchronously when available in memory cache', async () => {
     const avatarUrl = 'https://avatars.githubusercontent.com/u/12345?v=4';
-    const fakeData = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    const fakeData =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
     await avatarCache.set(avatarUrl, fakeData);
 

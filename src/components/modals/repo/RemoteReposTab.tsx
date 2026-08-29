@@ -37,7 +37,9 @@ export const RemoteReposTab: React.FC = () => {
       setPagedData(res);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
-      useLogStore.getState().addLog('error', 'Remote', `Failed to fetch remote repositories: ${msg}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Remote', `Failed to fetch remote repositories: ${msg}`);
       setError(toAppError(error, 'REMOTE_FETCH_ERROR'));
     } finally {
       setIsLoading(false);
@@ -61,7 +63,13 @@ export const RemoteReposTab: React.FC = () => {
       const cloneUrl = repo.http_url_to_repo || repo.ssh_url_to_repo;
       const finalPath = await AccountService.cloneRepository(cloneUrl, targetFolder);
 
-      useLogStore.getState().addLog('success', 'Git', `Successfully cloned repository '${repo.name}' to '${finalPath}'`);
+      useLogStore
+        .getState()
+        .addLog(
+          'success',
+          'Git',
+          `Successfully cloned repository '${repo.name}' to '${finalPath}'`
+        );
       setActiveRepoPath(finalPath);
       setIsRepoModalOpen(false);
     } catch (error: unknown) {
@@ -79,7 +87,8 @@ export const RemoteReposTab: React.FC = () => {
         <FolderGit2 className="w-12 h-12 text-text-muted mb-3 opacity-40" />
         <h4 className="text-sm font-semibold text-text-primary mb-1">No Active Account</h4>
         <p className="text-xs text-text-muted max-w-sm mb-4">
-          Please connect an account in the Accounts or Add Account tab to view and clone remote repositories.
+          Please connect an account in the Accounts or Add Account tab to view and clone remote
+          repositories.
         </p>
       </div>
     );
@@ -106,7 +115,9 @@ export const RemoteReposTab: React.FC = () => {
       {/* Repo List */}
       <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
         {repos.length === 0 && !isLoading ? (
-          <div className="p-8 text-center text-xs text-text-muted italic">No repositories found.</div>
+          <div className="p-8 text-center text-xs text-text-muted italic">
+            No repositories found.
+          </div>
         ) : (
           repos.map((repo) => {
             const isCloning = cloningRepoId === repo.id;
@@ -118,8 +129,12 @@ export const RemoteReposTab: React.FC = () => {
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-xs text-text-primary truncate">{repo.name}</span>
-                    <span className="text-[10px] text-text-muted truncate">{repo.path_with_namespace}</span>
+                    <span className="font-semibold text-xs text-text-primary truncate">
+                      {repo.name}
+                    </span>
+                    <span className="text-[10px] text-text-muted truncate">
+                      {repo.path_with_namespace}
+                    </span>
                     <span className="text-[10px] px-1.5 py-0.2 rounded bg-base-2 border border-border text-text-muted">
                       {repo.visibility}
                     </span>
@@ -136,7 +151,11 @@ export const RemoteReposTab: React.FC = () => {
                   disabled={isCloning}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 shrink-0 cursor-pointer"
                 >
-                  {isCloning ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  {isCloning ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
                   {isCloning ? 'Cloning...' : 'Clone'}
                 </button>
               </div>

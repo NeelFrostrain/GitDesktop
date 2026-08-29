@@ -8,8 +8,6 @@ import {
   CommitDetails,
   PullResult,
   RemoteInfo,
-  LfsFile,
-  LfsLock,
   WorktreeInfo,
   StashEntry,
   TagInfo,
@@ -55,14 +53,22 @@ export class GitService {
   /**
    * Retrieves line-by-line diff for a specific file in the working tree.
    */
-  static async getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<DiffResult> {
+  static async getFileDiff(
+    repoPath: string,
+    filePath: string,
+    staged: boolean
+  ): Promise<DiffResult> {
     return invoke<DiffResult>('get_file_diff', { repoPath, filePath, staged });
   }
 
   /**
    * Retrieves line-by-line diff for a file in a historical commit.
    */
-  static async getCommitFileDiff(repoPath: string, sha: string, filePath: string): Promise<DiffResult> {
+  static async getCommitFileDiff(
+    repoPath: string,
+    sha: string,
+    filePath: string
+  ): Promise<DiffResult> {
     return invoke<DiffResult>('get_commit_file_diff', { repoPath, sha, filePath });
   }
 
@@ -137,10 +143,22 @@ export class GitService {
   }
 
   /**
-   * Fetches paginated commit log history.
+   * Fetches paginated commit log history with optional branch/all filtering and topological sorting.
    */
-  static async getCommitHistory(repoPath: string, limit = 50, offset = 0): Promise<CommitInfo[]> {
-    return invoke<CommitInfo[]>('get_commit_history', { repoPath, limit, offset });
+  static async getCommitHistory(
+    repoPath: string,
+    limit = 50,
+    offset = 0,
+    branch?: string | null,
+    all?: boolean | null
+  ): Promise<CommitInfo[]> {
+    return invoke<CommitInfo[]>('get_commit_history', {
+      repoPath,
+      limit,
+      offset,
+      branch: branch ?? null,
+      all: all ?? null,
+    });
   }
 
   /**
@@ -264,7 +282,11 @@ export class GitService {
   /**
    * Creates a new stash entry.
    */
-  static async createStash(repoPath: string, message?: string, includeUntracked = true): Promise<void> {
+  static async createStash(
+    repoPath: string,
+    message?: string,
+    includeUntracked = true
+  ): Promise<void> {
     return invoke('create_stash_cmd', { repoPath, message: message || null, includeUntracked });
   }
 
@@ -299,7 +321,11 @@ export class GitService {
   /**
    * Gets the diff of a specific file in a stash entry.
    */
-  static async getStashFileDiff(repoPath: string, index: number, filePath: string): Promise<DiffResult> {
+  static async getStashFileDiff(
+    repoPath: string,
+    index: number,
+    filePath: string
+  ): Promise<DiffResult> {
     return invoke<DiffResult>('get_stash_file_diff_cmd', { repoPath, index, filePath });
   }
 
@@ -329,8 +355,18 @@ export class GitService {
   /**
    * Creates a tag.
    */
-  static async createTag(repoPath: string, name: string, message?: string, targetSha?: string | null): Promise<void> {
-    return invoke('create_tag_cmd', { repoPath, name, message: message || null, targetSha: targetSha || null });
+  static async createTag(
+    repoPath: string,
+    name: string,
+    message?: string,
+    targetSha?: string | null
+  ): Promise<void> {
+    return invoke('create_tag_cmd', {
+      repoPath,
+      name,
+      message: message || null,
+      targetSha: targetSha || null,
+    });
   }
 
   /**
@@ -350,14 +386,22 @@ export class GitService {
   /**
    * Pushes a specific tag to remote.
    */
-  static async pushSpecificTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+  static async pushSpecificTag(
+    repoPath: string,
+    tagName: string,
+    remote?: string | null
+  ): Promise<void> {
     return invoke('push_specific_tag_cmd', { repoPath, tagName, remote: remote || null });
   }
 
   /**
    * Deletes a tag on the remote repository.
    */
-  static async deleteRemoteTag(repoPath: string, tagName: string, remote?: string | null): Promise<void> {
+  static async deleteRemoteTag(
+    repoPath: string,
+    tagName: string,
+    remote?: string | null
+  ): Promise<void> {
     return invoke('delete_remote_tag_cmd', { repoPath, tagName, remote: remote || null });
   }
 
@@ -433,11 +477,7 @@ export class GitService {
   /**
    * Saves raw file content back to the local repository.
    */
-  static async saveFileContent(
-    repoPath: string,
-    filePath: string,
-    content: string
-  ): Promise<void> {
+  static async saveFileContent(repoPath: string, filePath: string, content: string): Promise<void> {
     return invoke<void>('save_file_content_cmd', { repoPath, filePath, content });
   }
 
@@ -451,11 +491,7 @@ export class GitService {
   /**
    * Renames or moves a file in the local working repository.
    */
-  static async renameFile(
-    repoPath: string,
-    oldPath: string,
-    newPath: string
-  ): Promise<void> {
+  static async renameFile(repoPath: string, oldPath: string, newPath: string): Promise<void> {
     return invoke<void>('rename_file_cmd', { repoPath, oldPath, newPath });
   }
 
@@ -484,8 +520,12 @@ export class GitService {
   /**
    * Lists available namespaces/organizations/groups for a provider account.
    */
-  static async listNamespaces(accountId: string): Promise<import('../../types/git').NamespaceOption[]> {
-    return invoke<import('../../types/git').NamespaceOption[]>('accounts_list_namespaces', { accountId });
+  static async listNamespaces(
+    accountId: string
+  ): Promise<import('../../types/git').NamespaceOption[]> {
+    return invoke<import('../../types/git').NamespaceOption[]>('accounts_list_namespaces', {
+      accountId,
+    });
   }
 
   /**

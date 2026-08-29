@@ -21,11 +21,49 @@ export function formatCssValue(definition: SettingDefinition | undefined, value:
 /**
  * Apply a single setting or CSS custom property directly to the DOM at runtime.
  */
-export function applySettingToDom(cssVar: string, value: any, definition?: SettingDefinition): void {
+export function applySettingToDom(
+  cssVar: string,
+  value: any,
+  definition?: SettingDefinition
+): void {
   if (!cssVar || typeof document === 'undefined') return;
 
   const formatted = formatCssValue(definition, value);
   document.documentElement.style.setProperty(cssVar, formatted);
+
+  // Handle UI Scale - apply native zoom scaling without viewport shrinking or black borders
+  if (cssVar === '--app-ui-scale') {
+    const scale = (value as number) / 100;
+    document.documentElement.style.setProperty('--app-ui-scale-value', String(scale));
+    (document.documentElement.style as any).zoom = String(scale);
+    document.documentElement.setAttribute('data-ui-scale', String(value));
+  }
+
+  // Handle font family - apply to body with proper fallbacks
+  if (cssVar === '--app-font-family') {
+    const fontMap: Record<string, string> = {
+      Inter: '-apple-system, BlinkMacSystemFont, "Inter", sans-serif',
+      'Segoe UI': '"Segoe UI", sans-serif',
+      'SF Pro Display': "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif",
+      Roboto: "'Roboto', sans-serif",
+      system: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    };
+    const fontStack = fontMap[String(value)] || fontMap['Inter'];
+    document.documentElement.style.fontFamily = fontStack;
+  }
+
+  // Handle terminal font family
+  if (cssVar === '--app-terminal-font-family') {
+    const terminalFontMap: Record<string, string> = {
+      'JetBrains Mono': "'JetBrains Mono', monospace",
+      'Fira Code': "'Fira Code', monospace",
+      'Cascadia Code': "'Cascadia Code', monospace",
+      Monaco: "'Monaco', monospace",
+      Menlo: "'Menlo', monospace",
+    };
+    const terminalFontStack = terminalFontMap[String(value)] || terminalFontMap['JetBrains Mono'];
+    document.documentElement.style.setProperty('--font-mono', terminalFontStack);
+  }
 
   // Handle density preset scaling
   if (cssVar === '--app-density') {
@@ -46,7 +84,11 @@ export function applySettingToDom(cssVar: string, value: any, definition?: Setti
 /**
  * Revert a CSS custom property to its schema default value.
  */
-export function removeSettingFromDom(cssVar: string, defaultVal: any, definition?: SettingDefinition): void {
+export function removeSettingFromDom(
+  cssVar: string,
+  defaultVal: any,
+  definition?: SettingDefinition
+): void {
   if (!cssVar || typeof document === 'undefined') return;
 
   if (defaultVal !== undefined) {

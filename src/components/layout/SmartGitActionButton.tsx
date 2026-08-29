@@ -36,13 +36,16 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const primaryCls =
-    'h-7 px-2.5 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
+    'h-6.5 px-2 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
   const secondaryCls =
-    'h-7 px-2.5 rounded-sm bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
+    'h-6.5 px-2 rounded-xs bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
   const mutedCls =
-    'h-7 px-2.5 rounded-sm border border-border bg-base-1 text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-2xs';
+    'h-6.5 px-2 rounded-xs text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
   const warnCls =
-    'h-7 px-2.5 rounded-sm border border-warning/80 bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-xs';
+    'h-6.5 px-2 rounded-xs bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
+
+  const neutralCls =
+    'h-6.5 px-2 rounded-xs hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition cursor-pointer active:scale-95 select-none group relative overflow-hidden';
 
   if (!hasRepo) {
     return {
@@ -58,10 +61,10 @@ function getButtonConfig(
     const opLabel = isPushing
       ? 'Pushing...'
       : isPulling
-      ? 'Pulling...'
-      : isFetching
-      ? 'Fetching...'
-      : 'Working...';
+        ? 'Pulling...'
+        : isFetching
+          ? 'Fetching...'
+          : 'Working...';
     const busyVariantCls = isPulling
       ? `${secondaryCls} opacity-90 cursor-wait active:scale-100`
       : `${primaryCls} opacity-90 cursor-wait active:scale-100`;
@@ -104,23 +107,22 @@ function getButtonConfig(
       };
     case 'up-to-date':
       return {
-        icon: (
-          <RefreshCw
-            className={`w-3.5 h-3.5 text-white ${
-              isFetching ? 'animate-spin' : ''
-            }`}
-          />
+        icon: isFetching ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
+        ) : (
+          <RefreshCw className="w-3.5 h-3.5 text-text-muted group-hover:text-commito-coral transition-colors" />
         ),
-        label: isFetching ? 'Fetching...' : 'Up to date',
+        label: isFetching ? 'Fetching...' : 'Fetch origin',
         tooltip: `Branch '${branch}' is up to date. Click to fetch and refresh status.`,
-        className: primaryCls,
+        className: neutralCls,
         disabled: false,
       };
     case 'no-remote':
       return {
         icon: <Upload className="w-3.5 h-3.5" />,
         label: 'Publish repository',
-        tooltip: 'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
+        tooltip:
+          'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
         className: primaryCls,
         disabled: false,
       };
@@ -173,18 +175,16 @@ function DirtyWarningBanner() {
 function ProgressBar({ isPulling }: { isPulling: boolean }) {
   return (
     <div
-      className="absolute bottom-0 left-0 right-0 h-0.5 bg-black/30 overflow-hidden rounded-b-sm"
+      className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-black/40 overflow-hidden rounded-b-sm pointer-events-none"
       role="progressbar"
       aria-label={isPulling ? 'Pull progress' : 'Push progress'}
     >
       <div
-        className={`h-full animate-[progress_1.2s_ease-in-out_infinite] ${
-          isPulling ? 'bg-blue-300' : 'bg-orange-300'
+        className={`h-full animate-progress-indeterminate ${
+          isPulling
+            ? 'bg-gradient-to-r from-blue-400 via-sky-200 to-blue-400 shadow-[0_0_8px_rgba(56,189,248,0.9)]'
+            : 'bg-gradient-to-r from-amber-300 via-yellow-100 to-amber-300 shadow-[0_0_8px_rgba(251,191,36,0.9)]'
         }`}
-        style={{
-          width: '60%',
-          transformOrigin: 'left',
-        }}
       />
     </div>
   );
@@ -222,8 +222,7 @@ export const SmartGitActionButton: React.FC = () => {
     isFetching
   );
 
-  const showDirtyWarning =
-    !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
+  const showDirtyWarning = !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
     if (isBusy) {

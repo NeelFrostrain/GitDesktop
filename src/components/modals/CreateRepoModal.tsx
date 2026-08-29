@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { invoke } from "@tauri-apps/api/core";
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { invoke } from '@tauri-apps/api/core';
 import {
   X,
   FolderPlus,
@@ -12,41 +12,41 @@ import {
   Scale,
   FileText,
   Folder,
-} from "lucide-react";
-import { useGitStore } from "../../store/useGitStore";
-import { useLogStore } from "../../store/useLogStore";
-import { Dropdown } from "../common/Dropdown";
-import { ConfirmDialog } from "../common/ConfirmDialog";
-import { SystemService } from "../../services/system/systemService";
-import { GitService } from "../../services/git/gitService";
-import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
-import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+} from 'lucide-react';
+import { useGitStore } from '../../store/useGitStore';
+import { useLogStore } from '../../store/useLogStore';
+import { Dropdown } from '../common/Dropdown';
+import { ConfirmDialog } from '../common/ConfirmDialog';
+import { SystemService } from '../../services/system/systemService';
+import { GitService } from '../../services/git/gitService';
+import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const GITIGNORE_TEMPLATES = [
-  { value: "None", label: "None (No .gitignore)" },
-  { value: "Node", label: "Node (JavaScript / TypeScript / React)" },
-  { value: "Rust", label: "Rust (Cargo / target)" },
-  { value: "Python", label: "Python (__pycache__ / venv)" },
-  { value: "Go", label: "Go (Golang binaries)" },
-  { value: "C++", label: "C++ / Visual Studio / CMake" },
-  { value: "Java", label: "Java (Maven / Gradle / .class)" },
-  { value: "Unity", label: "Unity 3D Engine" },
-  { value: "UnrealEngine", label: "Unreal Engine" },
+  { value: 'None', label: 'None (No .gitignore)' },
+  { value: 'Node', label: 'Node (JavaScript / TypeScript / React)' },
+  { value: 'Rust', label: 'Rust (Cargo / target)' },
+  { value: 'Python', label: 'Python (__pycache__ / venv)' },
+  { value: 'Go', label: 'Go (Golang binaries)' },
+  { value: 'C++', label: 'C++ / Visual Studio / CMake' },
+  { value: 'Java', label: 'Java (Maven / Gradle / .class)' },
+  { value: 'Unity', label: 'Unity 3D Engine' },
+  { value: 'UnrealEngine', label: 'Unreal Engine' },
 ];
 
 const LICENSE_TEMPLATES = [
-  { value: "None", label: "None (All Rights Reserved)" },
-  { value: "MIT", label: "MIT License (Permissive & Common)" },
-  { value: "Apache-2.0", label: "Apache License 2.0 (Patents & Trademarks)" },
-  { value: "GPL-3.0", label: "GNU General Public License v3.0 (Copyleft)" },
-  { value: "GPL-2.0", label: "GNU General Public License v2.0 (Legacy)" },
-  { value: "AGPL-3.0", label: "GNU Affero GPL v3.0 (Network Copyleft)" },
-  { value: "BSD-3-Clause", label: "BSD 3-Clause License" },
-  { value: "BSD-2-Clause", label: "BSD 2-Clause License" },
-  { value: "ISC", label: "ISC License (Minimal)" },
-  { value: "MPL-2.0", label: "Mozilla Public License 2.0" },
-  { value: "Unlicense", label: "The Unlicense (Public Domain)" },
-  { value: "CC0-1.0", label: "Creative Commons Zero v1.0 (Public Domain)" },
+  { value: 'None', label: 'None (All Rights Reserved)' },
+  { value: 'MIT', label: 'MIT License (Permissive & Common)' },
+  { value: 'Apache-2.0', label: 'Apache License 2.0 (Patents & Trademarks)' },
+  { value: 'GPL-3.0', label: 'GNU General Public License v3.0 (Copyleft)' },
+  { value: 'GPL-2.0', label: 'GNU General Public License v2.0 (Legacy)' },
+  { value: 'AGPL-3.0', label: 'GNU Affero GPL v3.0 (Network Copyleft)' },
+  { value: 'BSD-3-Clause', label: 'BSD 3-Clause License' },
+  { value: 'BSD-2-Clause', label: 'BSD 2-Clause License' },
+  { value: 'ISC', label: 'ISC License (Minimal)' },
+  { value: 'MPL-2.0', label: 'Mozilla Public License 2.0' },
+  { value: 'Unlicense', label: 'The Unlicense (Public Domain)' },
+  { value: 'CC0-1.0', label: 'Creative Commons Zero v1.0 (Public Domain)' },
 ];
 
 /**
@@ -62,35 +62,34 @@ export const CreateRepoModal: React.FC = () => {
     setError,
   } = useGitStore();
 
-  const [name, setName] = useState("");
+  const [name, setName] = useState('');
   const [parentPath, setParentPath] = useState(() => {
     try {
-      return localStorage.getItem("last_repo_parent_path") || "E:\\Projects";
+      return localStorage.getItem('last_repo_parent_path') || 'E:\\Projects';
     } catch {
-      return "E:\\Projects";
+      return 'E:\\Projects';
     }
   });
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState('');
   const [initReadme, setInitReadme] = useState(true);
-  const [gitignoreTemplate, setGitignoreTemplate] = useState("None");
-  const [licenseTemplate, setLicenseTemplate] = useState("None");
+  const [gitignoreTemplate, setGitignoreTemplate] = useState('None');
+  const [licenseTemplate, setLicenseTemplate] = useState('None');
   const [isCreating, setIsCreating] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const isDirty = name.trim() !== "" || description.trim() !== "";
+  const isDirty = name.trim() !== '' || description.trim() !== '';
 
-  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } =
-    useUnsavedChangesGuard({
-      isDirty,
-      onClose: () => setIsCreateRepoModalOpen(false),
-    });
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
+    isDirty,
+    onClose: () => setIsCreateRepoModalOpen(false),
+  });
 
   useEffect(() => {
     if (isCreateRepoModalOpen) {
-      setName("");
-      setDescription("");
+      setName('');
+      setDescription('');
       setLocalError(null);
       setIsCreating(false);
       setTimeout(() => {
@@ -111,7 +110,7 @@ export const CreateRepoModal: React.FC = () => {
       if (folder) {
         setParentPath(folder);
         try {
-          localStorage.setItem("last_repo_parent_path", folder);
+          localStorage.setItem('last_repo_parent_path', folder);
         } catch {}
       }
     } catch {
@@ -127,25 +126,20 @@ export const CreateRepoModal: React.FC = () => {
     setLocalError(null);
 
     try {
-      const createdPath = await invoke<string>("create_repository_cmd", {
+      const createdPath = await invoke<string>('create_repository_cmd', {
         opts: {
           name: cleanName,
           parent_path: parentPath,
           description: description.trim() ? description.trim() : null,
           init_readme: initReadme,
-          gitignore_template:
-            gitignoreTemplate !== "None" ? gitignoreTemplate : null,
-          license_template: licenseTemplate !== "None" ? licenseTemplate : null,
+          gitignore_template: gitignoreTemplate !== 'None' ? gitignoreTemplate : null,
+          license_template: licenseTemplate !== 'None' ? licenseTemplate : null,
         },
       });
 
       useLogStore
         .getState()
-        .addLog(
-          "success",
-          "Git",
-          `Created new local repository at '${createdPath}'`,
-        );
+        .addLog('success', 'Git', `Created new local repository at '${createdPath}'`);
 
       setActiveRepoPath(createdPath);
       const statusRes = await GitService.getRepoStatus(createdPath);
@@ -155,15 +149,15 @@ export const CreateRepoModal: React.FC = () => {
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       setLocalError(msg);
-      setError(toAppError(err, "CREATE_REPO_ERROR"));
+      setError(toAppError(err, 'CREATE_REPO_ERROR'));
     } finally {
       setIsCreating(false);
     }
   };
 
-  const sanitizedPreviewName = cleanName || "repository-name";
+  const sanitizedPreviewName = cleanName || 'repository-name';
   const fullDestinationPath = parentPath
-    ? `${parentPath.replace(/[/\\]+$/, "")}\\${sanitizedPreviewName}`
+    ? `${parentPath.replace(/[/\\]+$/, '')}\\${sanitizedPreviewName}`
     : sanitizedPreviewName;
 
   return createPortal(
@@ -179,7 +173,7 @@ export const CreateRepoModal: React.FC = () => {
       className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
-        className="w-full max-w-lg bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-lg bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -252,8 +246,8 @@ export const CreateRepoModal: React.FC = () => {
                 placeholder="e.g. my-awesome-app"
                 className={`w-full h-8 px-2.5 bg-base-1 border rounded-sm text-xs text-text-primary placeholder:text-text-muted/60 font-sans focus:outline-none transition shadow-2xs ${
                   hasInvalidChars
-                    ? "border-git-removed focus:border-git-removed"
-                    : "border-border hover:border-border-strong focus:border-commito-coral"
+                    ? 'border-git-removed focus:border-git-removed'
+                    : 'border-border hover:border-border-strong focus:border-commito-coral'
                 }`}
               />
             </div>
@@ -286,10 +280,7 @@ export const CreateRepoModal: React.FC = () => {
               <div className="pt-0.5 flex items-center gap-1.5 text-[10.5px] text-text-muted font-mono truncate">
                 <Folder className="w-3 h-3 text-text-muted shrink-0" />
                 <span className="shrink-0 text-text-faint">Path:</span>
-                <span
-                  className="text-text-secondary truncate"
-                  title={fullDestinationPath}
-                >
+                <span className="text-text-secondary truncate" title={fullDestinationPath}>
                   {fullDestinationPath}
                 </span>
               </div>
@@ -299,9 +290,7 @@ export const CreateRepoModal: React.FC = () => {
             <div className="space-y-1">
               <label className="text-[11.5px] font-medium text-text-secondary flex items-center justify-between">
                 <span>Description</span>
-                <span className="text-text-muted/70 font-normal text-[10.5px]">
-                  optional
-                </span>
+                <span className="text-text-muted/70 font-normal text-[10.5px]">optional</span>
               </label>
               <input
                 type="text"
@@ -338,14 +327,12 @@ export const CreateRepoModal: React.FC = () => {
                 {/* Clean Theme-Matching Switch */}
                 <div
                   className={`relative inline-flex items-center w-7 h-3.5 rounded-full px-0.5 transition-colors shrink-0 ${
-                    initReadme
-                      ? "bg-commito-coral"
-                      : "bg-base-3 border border-border"
+                    initReadme ? 'bg-commito-coral' : 'bg-base-3 border border-border'
                   }`}
                 >
                   <div
                     className={`w-2.5 h-2.5 rounded-full bg-white transition-transform duration-100 shadow-2xs ${
-                      initReadme ? "translate-x-3" : "translate-x-0"
+                      initReadme ? 'translate-x-3' : 'translate-x-0'
                     }`}
                   />
                 </div>
@@ -426,6 +413,6 @@ export const CreateRepoModal: React.FC = () => {
         variant="danger"
       />
     </div>,
-    document.body,
+    document.body
   );
 };

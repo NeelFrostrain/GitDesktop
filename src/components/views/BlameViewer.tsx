@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  FileText,
-  RefreshCw,
-} from 'lucide-react';
+import { X, FileText, RefreshCw } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { BlameLine } from '../../types/git';
 import { GitService } from '../../services/git/gitService';

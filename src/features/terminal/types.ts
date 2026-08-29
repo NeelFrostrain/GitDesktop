@@ -21,14 +21,7 @@ export interface LogSessionSummary {
 }
 
 export type AutocompleteKind =
-  | 'command'
-  | 'subcommand'
-  | 'flag'
-  | 'branch'
-  | 'remote'
-  | 'file'
-  | 'stash'
-  | 'tag';
+  'command' | 'subcommand' | 'flag' | 'branch' | 'remote' | 'file' | 'stash' | 'tag';
 
 export interface AutocompleteSuggestion {
   text: string;

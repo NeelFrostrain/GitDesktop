@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { marked } from 'marked';
 import { openUrl } from '@tauri-apps/plugin-opener';
+import { renderSafeMarkdown } from '../../shared/utils/markdown';
 
 export interface MarkdownPreviewProps {
   content: string;
@@ -16,10 +16,7 @@ export const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
   const html = useMemo(() => {
     if (!content.trim()) return '';
     try {
-      return marked.parse(content, {
-        gfm: true,
-        breaks: true,
-      }) as string;
+      return renderSafeMarkdown(content);
     } catch {
       return content;
     }

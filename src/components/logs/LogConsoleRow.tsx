@@ -51,10 +51,10 @@ export const LogConsoleRow: React.FC<LogConsoleRowProps> = ({
         log.level === 'error'
           ? 'bg-red-950/10 hover:bg-red-950/20'
           : log.level === 'success'
-          ? 'bg-emerald-950/10 hover:bg-emerald-950/20'
-          : log.level === 'warning'
-          ? 'bg-amber-950/10 hover:bg-amber-950/20'
-          : 'hover:bg-base-2/80'
+            ? 'bg-emerald-950/10 hover:bg-emerald-950/20'
+            : log.level === 'warning'
+              ? 'bg-amber-950/10 hover:bg-amber-950/20'
+              : 'hover:bg-base-2/80'
       } ${hasDetails ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-center gap-3 min-w-0">
@@ -80,7 +80,11 @@ export const LogConsoleRow: React.FC<LogConsoleRowProps> = ({
         {hasDetails && (
           <div className="flex items-center gap-1 text-[10px] text-commito-coral hover:underline flex-shrink-0 ml-auto font-sans font-semibold">
             <span>Details</span>
-            {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            {isExpanded ? (
+              <ChevronDown className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5" />
+            )}
           </div>
         )}
       </div>
