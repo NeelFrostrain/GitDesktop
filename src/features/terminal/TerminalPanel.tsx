@@ -155,7 +155,6 @@ export const TerminalPanel: React.FC = () => {
         }}
         className="relative w-full bg-base-0 border border-border/80 rounded-sm flex-col flex-shrink-0 select-none group/terminal z-20 shadow-2xs overflow-hidden"
       >
-
         {/* Header bar with Shell / App Log tab selector */}
         <TerminalTabBar
           repoName={repoName}
@@ -190,7 +189,7 @@ export const TerminalPanel: React.FC = () => {
           >
             <div
               ref={terminalContainerRef}
-              className="w-full h-full [&_.xterm-viewport]:bg-base-0 [&_.xterm-viewport]:scrollbar-thin [&_.xterm-viewport]:scrollbar-thumb-base-3"
+              className="w-full h-full [&_.xterm-viewport]:bg-base-0"
             />
 
             {/* Ghost Text Overlay if available */}

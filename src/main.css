@@ -148,8 +148,8 @@
   --provider-github: #2da44e;
 
   /* --- Terminal Canvas & Text --- */
-  --terminal-bg: #121113;
-  --terminal-fg: #e6e4e8;
+  --terminal-bg: #131313;
+  --terminal-fg: var(--text);
   --terminal-cursor: #e05638;
   --terminal-selection: #382221;
 
