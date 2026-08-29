@@ -150,7 +150,8 @@ pub async fn accounts_list_namespaces(account_id: String) -> Result<Vec<Namespac
         .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
-    let token = token_store::get_token(&account_id)?
+    let token = token_store::get_valid_token(&account_id)
+        .await?
         .ok_or_else(|| AppError::Auth(format!("No token found for account '{}'", account_id)))?;
 
     let client = reqwest::Client::builder()
@@ -355,7 +356,8 @@ pub async fn repo_publish(
         .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
-    let token = token_store::get_token(&account_id)?
+    let token = token_store::get_valid_token(&account_id)
+        .await?
         .ok_or_else(|| AppError::Auth(format!("No token found for account '{}'", account_id)))?;
 
     let client = reqwest::Client::builder()

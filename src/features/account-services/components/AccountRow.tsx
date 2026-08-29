@@ -80,6 +80,11 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
                   <span>Active</span>
                 </span>
               )}
+              {account.token_status === 'needs_reauth' && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-rose-950/40 border border-rose-700/50 text-rose-300 text-[10px] font-mono font-bold">
+                  <span>Reconnect Required</span>
+                </span>
+              )}
             </div>
 
             {/* Row 2: @handle • instance_url */}

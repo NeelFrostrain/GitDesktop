@@ -9,6 +9,8 @@ export const AccountsWidget: React.FC = () => {
   const { openModalWithTab } = useAccountServicesStore();
 
   const getStatusDot = (account: ProviderAccount) => {
+    if (account.token_status === 'needs_reauth')
+      return <span className="w-2 h-2 rounded-full bg-rose-500 ring-1 ring-base-1 animate-pulse flex-shrink-0" title="Session expired - please reconnect account" />;
     if (account.token_status === 'expired')
       return <span className="w-2 h-2 rounded-full bg-git-removed ring-1 ring-base-1 flex-shrink-0" title="Token expired" />;
     if (account.token_status === 'expiring_soon')

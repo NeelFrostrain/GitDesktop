@@ -50,7 +50,7 @@ export const ContributionHeatmap: React.FC = () => {
 
   useEffect(() => {
     loadContributions();
-  }, [loadContributions]);
+  }, [loadContributions, accounts.length]);
 
   // Auto-scroll to the current week (far right) on mount & calendar change
   useEffect(() => {

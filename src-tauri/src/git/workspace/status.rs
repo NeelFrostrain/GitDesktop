@@ -268,6 +268,8 @@ mod tests {
             }],
             is_clean: false,
             has_conflicts: false,
+            has_remote: false,
+            remote_url: None,
         };
 
         assert_eq!(repo_status.current_branch, "main");

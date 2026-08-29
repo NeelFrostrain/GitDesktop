@@ -15,6 +15,7 @@ pub enum TokenStatus {
     Valid,
     ExpiringSoon,
     Expired,
+    NeedsReauth,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -30,6 +31,7 @@ pub struct ProviderAccount {
     pub token_status: TokenStatus,
     pub scopes: Vec<String>,
     pub expires_at: Option<i64>,
+    pub refresh_token_expires_at: Option<i64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

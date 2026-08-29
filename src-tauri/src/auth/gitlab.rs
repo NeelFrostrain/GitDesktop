@@ -152,6 +152,7 @@ pub async fn listen_for_oauth_callback(
         expires_at,
         scopes: scopes_list,
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
 
     crate::auth::keyring::add_or_update_account(account)?;

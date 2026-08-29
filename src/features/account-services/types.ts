@@ -1,6 +1,6 @@
 export type ProviderKind = 'gitlab' | 'github' | 'bitbucket' | 'custom';
 
-export type TokenStatus = 'valid' | 'expiring_soon' | 'expired';
+export type TokenStatus = 'valid' | 'expiring_soon' | 'expired' | 'needs_reauth';
 
 export interface ProviderAccount {
   id: string;
@@ -14,6 +14,7 @@ export interface ProviderAccount {
   token_status: TokenStatus;
   scopes: string[];
   expires_at?: number | null;
+  refresh_token_expires_at?: number | null;
 }
 
 export interface AccountPatch {

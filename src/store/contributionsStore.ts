@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { ContributionCalendar, ContributionDay, CommitItem } from '../types/contributions';
 import { ContributionsService } from '../services/contributions/contributionsService';
 import { useRepoStore } from './repoStore';
@@ -13,7 +14,7 @@ interface ContributionsState {
   error: string | null;
 
   // Actions
-  setSelectedAccountId: (id: string) => void;
+  setSelectedAccountId: (id: string) => Promise<void>;
   setSelectedDate: (date: string | null) => void;
   loadContributions: (accountId?: string) => Promise<void>;
   refresh: () => Promise<void>;
@@ -30,9 +31,9 @@ export const useContributionsStore = create<ContributionsState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  setSelectedAccountId: (id: string) => {
+  setSelectedAccountId: async (id: string) => {
     set({ selectedAccountId: id, selectedDate: null });
-    get().loadContributions(id).catch(() => {});
+    await get().loadContributions(id);
   },
 
   setSelectedDate: (date: string | null) => {
@@ -45,7 +46,20 @@ export const useContributionsStore = create<ContributionsState>((set, get) => ({
 
     try {
       const repos = useRepoStore.getState().repos;
-      const repoPaths = repos.map((r) => r.path);
+      let repoPaths = repos.map((r) => r.path);
+
+      if (repoPaths.length === 0) {
+        try {
+          if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+            const known = await invoke<Array<{ path: string }>>('list_known_repos_cmd');
+            if (known && known.length > 0) {
+              repoPaths = known.map((k: { path: string }) => k.path);
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
 
       // If 'all' or 'local', or specific account id
       const cal = await ContributionsService.getContributionsCalendar(

@@ -47,6 +47,7 @@ pub async fn login_gitlab_pat(
         expires_at: None,
         scopes: Some(vec!["api".to_string(), "read_user".to_string()]),
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
@@ -73,6 +74,7 @@ pub async fn login_gitlab_pat(
         token_status: crate::domain::accounts::provider::TokenStatus::Valid,
         scopes: vec!["api".to_string(), "read_user".to_string()],
         expires_at: None,
+        refresh_token_expires_at: None,
     };
     let _ = crate::domain::accounts::token_store::save_account(prov_account, &token, None);
     let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&prov_account_id, None);
@@ -188,6 +190,7 @@ pub async fn complete_oauth_login(
         expires_at,
         scopes: scopes_list,
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
@@ -246,13 +249,17 @@ pub async fn gitlab_ensure_fresh_token(account_id: String) -> Result<String, App
 
 #[command]
 pub async fn gitlab_get_token_info_cmd(account_id: String) -> Result<TokenInfo, AppError> {
-    let accounts = keyring::list_accounts();
+    let accounts = crate::domain::accounts::token_store::list_accounts();
     let account = accounts
         .iter()
         .find(|a| a.id == account_id)
         .ok_or_else(|| AppError::NotFound(format!("Account '{}' not found", account_id)))?;
 
-    let client = GitLabClient::new(account.server_url.clone(), account.token.clone(), None)?;
+    let token = crate::domain::accounts::token_store::get_valid_token(&account_id)
+        .await?
+        .ok_or_else(|| AppError::Auth(format!("No token found for account '{}'", account_id)))?;
+
+    let client = GitLabClient::new(account.instance_url.clone(), token, None)?;
     client.get_token_info().await
 }
 
@@ -287,6 +294,7 @@ pub async fn get_current_user() -> Result<Option<GitLabUser>, AppError> {
                         expires_at: None,
                         scopes: None,
                         created_at: None,
+                        refresh_token_expires_at: None,
                     };
                     let _ = keyring::add_or_update_account(account);
                     Ok(Some(user))
@@ -391,6 +399,7 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
         expires_at: None,
         scopes: Some(vec!["repo".to_string(), "read:user".to_string()]),
         created_at: Some(chrono::Utc::now().timestamp()),
+        refresh_token_expires_at: None,
     };
     keyring::add_or_update_account(account)?;
     keyring::switch_active_account(&account_id)?;
@@ -411,6 +420,7 @@ pub async fn login_github_pat(token: String) -> Result<GitHubUser, AppError> {
         token_status: crate::domain::accounts::provider::TokenStatus::Valid,
         scopes: vec!["repo".to_string(), "read:user".to_string()],
         expires_at: None,
+        refresh_token_expires_at: None,
     };
     let _ = crate::domain::accounts::token_store::save_account(prov_account, &token, None);
     let _ = crate::domain::accounts::active_account::set_active_and_sync_git(&prov_account_id, None);

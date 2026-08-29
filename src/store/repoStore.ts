@@ -36,6 +36,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       const repos = await invoke<RepoEntry[]>('list_known_repos_cmd');
       set({ repos: repos || [] });
 
+      // Trigger contribution calendar sync
+      import('./contributionsStore').then((m) => {
+        m.useContributionsStore.getState().loadContributions().catch(() => {});
+      });
+
       // Fetch statuses in parallel (fast local git2 inspection)
       if (repos && repos.length > 0) {
         repos.forEach((repo) => {

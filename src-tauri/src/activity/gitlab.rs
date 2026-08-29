@@ -43,16 +43,20 @@ pub async fn get_gitlab_activity(
     project_paths: Vec<String>,
     limit: usize,
 ) -> Result<Vec<ActivityEvent>, AppError> {
-    if project_paths.is_empty() || token.trim().is_empty() {
+    if token.trim().is_empty() {
         return Ok(Vec::new());
     }
 
     let clean_url = server_url.trim_end_matches('/').to_string();
     let mut headers = HeaderMap::new();
+    if let Ok(hv) = HeaderValue::from_str(token.trim()) {
+        headers.insert(reqwest::header::HeaderName::from_static("private-token"), hv);
+    }
     let auth_val = format!("Bearer {}", token.trim());
     if let Ok(hv) = HeaderValue::from_str(&auth_val) {
         headers.insert(AUTHORIZATION, hv);
     }
+    headers.insert(reqwest::header::USER_AGENT, HeaderValue::from_static("GitLabDesktop/1.0"));
 
     let client = match reqwest::Client::builder().default_headers(headers).build() {
         Ok(c) => c,
@@ -60,6 +64,81 @@ pub async fn get_gitlab_activity(
     };
 
     let mut events = Vec::new();
+
+    // 1. Fetch user-wide recent events
+    let user_events_url = format!("{}/api/v4/events?per_page={}", clean_url, limit.max(20));
+    if let Ok(resp) = client.get(&user_events_url).send().await {
+        if resp.status().is_success() {
+            if let Ok(raw_events) = resp.json::<Vec<GitLabEventRaw>>().await {
+                for rev in raw_events {
+                    let action = rev.action_name.as_deref().unwrap_or("");
+                    let author = rev
+                        .author_username
+                        .unwrap_or_else(|| "gitlab-user".to_string());
+                    let at = parse_iso_time(&rev.created_at);
+                    let relative_date = format_relative_date(at);
+
+                    if action == "pushed to" || action == "pushed new" {
+                        let branch = rev
+                            .push_data
+                            .as_ref()
+                            .and_then(|p| p.ref_name.clone())
+                            .unwrap_or_else(|| "main".to_string());
+                        let count = rev
+                            .push_data
+                            .as_ref()
+                            .and_then(|p| p.commit_count)
+                            .unwrap_or(1);
+
+                        events.push(ActivityEvent {
+                            id: format!("gl-push-{}", rev.id),
+                            kind: ActivityKind::Push {
+                                remote: "origin".to_string(),
+                                branch,
+                                commit_count: count,
+                            },
+                            repo_path: "".to_string(),
+                            repo_name: "GitLab".to_string(),
+                            at,
+                            relative_date,
+                        });
+                    } else if action.contains("opened")
+                        || action.contains("closed")
+                        || action.contains("accepted")
+                    {
+                        let title = rev
+                            .target_title
+                            .unwrap_or_else(|| "Merge Request".to_string());
+                        let state = if action.contains("accepted") {
+                            "merged"
+                        } else if action.contains("closed") {
+                            "closed"
+                        } else {
+                            "opened"
+                        };
+                        let iid = rev.target_iid.unwrap_or(1);
+                        let mr_url = format!("{}/-/merge_requests/{}", clean_url, iid);
+
+                        events.push(ActivityEvent {
+                            id: format!("gl-mr-{}", rev.id),
+                            kind: ActivityKind::MergeRequest {
+                                title,
+                                state: state.to_string(),
+                                url: mr_url,
+                                author,
+                                source_branch: "".to_string(),
+                                target_branch: "".to_string(),
+                            },
+                            repo_path: "".to_string(),
+                            repo_name: "GitLab".to_string(),
+                            at,
+                            relative_date,
+                        });
+                    }
+                }
+            }
+        }
+    }
 
     for proj in project_paths {
         let encoded_proj = urlencoding::encode(&proj);

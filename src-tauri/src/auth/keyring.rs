@@ -28,6 +28,7 @@ pub struct SavedAccount {
     pub expires_at: Option<i64>,
     pub scopes: Option<Vec<String>>,
     pub created_at: Option<i64>,
+    pub refresh_token_expires_at: Option<i64>,
 }
 
 #[derive(Serialize, Deserialize, Default)]
@@ -94,6 +95,7 @@ pub fn list_accounts() -> Vec<SavedAccount> {
                     expires_at: None,
                     scopes: None,
                     created_at: None,
+                    refresh_token_expires_at: None,
                 };
                 store.accounts.push(acct);
                 write_local_store(&store);

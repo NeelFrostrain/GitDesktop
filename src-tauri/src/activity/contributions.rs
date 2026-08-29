@@ -173,11 +173,13 @@ fn scan_local_repos_commits(
     repo_paths: &[String],
     filter_email: Option<&str>,
     filter_name: Option<&str>,
+    filter_handle: Option<&str>,
     start_ts: i64,
 ) -> HashMap<String, Vec<CommitItem>> {
     let mut date_commits: HashMap<String, Vec<CommitItem>> = HashMap::new();
-    let norm_email = filter_email.map(|e| e.trim().to_lowercase());
-    let norm_name = filter_name.map(|n| n.trim().to_lowercase());
+    let norm_email = filter_email.map(|e| e.trim().to_lowercase()).filter(|e| !e.is_empty());
+    let norm_name = filter_name.map(|n| n.trim().to_lowercase()).filter(|n| !n.is_empty());
+    let norm_handle = filter_handle.map(|h| h.trim_start_matches('@').trim().to_lowercase()).filter(|h| !h.is_empty());
     
     for repo_path_str in repo_paths {
         let path = Path::new(repo_path_str);
@@ -199,6 +201,8 @@ fn scan_local_repos_commits(
         
         let _ = revwalk.set_sorting(Sort::TIME);
         let _ = revwalk.push_head();
+        let _ = revwalk.push_glob("refs/heads/*");
+        let _ = revwalk.push_glob("refs/remotes/*");
         
         // Also walk all local branches to find user commits across branches
         if let Ok(branches) = repo.branches(Some(git2::BranchType::Local)) {
@@ -230,8 +234,6 @@ fn scan_local_repos_commits(
             
             let commit_ts = commit.time().seconds();
             if commit_ts < start_ts {
-                // Since revwalk is sorted by time, if we go too far back on HEAD we can break,
-                // but other branches might interleave, so we continue.
                 continue;
             }
             
@@ -240,16 +242,24 @@ fn scan_local_repos_commits(
             let author_email = author.email().unwrap_or("").to_string();
             
             // Match author if filter provided
-            if let Some(ref target_email) = norm_email {
-                if !target_email.is_empty() {
-                    let c_email = author_email.to_lowercase();
-                    let c_name = author_name.to_lowercase();
-                    let matches_email = c_email == *target_email || c_email.contains(target_email);
-                    let matches_name = norm_name.as_ref().map(|n| c_name == *n || c_name.contains(n)).unwrap_or(false);
-                    
-                    if !matches_email && !matches_name {
-                        continue;
-                    }
+            if norm_email.is_some() || norm_name.is_some() || norm_handle.is_some() {
+                let c_email = author_email.to_lowercase();
+                let c_name = author_name.to_lowercase();
+                
+                let matches_email = norm_email.as_ref().map(|target| {
+                    c_email == *target || c_email.contains(target) || target.contains(&c_email)
+                }).unwrap_or(false);
+
+                let matches_name = norm_name.as_ref().map(|target| {
+                    c_name == *target || c_name.contains(target) || target.contains(&c_name)
+                }).unwrap_or(false);
+
+                let matches_handle = norm_handle.as_ref().map(|target| {
+                    c_name.contains(target) || c_email.contains(target) || target.contains(&c_name)
+                }).unwrap_or(false);
+                
+                if !matches_email && !matches_name && !matches_handle {
+                    continue;
                 }
             }
             
@@ -282,7 +292,7 @@ fn scan_local_repos_commits(
     date_commits
 }
 
-/// Fetch GitLab calendar contributions map via /users/:username/calendar.json
+/// Fetch GitLab calendar contributions map via /users/:username/calendar.json and REST events
 async fn fetch_gitlab_calendar(
     instance_url: &str,
     handle: &str,
@@ -290,32 +300,93 @@ async fn fetch_gitlab_calendar(
 ) -> HashMap<String, u32> {
     let clean_url = instance_url.trim_end_matches('/');
     let clean_handle = handle.trim_start_matches('@');
-    let url = format!("{}/users/{}/calendar.json", clean_url, clean_handle);
+    let mut calendar_map = HashMap::new();
+
+    // 1. Try public calendar.json (without Bearer header as web route rejects PAT)
+    let calendar_url = format!("{}/users/{}/calendar.json", clean_url, clean_handle);
+    let mut pub_headers = HeaderMap::new();
+    pub_headers.insert(USER_AGENT, HeaderValue::from_static("GitLabDesktop/1.0"));
     
-    let mut headers = HeaderMap::new();
-    headers.insert(USER_AGENT, HeaderValue::from_static("GitLabDesktop/1.0"));
+    if let Ok(client) = reqwest::Client::builder().default_headers(pub_headers).build() {
+        if let Ok(resp) = client.get(&calendar_url).send().await {
+            if resp.status().is_success() {
+                if let Ok(map) = resp.json::<HashMap<String, u32>>().await {
+                    for (date, count) in map {
+                        if count > 0 {
+                            calendar_map.insert(date, count);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Fetch authenticated GitLab Events API for private/internal contributions
     if let Some(tok) = token {
         if !tok.trim().is_empty() {
+            let mut auth_headers = HeaderMap::new();
+            auth_headers.insert(USER_AGENT, HeaderValue::from_static("GitLabDesktop/1.0"));
+            if let Ok(hv) = HeaderValue::from_str(tok.trim()) {
+                auth_headers.insert(reqwest::header::HeaderName::from_static("private-token"), hv);
+            }
             if let Ok(hv) = HeaderValue::from_str(&format!("Bearer {}", tok.trim())) {
-                headers.insert(AUTHORIZATION, hv);
+                auth_headers.insert(AUTHORIZATION, hv);
+            }
+
+            if let Ok(client) = reqwest::Client::builder().default_headers(auth_headers).build() {
+                // Try /api/v4/events?per_page=100
+                let events_url = format!("{}/api/v4/events?per_page=100", clean_url);
+                if let Ok(resp) = client.get(&events_url).send().await {
+                    if resp.status().is_success() {
+                        if let Ok(events) = resp.json::<Vec<serde_json::Value>>().await {
+                            for ev in events {
+                                if let Some(created_at) = ev.get("created_at").and_then(|v| v.as_str()) {
+                                    if created_at.len() >= 10 {
+                                        let date_part = &created_at[..10];
+                                        let count = ev.get("push_data")
+                                            .and_then(|p| p.get("commit_count"))
+                                            .and_then(|c| c.as_u64())
+                                            .map(|c| c as u32)
+                                            .unwrap_or(1);
+                                        *calendar_map.entry(date_part.to_string()).or_insert(0) += count;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Also try /api/v4/users/:username/events?per_page=100
+                if !clean_handle.is_empty() {
+                    let user_events_url = format!("{}/api/v4/users/{}/events?per_page=100", clean_url, clean_handle);
+                    if let Ok(resp) = client.get(&user_events_url).send().await {
+                        if resp.status().is_success() {
+                            if let Ok(events) = resp.json::<Vec<serde_json::Value>>().await {
+                                for ev in events {
+                                    if let Some(created_at) = ev.get("created_at").and_then(|v| v.as_str()) {
+                                        if created_at.len() >= 10 {
+                                            let date_part = &created_at[..10];
+                                            let count = ev.get("push_data")
+                                                .and_then(|p| p.get("commit_count"))
+                                                .and_then(|c| c.as_u64())
+                                                .map(|c| c as u32)
+                                                .unwrap_or(1);
+                                            let entry = calendar_map.entry(date_part.to_string()).or_insert(0);
+                                            if *entry == 0 {
+                                                *entry = count;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
-    
-    let client = match reqwest::Client::builder().default_headers(headers).build() {
-        Ok(c) => c,
-        Err(_) => return HashMap::new(),
-    };
-    
-    if let Ok(resp) = client.get(&url).send().await {
-        if resp.status().is_success() {
-            if let Ok(map) = resp.json::<HashMap<String, u32>>().await {
-                return map;
-            }
-        }
-    }
-    
-    HashMap::new()
+
+    calendar_map
 }
 
 /// GraphQL payload for GitHub contributionsCollection query
@@ -558,7 +629,7 @@ pub async fn get_contributions_calendar(
         if is_all_mode {
             // Aggregate all accounts
             for acct in &accounts {
-                let token = token_store::get_token(&acct.id).ok().flatten();
+                let token = token_store::get_valid_token(&acct.id).await.ok().flatten();
                 let m = match acct.provider {
                     ProviderKind::Gitlab => fetch_gitlab_calendar(&acct.instance_url, &acct.handle, token.as_deref()).await,
                     ProviderKind::Github => fetch_github_calendar(&acct.handle, token.as_deref()).await,
@@ -569,7 +640,7 @@ pub async fn get_contributions_calendar(
                 }
             }
         } else if let Some(ref acct) = target_account {
-            let token = token_store::get_token(&acct.id).ok().flatten();
+            let token = token_store::get_valid_token(&acct.id).await.ok().flatten();
             remote_counts = match acct.provider {
                 ProviderKind::Gitlab => fetch_gitlab_calendar(&acct.instance_url, &acct.handle, token.as_deref()).await,
                 ProviderKind::Github => fetch_github_calendar(&acct.handle, token.as_deref()).await,
@@ -578,7 +649,16 @@ pub async fn get_contributions_calendar(
         }
     }
     
-    // 2. Scan local git repositories
+    // 2. Scan local git repositories (fallback to known repos registry if repo_paths is empty)
+    let effective_repo_paths: Vec<String> = if repo_paths.is_empty() {
+        crate::repos::registry::list_known_repos()
+            .into_iter()
+            .map(|r| r.path)
+            .collect()
+    } else {
+        repo_paths
+    };
+
     let filter_email = if is_all_mode || is_local_mode {
         None
     } else {
@@ -589,8 +669,13 @@ pub async fn get_contributions_calendar(
     } else {
         target_account.as_ref().map(|a| a.display_name.as_str())
     };
+    let filter_handle = if is_all_mode || is_local_mode {
+        None
+    } else {
+        target_account.as_ref().map(|a| a.handle.as_str())
+    };
     
-    let local_commits = scan_local_repos_commits(&repo_paths, filter_email, filter_name, start_ts);
+    let local_commits = scan_local_repos_commits(&effective_repo_paths, filter_email, filter_name, filter_handle, start_ts);
     
     // 3. Merge counts and commits into calendar grid
     let mut total_contributions = 0u32;

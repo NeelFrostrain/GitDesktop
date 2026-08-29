@@ -50,7 +50,16 @@ pub fn get_local_activity(
     let mut all_events = Vec::new();
     let max_per_repo = 20;
 
-    for path_str in &repo_paths {
+    let effective_paths: Vec<String> = if repo_paths.is_empty() {
+        crate::repos::registry::list_known_repos()
+            .into_iter()
+            .map(|r| r.path)
+            .collect()
+    } else {
+        repo_paths
+    };
+
+    for path_str in &effective_paths {
         let path = Path::new(path_str);
         let repo = match Repository::open(path) {
             Ok(r) => r,
