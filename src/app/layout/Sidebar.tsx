@@ -70,23 +70,9 @@ export const Sidebar: React.FC = () => {
 
   return (
     <aside
-      style={{ width: `${sidebarWidth}px` }}
-      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col flex-shrink-0 select-none group/sidebar z-20 overflow-hidden shadow-2xs"
+      style={{ width: "100%", height: "100%" }}
+      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col flex-shrink-0 select-none z-20 overflow-hidden shadow-2xs"
     >
-      {/* Resizable handle — fills the full 6px gap to the right */}
-      <div
-        onMouseDown={startResizing}
-        onDoubleClick={() => setSidebarWidth(320)}
-        title="Drag to resize sidebar • Double-click to reset"
-        className={`absolute top-0 right-0 translate-x-full w-[6px] h-full cursor-col-resize z-30 flex items-center justify-center group/handle ${
-          isResizing ? "bg-commito-coral/30" : "hover:bg-commito-coral/20"
-        }`}
-      >
-        <div className={`w-px h-10 rounded-full transition-colors ${
-          isResizing ? "bg-commito-coral" : "bg-border/60 group-hover/handle:bg-commito-coral/80"
-        }`} />
-      </div>
-
       {/* Dynamic Route-Aware Sidebar */}
       {route === "home" ? <HomeSidebar /> : <RepoSidebar />}
     </aside>

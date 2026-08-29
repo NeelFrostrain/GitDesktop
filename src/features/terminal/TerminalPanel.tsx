@@ -155,22 +155,6 @@ export const TerminalPanel: React.FC = () => {
         }}
         className="relative w-full bg-base-0 border border-border/80 rounded-sm flex-col flex-shrink-0 select-none group/terminal z-20 shadow-2xs overflow-hidden"
       >
-        {/* Resizable handle — fills the full 6px gap above */}
-        <div
-          onMouseDown={startResizing}
-          onDoubleClick={() => {
-            setPanelHeight(Math.round(window.innerHeight * 0.30));
-            setTimeout(fitTerminal, 50);
-          }}
-          title="Drag to resize terminal • Double-click to reset"
-          className={`absolute top-0 left-0 w-full h-[6px] -translate-y-full cursor-row-resize z-30 flex items-center justify-center group/handle ${
-            isResizing ? "bg-commito-coral/30" : "hover:bg-commito-coral/20"
-          }`}
-        >
-          <div className={`h-px w-12 rounded-full transition-colors ${
-            isResizing ? "bg-commito-coral" : "bg-border/60 group-hover/handle:bg-commito-coral/80"
-          }`} />
-        </div>
 
         {/* Header bar with Shell / App Log tab selector */}
         <TerminalTabBar

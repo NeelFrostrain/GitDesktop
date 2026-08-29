@@ -70,7 +70,7 @@ const getStoredWidth = (): number => {
   }
 };
 
-export const AiAgentPanel: React.FC = () => {
+export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp }) => {
   const {
     isOpen,
     setIsOpen,
@@ -228,26 +228,14 @@ export const AiAgentPanel: React.FC = () => {
 
   if (!isOpen) return null;
 
+  // Use externally controlled width if provided; fall back to internal drag width
+  const effectiveWidth = widthProp ?? panelWidth;
+
   return (
     <aside
-      style={{ width: `${panelWidth}px` }}
-      className={`relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden ${
-        isDragging ? "" : "transition-[width] duration-75"
-      }`}
+      style={{ width: `${effectiveWidth}px` }}
+      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden"
     >
-      {/* Left Resizing Drag Handle — fills the full 6px gap to the left */}
-      <div
-        onMouseDown={handleMouseDownResize}
-        className={`absolute top-0 left-0 -translate-x-full w-[6px] h-full cursor-col-resize z-50 flex items-center justify-center group/handle select-none ${
-          isDragging ? "bg-commito-coral/30" : "hover:bg-commito-coral/20"
-        }`}
-        title="Drag to resize AI Agent sidebar"
-      >
-        <div className={`w-px h-10 rounded-full transition-colors ${
-          isDragging ? "bg-commito-coral" : "bg-border/60 group-hover/handle:bg-commito-coral/80"
-        }`} />
-      </div>
-
       {/* Top Header */}
       <div className="h-11 px-2 bg-base-1/90 border-b border-border/80 flex items-center justify-between gap-1.5 shrink-0">
         {/* Left: Icon, Session Switcher, Model Switcher */}

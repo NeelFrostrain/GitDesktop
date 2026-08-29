@@ -1,4 +1,4 @@
-import React, { useEffect, lazy, Suspense } from "react";
+import React, { useEffect, lazy, Suspense, useState, useRef, useCallback } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
@@ -20,6 +20,25 @@ import { AccountService } from "./services/accounts/accountService";
 import { toAppError } from "./shared/utils/errorUtils";
 import { DiffViewer } from "./components/views/DiffViewer";
 import { ToastContainer } from "./components/common/ToastContainer";
+import { PanelResizer } from "./components/layout/PanelResizer";
+
+// ── Panel width helpers ──────────────────────────────────────────────────────
+const SIDEBAR_MIN = 240;
+const SIDEBAR_MAX = 520;
+const SIDEBAR_DEFAULT = 320;
+const AI_MIN = 300;
+const AI_MAX = 900;
+const AI_DEFAULT = 420;
+
+function loadPanelWidth(key: string, def: number, min: number, max: number): number {
+  try {
+    const v = localStorage.getItem(key);
+    return v ? Math.max(min, Math.min(max, parseInt(v, 10))) : def;
+  } catch { return def; }
+}
+function savePanelWidth(key: string, v: number) {
+  try { localStorage.setItem(key, String(v)); } catch {}
+}
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
 const FileBrowser = lazy(() =>
@@ -483,34 +502,72 @@ export const App: React.FC = () => {
 
   const isHome = currentNavView === "home";
 
+  // ── Resizable panel widths ──────────────────────────────────────────────────
+  const [sidebarWidth, setSidebarWidth] = useState(() =>
+    loadPanelWidth("sidebar_width", SIDEBAR_DEFAULT, SIDEBAR_MIN, SIDEBAR_MAX)
+  );
+  const [aiPanelWidth, setAiPanelWidth] = useState(() =>
+    loadPanelWidth("ai_agent_panel_width", AI_DEFAULT, AI_MIN, AI_MAX)
+  );
+  const sidebarWidthRef = useRef(sidebarWidth);
+  const aiPanelWidthRef = useRef(aiPanelWidth);
+  sidebarWidthRef.current = sidebarWidth;
+  aiPanelWidthRef.current = aiPanelWidth;
+
+  const onSidebarResize = useCallback((delta: number) => {
+    setSidebarWidth(prev => Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)));
+  }, []);
+  const onSidebarResizeEnd = useCallback(() => {
+    savePanelWidth("sidebar_width", sidebarWidthRef.current);
+  }, []);
+
+  const onAiPanelResize = useCallback((delta: number) => {
+    setAiPanelWidth(prev => Math.max(AI_MIN, Math.min(AI_MAX, prev - delta)));
+  }, []);
+  const onAiPanelResizeEnd = useCallback(() => {
+    savePanelWidth("ai_agent_panel_width", aiPanelWidthRef.current);
+  }, []);
+
+  // Terminal height resize — wired to terminal store
+  const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } = useTerminalStore();
+  const onTerminalResize = useCallback((delta: number) => {
+    // dragging UP (negative delta) grows the terminal
+    setTerminalHeight(useTerminalStore.getState().panelHeight - delta);
+  }, [setTerminalHeight]);
+
+
   return (
     <ErrorBoundary>
       <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans">
         {/* Custom Application Titlebar */}
         <Titlebar />
 
-        <div className="flex-1 flex overflow-hidden p-1.5 pt-0 gap-1.5 pb-1.5">
+        <div className="flex-1 flex overflow-hidden p-1.5 pt-0 pb-1.5">
           {isHome ? (
-            /* ── Home page: HomeDashboard + relative Right AI Agent sidebar ── */
-            <div className="flex flex-1 min-w-0 w-full overflow-hidden gap-1.5">
+            /* ── Home page ── */
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
                 <HomeDashboard />
               </div>
-
-              {/* Right Sidebar: AI Agent Panel */}
+              <PanelResizer direction="horizontal" onResize={onAiPanelResize} onResizeEnd={onAiPanelResizeEnd} />
               <Suspense fallback={null}>
-                <AiAgentPanel />
+                <AiAgentPanel width={aiPanelWidth} />
               </Suspense>
             </div>
           ) : (
-            /* ── Repo page: sidebar (full-height) | center col (main+terminal) | AI panel (full-height) ── */
-            <div className="flex flex-1 min-w-0 w-full overflow-hidden gap-1.5">
-              {/* Left rail — full height */}
-              <Sidebar />
+            /* ── Repo page: sidebar | center (main+terminal) | AI panel ── */
+            <div className="flex flex-1 min-w-0 w-full overflow-hidden">
+              {/* Left sidebar — fixed width from App state */}
+              <div style={{ width: sidebarWidth }} className="flex-shrink-0 h-full min-w-0">
+                <Sidebar />
+              </div>
 
-              {/* Center column: main workspace (top) + terminal (bottom) */}
-              <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden gap-1.5">
-                {/* Main workspace — grows to fill */}
+              {/* Sidebar ↔ center divider */}
+              <PanelResizer direction="horizontal" onResize={onSidebarResize} onResizeEnd={onSidebarResizeEnd} />
+
+              {/* Center column */}
+              <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
+                {/* Main workspace */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
                   <Header />
                   <Suspense fallback={null}>
@@ -529,19 +586,28 @@ export const App: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Main ↕ Terminal vertical resizer + gap */}
+                {isTerminalOpen && (
+                  <PanelResizer direction="vertical" onResize={onTerminalResize} />
+                )}
+
                 {/* Terminal panel — docked bottom of center column */}
                 <Suspense fallback={null}>
                   <TerminalPanel />
                 </Suspense>
               </div>
 
-              {/* Right AI panel — full height */}
+              {/* Center ↔ AI panel divider */}
+              <PanelResizer direction="horizontal" onResize={onAiPanelResize} onResizeEnd={onAiPanelResizeEnd} />
+
+              {/* Right AI panel — fixed width from App state */}
               <Suspense fallback={null}>
-                <AiAgentPanel />
+                <AiAgentPanel width={aiPanelWidth} />
               </Suspense>
             </div>
           )}
         </div>
+
 
         {/* Global Dialog Modals (Lazy Loaded) */}
         <Suspense fallback={null}>
