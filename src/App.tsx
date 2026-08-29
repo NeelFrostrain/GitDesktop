@@ -28,6 +28,7 @@ import { toAppError } from "./shared/utils/errorUtils";
 import { DiffViewer } from "./components/views/DiffViewer";
 import { ToastContainer } from "./components/common/ToastContainer";
 import { PanelResizer } from "./components/layout/PanelResizer";
+import { useAiAgentStore } from "./features/ai-agent";
 
 // ── Panel width helpers ──────────────────────────────────────────────────────
 const SIDEBAR_MIN = 240;
@@ -546,6 +547,8 @@ export const App: React.FC = () => {
     savePanelWidth("ai_agent_panel_width", aiPanelWidthRef.current);
   }, []);
 
+  const { isOpen: isAiAgentOpen } = useAiAgentStore();
+
   // Terminal height resize — wired to terminal store
   const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } =
     useTerminalStore();
@@ -633,11 +636,13 @@ export const App: React.FC = () => {
               </div>
 
               {/* Center ↔ AI panel divider */}
-              <PanelResizer
-                direction="horizontal"
-                onResize={onAiPanelResize}
-                onResizeEnd={onAiPanelResizeEnd}
-              />
+              {isAiAgentOpen && (
+                <PanelResizer
+                  direction="horizontal"
+                  onResize={onAiPanelResize}
+                  onResizeEnd={onAiPanelResizeEnd}
+                />
+              )}
 
               {/* Right AI panel — fixed width from App state */}
               <Suspense fallback={null}>
