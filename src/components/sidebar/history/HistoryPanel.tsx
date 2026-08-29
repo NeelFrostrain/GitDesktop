@@ -176,7 +176,6 @@ export const HistoryPanel: React.FC = () => {
       />
       <CommitList
         commits={filteredCommits}
-        totalLoadedCount={commits.length}
         hasMore={hasMore}
         isLoadingMore={isLoadingMore}
         isLoadingInitial={isLoadingInitial}

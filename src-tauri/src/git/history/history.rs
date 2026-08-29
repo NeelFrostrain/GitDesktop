@@ -40,21 +40,51 @@ pub fn get_commit_history(
     repo_path: &str,
     limit: usize,
     offset: usize,
+    branch: Option<&str>,
+    all: Option<bool>,
 ) -> Result<Vec<CommitInfo>, AppError> {
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
     let mut revwalk = repo.revwalk()?;
-    revwalk
-        .push_head()
-        .map_err(|_| AppError::Git("Repository has no HEAD commit".to_string()))?;
+    let _ = revwalk.set_sorting(git2::Sort::TOPOLOGICAL | git2::Sort::TIME);
+
+    let show_all = all.unwrap_or(false) || branch == Some("all");
+
+    if show_all {
+        let _ = revwalk.push_glob("refs/heads/*");
+        let _ = revwalk.push_glob("refs/remotes/*");
+        let _ = revwalk.push_glob("refs/tags/*");
+        let _ = revwalk.push_head();
+    } else if let Some(br) = branch {
+        if br != "all" && !br.is_empty() {
+            let res = revwalk
+                .push_ref(&format!("refs/heads/{}", br))
+                .or_else(|_| revwalk.push_ref(&format!("refs/remotes/origin/{}", br)))
+                .or_else(|_| revwalk.push_ref(&format!("refs/remotes/{}", br)))
+                .or_else(|_| revwalk.push_ref(br));
+            if res.is_err() {
+                let _ = revwalk.push_head();
+            }
+        } else {
+            let _ = revwalk.push_head();
+        }
+    } else {
+        let _ = revwalk.push_head();
+    }
 
     let mut commits = Vec::new();
     let entries: Vec<_> = revwalk.skip(offset).take(limit).collect();
 
     for oid_res in entries {
-        let oid = oid_res?;
-        let commit = repo.find_commit(oid)?;
+        let oid = match oid_res {
+            Ok(id) => id,
+            Err(_) => continue,
+        };
+        let commit = match repo.find_commit(oid) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
 
         let author = commit.author();
         let author_name = author.name().unwrap_or("Unknown").to_string();

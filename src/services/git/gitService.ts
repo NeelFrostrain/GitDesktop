@@ -143,10 +143,22 @@ export class GitService {
   }
 
   /**
-   * Fetches paginated commit log history.
+   * Fetches paginated commit log history with optional branch/all filtering and topological sorting.
    */
-  static async getCommitHistory(repoPath: string, limit = 50, offset = 0): Promise<CommitInfo[]> {
-    return invoke<CommitInfo[]>('get_commit_history', { repoPath, limit, offset });
+  static async getCommitHistory(
+    repoPath: string,
+    limit = 50,
+    offset = 0,
+    branch?: string | null,
+    all?: boolean | null
+  ): Promise<CommitInfo[]> {
+    return invoke<CommitInfo[]>('get_commit_history', {
+      repoPath,
+      limit,
+      offset,
+      branch: branch ?? null,
+      all: all ?? null,
+    });
   }
 
   /**

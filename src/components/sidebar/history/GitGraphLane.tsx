@@ -21,13 +21,18 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
     return <div className="w-4 shrink-0" />;
   }
 
-  const { lane, colorIndex, isHead, isMerge, outSegments, activeLanes } = node;
+  const { lane, colorIndex, isHead, isMerge, inSegments, outSegments, activeLanes } = node;
   const nodeX = PADDING_LEFT + lane * LANE_WIDTH;
   const centerY = rowHeight / 2;
   const nodeColor = LANE_COLORS[colorIndex % LANE_COLORS.length] || LANE_COLORS[0];
 
   // Calculate required width
-  const maxLane = Math.max(lane, ...(activeLanes || [0]), ...outSegments.map((s) => s.toLane));
+  const maxLane = Math.max(
+    lane,
+    ...(activeLanes || [0]),
+    ...((inSegments || []).map((s) => s.fromLane)),
+    ...((outSegments || []).map((s) => s.toLane))
+  );
   const svgWidth = Math.max(22, PADDING_LEFT + (maxLane + 1) * LANE_WIDTH + 4);
 
   return (
@@ -60,19 +65,44 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
           );
         })}
 
-        {/* 2. Incoming top line into current commit node */}
-        <line
-          x1={nodeX}
-          y1={0}
-          x2={nodeX}
-          y2={centerY}
-          stroke={nodeColor}
-          strokeWidth={2}
-          strokeOpacity={0.9}
-        />
+        {/* 2. Incoming lines from above entering this commit node */}
+        {(inSegments || []).map((inSeg, inIdx) => {
+          const fromX = PADDING_LEFT + inSeg.fromLane * LANE_WIDTH;
+          const toX = nodeX;
+          const segColor = LANE_COLORS[inSeg.colorIndex % LANE_COLORS.length] || nodeColor;
+
+          if (fromX === toX) {
+            return (
+              <line
+                key={`in-${inIdx}`}
+                x1={fromX}
+                y1={0}
+                x2={toX}
+                y2={centerY}
+                stroke={segColor}
+                strokeWidth={2}
+                strokeOpacity={0.9}
+              />
+            );
+          }
+
+          // Curved incoming merge from another branch above
+          const midY = centerY / 2;
+          const pathData = `M ${fromX} 0 C ${fromX} ${midY}, ${toX} ${midY}, ${toX} ${centerY}`;
+          return (
+            <path
+              key={`in-curve-${inIdx}`}
+              d={pathData}
+              fill="none"
+              stroke={segColor}
+              strokeWidth={2}
+              strokeOpacity={0.9}
+            />
+          );
+        })}
 
         {/* 3. Outgoing bottom lines to parent commits */}
-        {outSegments.map((seg, sIdx) => {
+        {(outSegments || []).map((seg, sIdx) => {
           const fromX = nodeX;
           const toX = PADDING_LEFT + seg.toLane * LANE_WIDTH;
           const segColor = LANE_COLORS[seg.colorIndex % LANE_COLORS.length] || nodeColor;

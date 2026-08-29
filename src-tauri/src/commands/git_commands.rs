@@ -163,10 +163,12 @@ pub async fn get_commit_history(
     repo_path: String,
     limit: Option<usize>,
     offset: Option<usize>,
+    branch: Option<String>,
+    all: Option<bool>,
 ) -> Result<Vec<CommitInfo>, AppError> {
     let lim = limit.unwrap_or(50);
     let off = offset.unwrap_or(0);
-    tokio::task::spawn_blocking(move || history_fn(&repo_path, lim, off))
+    tokio::task::spawn_blocking(move || history_fn(&repo_path, lim, off, branch.as_deref(), all))
         .await
         .map_err(|e| AppError::Unknown(e.to_string()))?
 }

@@ -18,7 +18,7 @@ interface UserAvatarProps {
  */
 function getInitials(name?: string, handle?: string): string {
   const clean = (name || handle || '').trim().replace(/^@+/, '');
-  if (!clean) return '';
+  if (!clean || clean.toLowerCase() === 'you' || clean.toLowerCase() === 'user') return '';
 
   const parts = clean.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) {

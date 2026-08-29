@@ -1,10 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { X, AlertTriangle, ArrowUpDown, GitMerge, Info, Play, Loader2 } from 'lucide-react';
+import {
+  X,
+  AlertTriangle,
+  ArrowUpDown,
+  GitMerge,
+  Info,
+  Play,
+  Loader2,
+  ArrowDown,
+} from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
+import { UserAvatar } from '../common/UserAvatar';
 
 /**
  * Modal dialogue for confirming and executing history rewrite operations triggered by drag-and-drop
@@ -153,7 +163,7 @@ export const RewriteHistoryModal: React.FC = () => {
         <form
           id="rewrite-history-form"
           onSubmit={handleConfirm}
-          className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0"
+          className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0 scrollbar-thin"
         >
           {/* Uncommitted changes blocking alert */}
           {hasUncommittedChanges && (
@@ -186,33 +196,63 @@ export const RewriteHistoryModal: React.FC = () => {
           {/* Reorder Details */}
           {pendingHistoryOp.type === 'reorder' && (
             <div className="space-y-3">
-              <p className="text-xs text-text-secondary">You are moving the commit:</p>
+              <p className="text-xs text-text-secondary font-medium">Moving source commit:</p>
 
-              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">
-                  {pendingHistoryOp.sourceCommit.message}
-                </h4>
-                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
-                  <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
-                  <span>•</span>
+              {/* Source Commit Card */}
+              <div className="p-3 bg-base-2/80 border border-commito-coral/40 rounded-sm space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-bold text-text-primary truncate">
+                    {pendingHistoryOp.sourceCommit.message}
+                  </h4>
+                  <span className="px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[10px] font-mono text-commito-coral shrink-0">
+                    {pendingHistoryOp.sourceCommit.short_sha}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                  <UserAvatar
+                    name={pendingHistoryOp.sourceCommit.author_name}
+                    email={pendingHistoryOp.sourceCommit.author_email}
+                    className="w-3.5 h-3.5 text-[8px]"
+                  />
                   <span>{pendingHistoryOp.sourceCommit.author_name}</span>
+                  <span>•</span>
+                  <span className="font-mono text-[10px]">
+                    {pendingHistoryOp.sourceCommit.relative_date}
+                  </span>
                 </div>
               </div>
 
-              <p className="text-xs text-text-secondary">
-                {pendingHistoryOp.position === 'before'
-                  ? 'To immediately before commit:'
-                  : 'To immediately after commit:'}
-              </p>
+              {/* Direction Indicator */}
+              <div className="flex items-center justify-center gap-2 py-1 text-xs text-text-muted font-semibold">
+                <ArrowDown className="w-3.5 h-3.5 text-commito-coral animate-bounce" />
+                <span>
+                  {pendingHistoryOp.position === 'before'
+                    ? 'Immediately before target commit:'
+                    : 'Immediately after target commit:'}
+                </span>
+              </div>
 
-              <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">
-                  {pendingHistoryOp.targetCommit.message}
-                </h4>
-                <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
-                  <span>{pendingHistoryOp.targetCommit.short_sha}</span>
-                  <span>•</span>
+              {/* Target Commit Card */}
+              <div className="p-3 bg-base-2/80 border border-border rounded-sm space-y-1.5 shadow-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="text-xs font-bold text-text-primary truncate">
+                    {pendingHistoryOp.targetCommit.message}
+                  </h4>
+                  <span className="px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[10px] font-mono text-text-muted shrink-0">
+                    {pendingHistoryOp.targetCommit.short_sha}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-text-muted">
+                  <UserAvatar
+                    name={pendingHistoryOp.targetCommit.author_name}
+                    email={pendingHistoryOp.targetCommit.author_email}
+                    className="w-3.5 h-3.5 text-[8px]"
+                  />
                   <span>{pendingHistoryOp.targetCommit.author_name}</span>
+                  <span>•</span>
+                  <span className="font-mono text-[10px]">
+                    {pendingHistoryOp.targetCommit.relative_date}
+                  </span>
                 </div>
               </div>
             </div>
@@ -221,16 +261,43 @@ export const RewriteHistoryModal: React.FC = () => {
           {/* Merge Details */}
           {pendingHistoryOp.type === 'merge' && (
             <div className="space-y-3">
-              <p className="text-xs text-text-secondary">
+              <p className="text-xs text-text-secondary font-medium">
                 Combining 2 commits into 1 single commit:
               </p>
 
-              <div className="space-y-1.5">
-                <div className="p-2.5 bg-base-2 border border-border rounded-sm text-xs font-bold text-text-primary">
-                  1. {pendingHistoryOp.sourceCommit.message}
+              <div className="space-y-2">
+                {/* Source */}
+                <div className="p-2.5 bg-base-2 border border-border rounded-sm flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-1.5 py-0.2 bg-base-0 border border-border rounded-xs font-mono text-[10px] text-text-muted shrink-0">
+                      {pendingHistoryOp.sourceCommit.short_sha}
+                    </span>
+                    <span className="text-xs font-bold text-text-primary truncate">
+                      {pendingHistoryOp.sourceCommit.message}
+                    </span>
+                  </div>
+                  <UserAvatar
+                    name={pendingHistoryOp.sourceCommit.author_name}
+                    email={pendingHistoryOp.sourceCommit.author_email}
+                    className="w-3.5 h-3.5 text-[8px] shrink-0"
+                  />
                 </div>
-                <div className="p-2.5 bg-base-2 border border-border rounded-sm text-xs font-bold text-text-primary">
-                  2. {pendingHistoryOp.targetCommit.message}
+
+                {/* Target */}
+                <div className="p-2.5 bg-base-2 border border-border rounded-sm flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="px-1.5 py-0.2 bg-base-0 border border-border rounded-xs font-mono text-[10px] text-commito-coral shrink-0">
+                      {pendingHistoryOp.targetCommit.short_sha}
+                    </span>
+                    <span className="text-xs font-bold text-text-primary truncate">
+                      {pendingHistoryOp.targetCommit.message}
+                    </span>
+                  </div>
+                  <UserAvatar
+                    name={pendingHistoryOp.targetCommit.author_name}
+                    email={pendingHistoryOp.targetCommit.author_email}
+                    className="w-3.5 h-3.5 text-[8px] shrink-0"
+                  />
                 </div>
               </div>
 

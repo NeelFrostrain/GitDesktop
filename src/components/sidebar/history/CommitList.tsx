@@ -1,147 +1,102 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { Loader2, GitCommit } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
-import { useHistoryDragAndDrop } from '../../../hooks/useHistoryDragAndDrop';
 import { CommitCard } from './CommitCard';
 import { CommitContextMenu } from '../../context-menus/CommitContextMenu';
+import { useHistoryDragAndDrop } from '../../../hooks/useHistoryDragAndDrop';
 
 interface CommitListProps {
   commits: CommitInfo[];
-  totalLoadedCount?: number;
-  hasMore?: boolean;
-  isLoadingMore?: boolean;
-  isLoadingInitial?: boolean;
-  onLoadMore?: () => void;
+  hasMore: boolean;
+  isLoadingMore: boolean;
+  isLoadingInitial: boolean;
+  onLoadMore: () => void;
 }
 
 export const CommitList: React.FC<CommitListProps> = ({
   commits,
-  hasMore = false,
-  isLoadingMore = false,
-  isLoadingInitial = false,
+  hasMore,
+  isLoadingMore,
+  isLoadingInitial,
   onLoadMore,
 }) => {
-  const { selectedCommitSha, setSelectedCommitSha, setCurrentNavView } = useGitStore();
-  const { commitListRef, draggedSha, dragTarget, handleMouseDownOnCommit } =
-    useHistoryDragAndDrop(commits);
-
+  const { selectedCommitSha, setSelectedCommitSha } = useGitStore();
   const [contextMenu, setContextMenu] = useState<{
     commit: CommitInfo;
     x: number;
     y: number;
   } | null>(null);
 
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const { draggedSha, dragTarget, handleMouseDownOnCommit, commitListRef } =
+    useHistoryDragAndDrop(commits);
 
-  // IntersectionObserver to automatically trigger onLoadMore when scrolling near bottom
-  useEffect(() => {
-    if (!hasMore || isLoadingMore || !onLoadMore) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          onLoadMore();
-        }
-      },
-      {
-        root: commitListRef.current,
-        rootMargin: '200px',
-        threshold: 0.1,
+  const handleScroll = useCallback(
+    (e: React.UIEvent<HTMLDivElement>) => {
+      if (!hasMore || isLoadingMore || isLoadingInitial) return;
+      const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+      if (scrollHeight - scrollTop - clientHeight < 200) {
+        onLoadMore();
       }
-    );
-
-    const sentinel = sentinelRef.current;
-    if (sentinel) {
-      observer.observe(sentinel);
-    }
-
-    return () => {
-      if (sentinel) {
-        observer.unobserve(sentinel);
-      }
-      observer.disconnect();
-    };
-  }, [hasMore, isLoadingMore, onLoadMore, commitListRef]);
-
-  // Fallback scroll listener
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    if (!hasMore || isLoadingMore || !onLoadMore) return;
-
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop - clientHeight < 250) {
-      onLoadMore();
-    }
-  };
+    },
+    [hasMore, isLoadingMore, isLoadingInitial, onLoadMore]
+  );
 
   if (isLoadingInitial && commits.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-xs text-text-muted gap-2">
-        <Loader2 className="w-5 h-5 animate-spin text-commito-coral" />
-        <span>Loading commit timeline...</span>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-xs text-text-muted gap-2">
+        <Loader2 className="w-4 h-4 animate-spin text-commito-coral" />
+        <span>Loading commit history...</span>
       </div>
     );
   }
 
-  if (commits.length === 0) {
+  if (!isLoadingInitial && commits.length === 0) {
     return (
-      <div className="p-6 text-center text-xs text-text-muted italic">No commits match filter</div>
+      <div className="flex-1 flex flex-col items-center justify-center p-8 text-xs text-text-muted gap-2 text-center">
+        <GitCommit className="w-6 h-6 text-text-faint" />
+        <span>No commits found matching filter.</span>
+      </div>
     );
   }
 
   return (
-    <>
-      <div
-        ref={commitListRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto p-2 pr-0.5 space-y-1 select-none"
-      >
-        {commits.map((c) => {
-          const isSelected = selectedCommitSha === c.sha;
-          const isDragging = draggedSha === c.sha;
-          const isTarget = dragTarget?.sha === c.sha;
-          const dropZone = isTarget ? dragTarget.dropZone : null;
+    <div
+      ref={commitListRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-y-auto p-2 space-y-1.5 scrollbar-thin select-none"
+    >
+      {commits.map((commit) => {
+        const isSelected = selectedCommitSha === commit.sha;
+        const isDragging = draggedSha === commit.sha;
+        const isTarget = dragTarget?.sha === commit.sha;
+        const dropZone = isTarget ? dragTarget.dropZone : null;
 
-          return (
-            <CommitCard
-              key={c.sha}
-              commit={c}
-              isSelected={isSelected}
-              isDragging={isDragging}
-              isTarget={isTarget}
-              dropZone={dropZone}
-              onMouseDown={handleMouseDownOnCommit}
-              onClick={() => {
-                setSelectedCommitSha(c.sha);
-                setCurrentNavView('history');
-              }}
-              onContextMenu={(e, commit) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedCommitSha(commit.sha);
-                setContextMenu({ commit, x: e.clientX, y: e.clientY });
-              }}
-            />
-          );
-        })}
+        return (
+          <CommitCard
+            key={commit.sha}
+            commit={commit}
+            isSelected={isSelected}
+            isDragging={isDragging}
+            isTarget={isTarget}
+            dropZone={dropZone}
+            onMouseDown={handleMouseDownOnCommit}
+            onClick={() => setSelectedCommitSha(commit.sha)}
+            onContextMenu={(e, c) => {
+              e.preventDefault();
+              setSelectedCommitSha(c.sha);
+              setContextMenu({ commit: c, x: e.clientX, y: e.clientY });
+            }}
+          />
+        );
+      })}
 
-        {/* Sentinel element for infinite scroll observer */}
-        <div ref={sentinelRef} className="h-2 w-full pointer-events-none" />
-
-        {/* Bottom Loading / End State */}
-        {isLoadingMore && (
-          <div className="py-2.5 flex items-center justify-center gap-2 text-[11px] text-text-muted font-medium bg-base-1/50 border border-border/40 rounded-sm">
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
-            <span>Loading older commits...</span>
-          </div>
-        )}
-
-        {!hasMore && commits.length > 0 && (
-          <div className="py-3 text-center text-[10px] text-text-faint font-mono uppercase tracking-wider">
-            Beginning of Repository History
-          </div>
-        )}
-      </div>
+      {isLoadingMore && (
+        <div className="py-2 flex items-center justify-center gap-2 text-xs text-text-muted">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
+          <span>Loading more...</span>
+        </div>
+      )}
 
       {contextMenu && (
         <CommitContextMenu
@@ -151,6 +106,6 @@ export const CommitList: React.FC<CommitListProps> = ({
           onClose={() => setContextMenu(null)}
         />
       )}
-    </>
+    </div>
   );
 };
