@@ -164,7 +164,7 @@ export const Titlebar: React.FC = () => {
       ref={titlebarRef}
       data-tauri-drag-region
       onDoubleClick={handleToggleMaximize}
-      className="titlebar-drag h-10 rounded-sm bg-base-0 border border-border/80 shadow-2xs mx-1.5 mt-1.5 mb-1.5 flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
+      className="titlebar-drag h-10 bg-base-0 border-y border-border/80 shadow-2xs flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
       {/* Left: App Icon + Clean Title */}
       <div data-tauri-drag-region className="flex items-center gap-2 min-w-0 pointer-events-none">

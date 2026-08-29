@@ -276,7 +276,7 @@ export const LfsView: React.FC = () => {
   }, [lfsFiles, fileFilter]);
 
   return (
-    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-2 md:p-3 select-none space-y-5 scrollbar-thin">
+    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-1.5 md:p-2 select-none space-y-5 scrollbar-thin">
       {/* ── Top Header Banner & Quick Actions ── */}
       <div className="p-4 rounded-sm border border-border bg-base-1/50 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div>

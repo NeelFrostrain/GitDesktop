@@ -117,7 +117,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     const list: string[] = [];
 
     // 1. Explicit avatar URL for this entity
-    let primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url;
+    const primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url;
     if (primaryUrl && primaryUrl !== 'null' && primaryUrl.trim() !== '') {
       let trimmed = primaryUrl.trim();
       if (trimmed.startsWith('/')) {

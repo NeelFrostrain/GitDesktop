@@ -220,7 +220,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
   return (
     <aside
       style={{ width: `${effectiveWidth}px` }}
-      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden"
+      className="relative h-full bg-base-0 border-l border-border/80 flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden"
     >
       {/* Top Header */}
       <div className="h-11 px-2 bg-base-1/90 border-b border-border/80 flex items-center justify-between gap-1.5 shrink-0">

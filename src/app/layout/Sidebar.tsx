@@ -68,7 +68,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       style={{ width: '100%', height: '100%' }}
-      className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col flex-shrink-0 select-none z-20 overflow-hidden shadow-2xs"
+      className="relative h-full bg-base-0 border-r border-border/80 flex flex-col flex-shrink-0 select-none z-20 overflow-hidden shadow-2xs"
     >
       {/* Dynamic Route-Aware Sidebar */}
       {route === 'home' ? <HomeSidebar /> : <RepoSidebar />}

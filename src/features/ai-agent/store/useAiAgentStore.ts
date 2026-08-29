@@ -907,7 +907,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // 5. Clean output
-    let cleanOutput = capturedOutput
+    const cleanOutput = capturedOutput
       .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
       .replace(/\x1b\].*?\x07/g, '')
       .replace(/\r/g, '')

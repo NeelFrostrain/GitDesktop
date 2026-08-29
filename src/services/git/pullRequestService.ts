@@ -244,7 +244,7 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
   serverUrl?: string;
 } | null {
   if (!remoteUrl) return null;
-  let clean = remoteUrl.trim().replace(/\.git\/?$/, '');
+  const clean = remoteUrl.trim().replace(/\.git\/?$/, '');
 
   // 1. Match HTTPS/HTTP format: https://github.com/owner/repo or https://gitlab.com/group/project
   if (clean.startsWith('http://') || clean.startsWith('https://')) {

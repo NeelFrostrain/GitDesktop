@@ -532,11 +532,11 @@ export const App: React.FC = () => {
         {/* Custom Application Titlebar */}
         <Titlebar />
 
-        <div className="flex-1 flex overflow-hidden p-1.5 pt-0 pb-1.5">
+        <div className="flex-1 flex overflow-hidden">
           {isHome ? (
             /* ── Home page ── */
             <div className="flex flex-1 min-w-0 w-full overflow-hidden">
-              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
+              <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden border border-border/80 bg-base-0 shadow-2xs">
                 <HomeDashboard />
               </div>
               {/* <PanelResizer
@@ -566,7 +566,7 @@ export const App: React.FC = () => {
               {/* Center column */}
               <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
                 {/* Main workspace */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden border-x border-b border-border/80 bg-base-0 shadow-2xs">
                   <Header />
                   <Suspense fallback={null}>
                     <ConflictView />

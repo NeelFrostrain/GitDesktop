@@ -15,10 +15,26 @@ export default tseslint.config(
       '.vscode',
       '.idea',
       '*.log',
+      '.eslintcache',
     ],
   },
+  // Config for Node.js files
   {
-    files: ['**/*.{js,jsx,ts,tsx}'],
+    files: ['eslint.config.js', 'vite.config.ts', 'vitest.config.ts'],
+    languageOptions: {
+      parser: tseslint.parser,
+      globals: {
+        process: 'readonly',
+        __dirname: 'readonly',
+        __filename: 'readonly',
+        Buffer: 'readonly',
+        global: 'readonly',
+      },
+    },
+  },
+  // Config for source files
+  {
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
@@ -33,9 +49,29 @@ export default tseslint.config(
         },
       },
       globals: {
-        browser: true,
-        es2021: true,
-        node: true,
+        console: 'readonly',
+        document: 'readonly',
+        window: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLDivElement: 'readonly',
+        HTMLInputElement: 'readonly',
+        HTMLTextAreaElement: 'readonly',
+        MouseEvent: 'readonly',
+        Node: 'readonly',
+        FileReader: 'readonly',
+        React: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        AbortController: 'readonly',
+        clearTimeout: 'readonly',
+        setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+        IDBDatabase: 'readonly',
+        IDBOpenDBRequest: 'readonly',
       },
     },
     plugins: {
@@ -50,11 +86,13 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'warn',
       'react-refresh/only-export-components': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      'no-empty': 'warn',
     },
     settings: {
       react: {
         version: 'detect',
       },
     },
-  },
-];
+  }
+);

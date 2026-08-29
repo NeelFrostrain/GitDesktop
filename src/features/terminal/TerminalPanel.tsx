@@ -145,7 +145,7 @@ export const TerminalPanel: React.FC = () => {
           height: `${panelHeight}px`,
           display: isOpen ? 'flex' : 'none',
         }}
-        className="relative w-full bg-base-0 border border-border/80 rounded-sm flex-col flex-shrink-0 select-none group/terminal z-20 shadow-2xs overflow-hidden"
+        className="relative w-full bg-base-0 border-x border-t  border-border/80 flex-col flex-shrink-0 select-none group/terminal z-20 shadow-2xs overflow-hidden"
       >
         {/* Header bar with Shell / App Log tab selector */}
         <TerminalTabBar

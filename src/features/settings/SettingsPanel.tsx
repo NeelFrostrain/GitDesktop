@@ -6,6 +6,7 @@ import { searchSettings } from './lib/fuzzySearch';
 import { CategoryTree } from './components/CategoryTree';
 import { SettingRow } from './components/SettingRow';
 import { AiSettingsTab } from './components/AiSettingsTab';
+import { ThemeSelectorTab } from './components/ThemeSelectorTab';
 import { SettingsSearchBar } from './components/SettingsSearchBar';
 import { useGitStore } from '../../store/useGitStore';
 
@@ -221,6 +222,9 @@ export const SettingsPanel: React.FC = () => {
             ) : (
               /* 2. Category View Mode */
               <div className="space-y-4">
+                {/* Render dedicated AppearanceTab for theme selection */}
+                {selectedCategory === 'appearance' && <ThemeSelectorTab />}
+
                 {/* Render dedicated AiSettingsTab with multi-key pool */}
                 {selectedCategory === 'ai' && <AiSettingsTab />}
 
