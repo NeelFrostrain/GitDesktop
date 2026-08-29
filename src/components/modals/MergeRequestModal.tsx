@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { createPortal } from 'react-dom';
-import { openUrl } from '@tauri-apps/plugin-opener';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useCallback,
+} from "react";
+import { createPortal } from "react-dom";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   X,
   GitPullRequest,
@@ -37,14 +43,14 @@ import {
   MoreHorizontal,
   Key,
   ShieldAlert,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { useToastStore } from '../../store/useToastStore';
-import { useRemoteStore } from '../../store/remoteStore';
-import { useAccountServicesStore } from '../../features/account-services';
-import { useAccountStore } from '../../store/accountStore';
-import { UserAvatar } from '../common/UserAvatar';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { useToastStore } from "../../store/useToastStore";
+import { useRemoteStore } from "../../store/remoteStore";
+import { useAccountServicesStore } from "../../features/account-services";
+import { useAccountStore } from "../../store/accountStore";
+import { UserAvatar } from "../common/UserAvatar";
 import {
   UnifiedMergeRequest,
   BranchInfo,
@@ -52,24 +58,27 @@ import {
   CommitInfo,
   CommitFileStat,
   DiffResult,
-} from '../../types/git';
-import { GitService } from '../../services/git/gitService';
-import { ReleaseService } from '../../services/git/releaseService';
-import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
-import { toAppError, parseApiError } from '../../shared/utils/errorUtils';
-import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
-import { Dropdown } from '../common/Dropdown';
-import { Checkbox } from '../common/Checkbox';
-import { Radio } from '../common/Radio';
-import { Tabs } from '../common/Tabs';
-import { MarkdownPreview } from '../common/MarkdownPreview';
-import { Button } from '../common/Button';
-import { ConfirmDialog } from '../common/ConfirmDialog';
-import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
-import { UnifiedDiffView } from '../views/diff/UnifiedDiffView';
-import { SplitDiffView } from '../views/diff/SplitDiffView';
+} from "../../types/git";
+import { GitService } from "../../services/git/gitService";
+import { ReleaseService } from "../../services/git/releaseService";
+import {
+  PullRequestService,
+  parseRemoteRepoInfo,
+} from "../../services/git/pullRequestService";
+import { toAppError, parseApiError } from "../../shared/utils/errorUtils";
+import { formatBranchDropdownOptions } from "../../shared/utils/branchUtils";
+import { Dropdown } from "../common/Dropdown";
+import { Checkbox } from "../common/Checkbox";
+import { Radio } from "../common/Radio";
+import { Tabs } from "../common/Tabs";
+import { MarkdownPreview } from "../common/MarkdownPreview";
+import { Button } from "../common/Button";
+import { ConfirmDialog } from "../common/ConfirmDialog";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+import { UnifiedDiffView } from "../views/diff/UnifiedDiffView";
+import { SplitDiffView } from "../views/diff/SplitDiffView";
 
-type InspectorTab = 'conversation' | 'commits' | 'files';
+type InspectorTab = "conversation" | "commits" | "files";
 
 /**
  * Modern 50/50 Balanced 2-Column Split Modal for Creating, Inspecting, and Editing
@@ -89,56 +98,71 @@ export const MergeRequestModal: React.FC = () => {
   const { remotes, loadRemotes } = useRemoteStore();
 
   // Main Modal Mode: 'create' | 'list' | 'edit'
-  const [activeTab, setActiveTab] = useState<'create' | 'list' | 'edit'>('create');
-  const [editorTab, setEditorTab] = useState<'write' | 'preview'>('write');
+  const [activeTab, setActiveTab] = useState<"create" | "list" | "edit">(
+    "create",
+  );
+  const [editorTab, setEditorTab] = useState<"write" | "preview">("write");
 
   // Inspector Sub-Tabs
-  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('conversation');
+  const [inspectorTab, setInspectorTab] =
+    useState<InspectorTab>("conversation");
 
   // Create Mode Form State
-  const [sourceBranch, setSourceBranch] = useState(status?.current_branch || 'main');
-  const [targetBranch, setTargetBranch] = useState('main');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [sourceBranch, setSourceBranch] = useState(
+    status?.current_branch || "main",
+  );
+  const [targetBranch, setTargetBranch] = useState("main");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [isDraft, setIsDraft] = useState(false);
   const [squashCommits, setSquashCommits] = useState(false);
   const [deleteSourceBranch, setDeleteSourceBranch] = useState(false);
-  const [selectedRemote, setSelectedRemote] = useState('origin');
+  const [selectedRemote, setSelectedRemote] = useState("origin");
 
   // Edit Mode Form State
   const [editingMr, setEditingMr] = useState<UnifiedMergeRequest | null>(null);
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editTargetBranch, setEditTargetBranch] = useState('');
-  const [editEditorTab, setEditEditorTab] = useState<'write' | 'preview'>('write');
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editTargetBranch, setEditTargetBranch] = useState("");
+  const [editEditorTab, setEditEditorTab] = useState<"write" | "preview">(
+    "write",
+  );
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [isClosingPr, setIsClosingPr] = useState(false);
   const [isGeneratingAiForEdit, setIsGeneratingAiForEdit] = useState(false);
 
   // List & Inspector State
-  const [searchFilter, setSearchFilter] = useState('');
+  const [searchFilter, setSearchFilter] = useState("");
   const [selectedMrId, setSelectedMrId] = useState<string | null>(null);
 
   // Inspector Details: Commits, Files, Comments
   const [prComments, setPrComments] = useState<PullRequestComment[]>([]);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
-  const [newCommentText, setNewCommentText] = useState('');
-  const [commentEditorTab, setCommentEditorTab] = useState<'write' | 'preview'>('write');
+  const [newCommentText, setNewCommentText] = useState("");
+  const [commentEditorTab, setCommentEditorTab] = useState<"write" | "preview">(
+    "write",
+  );
   const [isPostingComment, setIsPostingComment] = useState(false);
   const commentTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Comment Actions & Context Menu
-  const [activeCommentMenuId, setActiveCommentMenuId] = useState<number | string | null>(null);
+  const [activeCommentMenuId, setActiveCommentMenuId] = useState<
+    number | string | null
+  >(null);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
-  const [editingCommentBody, setEditingCommentBody] = useState('');
+  const [editingCommentBody, setEditingCommentBody] = useState("");
   const [isSavingCommentEdit, setIsSavingCommentEdit] = useState(false);
-  const [hiddenCommentIds, setHiddenCommentIds] = useState<Set<number>>(new Set());
+  const [hiddenCommentIds, setHiddenCommentIds] = useState<Set<number>>(
+    new Set(),
+  );
 
   // Merge PR Modal State
   const [showMergeModal, setShowMergeModal] = useState(false);
-  const [mergeMethod, setMergeMethod] = useState<'merge' | 'squash' | 'rebase'>('merge');
-  const [mergeCommitTitle, setMergeCommitTitle] = useState('');
-  const [mergeCommitMessage, setMergeCommitMessage] = useState('');
+  const [mergeMethod, setMergeMethod] = useState<"merge" | "squash" | "rebase">(
+    "merge",
+  );
+  const [mergeCommitTitle, setMergeCommitTitle] = useState("");
+  const [mergeCommitMessage, setMergeCommitMessage] = useState("");
   const [deleteBranchAfterMerge, setDeleteBranchAfterMerge] = useState(false);
   const [squashAfterMerge, setSquashAfterMerge] = useState(false);
   const [isMerging, setIsMerging] = useState(false);
@@ -150,10 +174,16 @@ export const MergeRequestModal: React.FC = () => {
   const [isLoadingBranchDiff, setIsLoadingBranchDiff] = useState(false);
 
   // Diff View Mode (Unified vs Split) & Expanded files
-  const [diffViewMode, setDiffViewMode] = useState<'unified' | 'split'>('unified');
+  const [diffViewMode, setDiffViewMode] = useState<"unified" | "split">(
+    "unified",
+  );
   const [openFilePaths, setOpenFilePaths] = useState<Set<string>>(new Set());
-  const [fileDiffCache, setFileDiffCache] = useState<Record<string, DiffResult>>({});
-  const [loadingFilePaths, setLoadingFilePaths] = useState<Set<string>>(new Set());
+  const [fileDiffCache, setFileDiffCache] = useState<
+    Record<string, DiffResult>
+  >({});
+  const [loadingFilePaths, setLoadingFilePaths] = useState<Set<string>>(
+    new Set(),
+  );
   const [copiedFilePath, setCopiedFilePath] = useState<string | null>(null);
 
   // Data & Loaders
@@ -165,28 +195,38 @@ export const MergeRequestModal: React.FC = () => {
 
   // Track unsaved form edits
   const isDirty = useMemo(() => {
-    if (activeTab === 'create') {
-      return title.trim() !== '' || description.trim() !== '';
+    if (activeTab === "create") {
+      return title.trim() !== "" || description.trim() !== "";
     }
-    if (activeTab === 'edit' && editingMr) {
+    if (activeTab === "edit" && editingMr) {
       return (
-        editTitle !== (editingMr.title || '') ||
-        editDescription !== (editingMr.description || '') ||
-        editTargetBranch !== (editingMr.target_branch || '')
+        editTitle !== (editingMr.title || "") ||
+        editDescription !== (editingMr.description || "") ||
+        editTargetBranch !== (editingMr.target_branch || "")
       );
     }
     return false;
-  }, [activeTab, title, description, editingMr, editTitle, editDescription, editTargetBranch]);
+  }, [
+    activeTab,
+    title,
+    description,
+    editingMr,
+    editTitle,
+    editDescription,
+    editTargetBranch,
+  ]);
 
-  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
-    isDirty,
-    onClose: () => setIsMergeRequestModalOpen(false),
-  });
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } =
+    useUnsavedChangesGuard({
+      isDirty,
+      onClose: () => setIsMergeRequestModalOpen(false),
+    });
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
   // Account services multi-account integration
-  const { accounts, activeAccount, setActiveAccount, openModalWithTab } = useAccountServicesStore();
+  const { accounts, activeAccount, setActiveAccount, openModalWithTab } =
+    useAccountServicesStore();
   const { setIsSignInModalOpen } = useAccountStore();
   const { addRemote } = useRemoteStore();
   const [isSwitchingAccount, setIsSwitchingAccount] = useState(false);
@@ -194,12 +234,12 @@ export const MergeRequestModal: React.FC = () => {
   const accountDropdownRef = useRef<HTMLDivElement>(null);
 
   // Quick remote connection & inline token update
-  const [newRemoteUrl, setNewRemoteUrl] = useState('');
+  const [newRemoteUrl, setNewRemoteUrl] = useState("");
   const [isAddingRemote, setIsAddingRemote] = useState(false);
   const [remoteError, setRemoteError] = useState<string | null>(null);
 
   const [isTokenInputVisible, setIsTokenInputVisible] = useState(false);
-  const [tokenInput, setTokenInput] = useState('');
+  const [tokenInput, setTokenInput] = useState("");
   const [isUpdatingToken, setIsUpdatingToken] = useState(false);
   const [tokenSaveError, setTokenSaveError] = useState<string | null>(null);
 
@@ -210,7 +250,7 @@ export const MergeRequestModal: React.FC = () => {
   // Resizable panel width state
   const [leftPanelWidth, setLeftPanelWidth] = useState<number>(() => {
     try {
-      const saved = localStorage.getItem('pr_modal_left_width');
+      const saved = localStorage.getItem("pr_modal_left_width");
       return saved ? Math.max(260, Math.min(650, parseInt(saved, 10))) : 360;
     } catch {
       return 360;
@@ -229,27 +269,30 @@ export const MergeRequestModal: React.FC = () => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!modalContainerRef.current) return;
       const modalRect = modalContainerRef.current.getBoundingClientRect();
-      const newWidth = Math.max(260, Math.min(modalRect.width - 340, e.clientX - modalRect.left));
+      const newWidth = Math.max(
+        260,
+        Math.min(modalRect.width - 340, e.clientX - modalRect.left),
+      );
       setLeftPanelWidth(newWidth);
     };
 
     const handleMouseUp = () => {
       setIsResizingLeft(false);
       try {
-        localStorage.setItem('pr_modal_left_width', leftPanelWidth.toString());
+        localStorage.setItem("pr_modal_left_width", leftPanelWidth.toString());
       } catch {}
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'col-resize';
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
 
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.userSelect = '';
-      document.body.style.cursor = '';
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
     };
   }, [isResizingLeft, leftPanelWidth]);
 
@@ -270,7 +313,7 @@ export const MergeRequestModal: React.FC = () => {
     setIsLoadingBranches(true);
     setFormError(null);
 
-    const current = status?.current_branch || 'main';
+    const current = status?.current_branch || "main";
     setSourceBranch(current);
 
     GitService.listBranches(activeRepoPath)
@@ -279,9 +322,10 @@ export const MergeRequestModal: React.FC = () => {
           setBranches(res);
           const otherBranches = res.filter((b) => b.name !== current);
           const defaultTarget =
-            otherBranches.find((b) => b.name === 'main' || b.name === 'master')?.name ||
+            otherBranches.find((b) => b.name === "main" || b.name === "master")
+              ?.name ||
             otherBranches[0]?.name ||
-            (current === 'main' ? 'dev' : 'main');
+            (current === "main" ? "dev" : "main");
           setTargetBranch(defaultTarget);
         }
       })
@@ -302,7 +346,12 @@ export const MergeRequestModal: React.FC = () => {
     setTimeout(() => {
       titleInputRef.current?.focus();
     }, 80);
-  }, [isMergeRequestModalOpen, activeRepoPath, mergeRequestModalTab, selectedMergeRequestId]);
+  }, [
+    isMergeRequestModalOpen,
+    activeRepoPath,
+    mergeRequestModalTab,
+    selectedMergeRequestId,
+  ]);
 
   const targetRemoteInfo = useMemo(() => {
     const remote = remotes.find((r) => r.name === selectedRemote) || remotes[0];
@@ -310,13 +359,14 @@ export const MergeRequestModal: React.FC = () => {
   }, [remotes, selectedRemote]);
 
   const providerName = useMemo(() => {
-    if (targetRemoteInfo?.provider === 'github') return 'GitHub';
-    if (targetRemoteInfo?.provider === 'gitlab') return 'GitLab';
-    if (user?.provider === 'github') return 'GitHub';
-    return 'GitLab';
+    if (targetRemoteInfo?.provider === "github") return "GitHub";
+    if (targetRemoteInfo?.provider === "gitlab") return "GitLab";
+    if (user?.provider === "github") return "GitHub";
+    return "GitLab";
   }, [targetRemoteInfo, user]);
 
-  const requestTypeLabel = providerName === 'GitHub' ? 'Pull Request' : 'Merge Request';
+  const requestTypeLabel =
+    providerName === "GitHub" ? "Pull Request" : "Merge Request";
 
   // Handlers for Quick Remote Connection and Direct Token Update
   const handleQuickAddRemote = async () => {
@@ -324,12 +374,12 @@ export const MergeRequestModal: React.FC = () => {
     setIsAddingRemote(true);
     setRemoteError(null);
     try {
-      await addRemote(activeRepoPath, 'origin', newRemoteUrl.trim());
-      setNewRemoteUrl('');
+      await addRemote(activeRepoPath, "origin", newRemoteUrl.trim());
+      setNewRemoteUrl("");
       await loadRemotes(activeRepoPath);
       setFormError(null);
     } catch (err: unknown) {
-      setRemoteError(parseApiError(err) || 'Failed to add remote repository');
+      setRemoteError(parseApiError(err) || "Failed to add remote repository");
     } finally {
       setIsAddingRemote(false);
     }
@@ -340,21 +390,25 @@ export const MergeRequestModal: React.FC = () => {
     setIsUpdatingToken(true);
     setTokenSaveError(null);
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      if (providerName === 'GitHub') {
-        await invoke('login_github_pat', { token: tokenInput.trim() });
+      const { invoke } = await import("@tauri-apps/api/core");
+      if (providerName === "GitHub") {
+        await invoke("login_github_pat", { token: tokenInput.trim() });
       } else {
-        const sUrl = targetRemoteInfo?.serverUrl || 'https://gitlab.com';
-        await invoke('login_gitlab_pat', { serverUrl: sUrl, token: tokenInput.trim(), customCaPem: null });
+        const sUrl = targetRemoteInfo?.serverUrl || "https://gitlab.com";
+        await invoke("login_gitlab_pat", {
+          serverUrl: sUrl,
+          token: tokenInput.trim(),
+          customCaPem: null,
+        });
       }
       await useAccountServicesStore.getState().loadAccounts();
       await useAccountStore.getState().fetchAccounts();
-      setTokenInput('');
+      setTokenInput("");
       setIsTokenInputVisible(false);
       setFormError(null);
       await loadMergeRequests();
     } catch (err: unknown) {
-      setTokenSaveError(parseApiError(err) || 'Failed to update token');
+      setTokenSaveError(parseApiError(err) || "Failed to update token");
     } finally {
       setIsUpdatingToken(false);
     }
@@ -373,27 +427,42 @@ export const MergeRequestModal: React.FC = () => {
     try {
       const projectPath = targetRemoteInfo.projectPath;
       const serverUrl = targetRemoteInfo.serverUrl;
-      const provider = targetRemoteInfo.provider !== 'unknown' ? targetRemoteInfo.provider : user?.provider;
-      const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
+      const provider =
+        targetRemoteInfo.provider !== "unknown"
+          ? targetRemoteInfo.provider
+          : user?.provider;
+      const res = await PullRequestService.listOpenPullRequests(
+        projectPath,
+        serverUrl,
+        provider,
+      );
       setMergeRequests(res || []);
       setFormError(null);
       if (res && res.length > 0) {
         setSelectedMrId((prev) => {
           if (
             selectedMergeRequestId &&
-            res.some((m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId)
+            res.some(
+              (m) =>
+                String(m.id) === selectedMergeRequestId ||
+                String(m.iid) === selectedMergeRequestId,
+            )
           ) {
             const found = res.find(
-              (m) => String(m.id) === selectedMergeRequestId || String(m.iid) === selectedMergeRequestId
+              (m) =>
+                String(m.id) === selectedMergeRequestId ||
+                String(m.iid) === selectedMergeRequestId,
             );
             return found ? String(found.id) : selectedMergeRequestId;
           }
-          return prev && res.some((m) => String(m.id) === prev) ? prev : String(res[0].id);
+          return prev && res.some((m) => String(m.id) === prev)
+            ? prev
+            : String(res[0].id);
         });
       }
     } catch (err: unknown) {
       setMergeRequests([]);
-      setFormError(parseApiError(err) || 'Could not load open requests');
+      setFormError(parseApiError(err) || "Could not load open requests");
     } finally {
       setIsLoadingList(false);
     }
@@ -409,15 +478,28 @@ export const MergeRequestModal: React.FC = () => {
 
   // Load Open Requests once when modal opens or remotes become available
   useEffect(() => {
-    if (isMergeRequestModalOpen && activeRepoPath && targetRemoteInfo?.projectPath) {
+    if (
+      isMergeRequestModalOpen &&
+      activeRepoPath &&
+      targetRemoteInfo?.projectPath
+    ) {
       loadMergeRequests();
     }
-  }, [isMergeRequestModalOpen, activeRepoPath, selectedRemote, remotes.length, targetRemoteInfo?.projectPath]);
+  }, [
+    isMergeRequestModalOpen,
+    activeRepoPath,
+    selectedRemote,
+    remotes.length,
+    targetRemoteInfo?.projectPath,
+  ]);
 
   // Check if an open PR already exists for the selected source branch
   const existingPrForSource = useMemo(() => {
     return mergeRequests.find(
-      (mr) => mr.source_branch === sourceBranch && (mr.state?.toLowerCase() === 'open' || mr.state?.toLowerCase() === 'opened')
+      (mr) =>
+        mr.source_branch === sourceBranch &&
+        (mr.state?.toLowerCase() === "open" ||
+          mr.state?.toLowerCase() === "opened"),
     );
   }, [mergeRequests, sourceBranch]);
 
@@ -439,8 +521,8 @@ export const MergeRequestModal: React.FC = () => {
         setIsAccountDropdownOpen(false);
       }
     };
-    window.addEventListener('click', handleGlobalClick);
-    return () => window.removeEventListener('click', handleGlobalClick);
+    window.addEventListener("click", handleGlobalClick);
+    return () => window.removeEventListener("click", handleGlobalClick);
   }, [activeCommentMenuId]);
 
   // Account switching helper
@@ -451,7 +533,7 @@ export const MergeRequestModal: React.FC = () => {
       setFormError(null);
       await loadMergeRequests();
     } catch (err: unknown) {
-      setFormError(parseApiError(err) || 'Failed to switch account');
+      setFormError(parseApiError(err) || "Failed to switch account");
     } finally {
       setIsSwitchingAccount(false);
       setIsAccountDropdownOpen(false);
@@ -459,10 +541,10 @@ export const MergeRequestModal: React.FC = () => {
   };
 
   const handleOpenSignIn = () => {
-    if (providerName === 'GitLab') {
+    if (providerName === "GitLab") {
       setIsSignInModalOpen(true);
     } else {
-      openModalWithTab('add');
+      openModalWithTab("add");
     }
   };
 
@@ -471,12 +553,12 @@ export const MergeRequestModal: React.FC = () => {
     if (!formError) return false;
     const lower = formError.toLowerCase();
     return (
-      lower.includes('401') ||
-      lower.includes('unauthorized') ||
-      lower.includes('no authenticated session') ||
-      lower.includes('token') ||
-      lower.includes('authentication') ||
-      lower.includes('auth error')
+      lower.includes("401") ||
+      lower.includes("unauthorized") ||
+      lower.includes("no authenticated session") ||
+      lower.includes("token") ||
+      lower.includes("authentication") ||
+      lower.includes("auth error")
     );
   }, [formError]);
 
@@ -488,9 +570,13 @@ export const MergeRequestModal: React.FC = () => {
           <Globe className="w-3.5 h-3.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="font-bold text-text-primary">No Remote Repository (origin) Configured</div>
+          <div className="font-bold text-text-primary">
+            No Remote Repository (origin) Configured
+          </div>
           <p className="text-[11.5px] text-text-secondary mt-0.5 leading-normal">
-            This local repository does not have a remote configured yet. Connect a GitHub or GitLab repository URL to create and sync pull/merge requests.
+            This local repository does not have a remote configured yet. Connect
+            a GitHub or GitLab repository URL to create and sync pull/merge
+            requests.
           </p>
         </div>
       </div>
@@ -516,11 +602,17 @@ export const MergeRequestModal: React.FC = () => {
             disabled={isAddingRemote || !newRemoteUrl.trim()}
             className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralHover text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
           >
-            {isAddingRemote ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            {isAddingRemote ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Plus className="w-3.5 h-3.5" />
+            )}
             <span>Connect Remote</span>
           </button>
         </div>
-        {remoteError && <p className="text-[11px] text-git-removed">{remoteError}</p>}
+        {remoteError && (
+          <p className="text-[11px] text-git-removed">{remoteError}</p>
+        )}
       </form>
     </div>
   );
@@ -535,8 +627,15 @@ export const MergeRequestModal: React.FC = () => {
             <span>Authentication Failed (Status 401 Unauthorized)</span>
           </div>
           <p className="text-[11.5px] text-text-secondary mt-0.5 leading-normal">
-            Your session or Personal Access Token for <span className="font-semibold text-text-primary">{providerName}</span> is expired, invalid, or lacks permissions for repository{' '}
-            <span className="font-mono text-commito-coral font-semibold">{targetRemoteInfo?.projectPath || selectedRemote}</span>.
+            Your session or Personal Access Token for{" "}
+            <span className="font-semibold text-text-primary">
+              {providerName}
+            </span>{" "}
+            is expired, invalid, or lacks permissions for repository{" "}
+            <span className="font-mono text-commito-coral font-semibold">
+              {targetRemoteInfo?.projectPath || selectedRemote}
+            </span>
+            .
           </p>
         </div>
       </div>
@@ -564,7 +663,11 @@ export const MergeRequestModal: React.FC = () => {
               disabled={isUpdatingToken || !tokenInput.trim()}
               className="h-7 px-3 bg-commito-coral hover:bg-commito-coralHover text-white rounded-xs text-xs font-semibold flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
             >
-              {isUpdatingToken ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+              {isUpdatingToken ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Save className="w-3 h-3" />
+              )}
               <span>Save & Retry</span>
             </button>
             <button
@@ -575,7 +678,9 @@ export const MergeRequestModal: React.FC = () => {
               Cancel
             </button>
           </div>
-          {tokenSaveError && <p className="text-[11px] text-git-removed">{tokenSaveError}</p>}
+          {tokenSaveError && (
+            <p className="text-[11px] text-git-removed">{tokenSaveError}</p>
+          )}
         </form>
       ) : (
         /* Quick Action Bar */
@@ -584,14 +689,15 @@ export const MergeRequestModal: React.FC = () => {
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] text-text-muted">Account:</span>
               <select
-                value={activeAccount?.id || ''}
+                value={activeAccount?.id || ""}
                 onChange={(e) => handleSwitchAccountFromModal(e.target.value)}
                 disabled={isSwitchingAccount || isLoadingList}
                 className="h-7 px-2 bg-base-1 border border-border hover:border-border-strong rounded-xs text-xs text-text-primary font-mono focus:outline-none cursor-pointer"
               >
                 {accounts.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.provider.toUpperCase()} • {a.display_name || a.handle} {a.is_active ? '(active)' : ''}
+                    {a.provider.toUpperCase()} • {a.display_name || a.handle}{" "}
+                    {a.is_active ? "(active)" : ""}
                   </option>
                 ))}
               </select>
@@ -622,7 +728,9 @@ export const MergeRequestModal: React.FC = () => {
             disabled={isLoadingList || isSwitchingAccount}
             className="h-7 px-2.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-xs text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoadingList ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isLoadingList ? "animate-spin" : ""}`}
+            />
             <span>Retry</span>
           </button>
 
@@ -657,7 +765,7 @@ export const MergeRequestModal: React.FC = () => {
         mr.title.toLowerCase().includes(q) ||
         mr.source_branch.toLowerCase().includes(q) ||
         mr.target_branch.toLowerCase().includes(q) ||
-        (mr.author_name && mr.author_name.toLowerCase().includes(q))
+        (mr.author_name && mr.author_name.toLowerCase().includes(q)),
     );
   }, [mergeRequests, searchFilter]);
 
@@ -665,7 +773,10 @@ export const MergeRequestModal: React.FC = () => {
   const activeSelectedMr = useMemo(() => {
     if (filteredMergeRequests.length === 0) return null;
     if (selectedMrId) {
-      return filteredMergeRequests.find((m) => String(m.id) === selectedMrId) || filteredMergeRequests[0];
+      return (
+        filteredMergeRequests.find((m) => String(m.id) === selectedMrId) ||
+        filteredMergeRequests[0]
+      );
     }
     return filteredMergeRequests[0];
   }, [filteredMergeRequests, selectedMrId]);
@@ -674,9 +785,12 @@ export const MergeRequestModal: React.FC = () => {
   const loadPrDetails = useCallback(async () => {
     if (!activeSelectedMr || !activeRepoPath) return;
 
-    const projectPath = targetRemoteInfo?.projectPath || '1';
+    const projectPath = targetRemoteInfo?.projectPath || "1";
     const serverUrl = targetRemoteInfo?.serverUrl;
-    const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+    const provider =
+      targetRemoteInfo?.provider !== "unknown"
+        ? targetRemoteInfo?.provider
+        : user?.provider;
     const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
 
     // 1. Load Comments
@@ -694,7 +808,11 @@ export const MergeRequestModal: React.FC = () => {
 
     // 2. Load Commits & Changed Files between branches
     setIsLoadingBranchDiff(true);
-    GitService.getBranchComparison(activeRepoPath, activeSelectedMr.target_branch, activeSelectedMr.source_branch)
+    GitService.getBranchComparison(
+      activeRepoPath,
+      activeSelectedMr.target_branch,
+      activeSelectedMr.source_branch,
+    )
       .then((diffRes) => {
         if (diffRes) {
           setPrCommits(diffRes.commits || []);
@@ -720,10 +838,17 @@ export const MergeRequestModal: React.FC = () => {
       .finally(() => {
         setIsLoadingBranchDiff(false);
       });
-  }, [activeSelectedMr, activeRepoPath, targetRemoteInfo?.projectPath, targetRemoteInfo?.serverUrl, targetRemoteInfo?.provider, user?.provider]);
+  }, [
+    activeSelectedMr,
+    activeRepoPath,
+    targetRemoteInfo?.projectPath,
+    targetRemoteInfo?.serverUrl,
+    targetRemoteInfo?.provider,
+    user?.provider,
+  ]);
 
   useEffect(() => {
-    if (activeTab === 'list' && activeSelectedMr) {
+    if (activeTab === "list" && activeSelectedMr) {
       loadPrDetails();
     }
   }, [activeTab, activeSelectedMr?.id, loadPrDetails]);
@@ -743,7 +868,11 @@ export const MergeRequestModal: React.FC = () => {
     if (!fileDiffCache[filePath] && activeRepoPath) {
       setLoadingFilePaths((prev) => new Set(prev).add(filePath));
       try {
-        const res = await GitService.getFileDiff(activeRepoPath, filePath, false);
+        const res = await GitService.getFileDiff(
+          activeRepoPath,
+          filePath,
+          false,
+        );
         setFileDiffCache((prev) => ({ ...prev, [filePath]: res }));
       } catch {
         // fail gracefully
@@ -800,9 +929,12 @@ export const MergeRequestModal: React.FC = () => {
 
     setIsPostingComment(true);
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
 
       const added = await PullRequestService.addComment(
@@ -810,21 +942,21 @@ export const MergeRequestModal: React.FC = () => {
         prNumber,
         newCommentText.trim(),
         serverUrl,
-        provider
+        provider,
       );
 
       setPrComments((prev) => [...prev, added]);
-      setNewCommentText('');
-      setCommentEditorTab('write');
+      setNewCommentText("");
+      setCommentEditorTab("write");
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Comment Added',
-        message: 'Your comment was posted successfully.',
+        type: "success",
+        title: "Comment Added",
+        message: "Your comment was posted successfully.",
       });
     } catch (err: unknown) {
       useToastStore.getState().showToast({
-        type: 'error',
-        title: 'Failed to Post Comment',
+        type: "error",
+        title: "Failed to Post Comment",
         message: parseApiError(err),
       });
     } finally {
@@ -835,8 +967,12 @@ export const MergeRequestModal: React.FC = () => {
   // Open Merge Modal
   const handleOpenMergeModal = () => {
     if (!activeSelectedMr) return;
-    setMergeCommitTitle(`Merge pull request #${activeSelectedMr.id} from ${activeSelectedMr.source_branch}`);
-    setMergeCommitMessage(`Merge branch '${activeSelectedMr.source_branch}' into ${activeSelectedMr.target_branch}`);
+    setMergeCommitTitle(
+      `Merge pull request #${activeSelectedMr.id} from ${activeSelectedMr.source_branch}`,
+    );
+    setMergeCommitMessage(
+      `Merge branch '${activeSelectedMr.source_branch}' into ${activeSelectedMr.target_branch}`,
+    );
     setShowMergeModal(true);
   };
 
@@ -845,9 +981,12 @@ export const MergeRequestModal: React.FC = () => {
     if (!activeSelectedMr || isMerging) return;
     setIsMerging(true);
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
 
       await PullRequestService.mergePullRequest(projectPath, prNumber, {
@@ -861,7 +1000,7 @@ export const MergeRequestModal: React.FC = () => {
       });
 
       useToastStore.getState().showToast({
-        type: 'success',
+        type: "success",
         title: `${requestTypeLabel} Merged`,
         message: `Successfully merged #${activeSelectedMr.id} into ${activeSelectedMr.target_branch}`,
       });
@@ -871,8 +1010,8 @@ export const MergeRequestModal: React.FC = () => {
     } catch (err: unknown) {
       const msg = parseApiError(err);
       useToastStore.getState().showToast({
-        type: 'error',
-        title: 'Merge Failed',
+        type: "error",
+        title: "Merge Failed",
         message: msg,
       });
     } finally {
@@ -888,9 +1027,9 @@ export const MergeRequestModal: React.FC = () => {
       : activeSelectedMr.web_url;
     navigator.clipboard.writeText(url);
     useToastStore.getState().showToast({
-      type: 'info',
-      title: 'Link Copied',
-      message: 'Direct link copied to clipboard',
+      type: "info",
+      title: "Link Copied",
+      message: "Direct link copied to clipboard",
     });
     setActiveCommentMenuId(null);
   };
@@ -898,20 +1037,22 @@ export const MergeRequestModal: React.FC = () => {
   const handleCopyCommentMarkdown = (body: string) => {
     navigator.clipboard.writeText(body);
     useToastStore.getState().showToast({
-      type: 'info',
-      title: 'Markdown Copied',
-      message: 'Markdown text copied to clipboard',
+      type: "info",
+      title: "Markdown Copied",
+      message: "Markdown text copied to clipboard",
     });
     setActiveCommentMenuId(null);
   };
 
   const handleQuoteReply = (body: string) => {
     const quoted = body
-      .split('\n')
+      .split("\n")
       .map((line) => `> ${line}`)
-      .join('\n');
-    setNewCommentText((prev) => (prev.trim() ? `${prev.trim()}\n\n${quoted}\n\n` : `${quoted}\n\n`));
-    setCommentEditorTab('write');
+      .join("\n");
+    setNewCommentText((prev) =>
+      prev.trim() ? `${prev.trim()}\n\n${quoted}\n\n` : `${quoted}\n\n`,
+    );
+    setCommentEditorTab("write");
     setActiveCommentMenuId(null);
     setTimeout(() => {
       commentTextareaRef.current?.focus();
@@ -925,9 +1066,9 @@ export const MergeRequestModal: React.FC = () => {
       : `Ref: ${activeSelectedMr.title} (#${activeSelectedMr.id})`;
     navigator.clipboard.writeText(refText);
     useToastStore.getState().showToast({
-      type: 'info',
-      title: 'Reference Copied',
-      message: 'Reference text copied to clipboard for new issue',
+      type: "info",
+      title: "Reference Copied",
+      message: "Reference text copied to clipboard for new issue",
     });
     setActiveCommentMenuId(null);
   };
@@ -939,12 +1080,16 @@ export const MergeRequestModal: React.FC = () => {
   };
 
   const handleSaveEditComment = async (commentId: number) => {
-    if (!activeSelectedMr || !editingCommentBody.trim() || isSavingCommentEdit) return;
+    if (!activeSelectedMr || !editingCommentBody.trim() || isSavingCommentEdit)
+      return;
     setIsSavingCommentEdit(true);
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
 
       const updated = await PullRequestService.editComment(
@@ -953,24 +1098,26 @@ export const MergeRequestModal: React.FC = () => {
         commentId,
         editingCommentBody.trim(),
         serverUrl,
-        provider
+        provider,
       );
 
       setPrComments((prev) =>
-        prev.map((c) => (c.id === commentId ? { ...c, body: updated.body } : c))
+        prev.map((c) =>
+          c.id === commentId ? { ...c, body: updated.body } : c,
+        ),
       );
       setEditingCommentId(null);
-      setEditingCommentBody('');
+      setEditingCommentBody("");
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Comment Updated',
-        message: 'Your comment has been edited.',
+        type: "success",
+        title: "Comment Updated",
+        message: "Your comment has been edited.",
       });
     } catch (err: unknown) {
       const msg = parseApiError(err);
       useToastStore.getState().showToast({
-        type: 'error',
-        title: 'Edit Failed',
+        type: "error",
+        title: "Edit Failed",
         message: msg,
       });
     } finally {
@@ -980,27 +1127,36 @@ export const MergeRequestModal: React.FC = () => {
 
   const handleDeleteComment = async (commentId: number) => {
     if (!activeSelectedMr) return;
-    if (!confirm('Are you sure you want to delete this comment?')) return;
+    if (!confirm("Are you sure you want to delete this comment?")) return;
     setActiveCommentMenuId(null);
 
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(activeSelectedMr.iid || activeSelectedMr.id);
 
-      await PullRequestService.deleteComment(projectPath, prNumber, commentId, serverUrl, provider);
+      await PullRequestService.deleteComment(
+        projectPath,
+        prNumber,
+        commentId,
+        serverUrl,
+        provider,
+      );
       setPrComments((prev) => prev.filter((c) => c.id !== commentId));
       useToastStore.getState().showToast({
-        type: 'info',
-        title: 'Comment Deleted',
-        message: 'Comment was removed.',
+        type: "info",
+        title: "Comment Deleted",
+        message: "Comment was removed.",
       });
     } catch (err: unknown) {
       const msg = parseApiError(err);
       useToastStore.getState().showToast({
-        type: 'error',
-        title: 'Delete Failed',
+        type: "error",
+        title: "Delete Failed",
         message: msg,
       });
     }
@@ -1023,11 +1179,11 @@ export const MergeRequestModal: React.FC = () => {
   const handleOpenFullEditWorkspace = (mr: UnifiedMergeRequest) => {
     setEditingMr(mr);
     setEditTitle(mr.title);
-    setEditDescription(mr.description || '');
+    setEditDescription(mr.description || "");
     setEditTargetBranch(mr.target_branch);
-    setEditEditorTab('write');
+    setEditEditorTab("write");
     setFormError(null);
-    setActiveTab('edit');
+    setActiveTab("edit");
     setTimeout(() => {
       editTitleInputRef.current?.focus();
     }, 80);
@@ -1042,9 +1198,12 @@ export const MergeRequestModal: React.FC = () => {
     setFormError(null);
 
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(editingMr.iid || editingMr.id);
 
       const updated = await PullRequestService.updatePullRequest(
@@ -1056,31 +1215,35 @@ export const MergeRequestModal: React.FC = () => {
           targetBranch: editTargetBranch || undefined,
           serverUrl,
           provider,
-        }
+        },
       );
 
       setMergeRequests((prev) =>
-        prev.map((mr) => (mr.id === editingMr.id ? { ...mr, ...updated } : mr))
+        prev.map((mr) => (mr.id === editingMr.id ? { ...mr, ...updated } : mr)),
       );
 
       useToastStore.getState().showToast({
-        type: 'success',
+        type: "success",
         title: `${requestTypeLabel} Updated`,
         message: `Successfully updated #${editingMr.id}`,
       });
       useLogStore
         .getState()
-        .addLog('success', 'Merge Request', `Updated ${requestTypeLabel} #${editingMr.id} '${editTitle}'`);
+        .addLog(
+          "success",
+          "Merge Request",
+          `Updated ${requestTypeLabel} #${editingMr.id} '${editTitle}'`,
+        );
 
-      setActiveTab('list');
+      setActiveTab("list");
       setSelectedMrId(String(editingMr.id));
       setEditingMr(null);
     } catch (err: unknown) {
       const msg = parseApiError(err);
       setFormError(msg);
       useToastStore.getState().showToast({
-        type: 'error',
-        title: 'Update Failed',
+        type: "error",
+        title: "Update Failed",
         message: msg,
       });
     } finally {
@@ -1091,10 +1254,16 @@ export const MergeRequestModal: React.FC = () => {
   // Close or Reopen PR
   const handleCloseOrReopenPr = async (mrToToggle: UnifiedMergeRequest) => {
     if (!mrToToggle || isClosingPr) return;
-    const isCurrentlyOpen = mrToToggle.state?.toLowerCase() === 'open' || mrToToggle.state?.toLowerCase() === 'opened';
-    const actionLabel = isCurrentlyOpen ? 'close' : 'reopen';
+    const isCurrentlyOpen =
+      mrToToggle.state?.toLowerCase() === "open" ||
+      mrToToggle.state?.toLowerCase() === "opened";
+    const actionLabel = isCurrentlyOpen ? "close" : "reopen";
 
-    if (!confirm(`Are you sure you want to ${actionLabel} ${requestTypeLabel} #${mrToToggle.id} '${mrToToggle.title}'?`)) {
+    if (
+      !confirm(
+        `Are you sure you want to ${actionLabel} ${requestTypeLabel} #${mrToToggle.id} '${mrToToggle.title}'?`,
+      )
+    ) {
       return;
     }
 
@@ -1102,38 +1271,37 @@ export const MergeRequestModal: React.FC = () => {
     setFormError(null);
 
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
       const prNumber = Number(mrToToggle.iid || mrToToggle.id);
 
-      await PullRequestService.updatePullRequest(
-        projectPath,
-        prNumber,
-        {
-          state: isCurrentlyOpen ? 'closed' : 'open',
-          serverUrl,
-          provider,
-        }
-      );
+      await PullRequestService.updatePullRequest(projectPath, prNumber, {
+        state: isCurrentlyOpen ? "closed" : "open",
+        serverUrl,
+        provider,
+      });
 
       useToastStore.getState().showToast({
-        type: 'info',
-        title: `${requestTypeLabel} ${isCurrentlyOpen ? 'Closed' : 'Reopened'}`,
-        message: `Successfully ${isCurrentlyOpen ? 'closed' : 'reopened'} #${mrToToggle.id}`,
+        type: "info",
+        title: `${requestTypeLabel} ${isCurrentlyOpen ? "Closed" : "Reopened"}`,
+        message: `Successfully ${isCurrentlyOpen ? "closed" : "reopened"} #${mrToToggle.id}`,
       });
 
       await loadMergeRequests();
-      if (activeTab === 'edit') {
-        setActiveTab('list');
+      if (activeTab === "edit") {
+        setActiveTab("list");
         setEditingMr(null);
       }
     } catch (err: unknown) {
       const msg = parseApiError(err);
       setFormError(msg);
       useToastStore.getState().showToast({
-        type: 'error',
-        title: `${isCurrentlyOpen ? 'Close' : 'Reopen'} Failed`,
+        type: "error",
+        title: `${isCurrentlyOpen ? "Close" : "Reopen"} Failed`,
         message: msg,
       });
     } finally {
@@ -1152,15 +1320,17 @@ export const MergeRequestModal: React.FC = () => {
       const res = await ReleaseService.generateAiReleaseNotes(
         activeRepoPath,
         editingMr.source_branch,
-        editTargetBranch !== editingMr.source_branch ? editTargetBranch : undefined
+        editTargetBranch !== editingMr.source_branch
+          ? editTargetBranch
+          : undefined,
       );
 
       if (res && res.notes) {
         setEditDescription(res.notes);
-        setEditEditorTab('preview');
+        setEditEditorTab("preview");
         useToastStore.getState().showToast({
-          type: 'success',
-          title: 'Notes Generated',
+          type: "success",
+          title: "Notes Generated",
           message: `Generated summary analyzing ${res.commits_analyzed} commits`,
         });
       }
@@ -1169,18 +1339,22 @@ export const MergeRequestModal: React.FC = () => {
         const history = await GitService.getCommitHistory(activeRepoPath, 30);
         if (history && history.length > 0) {
           const commitBullets = history
-            .filter((c) => !c.message.startsWith('Merge branch') && !c.message.startsWith('Merge pull request'))
+            .filter(
+              (c) =>
+                !c.message.startsWith("Merge branch") &&
+                !c.message.startsWith("Merge pull request"),
+            )
             .map((c) => {
-              const handle = `@${c.author_name.replace(/\s+/g, '')}`;
+              const handle = `@${c.author_name.replace(/\s+/g, "")}`;
               return `- ${c.message} (\`${c.short_sha}\`) by ${handle}`;
             })
-            .join('\n');
+            .join("\n");
           const generated = `### Summary of Changes\n\n${commitBullets}\n\n### Review Notes\n- Verified branch diff between \`${editingMr.source_branch}\` and \`${editTargetBranch}\`\n- Ready for peer review`;
           setEditDescription(generated);
-          setEditEditorTab('preview');
+          setEditEditorTab("preview");
         }
       } catch {
-        setFormError(parseApiError(err) || 'Could not generate AI description');
+        setFormError(parseApiError(err) || "Could not generate AI description");
       }
     } finally {
       setIsGeneratingAiForEdit(false);
@@ -1198,18 +1372,18 @@ export const MergeRequestModal: React.FC = () => {
       const res = await ReleaseService.generateAiReleaseNotes(
         activeRepoPath,
         sourceBranch,
-        targetBranch !== sourceBranch ? targetBranch : undefined
+        targetBranch !== sourceBranch ? targetBranch : undefined,
       );
 
       if (res && res.notes) {
         if (!title.trim() && res.title) {
-          setTitle(res.title.replace(/^Release\s+/i, 'feat: '));
+          setTitle(res.title.replace(/^Release\s+/i, "feat: "));
         }
         setDescription(res.notes);
-        setEditorTab('preview');
+        setEditorTab("preview");
         useToastStore.getState().showToast({
-          type: 'success',
-          title: 'PR Notes Generated',
+          type: "success",
+          title: "PR Notes Generated",
           message: `Generated summary analyzing ${res.commits_analyzed} commits`,
         });
       }
@@ -1218,23 +1392,27 @@ export const MergeRequestModal: React.FC = () => {
         const history = await GitService.getCommitHistory(activeRepoPath, 30);
         if (history && history.length > 0) {
           const commitBullets = history
-            .filter((c) => !c.message.startsWith('Merge branch') && !c.message.startsWith('Merge pull request'))
+            .filter(
+              (c) =>
+                !c.message.startsWith("Merge branch") &&
+                !c.message.startsWith("Merge pull request"),
+            )
             .map((c) => {
-              const handle = `@${c.author_name.replace(/\s+/g, '')}`;
+              const handle = `@${c.author_name.replace(/\s+/g, "")}`;
               return `- ${c.message} (\`${c.short_sha}\`) by ${handle}`;
             })
-            .join('\n');
+            .join("\n");
           const generated = `### Summary of Changes\n\n${commitBullets}\n\n### Review Notes\n- Verified branch diff between \`${sourceBranch}\` and \`${targetBranch}\`\n- Ready for peer review`;
           setDescription(generated);
-          setEditorTab('preview');
+          setEditorTab("preview");
           useToastStore.getState().showToast({
-            type: 'info',
-            title: 'Commit Notes Loaded',
+            type: "info",
+            title: "Commit Notes Loaded",
             message: `Loaded ${history.length} commits into description`,
           });
         }
       } catch {
-        setFormError(parseApiError(err) || 'Could not generate AI description');
+        setFormError(parseApiError(err) || "Could not generate AI description");
       }
     } finally {
       setIsGeneratingAi(false);
@@ -1247,12 +1425,16 @@ export const MergeRequestModal: React.FC = () => {
     if (!title.trim() || isSubmitting) return;
 
     if (sourceBranch === targetBranch) {
-      setFormError(`Source branch and target branch cannot be the same (${sourceBranch} → ${targetBranch}). Please select a different target base branch.`);
+      setFormError(
+        `Source branch and target branch cannot be the same (${sourceBranch} → ${targetBranch}). Please select a different target base branch.`,
+      );
       return;
     }
 
     if (existingPrForSource) {
-      setFormError(`A ${requestTypeLabel.toLowerCase()} (#${existingPrForSource.id}) already exists for '${sourceBranch}'.`);
+      setFormError(
+        `A ${requestTypeLabel.toLowerCase()} (#${existingPrForSource.id}) already exists for '${sourceBranch}'.`,
+      );
       return;
     }
 
@@ -1260,14 +1442,21 @@ export const MergeRequestModal: React.FC = () => {
     setFormError(null);
 
     let finalTitle = title.trim();
-    if (isDraft && !finalTitle.toLowerCase().startsWith('draft:') && !finalTitle.toLowerCase().startsWith('wip:')) {
+    if (
+      isDraft &&
+      !finalTitle.toLowerCase().startsWith("draft:") &&
+      !finalTitle.toLowerCase().startsWith("wip:")
+    ) {
       finalTitle = `Draft: ${finalTitle}`;
     }
 
     try {
-      const projectPath = targetRemoteInfo?.projectPath || '1';
+      const projectPath = targetRemoteInfo?.projectPath || "1";
       const serverUrl = targetRemoteInfo?.serverUrl;
-      const provider = targetRemoteInfo?.provider !== 'unknown' ? targetRemoteInfo?.provider : user?.provider;
+      const provider =
+        targetRemoteInfo?.provider !== "unknown"
+          ? targetRemoteInfo?.provider
+          : user?.provider;
 
       const res = await PullRequestService.createPullRequest(
         projectPath,
@@ -1276,24 +1465,28 @@ export const MergeRequestModal: React.FC = () => {
         finalTitle,
         description.trim() || undefined,
         serverUrl,
-        provider
+        provider,
       );
 
       useLogStore
         .getState()
-        .addLog('success', 'Merge Request', `Created request '${finalTitle}' (${sourceBranch} -> ${targetBranch})`);
+        .addLog(
+          "success",
+          "Merge Request",
+          `Created request '${finalTitle}' (${sourceBranch} -> ${targetBranch})`,
+        );
 
       useToastStore.getState().showToast({
-        type: 'success',
+        type: "success",
         title: `${requestTypeLabel} Created`,
         message: `Successfully created ${requestTypeLabel} for ${sourceBranch} -> ${targetBranch}`,
       });
 
-      setTitle('');
-      setDescription('');
+      setTitle("");
+      setDescription("");
       setIsDraft(false);
       await loadMergeRequests();
-      setActiveTab('list');
+      setActiveTab("list");
 
       if (res?.web_url) {
         openUrl(res.web_url).catch(() => {});
@@ -1301,15 +1494,27 @@ export const MergeRequestModal: React.FC = () => {
     } catch (error: unknown) {
       const errorMsg = parseApiError(error);
       setFormError(errorMsg);
-      setError(toAppError(error, 'MR_ERROR'));
-      useLogStore.getState().addLog('error', 'Merge Request', `Failed to create request: ${errorMsg}`);
+      setError(toAppError(error, "MR_ERROR"));
+      useLogStore
+        .getState()
+        .addLog(
+          "error",
+          "Merge Request",
+          `Failed to create request: ${errorMsg}`,
+        );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !isSubmitting && !isGeneratingAi && !isSavingEdit && !isPostingComment) {
+    if (
+      e.key === "Escape" &&
+      !isSubmitting &&
+      !isGeneratingAi &&
+      !isSavingEdit &&
+      !isPostingComment
+    ) {
       requestClose();
     }
   };
@@ -1323,7 +1528,13 @@ export const MergeRequestModal: React.FC = () => {
       aria-labelledby="merge-request-modal-title"
       onKeyDown={handleKeyDown}
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting && !isGeneratingAi && !isSavingEdit && !isPostingComment) {
+        if (
+          e.target === e.currentTarget &&
+          !isSubmitting &&
+          !isGeneratingAi &&
+          !isSavingEdit &&
+          !isPostingComment
+        ) {
           requestClose();
         }
       }}
@@ -1337,12 +1548,15 @@ export const MergeRequestModal: React.FC = () => {
         {/* Top Header (Compact & Space-saving) */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <GitPullRequest className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 min-w-0">
-              <h2 id="merge-request-modal-title" className="text-xs font-bold text-text-primary leading-none">
-                {activeTab === 'edit' && editingMr
+              <h2
+                id="merge-request-modal-title"
+                className="text-xs font-bold text-text-primary leading-none"
+              >
+                {activeTab === "edit" && editingMr
                   ? `Edit ${requestTypeLabel} #${editingMr.id}`
                   : `${requestTypeLabel}s`}
               </h2>
@@ -1358,7 +1572,9 @@ export const MergeRequestModal: React.FC = () => {
               <div className="relative ml-1" ref={accountDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => setIsAccountDropdownOpen(!isAccountDropdownOpen)}
+                  onClick={() =>
+                    setIsAccountDropdownOpen(!isAccountDropdownOpen)
+                  }
                   className="h-6 px-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded flex items-center gap-1.5 text-xs text-text-primary transition cursor-pointer shadow-2xs"
                   title="Connected Account • Click to switch or add account"
                 >
@@ -1389,19 +1605,25 @@ export const MergeRequestModal: React.FC = () => {
                   <div className="absolute left-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-xl z-50 py-1 font-sans animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-1.5 border-b border-border/60 text-[10.5px] font-bold text-text-muted uppercase tracking-wider flex items-center justify-between">
                       <span>Connected Accounts</span>
-                      <span className="text-text-faint font-mono">{accounts.length}</span>
+                      <span className="text-text-faint font-mono">
+                        {accounts.length}
+                      </span>
                     </div>
 
                     <div className="max-h-48 overflow-y-auto py-1">
                       {accounts.length === 0 ? (
-                        <div className="px-3 py-2 text-xs text-text-muted italic">No accounts configured</div>
+                        <div className="px-3 py-2 text-xs text-text-muted italic">
+                          No accounts configured
+                        </div>
                       ) : (
                         accounts.map((acc) => (
                           <div
                             key={acc.id}
                             onClick={() => handleSwitchAccountFromModal(acc.id)}
                             className={`px-3 py-1.5 flex items-center justify-between hover:bg-base-2 cursor-pointer text-xs transition ${
-                              acc.is_active ? 'bg-base-2 font-bold text-text-primary' : 'text-text-secondary'
+                              acc.is_active
+                                ? "bg-base-2 font-bold text-text-primary"
+                                : "text-text-secondary"
                             }`}
                           >
                             <div className="flex items-center gap-2 truncate min-w-0">
@@ -1414,13 +1636,18 @@ export const MergeRequestModal: React.FC = () => {
                                 iconClassName="w-3 h-3"
                               />
                               <div className="truncate min-w-0">
-                                <span className="truncate block leading-tight">{acc.display_name || acc.handle}</span>
+                                <span className="truncate block leading-tight">
+                                  {acc.display_name || acc.handle}
+                                </span>
                                 <span className="text-[10px] text-text-muted font-mono block leading-tight truncate">
-                                  {acc.provider.toUpperCase()} • {acc.instance_url.replace(/^https?:\/\//, '')}
+                                  {acc.provider.toUpperCase()} •{" "}
+                                  {acc.instance_url.replace(/^https?:\/\//, "")}
                                 </span>
                               </div>
                             </div>
-                            {acc.is_active && <Check className="w-3.5 h-3.5 text-commito-coral shrink-0 ml-1.5" />}
+                            {acc.is_active && (
+                              <Check className="w-3.5 h-3.5 text-commito-coral shrink-0 ml-1.5" />
+                            )}
                           </div>
                         ))
                       )}
@@ -1447,11 +1674,11 @@ export const MergeRequestModal: React.FC = () => {
 
           {/* Mode Switcher Tabs */}
           <div className="flex items-center gap-2 shrink-0">
-            {activeTab === 'edit' ? (
+            {activeTab === "edit" ? (
               <button
                 type="button"
                 onClick={() => {
-                  setActiveTab('list');
+                  setActiveTab("list");
                   setEditingMr(null);
                 }}
                 className="h-6.5 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
@@ -1460,11 +1687,15 @@ export const MergeRequestModal: React.FC = () => {
                 <span>Back</span>
               </button>
             ) : (
-              <Tabs<'create' | 'list'>
+              <Tabs<"create" | "list">
                 tabs={[
-                  { id: 'create', label: `New ${requestTypeLabel}`, icon: <Plus className="w-3 h-3" /> },
                   {
-                    id: 'list',
+                    id: "create",
+                    label: `New ${requestTypeLabel}`,
+                    icon: <Plus className="w-3 h-3" />,
+                  },
+                  {
+                    id: "list",
                     label: `Open (${mergeRequests.length})`,
                     icon: <GitPullRequest className="w-3 h-3" />,
                   },
@@ -1493,9 +1724,12 @@ export const MergeRequestModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        {activeTab === 'create' ? (
+        {activeTab === "create" ? (
           /* CREATE PULL REQUEST WORKSPACE (Resizable Left / Right) */
-          <form onSubmit={handleCreateMergeRequest} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          <form
+            onSubmit={handleCreateMergeRequest}
+            className="flex-1 flex flex-row min-h-0 overflow-hidden"
+          >
             {/* Resizable Left Column */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
@@ -1514,7 +1748,9 @@ export const MergeRequestModal: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
                         <span>Source</span>
-                        <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">head</span>
+                        <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">
+                          head
+                        </span>
                       </span>
                     </div>
                     <Dropdown
@@ -1522,7 +1758,9 @@ export const MergeRequestModal: React.FC = () => {
                       value={sourceBranch}
                       onChange={setSourceBranch}
                       disabled={isSubmitting || isLoadingBranches}
-                      placeholder={isLoadingBranches ? 'Loading...' : 'Source...'}
+                      placeholder={
+                        isLoadingBranches ? "Loading..." : "Source..."
+                      }
                       size="md"
                     />
                   </div>
@@ -1546,7 +1784,9 @@ export const MergeRequestModal: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
                         <span>Target</span>
-                        <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">base</span>
+                        <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">
+                          base
+                        </span>
                       </span>
                     </div>
                     <Dropdown
@@ -1554,7 +1794,9 @@ export const MergeRequestModal: React.FC = () => {
                       value={targetBranch}
                       onChange={setTargetBranch}
                       disabled={isSubmitting || isLoadingBranches}
-                      placeholder={isLoadingBranches ? 'Loading...' : 'Target...'}
+                      placeholder={
+                        isLoadingBranches ? "Loading..." : "Target..."
+                      }
                       size="md"
                     />
                   </div>
@@ -1564,7 +1806,8 @@ export const MergeRequestModal: React.FC = () => {
               {/* Title Input */}
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-text-primary block">
-                  {requestTypeLabel} Title <span className="text-commito-coral">*</span>
+                  {requestTypeLabel} Title{" "}
+                  <span className="text-commito-coral">*</span>
                 </label>
                 <input
                   ref={titleInputRef}
@@ -1584,7 +1827,9 @@ export const MergeRequestModal: React.FC = () => {
               {/* Remote Dropdown if multiple */}
               {remotes.length > 1 && (
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-text-primary block">Target Remote</label>
+                  <label className="text-xs font-semibold text-text-primary block">
+                    Target Remote
+                  </label>
                   <Dropdown
                     options={remoteOptions}
                     value={selectedRemote}
@@ -1652,14 +1897,21 @@ export const MergeRequestModal: React.FC = () => {
                     <span>Existing Request Found</span>
                   </div>
                   <p className="text-[11.5px] text-text-secondary leading-normal">
-                    A pull request (<span className="font-mono text-amber-400">#{existingPrForSource.id}</span>) from{' '}
-                    <span className="font-mono text-commito-coral">'{sourceBranch}'</span> already exists.
+                    A pull request (
+                    <span className="font-mono text-amber-400">
+                      #{existingPrForSource.id}
+                    </span>
+                    ) from{" "}
+                    <span className="font-mono text-commito-coral">
+                      '{sourceBranch}'
+                    </span>{" "}
+                    already exists.
                   </p>
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedMrId(String(existingPrForSource.id));
-                      setActiveTab('list');
+                      setActiveTab("list");
                     }}
                     className="mt-1 text-[11px] font-semibold text-commito-coral hover:underline inline-flex items-center gap-1 cursor-pointer"
                   >
@@ -1674,7 +1926,8 @@ export const MergeRequestModal: React.FC = () => {
                     <span>Identical Branches</span>
                   </div>
                   <p className="text-[11.5px] text-text-secondary leading-normal">
-                    Choose two different branches to create a {requestTypeLabel.toLowerCase()}.
+                    Choose two different branches to create a{" "}
+                    {requestTypeLabel.toLowerCase()}.
                   </p>
                 </div>
               ) : (
@@ -1684,8 +1937,15 @@ export const MergeRequestModal: React.FC = () => {
                     <span>Branches Differ</span>
                   </div>
                   <p className="text-[11.5px] text-text-secondary leading-normal">
-                    Changes on <span className="font-mono text-commito-coral">'{sourceBranch}'</span> will be submitted into{' '}
-                    <span className="font-mono text-emerald-400">'{targetBranch}'</span>.
+                    Changes on{" "}
+                    <span className="font-mono text-commito-coral">
+                      '{sourceBranch}'
+                    </span>{" "}
+                    will be submitted into{" "}
+                    <span className="font-mono text-emerald-400">
+                      '{targetBranch}'
+                    </span>
+                    .
                   </p>
                 </div>
               )}
@@ -1710,7 +1970,9 @@ export const MergeRequestModal: React.FC = () => {
               onDoubleClick={() => setLeftPanelWidth(360)}
               title="Drag to resize • Double-click to reset"
               className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+                isResizingLeft
+                  ? "bg-commito-coral"
+                  : "bg-transparent border-r border-border"
               }`}
             >
               <div className="absolute inset-y-0 -left-1 -right-1" />
@@ -1724,10 +1986,10 @@ export const MergeRequestModal: React.FC = () => {
                     <FileText className="w-3.5 h-3.5 text-commito-coral" />
                     <span>Description & Review Notes</span>
                   </label>
-                  <Tabs<'write' | 'preview'>
+                  <Tabs<"write" | "preview">
                     tabs={[
-                      { id: 'write', label: 'Write' },
-                      { id: 'preview', label: 'Preview' },
+                      { id: "write", label: "Write" },
+                      { id: "preview", label: "Preview" },
                     ]}
                     activeTab={editorTab}
                     onChange={setEditorTab}
@@ -1759,7 +2021,7 @@ export const MergeRequestModal: React.FC = () => {
 
               {/* Description Input / Markdown Area */}
               <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-sm overflow-hidden flex flex-col shadow-2xs">
-                {editorTab === 'write' ? (
+                {editorTab === "write" ? (
                   <textarea
                     placeholder="Enter full description, checklist, or click 'Generate Notes with AI' to analyze commits between branches automatically..."
                     value={description}
@@ -1779,15 +2041,22 @@ export const MergeRequestModal: React.FC = () => {
 
               <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
                 <span>
-                  {description.length} characters • {description.trim() ? description.trim().split(/\s+/).length : 0} words
+                  {description.length} characters •{" "}
+                  {description.trim()
+                    ? description.trim().split(/\s+/).length
+                    : 0}{" "}
+                  words
                 </span>
                 <span>Markdown & GFM supported</span>
               </div>
             </div>
           </form>
-        ) : activeTab === 'edit' && editingMr ? (
+        ) : activeTab === "edit" && editingMr ? (
           /* EDIT EXISTING PULL REQUEST WORKSPACE (Resizable Left / Right) */
-          <form onSubmit={handleSaveFullEdit} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          <form
+            onSubmit={handleSaveFullEdit}
+            className="flex-1 flex flex-row min-h-0 overflow-hidden"
+          >
             {/* Resizable Left Column */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
@@ -1800,7 +2069,7 @@ export const MergeRequestModal: React.FC = () => {
                     <span>Branch Configuration</span>
                   </span>
                   <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded-xs font-mono font-semibold uppercase">
-                    {editingMr.state || 'OPEN'}
+                    {editingMr.state || "OPEN"}
                   </span>
                 </div>
 
@@ -1808,7 +2077,9 @@ export const MergeRequestModal: React.FC = () => {
                   <div className="space-y-1 min-w-0">
                     <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
                       <span>Source Branch</span>
-                      <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">head</span>
+                      <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">
+                        head
+                      </span>
                     </span>
                     <div className="h-8.5 px-3 bg-base-0 border border-border rounded-sm text-xs font-mono text-commito-coral font-bold flex items-center truncate">
                       {editingMr.source_branch}
@@ -1818,7 +2089,9 @@ export const MergeRequestModal: React.FC = () => {
                   <div className="space-y-1 min-w-0">
                     <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
                       <span>Target Branch</span>
-                      <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">base</span>
+                      <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">
+                        base
+                      </span>
                     </span>
                     <Dropdown
                       options={branchOptions}
@@ -1834,7 +2107,8 @@ export const MergeRequestModal: React.FC = () => {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-text-primary block">
-                  {requestTypeLabel} Title <span className="text-commito-coral">*</span>
+                  {requestTypeLabel} Title{" "}
+                  <span className="text-commito-coral">*</span>
                 </label>
                 <input
                   ref={editTitleInputRef}
@@ -1857,11 +2131,15 @@ export const MergeRequestModal: React.FC = () => {
                 </span>
                 <div className="flex items-center justify-between text-text-muted pt-1">
                   <span>Author:</span>
-                  <span className="text-text-primary font-bold">@{editingMr.author_name}</span>
+                  <span className="text-text-primary font-bold">
+                    @{editingMr.author_name}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-text-muted">
                   <span>Request Number:</span>
-                  <span className="text-text-primary font-bold">#{editingMr.id}</span>
+                  <span className="text-text-primary font-bold">
+                    #{editingMr.id}
+                  </span>
                 </div>
                 {editingMr.web_url && (
                   <div className="pt-2">
@@ -1877,16 +2155,15 @@ export const MergeRequestModal: React.FC = () => {
                 )}
               </div>
 
-              {formError && (
-                isAuthError ? (
+              {formError &&
+                (isAuthError ? (
                   renderAuthAlert()
                 ) : (
                   <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
                     <AlertCircle className="w-4 h-4 shrink-0" />
                     <span className="truncate">{formError}</span>
                   </div>
-                )
-              )}
+                ))}
             </div>
 
             {/* Resizable Divider Splitter Handle */}
@@ -1895,7 +2172,9 @@ export const MergeRequestModal: React.FC = () => {
               onDoubleClick={() => setLeftPanelWidth(360)}
               title="Drag to resize • Double-click to reset"
               className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+                isResizingLeft
+                  ? "bg-commito-coral"
+                  : "bg-transparent border-r border-border"
               }`}
             >
               <div className="absolute inset-y-0 -left-1 -right-1" />
@@ -1909,10 +2188,10 @@ export const MergeRequestModal: React.FC = () => {
                     <FileText className="w-3.5 h-3.5 text-commito-coral" />
                     <span>Description & Review Notes</span>
                   </label>
-                  <Tabs<'write' | 'preview'>
+                  <Tabs<"write" | "preview">
                     tabs={[
-                      { id: 'write', label: 'Write' },
-                      { id: 'preview', label: 'Preview' },
+                      { id: "write", label: "Write" },
+                      { id: "preview", label: "Preview" },
                     ]}
                     activeTab={editEditorTab}
                     onChange={setEditEditorTab}
@@ -1943,7 +2222,7 @@ export const MergeRequestModal: React.FC = () => {
               </div>
 
               <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-sm overflow-hidden flex flex-col shadow-2xs">
-                {editEditorTab === 'write' ? (
+                {editEditorTab === "write" ? (
                   <textarea
                     placeholder="Enter updated pull request description or checklist..."
                     value={editDescription}
@@ -1963,7 +2242,11 @@ export const MergeRequestModal: React.FC = () => {
 
               <div className="flex items-center justify-between text-[10.5px] text-text-muted shrink-0 pt-0.5 font-mono">
                 <span>
-                  {editDescription.length} characters • {editDescription.trim() ? editDescription.trim().split(/\s+/).length : 0} words
+                  {editDescription.length} characters •{" "}
+                  {editDescription.trim()
+                    ? editDescription.trim().split(/\s+/).length
+                    : 0}{" "}
+                  words
                 </span>
                 <span>Markdown & GFM supported</span>
               </div>
@@ -1996,35 +2279,41 @@ export const MergeRequestModal: React.FC = () => {
                   className="h-7.5 px-2 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition cursor-pointer disabled:opacity-50 shadow-2xs shrink-0"
                   title="Refresh open requests from remote"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isLoadingList ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`w-3 h-3 ${isLoadingList ? "animate-spin" : ""}`}
+                  />
                 </button>
               </div>
 
               {isLoadingList ? (
                 <div className="p-8 text-center space-y-2 flex-1 flex flex-col items-center justify-center">
                   <Loader2 className="w-5 h-5 animate-spin text-commito-coral mx-auto" />
-                  <p className="text-xs font-medium text-text-muted">Loading open {requestTypeLabel.toLowerCase()}s...</p>
+                  <p className="text-xs font-medium text-text-muted">
+                    Loading open {requestTypeLabel.toLowerCase()}s...
+                  </p>
                 </div>
               ) : filteredMergeRequests.length === 0 ? (
                 remotes.length === 0 ? (
-                  <div className="p-2">
-                    {renderNoRemoteCard()}
-                  </div>
+                  <div className="p-2">{renderNoRemoteCard()}</div>
                 ) : formError && isAuthError ? (
-                  <div className="p-2">
-                    {renderAuthAlert()}
-                  </div>
+                  <div className="p-2">{renderAuthAlert()}</div>
                 ) : (
                   <div className="p-6 text-center bg-base-0 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
                     <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
-                    <h4 className="text-xs font-bold text-text-primary">No open {requestTypeLabel.toLowerCase()}s</h4>
+                    <h4 className="text-xs font-bold text-text-primary">
+                      No open {requestTypeLabel.toLowerCase()}s
+                    </h4>
                     <p className="text-[11px] text-text-muted max-w-xs mx-auto">
-                      No active {requestTypeLabel.toLowerCase()}s pending on remote{' '}
-                      <span className="font-mono text-text-primary font-semibold">{selectedRemote}</span>.
+                      No active {requestTypeLabel.toLowerCase()}s pending on
+                      remote{" "}
+                      <span className="font-mono text-text-primary font-semibold">
+                        {selectedRemote}
+                      </span>
+                      .
                     </p>
                     <button
                       type="button"
-                      onClick={() => setActiveTab('create')}
+                      onClick={() => setActiveTab("create")}
                       className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
@@ -2035,41 +2324,56 @@ export const MergeRequestModal: React.FC = () => {
               ) : (
                 <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 p-0.5">
                   {filteredMergeRequests.map((mr) => {
-                    const isSelected = String(mr.id) === String(activeSelectedMr?.id);
+                    const isSelected =
+                      String(mr.id) === String(activeSelectedMr?.id);
                     return (
                       <div
                         key={mr.id}
                         onClick={() => setSelectedMrId(String(mr.id))}
                         className={`p-2.5 rounded-sm border transition-all duration-150 cursor-pointer select-none space-y-1 text-left ${
                           isSelected
-                            ? 'bg-base-1 border-border-strong shadow-xs'
-                            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
+                            ? "bg-base-1 border-border-strong shadow-xs"
+                            : "bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs"
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[9.5px] font-mono font-bold rounded-xs uppercase shrink-0">
-                            {mr.state || 'OPEN'}
+                            {mr.state || "OPEN"}
                           </span>
-                          <span className="text-[10.5px] font-mono text-text-faint">#{mr.id}</span>
+                          <span className="text-[10.5px] font-mono text-text-faint">
+                            #{mr.id}
+                          </span>
                         </div>
 
-                        <h4 className={`text-xs font-bold truncate leading-tight transition-colors ${
-                          isSelected ? 'text-commito-coral' : 'text-text-primary'
-                        }`}>
+                        <h4
+                          className={`text-xs font-bold truncate leading-tight transition-colors ${
+                            isSelected
+                              ? "text-commito-coral"
+                              : "text-text-primary"
+                          }`}
+                        >
                           {mr.title}
                         </h4>
 
                         <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-text-muted/70 pt-0.5">
                           <span className="truncate">
-                            <span className="text-commito-coral font-semibold">{mr.source_branch}</span>
-                            {' → '}
-                            <span className="text-emerald-400 font-semibold">{mr.target_branch}</span>
+                            <span className="text-commito-coral font-semibold">
+                              {mr.source_branch}
+                            </span>
+                            {" → "}
+                            <span className="text-emerald-400 font-semibold">
+                              {mr.target_branch}
+                            </span>
                           </span>
                           <span className="truncate shrink-0 flex items-center gap-1">
                             {mr.author_avatar ? (
-                              <img src={mr.author_avatar} alt="" className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0" />
+                              <img
+                                src={mr.author_avatar}
+                                alt=""
+                                className="w-3.5 h-3.5 rounded-full object-cover border border-border shrink-0"
+                              />
                             ) : null}
-                            <span>@{mr.author_name.replace(/\s+/g, '')}</span>
+                            <span>@{mr.author_name.replace(/\s+/g, "")}</span>
                           </span>
                         </div>
                       </div>
@@ -2085,7 +2389,9 @@ export const MergeRequestModal: React.FC = () => {
               onDoubleClick={() => setLeftPanelWidth(360)}
               title="Drag to resize • Double-click to reset"
               className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-                isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+                isResizingLeft
+                  ? "bg-commito-coral"
+                  : "bg-transparent border-r border-border"
               }`}
             >
               <div className="absolute inset-y-0 -left-1 -right-1" />
@@ -2101,14 +2407,20 @@ export const MergeRequestModal: React.FC = () => {
                     <div className="flex items-center justify-between gap-2.5 min-w-0">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="px-1.5 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[10px] font-mono font-bold rounded-xs uppercase shrink-0">
-                          {activeSelectedMr.state || 'OPEN'}
+                          {activeSelectedMr.state || "OPEN"}
                         </span>
-                        <span className="text-xs font-mono text-text-muted font-bold shrink-0">#{activeSelectedMr.id}</span>
-                        <h3 className="text-xs font-bold text-text-primary truncate">{activeSelectedMr.title}</h3>
+                        <span className="text-xs font-mono text-text-muted font-bold shrink-0">
+                          #{activeSelectedMr.id}
+                        </span>
+                        <h3 className="text-xs font-bold text-text-primary truncate">
+                          {activeSelectedMr.title}
+                        </h3>
                       </div>
 
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {(activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened') && (
+                        {(activeSelectedMr.state?.toLowerCase() === "open" ||
+                          activeSelectedMr.state?.toLowerCase() ===
+                            "opened") && (
                           <button
                             type="button"
                             onClick={handleOpenMergeModal}
@@ -2121,7 +2433,9 @@ export const MergeRequestModal: React.FC = () => {
 
                         <button
                           type="button"
-                          onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
+                          onClick={() =>
+                            handleOpenFullEditWorkspace(activeSelectedMr)
+                          }
                           className="h-6.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs active:scale-95"
                         >
                           <Edit3 className="w-3 h-3 text-text-muted" />
@@ -2147,25 +2461,32 @@ export const MergeRequestModal: React.FC = () => {
                       <Tabs<InspectorTab>
                         tabs={[
                           {
-                            id: 'conversation',
-                            label: 'Conversation',
+                            id: "conversation",
+                            label: "Conversation",
                             icon: <MessageSquare className="w-3 h-3" />,
-                            badge: prComments.length > 0 ? prComments.length : undefined,
-                            badgeVariant: 'neutral',
+                            badge:
+                              prComments.length > 0
+                                ? prComments.length
+                                : undefined,
+                            badgeVariant: "neutral",
                           },
                           {
-                            id: 'commits',
-                            label: 'Commits',
+                            id: "commits",
+                            label: "Commits",
                             icon: <GitCommit className="w-3 h-3" />,
-                            badge: isLoadingBranchDiff ? undefined : prCommits.length,
-                            badgeVariant: 'neutral',
+                            badge: isLoadingBranchDiff
+                              ? undefined
+                              : prCommits.length,
+                            badgeVariant: "neutral",
                           },
                           {
-                            id: 'files',
-                            label: 'Files Changed',
+                            id: "files",
+                            label: "Files Changed",
                             icon: <FileCode className="w-3 h-3" />,
-                            badge: isLoadingBranchDiff ? undefined : prFiles.length,
-                            badgeVariant: 'neutral',
+                            badge: isLoadingBranchDiff
+                              ? undefined
+                              : prFiles.length,
+                            badgeVariant: "neutral",
                           },
                         ]}
                         activeTab={inspectorTab}
@@ -2178,9 +2499,13 @@ export const MergeRequestModal: React.FC = () => {
                       <div className="flex items-center gap-2 text-[11px] font-mono text-text-muted flex-wrap">
                         <div className="flex items-center gap-1">
                           <GitBranch className="w-3 h-3 text-commito-coral shrink-0" />
-                          <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
+                          <span className="text-commito-coral font-bold">
+                            {activeSelectedMr.source_branch}
+                          </span>
                           <span className="text-text-faint">→</span>
-                          <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
+                          <span className="text-emerald-400 font-bold">
+                            {activeSelectedMr.target_branch}
+                          </span>
                         </div>
 
                         <span className="text-border">•</span>
@@ -2195,15 +2520,21 @@ export const MergeRequestModal: React.FC = () => {
                           ) : (
                             <User className="w-3 h-3 text-text-faint shrink-0" />
                           )}
-                          <span>@{activeSelectedMr.author_name.replace(/\s+/g, '')}</span>
+                          <span>
+                            @{activeSelectedMr.author_name.replace(/\s+/g, "")}
+                          </span>
                         </div>
 
                         {(totalAdditions > 0 || totalDeletions > 0) && (
                           <>
                             <span className="text-border">•</span>
                             <div className="flex items-center gap-1 font-mono text-[10.5px] font-bold px-1.5 py-0.2 rounded-xs bg-base-1 border border-border">
-                              <span className="text-emerald-400">+{totalAdditions}</span>
-                              <span className="text-red-400">-{totalDeletions}</span>
+                              <span className="text-emerald-400">
+                                +{totalAdditions}
+                              </span>
+                              <span className="text-red-400">
+                                -{totalDeletions}
+                              </span>
                             </div>
                           </>
                         )}
@@ -2213,7 +2544,7 @@ export const MergeRequestModal: React.FC = () => {
 
                   {/* Inspector Body Content based on Sub-Tab */}
                   <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-                    {inspectorTab === 'conversation' && (
+                    {inspectorTab === "conversation" && (
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                         {/* Main Conversation Stream (col 8) */}
                         <div className="lg:col-span-8 space-y-4">
@@ -2229,13 +2560,21 @@ export const MergeRequestModal: React.FC = () => {
                                   />
                                 ) : (
                                   <div className="w-5 h-5 rounded-full bg-commito-coral/20 border border-commito-coral/40 flex items-center justify-center text-[10px] font-bold text-commito-coral shrink-0">
-                                    {activeSelectedMr.author_name.charAt(0).toUpperCase()}
+                                    {activeSelectedMr.author_name
+                                      .charAt(0)
+                                      .toUpperCase()}
                                   </div>
                                 )}
                                 <span className="text-xs font-bold text-text-primary">
-                                  @{activeSelectedMr.author_name.replace(/\s+/g, '')}
+                                  @
+                                  {activeSelectedMr.author_name.replace(
+                                    /\s+/g,
+                                    "",
+                                  )}
                                 </span>
-                                <span className="text-[10.5px] text-text-muted">opened this request</span>
+                                <span className="text-[10.5px] text-text-muted">
+                                  opened this request
+                                </span>
                               </div>
 
                               <div className="relative flex items-center gap-1">
@@ -2243,7 +2582,11 @@ export const MergeRequestModal: React.FC = () => {
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setActiveCommentMenuId(activeCommentMenuId === 'desc' ? null : 'desc');
+                                    setActiveCommentMenuId(
+                                      activeCommentMenuId === "desc"
+                                        ? null
+                                        : "desc",
+                                    );
                                   }}
                                   className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
                                   title="Options"
@@ -2251,7 +2594,7 @@ export const MergeRequestModal: React.FC = () => {
                                   <MoreHorizontal className="w-3.5 h-3.5" />
                                 </button>
 
-                                {activeCommentMenuId === 'desc' && (
+                                {activeCommentMenuId === "desc" && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
                                     className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
@@ -2266,21 +2609,31 @@ export const MergeRequestModal: React.FC = () => {
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleCopyCommentMarkdown(activeSelectedMr.description || '')}
+                                        onClick={() =>
+                                          handleCopyCommentMarkdown(
+                                            activeSelectedMr.description || "",
+                                          )
+                                        }
                                         className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                       >
                                         Copy Markdown
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleQuoteReply(activeSelectedMr.description || '')}
+                                        onClick={() =>
+                                          handleQuoteReply(
+                                            activeSelectedMr.description || "",
+                                          )
+                                        }
                                         className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                       >
                                         Quote reply
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => handleReferenceInNewIssue()}
+                                        onClick={() =>
+                                          handleReferenceInNewIssue()
+                                        }
                                         className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                       >
                                         Reference in new issue
@@ -2292,7 +2645,9 @@ export const MergeRequestModal: React.FC = () => {
                                         type="button"
                                         onClick={() => {
                                           setActiveCommentMenuId(null);
-                                          handleOpenFullEditWorkspace(activeSelectedMr);
+                                          handleOpenFullEditWorkspace(
+                                            activeSelectedMr,
+                                          );
                                         }}
                                         className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                       >
@@ -2305,7 +2660,7 @@ export const MergeRequestModal: React.FC = () => {
                             </div>
                             <div className="p-4 max-h-[320px] overflow-y-auto">
                               <MarkdownPreview
-                                content={activeSelectedMr.description || ''}
+                                content={activeSelectedMr.description || ""}
                                 emptyText="No description provided for this request."
                               />
                             </div>
@@ -2320,8 +2675,11 @@ export const MergeRequestModal: React.FC = () => {
                           ) : prComments.length > 0 ? (
                             <div className="space-y-3">
                               {prComments.map((comment) => {
-                                const isHidden = hiddenCommentIds.has(comment.id);
-                                const isEditing = editingCommentId === comment.id;
+                                const isHidden = hiddenCommentIds.has(
+                                  comment.id,
+                                );
+                                const isEditing =
+                                  editingCommentId === comment.id;
 
                                 if (isHidden) {
                                   return (
@@ -2329,10 +2687,14 @@ export const MergeRequestModal: React.FC = () => {
                                       key={comment.id}
                                       className="bg-base-0 border border-border/70 rounded-sm px-3.5 py-2 flex items-center justify-between text-xs text-text-muted"
                                     >
-                                      <span className="italic">This comment was hidden.</span>
+                                      <span className="italic">
+                                        This comment was hidden.
+                                      </span>
                                       <button
                                         type="button"
-                                        onClick={() => handleToggleHideComment(comment.id)}
+                                        onClick={() =>
+                                          handleToggleHideComment(comment.id)
+                                        }
                                         className="text-[11px] font-semibold text-commito-coral hover:underline cursor-pointer"
                                       >
                                         Unhide
@@ -2356,12 +2718,19 @@ export const MergeRequestModal: React.FC = () => {
                                           />
                                         ) : (
                                           <div className="w-5 h-5 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-[10px] font-bold text-emerald-400 shrink-0">
-                                            {comment.author_name.charAt(0).toUpperCase()}
+                                            {comment.author_name
+                                              .charAt(0)
+                                              .toUpperCase()}
                                           </div>
                                         )}
-                                        <span className="font-bold text-text-primary">@{comment.author_username}</span>
+                                        <span className="font-bold text-text-primary">
+                                          @{comment.author_username}
+                                        </span>
                                         <span className="text-[10.5px] text-text-muted">
-                                          commented {comment.created_at ? comment.created_at.slice(0, 10) : ''}
+                                          commented{" "}
+                                          {comment.created_at
+                                            ? comment.created_at.slice(0, 10)
+                                            : ""}
                                         </span>
                                       </div>
 
@@ -2370,7 +2739,11 @@ export const MergeRequestModal: React.FC = () => {
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            setActiveCommentMenuId(activeCommentMenuId === comment.id ? null : comment.id);
+                                            setActiveCommentMenuId(
+                                              activeCommentMenuId === comment.id
+                                                ? null
+                                                : comment.id,
+                                            );
                                           }}
                                           className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
                                           title="Options"
@@ -2386,28 +2759,42 @@ export const MergeRequestModal: React.FC = () => {
                                             <div className="py-0.5">
                                               <button
                                                 type="button"
-                                                onClick={() => handleCopyCommentLink(comment.id)}
+                                                onClick={() =>
+                                                  handleCopyCommentLink(
+                                                    comment.id,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Copy link
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => handleCopyCommentMarkdown(comment.body)}
+                                                onClick={() =>
+                                                  handleCopyCommentMarkdown(
+                                                    comment.body,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Copy Markdown
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => handleQuoteReply(comment.body)}
+                                                onClick={() =>
+                                                  handleQuoteReply(comment.body)
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Quote reply
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => handleReferenceInNewIssue(comment.id)}
+                                                onClick={() =>
+                                                  handleReferenceInNewIssue(
+                                                    comment.id,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Reference in new issue
@@ -2417,21 +2804,34 @@ export const MergeRequestModal: React.FC = () => {
                                             <div className="py-0.5">
                                               <button
                                                 type="button"
-                                                onClick={() => handleStartEditComment(comment.id, comment.body)}
+                                                onClick={() =>
+                                                  handleStartEditComment(
+                                                    comment.id,
+                                                    comment.body,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Edit
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => handleToggleHideComment(comment.id)}
+                                                onClick={() =>
+                                                  handleToggleHideComment(
+                                                    comment.id,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-text-primary hover:bg-base-2 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Hide
                                               </button>
                                               <button
                                                 type="button"
-                                                onClick={() => handleDeleteComment(comment.id)}
+                                                onClick={() =>
+                                                  handleDeleteComment(
+                                                    comment.id,
+                                                  )
+                                                }
                                                 className="w-full px-3.5 py-1.5 text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 transition cursor-pointer text-xs font-normal"
                                               >
                                                 Delete
@@ -2446,14 +2846,20 @@ export const MergeRequestModal: React.FC = () => {
                                       <div className="p-3 space-y-2">
                                         <textarea
                                           value={editingCommentBody}
-                                          onChange={(e) => setEditingCommentBody(e.target.value)}
+                                          onChange={(e) =>
+                                            setEditingCommentBody(
+                                              e.target.value,
+                                            )
+                                          }
                                           disabled={isSavingCommentEdit}
                                           className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
                                         />
                                         <div className="flex items-center justify-end gap-2">
                                           <button
                                             type="button"
-                                            onClick={() => setEditingCommentId(null)}
+                                            onClick={() =>
+                                              setEditingCommentId(null)
+                                            }
                                             disabled={isSavingCommentEdit}
                                             className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold cursor-pointer"
                                           >
@@ -2461,18 +2867,27 @@ export const MergeRequestModal: React.FC = () => {
                                           </button>
                                           <button
                                             type="button"
-                                            onClick={() => handleSaveEditComment(comment.id)}
-                                            disabled={isSavingCommentEdit || !editingCommentBody.trim()}
+                                            onClick={() =>
+                                              handleSaveEditComment(comment.id)
+                                            }
+                                            disabled={
+                                              isSavingCommentEdit ||
+                                              !editingCommentBody.trim()
+                                            }
                                             className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                                           >
-                                            {isSavingCommentEdit && <Loader2 className="w-3 h-3 animate-spin" />}
+                                            {isSavingCommentEdit && (
+                                              <Loader2 className="w-3 h-3 animate-spin" />
+                                            )}
                                             <span>Save Changes</span>
                                           </button>
                                         </div>
                                       </div>
                                     ) : (
                                       <div className="p-3.5 text-xs text-text-primary">
-                                        <MarkdownPreview content={comment.body} />
+                                        <MarkdownPreview
+                                          content={comment.body}
+                                        />
                                       </div>
                                     )}
                                   </div>
@@ -2488,10 +2903,10 @@ export const MergeRequestModal: React.FC = () => {
                                 <MessageSquare className="w-3.5 h-3.5 text-commito-coral" />
                                 <span>Add a comment</span>
                               </span>
-                              <Tabs<'write' | 'preview'>
+                              <Tabs<"write" | "preview">
                                 tabs={[
-                                  { id: 'write', label: 'Write' },
-                                  { id: 'preview', label: 'Preview' },
+                                  { id: "write", label: "Write" },
+                                  { id: "preview", label: "Preview" },
                                 ]}
                                 activeTab={commentEditorTab}
                                 onChange={setCommentEditorTab}
@@ -2501,12 +2916,14 @@ export const MergeRequestModal: React.FC = () => {
                             </div>
 
                             <div className="p-3">
-                              {commentEditorTab === 'write' ? (
+                              {commentEditorTab === "write" ? (
                                 <textarea
                                   ref={commentTextareaRef}
                                   placeholder="Add your comment here... (Markdown supported)"
                                   value={newCommentText}
-                                  onChange={(e) => setNewCommentText(e.target.value)}
+                                  onChange={(e) =>
+                                    setNewCommentText(e.target.value)
+                                  }
                                   disabled={isPostingComment}
                                   className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition"
                                 />
@@ -2526,7 +2943,9 @@ export const MergeRequestModal: React.FC = () => {
                                 <button
                                   type="button"
                                   onClick={handlePostComment}
-                                  disabled={!newCommentText.trim() || isPostingComment}
+                                  disabled={
+                                    !newCommentText.trim() || isPostingComment
+                                  }
                                   className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
                                 >
                                   {isPostingComment ? (
@@ -2557,15 +2976,25 @@ export const MergeRequestModal: React.FC = () => {
                                   <span>Reviewers</span>
                                 </span>
                               </div>
-                              {activeSelectedMr.reviewers && activeSelectedMr.reviewers.length > 0 ? (
+                              {activeSelectedMr.reviewers &&
+                              activeSelectedMr.reviewers.length > 0 ? (
                                 <div className="space-y-1.5 pt-0.5">
                                   {activeSelectedMr.reviewers.map((r, idx) => (
-                                    <div key={idx} className="flex items-center gap-1.5">
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-1.5"
+                                    >
                                       {r.avatar_url ? (
-                                        <img src={r.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                                        <img
+                                          src={r.avatar_url}
+                                          alt=""
+                                          className="w-4 h-4 rounded-full"
+                                        />
                                       ) : (
                                         <div className="w-4 h-4 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
-                                          {(r.name || r.username || 'R').charAt(0).toUpperCase()}
+                                          {(r.name || r.username || "R")
+                                            .charAt(0)
+                                            .toUpperCase()}
                                         </div>
                                       )}
                                       <span className="font-mono text-text-primary text-[11px] font-medium truncate">
@@ -2575,7 +3004,9 @@ export const MergeRequestModal: React.FC = () => {
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-[11px] text-text-muted">No reviews requested</p>
+                                <p className="text-[11px] text-text-muted">
+                                  No reviews requested
+                                </p>
                               )}
                             </div>
 
@@ -2587,15 +3018,25 @@ export const MergeRequestModal: React.FC = () => {
                                   <span>Assignees</span>
                                 </span>
                               </div>
-                              {activeSelectedMr.assignees && activeSelectedMr.assignees.length > 0 ? (
+                              {activeSelectedMr.assignees &&
+                              activeSelectedMr.assignees.length > 0 ? (
                                 <div className="space-y-1.5 pt-0.5">
                                   {activeSelectedMr.assignees.map((a, idx) => (
-                                    <div key={idx} className="flex items-center gap-1.5">
+                                    <div
+                                      key={idx}
+                                      className="flex items-center gap-1.5"
+                                    >
                                       {a.avatar_url ? (
-                                        <img src={a.avatar_url} alt="" className="w-4 h-4 rounded-full" />
+                                        <img
+                                          src={a.avatar_url}
+                                          alt=""
+                                          className="w-4 h-4 rounded-full"
+                                        />
                                       ) : (
                                         <div className="w-4 h-4 rounded-full bg-base-2 border border-border flex items-center justify-center text-[9px] font-mono">
-                                          {(a.name || a.username || 'A').charAt(0).toUpperCase()}
+                                          {(a.name || a.username || "A")
+                                            .charAt(0)
+                                            .toUpperCase()}
                                         </div>
                                       )}
                                       <span className="font-mono text-text-primary text-[11px] font-medium truncate">
@@ -2605,7 +3046,9 @@ export const MergeRequestModal: React.FC = () => {
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-[11px] text-text-muted">No one assigned</p>
+                                <p className="text-[11px] text-text-muted">
+                                  No one assigned
+                                </p>
                               )}
                             </div>
 
@@ -2617,14 +3060,19 @@ export const MergeRequestModal: React.FC = () => {
                                   <span>Labels</span>
                                 </span>
                               </div>
-                              {activeSelectedMr.labels && activeSelectedMr.labels.length > 0 ? (
+                              {activeSelectedMr.labels &&
+                              activeSelectedMr.labels.length > 0 ? (
                                 <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                                   {activeSelectedMr.labels.map((l, idx) => (
                                     <span
                                       key={idx}
                                       style={{
-                                        backgroundColor: l.color ? `${l.color}20` : undefined,
-                                        borderColor: l.color ? `${l.color}50` : undefined,
+                                        backgroundColor: l.color
+                                          ? `${l.color}20`
+                                          : undefined,
+                                        borderColor: l.color
+                                          ? `${l.color}50`
+                                          : undefined,
                                         color: l.color || undefined,
                                       }}
                                       className="px-1.5 py-0.2 bg-base-2 border border-border text-text-secondary text-[10px] font-mono font-semibold rounded-xs"
@@ -2634,7 +3082,9 @@ export const MergeRequestModal: React.FC = () => {
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-[11px] text-text-muted">None yet</p>
+                                <p className="text-[11px] text-text-muted">
+                                  None yet
+                                </p>
                               )}
                             </div>
 
@@ -2654,7 +3104,9 @@ export const MergeRequestModal: React.FC = () => {
                             <div className="space-y-2 pt-1">
                               <button
                                 type="button"
-                                onClick={() => handleCloseOrReopenPr(activeSelectedMr)}
+                                onClick={() =>
+                                  handleCloseOrReopenPr(activeSelectedMr)
+                                }
                                 disabled={isClosingPr}
                                 className="w-full h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
                               >
@@ -2664,7 +3116,10 @@ export const MergeRequestModal: React.FC = () => {
                                   <XCircle className="w-3.5 h-3.5" />
                                 )}
                                 <span>
-                                  {activeSelectedMr.state?.toLowerCase() === 'open' || activeSelectedMr.state?.toLowerCase() === 'opened'
+                                  {activeSelectedMr.state?.toLowerCase() ===
+                                    "open" ||
+                                  activeSelectedMr.state?.toLowerCase() ===
+                                    "opened"
                                     ? `Close ${requestTypeLabel}`
                                     : `Reopen ${requestTypeLabel}`}
                                 </span>
@@ -2676,13 +3131,22 @@ export const MergeRequestModal: React.FC = () => {
                     )}
 
                     {/* Commits Sub-Tab */}
-                    {inspectorTab === 'commits' && (
+                    {inspectorTab === "commits" && (
                       <div className="space-y-3">
                         <div className="flex items-center justify-between pb-1 border-b border-border/70 text-xs">
                           <span className="font-bold text-text-primary">
-                            {prCommits.length} Commits between <code className="text-commito-coral">{activeSelectedMr.source_branch}</code> and <code className="text-emerald-400">{activeSelectedMr.target_branch}</code>
+                            {prCommits.length} Commits between{" "}
+                            <code className="text-commito-coral">
+                              {activeSelectedMr.source_branch}
+                            </code>{" "}
+                            and{" "}
+                            <code className="text-emerald-400">
+                              {activeSelectedMr.target_branch}
+                            </code>
                           </span>
-                          <span className="text-text-muted font-mono text-[11px]">Git History</span>
+                          <span className="text-text-muted font-mono text-[11px]">
+                            Git History
+                          </span>
                         </div>
 
                         {isLoadingBranchDiff ? (
@@ -2693,17 +3157,28 @@ export const MergeRequestModal: React.FC = () => {
                         ) : prCommits.length === 0 ? (
                           <div className="p-8 text-center bg-base-0 border border-border rounded-sm text-xs text-text-muted space-y-1">
                             <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
-                            <p className="font-bold text-text-primary">Branches are up to date</p>
-                            <p className="text-[11px]">No unique commits found in this branch comparison.</p>
+                            <p className="font-bold text-text-primary">
+                              Branches are up to date
+                            </p>
+                            <p className="text-[11px]">
+                              No unique commits found in this branch comparison.
+                            </p>
                           </div>
                         ) : (
                           <div className="space-y-2">
                             {prCommits.map((c) => (
-                              <div key={c.sha} className="p-3 bg-base-0 border border-border rounded-sm flex items-center justify-between gap-3 shadow-2xs hover:border-border-strong transition">
+                              <div
+                                key={c.sha}
+                                className="p-3 bg-base-0 border border-border rounded-sm flex items-center justify-between gap-3 shadow-2xs hover:border-border-strong transition"
+                              >
                                 <div className="space-y-1 min-w-0">
-                                  <h4 className="text-xs font-bold text-text-primary line-clamp-1">{c.message}</h4>
+                                  <h4 className="text-xs font-bold text-text-primary line-clamp-1">
+                                    {c.message}
+                                  </h4>
                                   <div className="flex items-center gap-2 text-[11px] text-text-muted">
-                                    <span className="font-semibold text-text-secondary">@{c.author_name}</span>
+                                    <span className="font-semibold text-text-secondary">
+                                      @{c.author_name}
+                                    </span>
                                     <span>•</span>
                                     <span>{c.relative_date}</span>
                                   </div>
@@ -2718,8 +3193,8 @@ export const MergeRequestModal: React.FC = () => {
                                     onClick={() => {
                                       navigator.clipboard.writeText(c.sha);
                                       useToastStore.getState().showToast({
-                                        type: 'info',
-                                        title: 'SHA Copied',
+                                        type: "info",
+                                        title: "SHA Copied",
                                         message: `Copied ${c.short_sha} to clipboard`,
                                       });
                                     }}
@@ -2737,7 +3212,7 @@ export const MergeRequestModal: React.FC = () => {
                     )}
 
                     {/* Files Changed Sub-Tab with 2 View Modes (Unified & Split) */}
-                    {inspectorTab === 'files' && (
+                    {inspectorTab === "files" && (
                       <div className="space-y-3">
                         {/* Header toolbar */}
                         <div className="flex items-center justify-between pb-2 border-b border-border/70 text-xs flex-wrap gap-2">
@@ -2747,8 +3222,16 @@ export const MergeRequestModal: React.FC = () => {
                             </span>
                             {(totalAdditions > 0 || totalDeletions > 0) && (
                               <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-xs bg-base-0 border border-border shadow-2xs">
-                                {totalAdditions > 0 && <span className="text-emerald-400">+{totalAdditions}</span>}
-                                {totalDeletions > 0 && <span className="text-red-400">-{totalDeletions}</span>}
+                                {totalAdditions > 0 && (
+                                  <span className="text-emerald-400">
+                                    +{totalAdditions}
+                                  </span>
+                                )}
+                                {totalDeletions > 0 && (
+                                  <span className="text-red-400">
+                                    -{totalDeletions}
+                                  </span>
+                                )}
                               </span>
                             )}
                           </div>
@@ -2758,11 +3241,11 @@ export const MergeRequestModal: React.FC = () => {
                             <div className="flex items-center bg-base-0 border border-border rounded-sm p-0.5 shadow-2xs">
                               <button
                                 type="button"
-                                onClick={() => setDiffViewMode('unified')}
+                                onClick={() => setDiffViewMode("unified")}
                                 className={`p-1 rounded-sm text-xs transition cursor-pointer ${
-                                  diffViewMode === 'unified'
-                                    ? 'bg-base-2 text-text-primary shadow-xs'
-                                    : 'text-text-muted hover:text-text-primary'
+                                  diffViewMode === "unified"
+                                    ? "bg-base-2 text-text-primary shadow-xs"
+                                    : "text-text-muted hover:text-text-primary"
                                 }`}
                                 title="Unified View"
                               >
@@ -2771,11 +3254,11 @@ export const MergeRequestModal: React.FC = () => {
 
                               <button
                                 type="button"
-                                onClick={() => setDiffViewMode('split')}
+                                onClick={() => setDiffViewMode("split")}
                                 className={`p-1 rounded-sm text-xs transition cursor-pointer ${
-                                  diffViewMode === 'split'
-                                    ? 'bg-base-2 text-text-primary shadow-xs'
-                                    : 'text-text-muted hover:text-text-primary'
+                                  diffViewMode === "split"
+                                    ? "bg-base-2 text-text-primary shadow-xs"
+                                    : "text-text-muted hover:text-text-primary"
                                 }`}
                                 title="Split (Side-by-Side) View"
                               >
@@ -2791,7 +3274,9 @@ export const MergeRequestModal: React.FC = () => {
                                 size="xs"
                                 onClick={handleToggleExpandAll}
                               >
-                                {openFilePaths.size === prFiles.length ? 'Collapse All' : 'Expand All'}
+                                {openFilePaths.size === prFiles.length
+                                  ? "Collapse All"
+                                  : "Expand All"}
                               </Button>
                             )}
                           </div>
@@ -2805,18 +3290,27 @@ export const MergeRequestModal: React.FC = () => {
                         ) : prFiles.length === 0 ? (
                           <div className="p-8 text-center bg-base-0 border border-border rounded-sm text-xs text-text-muted space-y-1">
                             <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
-                            <p className="font-bold text-text-primary">No file changes</p>
-                            <p className="text-[11px]">No file modifications between these two branches.</p>
+                            <p className="font-bold text-text-primary">
+                              No file changes
+                            </p>
+                            <p className="text-[11px]">
+                              No file modifications between these two branches.
+                            </p>
                           </div>
                         ) : (
                           <div className="space-y-3">
                             {prFiles.map((f) => {
                               const isExpanded = openFilePaths.has(f.path);
-                              const isLoadingDiff = loadingFilePaths.has(f.path);
+                              const isLoadingDiff = loadingFilePaths.has(
+                                f.path,
+                              );
                               const diffData = fileDiffCache[f.path];
 
                               return (
-                                <div key={f.path} className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs">
+                                <div
+                                  key={f.path}
+                                  className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs"
+                                >
                                   {/* File Card Header */}
                                   <div
                                     onClick={() => handleToggleFileDiff(f.path)}
@@ -2829,18 +3323,20 @@ export const MergeRequestModal: React.FC = () => {
                                         <ChevronRight className="w-3.5 h-3.5 text-text-muted shrink-0" />
                                       )}
                                       <FileCode className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                                      <span className="text-xs font-mono text-text-primary font-bold truncate">{f.path}</span>
+                                      <span className="text-xs font-mono text-text-primary font-bold truncate">
+                                        {f.path}
+                                      </span>
                                     </div>
 
                                     <div className="flex items-center gap-2 shrink-0">
                                       {/* Status Badge */}
                                       <span
                                         className={`px-1.5 py-0.2 text-[9.5px] font-mono font-bold uppercase rounded-xs border ${
-                                          f.status === 'added'
-                                            ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-400'
-                                            : f.status === 'deleted'
-                                            ? 'bg-red-500/15 border-red-500/35 text-red-400'
-                                            : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                                          f.status === "added"
+                                            ? "bg-emerald-500/15 border-emerald-500/35 text-emerald-400"
+                                            : f.status === "deleted"
+                                              ? "bg-red-500/15 border-red-500/35 text-red-400"
+                                              : "bg-amber-500/15 border-amber-500/30 text-amber-400"
                                         }`}
                                       >
                                         {f.status}
@@ -2849,14 +3345,18 @@ export const MergeRequestModal: React.FC = () => {
                                       {/* Copy Path Button */}
                                       <button
                                         type="button"
-                                        onClick={(e) => handleCopyFilePath(e, f.path)}
+                                        onClick={(e) =>
+                                          handleCopyFilePath(e, f.path)
+                                        }
                                         className="h-5 px-1.5 text-[10px] font-mono text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-xs flex items-center gap-1 transition cursor-pointer"
                                         title="Copy file path"
                                       >
                                         {copiedFilePath === f.path ? (
                                           <>
                                             <Check className="w-2.5 h-2.5 text-emerald-400" />
-                                            <span className="text-emerald-400">Copied</span>
+                                            <span className="text-emerald-400">
+                                              Copied
+                                            </span>
                                           </>
                                         ) : (
                                           <>
@@ -2874,13 +3374,20 @@ export const MergeRequestModal: React.FC = () => {
                                       {isLoadingDiff ? (
                                         <div className="p-6 text-center text-text-muted flex items-center justify-center gap-2">
                                           <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />
-                                          <span className="text-xs">Loading file diff...</span>
+                                          <span className="text-xs">
+                                            Loading file diff...
+                                          </span>
                                         </div>
-                                      ) : diffData && diffData.lines.length > 0 ? (
-                                        diffViewMode === 'split' ? (
-                                          <SplitDiffView lines={diffData.lines} />
+                                      ) : diffData &&
+                                        diffData.lines.length > 0 ? (
+                                        diffViewMode === "split" ? (
+                                          <SplitDiffView
+                                            lines={diffData.lines}
+                                          />
                                         ) : (
-                                          <UnifiedDiffView lines={diffData.lines} />
+                                          <UnifiedDiffView
+                                            lines={diffData.lines}
+                                          />
                                         )
                                       ) : (
                                         <div className="p-6 text-text-muted text-center font-mono text-xs">
@@ -2901,7 +3408,10 @@ export const MergeRequestModal: React.FC = () => {
               ) : (
                 <div className="p-12 text-center flex-1 flex flex-col items-center justify-center text-text-muted space-y-2">
                   <GitPullRequest className="w-8 h-8 text-text-faint mx-auto" />
-                  <p className="text-xs">Select a {requestTypeLabel.toLowerCase()} from the left to inspect or review details</p>
+                  <p className="text-xs">
+                    Select a {requestTypeLabel.toLowerCase()} from the left to
+                    inspect or review details
+                  </p>
                 </div>
               )}
             </div>
@@ -2912,12 +3422,15 @@ export const MergeRequestModal: React.FC = () => {
         <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 border-t border-border bg-base-1/70 shrink-0 min-h-[38px]">
           <div className="flex items-center gap-2 text-xs text-text-muted font-mono">
             <span className="truncate text-[11px]">
-              Target: <span className="text-text-primary font-semibold">{targetRemoteInfo?.projectPath || selectedRemote}</span>
+              Target:{" "}
+              <span className="text-text-primary font-semibold">
+                {targetRemoteInfo?.projectPath || selectedRemote}
+              </span>
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            {activeTab === 'edit' && editingMr ? (
+            {activeTab === "edit" && editingMr ? (
               <>
                 <button
                   type="button"
@@ -2931,7 +3444,8 @@ export const MergeRequestModal: React.FC = () => {
                     <XCircle className="w-3 h-3" />
                   )}
                   <span>
-                    {editingMr.state?.toLowerCase() === 'open' || editingMr.state?.toLowerCase() === 'opened'
+                    {editingMr.state?.toLowerCase() === "open" ||
+                    editingMr.state?.toLowerCase() === "opened"
                       ? `Close ${requestTypeLabel}`
                       : `Reopen ${requestTypeLabel}`}
                   </span>
@@ -2942,7 +3456,7 @@ export const MergeRequestModal: React.FC = () => {
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    setActiveTab('list');
+                    setActiveTab("list");
                     setEditingMr(null);
                   }}
                   disabled={isSavingEdit}
@@ -2957,7 +3471,9 @@ export const MergeRequestModal: React.FC = () => {
                   onClick={() => handleSaveFullEdit()}
                   disabled={!editTitle.trim() || isSavingEdit}
                   isLoading={isSavingEdit}
-                  leftIcon={!isSavingEdit ? <Save className="w-3.5 h-3.5" /> : undefined}
+                  leftIcon={
+                    !isSavingEdit ? <Save className="w-3.5 h-3.5" /> : undefined
+                  }
                 >
                   Save Changes
                 </Button>
@@ -2974,21 +3490,31 @@ export const MergeRequestModal: React.FC = () => {
                   Close
                 </Button>
 
-                {activeTab === 'create' && (
+                {activeTab === "create" && (
                   <Button
                     type="button"
                     variant="coral"
                     size="sm"
                     onClick={handleCreateMergeRequest}
-                    disabled={!title.trim() || isSubmitting || isGeneratingAi || sourceBranch === targetBranch || !!existingPrForSource}
+                    disabled={
+                      !title.trim() ||
+                      isSubmitting ||
+                      isGeneratingAi ||
+                      sourceBranch === targetBranch ||
+                      !!existingPrForSource
+                    }
                     isLoading={isSubmitting}
-                    leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
+                    leftIcon={
+                      !isSubmitting ? (
+                        <Check className="w-3.5 h-3.5" />
+                      ) : undefined
+                    }
                     title={
                       sourceBranch === targetBranch
-                        ? 'Cannot submit pull request: Source and target branches are identical'
+                        ? "Cannot submit pull request: Source and target branches are identical"
                         : existingPrForSource
-                        ? `A pull request (#${existingPrForSource.id}) already exists for '${sourceBranch}'`
-                        : undefined
+                          ? `A pull request (#${existingPrForSource.id}) already exists for '${sourceBranch}'`
+                          : undefined
                     }
                   >
                     Submit {requestTypeLabel}
@@ -3016,7 +3542,9 @@ export const MergeRequestModal: React.FC = () => {
               <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-base-1">
                 <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
                   <GitMerge className="w-4 h-4" />
-                  <span>Merge {requestTypeLabel} #{activeSelectedMr.id}</span>
+                  <span>
+                    Merge {requestTypeLabel} #{activeSelectedMr.id}
+                  </span>
                 </div>
                 <button
                   type="button"
@@ -3033,13 +3561,17 @@ export const MergeRequestModal: React.FC = () => {
                 {/* Branch route */}
                 <div className="p-2.5 bg-base-1 border border-border rounded-sm flex items-center gap-2 font-mono text-[11.5px]">
                   <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                  <span className="text-commito-coral font-bold">{activeSelectedMr.source_branch}</span>
+                  <span className="text-commito-coral font-bold">
+                    {activeSelectedMr.source_branch}
+                  </span>
                   <span className="text-text-muted">merges into</span>
-                  <span className="text-emerald-400 font-bold">{activeSelectedMr.target_branch}</span>
+                  <span className="text-emerald-400 font-bold">
+                    {activeSelectedMr.target_branch}
+                  </span>
                 </div>
 
                 {/* Strategy Selector (GitHub) */}
-                {providerName === 'GitHub' ? (
+                {providerName === "GitHub" ? (
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-text-secondary uppercase tracking-wider">
                       Merge Strategy
@@ -3047,19 +3579,19 @@ export const MergeRequestModal: React.FC = () => {
                     <div className="space-y-1.5">
                       {[
                         {
-                          id: 'merge' as const,
-                          label: 'Create a merge commit',
-                          desc: 'All commits from this branch will be added to the base branch via a merge commit.',
+                          id: "merge" as const,
+                          label: "Create a merge commit",
+                          desc: "All commits from this branch will be added to the base branch via a merge commit.",
                         },
                         {
-                          id: 'squash' as const,
-                          label: 'Squash and merge',
-                          desc: 'The commits from this branch will be combined into one commit in the base branch.',
+                          id: "squash" as const,
+                          label: "Squash and merge",
+                          desc: "The commits from this branch will be combined into one commit in the base branch.",
                         },
                         {
-                          id: 'rebase' as const,
-                          label: 'Rebase and merge',
-                          desc: 'The commits from this branch will be rebased and added to the base branch.',
+                          id: "rebase" as const,
+                          label: "Rebase and merge",
+                          desc: "The commits from this branch will be rebased and added to the base branch.",
                         },
                       ].map((strat) => {
                         const isSelected = mergeMethod === strat.id;
@@ -3069,8 +3601,8 @@ export const MergeRequestModal: React.FC = () => {
                             onClick={() => setMergeMethod(strat.id)}
                             className={`p-2.5 rounded-sm border transition cursor-pointer flex items-start gap-2.5 select-none ${
                               isSelected
-                                ? 'bg-emerald-500/10 border-emerald-500/50 shadow-2xs'
-                                : 'bg-base-1 border-border hover:bg-base-2 hover:border-border-strong'
+                                ? "bg-emerald-500/10 border-emerald-500/50 shadow-2xs"
+                                : "bg-base-1 border-border hover:bg-base-2 hover:border-border-strong"
                             }`}
                           >
                             <Radio
@@ -3084,7 +3616,9 @@ export const MergeRequestModal: React.FC = () => {
                             <div className="space-y-0.5 min-w-0 flex-1">
                               <div
                                 className={`text-xs font-semibold leading-tight transition-colors ${
-                                  isSelected ? 'text-emerald-400 font-bold' : 'text-text-primary'
+                                  isSelected
+                                    ? "text-emerald-400 font-bold"
+                                    : "text-text-primary"
                                 }`}
                               >
                                 {strat.label}
@@ -3159,7 +3693,11 @@ export const MergeRequestModal: React.FC = () => {
                   onClick={handleMergePr}
                   disabled={isMerging}
                   isLoading={isMerging}
-                  leftIcon={!isMerging ? <GitMerge className="w-3.5 h-3.5" /> : undefined}
+                  leftIcon={
+                    !isMerging ? (
+                      <GitMerge className="w-3.5 h-3.5" />
+                    ) : undefined
+                  }
                 >
                   Confirm Merge
                 </Button>
@@ -3175,20 +3713,28 @@ export const MergeRequestModal: React.FC = () => {
         title={`Unsaved ${requestTypeLabel} Changes`}
         description={`You have unsaved changes in this ${requestTypeLabel.toLowerCase()} draft. If you leave now, your title, description, and settings will be discarded.`}
         discardText="Discard Changes"
-        saveText={activeTab === 'create' ? (title.trim() ? `Create ${requestTypeLabel}` : undefined) : 'Save Changes'}
+        saveText={
+          activeTab === "create"
+            ? title.trim()
+              ? `Create ${requestTypeLabel}`
+              : undefined
+            : "Save Changes"
+        }
         cancelText="Keep Editing"
         isSaving={isSubmitting || isSavingEdit}
         onDiscard={confirmDiscard}
         onSave={() => {
-          if (activeTab === 'create') {
-            handleCreateMergeRequest({ preventDefault: () => {} } as React.FormEvent);
-          } else if (activeTab === 'edit') {
+          if (activeTab === "create") {
+            handleCreateMergeRequest({
+              preventDefault: () => {},
+            } as React.FormEvent);
+          } else if (activeTab === "edit") {
             handleSaveFullEdit();
           }
         }}
         onCancel={cancelDiscard}
       />
     </div>,
-    document.body
+    document.body,
   );
 };

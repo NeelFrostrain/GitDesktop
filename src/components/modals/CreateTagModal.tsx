@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Tag,
   X,
@@ -12,21 +12,21 @@ import {
   Check,
   Trash2,
   RefreshCw,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useToastStore } from '../../store/useToastStore';
-import { useLogStore } from '../../store/useLogStore';
-import { useRemoteStore } from '../../store/remoteStore';
-import { GitService } from '../../services/git/gitService';
-import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
-import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
-import { Dropdown } from '../common/Dropdown';
-import { Checkbox } from '../common/Checkbox';
-import { Tabs } from '../common/Tabs';
-import { Button } from '../common/Button';
-import { ConfirmDialog } from '../common/ConfirmDialog';
-import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
-import { TagInfo } from '../../types/git';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useToastStore } from "../../store/useToastStore";
+import { useLogStore } from "../../store/useLogStore";
+import { useRemoteStore } from "../../store/remoteStore";
+import { GitService } from "../../services/git/gitService";
+import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
+import { formatBranchDropdownOptions } from "../../shared/utils/branchUtils";
+import { Dropdown } from "../common/Dropdown";
+import { Checkbox } from "../common/Checkbox";
+import { Tabs } from "../common/Tabs";
+import { Button } from "../common/Button";
+import { ConfirmDialog } from "../common/ConfirmDialog";
+import { useUnsavedChangesGuard } from "../../hooks/useUnsavedChangesGuard";
+import { TagInfo } from "../../types/git";
 
 export interface CreateTagModalProps {
   isOpen: boolean;
@@ -34,7 +34,7 @@ export interface CreateTagModalProps {
   targetCommitSha?: string | null;
   targetBranchName?: string | null;
   initialTagName?: string | null;
-  initialMode?: 'new' | 'existing';
+  initialMode?: "new" | "existing";
   onSuccess?: () => void;
 }
 
@@ -44,25 +44,28 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
   targetCommitSha,
   targetBranchName,
   initialTagName,
-  initialMode = 'new',
+  initialMode = "new",
   onSuccess,
 }) => {
-  const { activeRepoPath, branches, tags, status, setTags, setBranches } = useGitStore();
+  const { activeRepoPath, branches, tags, status, setTags, setBranches } =
+    useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
   // Mode: Create New Tag vs Manage Existing Tag
-  const [tagMode, setTagMode] = useState<'new' | 'existing'>(initialMode);
-  const [selectedExistingTag, setSelectedExistingTag] = useState<string>('');
+  const [tagMode, setTagMode] = useState<"new" | "existing">(initialMode);
+  const [selectedExistingTag, setSelectedExistingTag] = useState<string>("");
 
   // New Tag Fields
-  const [tagName, setTagName] = useState('');
-  const [tagMessage, setTagMessage] = useState('');
+  const [tagName, setTagName] = useState("");
+  const [tagMessage, setTagMessage] = useState("");
   const [isAnnotated, setIsAnnotated] = useState(false);
-  const [targetType, setTargetType] = useState<'branch' | 'head' | 'commit'>('branch');
-  const [selectedBranch, setSelectedBranch] = useState('');
-  const [customCommitSha, setCustomCommitSha] = useState('');
+  const [targetType, setTargetType] = useState<"branch" | "head" | "commit">(
+    "branch",
+  );
+  const [selectedBranch, setSelectedBranch] = useState("");
+  const [customCommitSha, setCustomCommitSha] = useState("");
   const [pushImmediately, setPushImmediately] = useState(true);
-  const [selectedRemote, setSelectedRemote] = useState('origin');
+  const [selectedRemote, setSelectedRemote] = useState("origin");
   const [deleteFromRemote, setDeleteFromRemote] = useState(false);
 
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
@@ -78,16 +81,21 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
   // Track unsaved form edits
   const isDirty = useMemo(() => {
-    if (tagMode === 'new') {
-      return tagName.trim() !== '' || tagMessage.trim() !== '' || customCommitSha.trim() !== '';
+    if (tagMode === "new") {
+      return (
+        tagName.trim() !== "" ||
+        tagMessage.trim() !== "" ||
+        customCommitSha.trim() !== ""
+      );
     }
     return false;
   }, [tagMode, tagName, tagMessage, customCommitSha]);
 
-  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } = useUnsavedChangesGuard({
-    isDirty,
-    onClose,
-  });
+  const { showConfirm, requestClose, confirmDiscard, cancelDiscard } =
+    useUnsavedChangesGuard({
+      isDirty,
+      onClose,
+    });
 
   const fetchRemoteTags = async () => {
     if (!activeRepoPath || isFetchingRemote) return;
@@ -98,15 +106,16 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       const updatedTags = await GitService.listTags(activeRepoPath);
       setTags(updatedTags || []);
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Tags Synced',
-        message: `Synced ${updatedTags.length} tags from cloud (${selectedRemote || 'origin'})`,
+        type: "success",
+        title: "Tags Synced",
+        message: `Synced ${updatedTags.length} tags from cloud (${selectedRemote || "origin"})`,
       });
     } catch (err: unknown) {
       useToastStore.getState().showToast({
-        type: 'warning',
-        title: 'Cloud Sync Failed',
-        message: getErrorMessage(err) || 'Could not fetch remote tags from cloud',
+        type: "warning",
+        title: "Cloud Sync Failed",
+        message:
+          getErrorMessage(err) || "Could not fetch remote tags from cloud",
       });
     } finally {
       setIsFetchingRemote(false);
@@ -120,13 +129,17 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     try {
       await GitService.pushTags(activeRepoPath, selectedRemote || null);
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'All Tags Pushed',
-        message: `Successfully pushed all local tags to cloud (${selectedRemote || 'origin'})`,
+        type: "success",
+        title: "All Tags Pushed",
+        message: `Successfully pushed all local tags to cloud (${selectedRemote || "origin"})`,
       });
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(appErr.message || getErrorMessage(err) || 'Failed to push all tags to remote');
+      setError(
+        appErr.message ||
+          getErrorMessage(err) ||
+          "Failed to push all tags to remote",
+      );
     } finally {
       setIsPushingAll(false);
     }
@@ -165,8 +178,8 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       setTagMode(initialMode);
-      setTagName('');
-      setTagMessage('');
+      setTagName("");
+      setTagMessage("");
       setIsAnnotated(false);
       setError(null);
       setIsSubmitting(false);
@@ -175,14 +188,18 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       setDeleteFromRemote(false);
 
       if (targetCommitSha) {
-        setTargetType('commit');
+        setTargetType("commit");
         setCustomCommitSha(targetCommitSha);
       } else if (targetBranchName) {
-        setTargetType('branch');
+        setTargetType("branch");
         setSelectedBranch(targetBranchName);
       } else {
-        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
-        setTargetType('branch');
+        const current =
+          status?.current_branch ||
+          branches.find((b) => b.is_current)?.name ||
+          branches[0]?.name ||
+          "main";
+        setTargetType("branch");
         setSelectedBranch(current);
       }
 
@@ -197,10 +214,10 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       } else if (tags.length > 0) {
         setSelectedExistingTag(tags[0].name);
       } else {
-        setSelectedExistingTag('');
+        setSelectedExistingTag("");
       }
 
-      if (initialMode === 'new') {
+      if (initialMode === "new") {
         setTimeout(() => {
           inputRef.current?.focus();
         }, 50);
@@ -220,14 +237,29 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
   // Keep selectedBranch synced if branches load asynchronously
   useEffect(() => {
-    if (isOpen && branches.length > 0 && !targetBranchName && !targetCommitSha) {
+    if (
+      isOpen &&
+      branches.length > 0 &&
+      !targetBranchName &&
+      !targetCommitSha
+    ) {
       setSelectedBranch((prev) => {
         if (prev && branches.some((b) => b.name === prev)) return prev;
-        const current = status?.current_branch || branches.find((b) => b.is_current)?.name || branches[0]?.name || 'main';
+        const current =
+          status?.current_branch ||
+          branches.find((b) => b.is_current)?.name ||
+          branches[0]?.name ||
+          "main";
         return current;
       });
     }
-  }, [isOpen, branches, targetBranchName, targetCommitSha, status?.current_branch]);
+  }, [
+    isOpen,
+    branches,
+    targetBranchName,
+    targetCommitSha,
+    status?.current_branch,
+  ]);
 
   // Keep selectedExistingTag valid
   useEffect(() => {
@@ -256,7 +288,8 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       value: t.name,
       label: t.name,
       badge: t.sha ? t.sha.slice(0, 7) : undefined,
-      description: t.message || (t.is_annotated ? 'Annotated tag' : 'Lightweight tag'),
+      description:
+        t.message || (t.is_annotated ? "Annotated tag" : "Lightweight tag"),
       icon: <Tag className="w-3.5 h-3.5 text-commito-coral shrink-0" />,
     }));
   }, [tags]);
@@ -279,12 +312,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     const cleanTagName = tagName.trim();
     let targetRef: string | null = null;
 
-    if (targetType === 'branch') {
+    if (targetType === "branch") {
       targetRef = selectedBranch || null;
-    } else if (targetType === 'commit') {
+    } else if (targetType === "commit") {
       targetRef = customCommitSha.trim() || null;
     } else {
-      targetRef = 'HEAD';
+      targetRef = "HEAD";
     }
 
     try {
@@ -293,24 +326,36 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         activeRepoPath,
         cleanTagName,
         isAnnotated ? tagMessage.trim() || undefined : undefined,
-        targetRef
+        targetRef,
       );
 
       useLogStore
         .getState()
-        .addLog('success', 'Git', `Created tag '${cleanTagName}' ${targetRef ? `on ${targetRef}` : ''}`);
+        .addLog(
+          "success",
+          "Git",
+          `Created tag '${cleanTagName}' ${targetRef ? `on ${targetRef}` : ""}`,
+        );
 
       // 2. Optionally push immediately
       if (pushImmediately) {
         try {
-          await GitService.pushSpecificTag(activeRepoPath, cleanTagName, selectedRemote || null);
+          await GitService.pushSpecificTag(
+            activeRepoPath,
+            cleanTagName,
+            selectedRemote || null,
+          );
           useLogStore
             .getState()
-            .addLog('success', 'Git', `Pushed tag '${cleanTagName}' to remote '${selectedRemote || 'origin'}'`);
+            .addLog(
+              "success",
+              "Git",
+              `Pushed tag '${cleanTagName}' to remote '${selectedRemote || "origin"}'`,
+            );
         } catch (pushErr: unknown) {
           useToastStore.getState().showToast({
-            type: 'warning',
-            title: 'Tag Created (Push Failed)',
+            type: "warning",
+            title: "Tag Created (Push Failed)",
             message: `Tag '${cleanTagName}' was created locally, but could not be pushed: ${getErrorMessage(pushErr)}`,
           });
         }
@@ -321,16 +366,18 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       setTags(updatedTags || []);
 
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Tag Created',
-        message: `Successfully created tag '${cleanTagName}'${pushImmediately ? ' and pushed to remote' : ''}`,
+        type: "success",
+        title: "Tag Created",
+        message: `Successfully created tag '${cleanTagName}'${pushImmediately ? " and pushed to remote" : ""}`,
       });
 
       onSuccess?.();
       onClose();
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(appErr.message || getErrorMessage(err) || 'Failed to create tag');
+      setError(
+        appErr.message || getErrorMessage(err) || "Failed to create tag",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -342,8 +389,10 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
     const confirmed = window.confirm(
       `Are you sure you want to permanently delete tag '${selectedExistingTag}'?${
-        deleteFromRemote ? '\nThis will also remove the tag from the remote repository.' : ''
-      }`
+        deleteFromRemote
+          ? "\nThis will also remove the tag from the remote repository."
+          : ""
+      }`,
     );
     if (!confirmed) return;
 
@@ -353,19 +402,29 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     try {
       // 1. Delete local tag
       await GitService.deleteTag(activeRepoPath, selectedExistingTag);
-      useLogStore.getState().addLog('success', 'Git', `Deleted local tag '${selectedExistingTag}'`);
+      useLogStore
+        .getState()
+        .addLog("success", "Git", `Deleted local tag '${selectedExistingTag}'`);
 
       // 2. Optionally delete remote tag
       if (deleteFromRemote) {
         try {
-          await GitService.deleteRemoteTag(activeRepoPath, selectedExistingTag, selectedRemote || null);
+          await GitService.deleteRemoteTag(
+            activeRepoPath,
+            selectedExistingTag,
+            selectedRemote || null,
+          );
           useLogStore
             .getState()
-            .addLog('success', 'Git', `Deleted remote tag '${selectedExistingTag}' from '${selectedRemote || 'origin'}'`);
+            .addLog(
+              "success",
+              "Git",
+              `Deleted remote tag '${selectedExistingTag}' from '${selectedRemote || "origin"}'`,
+            );
         } catch (remoteErr: unknown) {
           useToastStore.getState().showToast({
-            type: 'warning',
-            title: 'Remote Tag Deletion Failed',
+            type: "warning",
+            title: "Remote Tag Deletion Failed",
             message: `Local tag was removed, but remote tag could not be deleted: ${getErrorMessage(remoteErr)}`,
           });
         }
@@ -376,22 +435,24 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
       setTags(updatedTags || []);
 
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Tag Deleted',
+        type: "success",
+        title: "Tag Deleted",
         message: `Successfully removed tag '${selectedExistingTag}'`,
       });
 
       if (updatedTags && updatedTags.length > 0) {
         setSelectedExistingTag(updatedTags[0].name);
       } else {
-        setSelectedExistingTag('');
-        setTagMode('new');
+        setSelectedExistingTag("");
+        setTagMode("new");
       }
 
       onSuccess?.();
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(appErr.message || getErrorMessage(err) || 'Failed to delete tag');
+      setError(
+        appErr.message || getErrorMessage(err) || "Failed to delete tag",
+      );
     } finally {
       setIsDeleting(false);
     }
@@ -405,26 +466,43 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     setError(null);
 
     try {
-      await GitService.pushSpecificTag(activeRepoPath, selectedExistingTag, selectedRemote || null);
+      await GitService.pushSpecificTag(
+        activeRepoPath,
+        selectedExistingTag,
+        selectedRemote || null,
+      );
       useLogStore
         .getState()
-        .addLog('success', 'Git', `Pushed tag '${selectedExistingTag}' to remote '${selectedRemote || 'origin'}'`);
+        .addLog(
+          "success",
+          "Git",
+          `Pushed tag '${selectedExistingTag}' to remote '${selectedRemote || "origin"}'`,
+        );
 
       useToastStore.getState().showToast({
-        type: 'success',
-        title: 'Tag Pushed',
-        message: `Successfully pushed tag '${selectedExistingTag}' to '${selectedRemote || 'origin'}'`,
+        type: "success",
+        title: "Tag Pushed",
+        message: `Successfully pushed tag '${selectedExistingTag}' to '${selectedRemote || "origin"}'`,
       });
     } catch (err: unknown) {
       const appErr = toAppError(err);
-      setError(appErr.message || getErrorMessage(err) || 'Failed to push tag to remote');
+      setError(
+        appErr.message ||
+          getErrorMessage(err) ||
+          "Failed to push tag to remote",
+      );
     } finally {
       setIsPushingExisting(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape' && !isSubmitting && !isDeleting && !isPushingExisting) {
+    if (
+      e.key === "Escape" &&
+      !isSubmitting &&
+      !isDeleting &&
+      !isPushingExisting
+    ) {
       requestClose();
     }
   };
@@ -433,7 +511,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
     <div
       className="fixed inset-0 z-10000 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 select-none font-sans animate-in fade-in duration-100"
       onClick={(e) => {
-        if (e.target === e.currentTarget && !isSubmitting && !isDeleting && !isPushingExisting) {
+        if (
+          e.target === e.currentTarget &&
+          !isSubmitting &&
+          !isDeleting &&
+          !isPushingExisting
+        ) {
           requestClose();
         }
       }}
@@ -446,12 +529,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         {/* Header (Compact Single-Row with Tabs) */}
         <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Tag className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="font-bold text-xs text-text-primary leading-none">
-                {tagMode === 'new' ? 'New Tag' : 'Manage Tags'}
+                {tagMode === "new" ? "New Tag" : "Manage Tags"}
               </h3>
               {selectedRemote && (
                 <>
@@ -465,11 +548,15 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Tabs<'new' | 'existing'>
+            <Tabs<"new" | "existing">
               tabs={[
-                { id: 'new', label: 'Create', icon: <Tag className="w-3 h-3" /> },
                 {
-                  id: 'existing',
+                  id: "new",
+                  label: "Create",
+                  icon: <Tag className="w-3 h-3" />,
+                },
+                {
+                  id: "existing",
                   label: `Tags (${tags.length})`,
                   icon: <Bookmark className="w-3 h-3" />,
                 },
@@ -496,8 +583,11 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         </div>
 
         {/* Body */}
-        {tagMode === 'new' ? (
-          <form onSubmit={handleSubmit} className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto">
+        {tagMode === "new" ? (
+          <form
+            onSubmit={handleSubmit}
+            className="p-4 space-y-3.5 max-h-[75vh] overflow-y-auto"
+          >
             {/* Tag Name Input */}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-text-primary block">
@@ -524,11 +614,23 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                 Target Reference
               </label>
 
-              <Tabs<'branch' | 'head' | 'commit'>
+              <Tabs<"branch" | "head" | "commit">
                 tabs={[
-                  { id: 'branch', label: 'On Branch', icon: <GitBranch className="w-3.5 h-3.5" /> },
-                  { id: 'head', label: 'HEAD', icon: <Bookmark className="w-3.5 h-3.5" /> },
-                  { id: 'commit', label: 'Commit SHA', icon: <GitCommit className="w-3.5 h-3.5" /> },
+                  {
+                    id: "branch",
+                    label: "On Branch",
+                    icon: <GitBranch className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    id: "head",
+                    label: "HEAD",
+                    icon: <Bookmark className="w-3.5 h-3.5" />,
+                  },
+                  {
+                    id: "commit",
+                    label: "Commit SHA",
+                    icon: <GitCommit className="w-3.5 h-3.5" />,
+                  },
                 ]}
                 activeTab={targetType}
                 onChange={setTargetType}
@@ -538,21 +640,25 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
               />
 
               {/* Custom Branch Dropdown */}
-              {targetType === 'branch' && (
+              {targetType === "branch" && (
                 <div className="pt-0.5">
                   <Dropdown
                     options={branchOptions}
                     value={selectedBranch}
                     onChange={(val) => setSelectedBranch(val)}
                     disabled={isSubmitting}
-                    placeholder={isLoadingBranches ? 'Loading branches...' : 'Select target branch...'}
+                    placeholder={
+                      isLoadingBranches
+                        ? "Loading branches..."
+                        : "Select target branch..."
+                    }
                     size="md"
                   />
                 </div>
               )}
 
               {/* Custom Commit Input */}
-              {targetType === 'commit' && (
+              {targetType === "commit" && (
                 <div className="pt-0.5">
                   <input
                     type="text"
@@ -561,7 +667,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                     onChange={(e) => setCustomCommitSha(e.target.value)}
                     disabled={isSubmitting}
                     className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
-                    required={targetType === 'commit'}
+                    required={targetType === "commit"}
                   />
                 </div>
               )}
@@ -610,7 +716,9 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
               {pushImmediately && remotes.length > 1 && (
                 <div className="pt-1 flex items-center gap-2">
-                  <span className="text-[11px] text-text-muted font-medium shrink-0">Target Remote:</span>
+                  <span className="text-[11px] text-text-muted font-medium shrink-0">
+                    Target Remote:
+                  </span>
                   <div className="flex-1">
                     <Dropdown
                       options={remoteOptions}
@@ -651,7 +759,9 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                 size="sm"
                 disabled={isSubmitting || !tagName.trim()}
                 isLoading={isSubmitting}
-                leftIcon={!isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined}
+                leftIcon={
+                  !isSubmitting ? <Check className="w-3.5 h-3.5" /> : undefined
+                }
               >
                 Create Tag
               </Button>
@@ -663,10 +773,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
             {tags.length === 0 ? (
               <div className="text-center py-8 space-y-2">
                 <Tag className="w-8 h-8 text-text-faint mx-auto" />
-                <p className="text-xs font-medium text-text-muted">No existing tags found in this repository.</p>
+                <p className="text-xs font-medium text-text-muted">
+                  No existing tags found in this repository.
+                </p>
                 <button
                   type="button"
-                  onClick={() => setTagMode('new')}
+                  onClick={() => setTagMode("new")}
                   className="h-7 px-3 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/30 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
                 >
                   <Tag className="w-3 h-3" />
@@ -678,16 +790,24 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                 {/* Select Tag Dropdown with Cloud Sync Button */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-text-primary block">Select Tag to Manage</label>
+                    <label className="text-xs font-semibold text-text-primary block">
+                      Select Tag to Manage
+                    </label>
                     <button
                       type="button"
                       onClick={fetchRemoteTags}
-                      disabled={isFetchingRemote || isDeleting || isPushingExisting}
+                      disabled={
+                        isFetchingRemote || isDeleting || isPushingExisting
+                      }
                       className="text-[11px] font-semibold text-commito-coral hover:text-commito-coralLight flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
                       title="Fetch latest tags from cloud remote repository"
                     >
-                      <RefreshCw className={`w-3 h-3 ${isFetchingRemote ? 'animate-spin' : ''}`} />
-                      <span>{isFetchingRemote ? 'Syncing...' : 'Sync with Cloud'}</span>
+                      <RefreshCw
+                        className={`w-3 h-3 ${isFetchingRemote ? "animate-spin" : ""}`}
+                      />
+                      <span>
+                        {isFetchingRemote ? "Syncing..." : "Sync with Cloud"}
+                      </span>
                     </button>
                   </div>
                   <Dropdown
@@ -697,8 +817,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                       setSelectedExistingTag(val);
                       setError(null);
                     }}
-                    disabled={isDeleting || isPushingExisting || isFetchingRemote}
-                    placeholder={isLoadingTags ? 'Loading tags...' : 'Choose a tag...'}
+                    disabled={
+                      isDeleting || isPushingExisting || isFetchingRemote
+                    }
+                    placeholder={
+                      isLoadingTags ? "Loading tags..." : "Choose a tag..."
+                    }
                     size="md"
                   />
                 </div>
@@ -713,32 +837,40 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                       <span
                         className={`text-[10px] font-mono px-1.5 py-0.2 rounded-xs border ${
                           currentTagInfo.is_annotated
-                            ? 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral font-semibold'
-                            : 'bg-base-2 border-border text-text-muted'
+                            ? "bg-commito-coral/10 border-commito-coral/30 text-commito-coral font-semibold"
+                            : "bg-base-2 border-border text-text-muted"
                         }`}
                       >
-                        {currentTagInfo.is_annotated ? 'Annotated Tag' : 'Lightweight'}
+                        {currentTagInfo.is_annotated
+                          ? "Annotated Tag"
+                          : "Lightweight"}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-xs">
                       <div className="p-2 bg-base-0 border border-border/70 rounded-xs">
-                        <span className="text-[10px] text-text-faint block uppercase font-mono">Target SHA</span>
+                        <span className="text-[10px] text-text-faint block uppercase font-mono">
+                          Target SHA
+                        </span>
                         <span className="font-mono text-text-primary font-bold">
-                          {currentTagInfo.sha || 'Unknown'}
+                          {currentTagInfo.sha || "Unknown"}
                         </span>
                       </div>
                       <div className="p-2 bg-base-0 border border-border/70 rounded-xs">
-                        <span className="text-[10px] text-text-faint block uppercase font-mono">Tagger / Author</span>
+                        <span className="text-[10px] text-text-faint block uppercase font-mono">
+                          Tagger / Author
+                        </span>
                         <span className="text-text-primary truncate block">
-                          {currentTagInfo.tagger_name || 'Git Commit Author'}
+                          {currentTagInfo.tagger_name || "Git Commit Author"}
                         </span>
                       </div>
                     </div>
 
                     {currentTagInfo.message && (
                       <div className="p-2.5 bg-base-0 border border-border/70 rounded-xs space-y-1">
-                        <span className="text-[10px] text-text-faint block uppercase font-mono">Tag Message</span>
+                        <span className="text-[10px] text-text-faint block uppercase font-mono">
+                          Tag Message
+                        </span>
                         <p className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
                           {currentTagInfo.message}
                         </p>
@@ -759,18 +891,29 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                       <button
                         type="button"
                         onClick={handlePushAllTags}
-                        disabled={isPushingAll || isPushingExisting || isDeleting}
+                        disabled={
+                          isPushingAll || isPushingExisting || isDeleting
+                        }
                         className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-medium text-text-secondary rounded-sm flex items-center gap-1 transition cursor-pointer disabled:opacity-50"
                         title="Push all local repository tags to remote"
                       >
-                        {isPushingAll ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                        {isPushingAll ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Upload className="w-3 h-3" />
+                        )}
                         <span>Push All Tags</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={handlePushExistingTag}
-                        disabled={isPushingExisting || isPushingAll || isDeleting || !selectedExistingTag}
+                        disabled={
+                          isPushingExisting ||
+                          isPushingAll ||
+                          isDeleting ||
+                          !selectedExistingTag
+                        }
                         className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
                       >
                         {isPushingExisting ? (
@@ -790,7 +933,9 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
 
                   {remotes.length > 1 && (
                     <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[11px] text-text-muted shrink-0">Remote:</span>
+                      <span className="text-[11px] text-text-muted shrink-0">
+                        Remote:
+                      </span>
                       <div className="flex-1">
                         <Dropdown
                           options={remoteOptions}
@@ -832,9 +977,15 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                     variant="danger"
                     size="sm"
                     onClick={handleDeleteTag}
-                    disabled={isDeleting || isPushingExisting || !selectedExistingTag}
+                    disabled={
+                      isDeleting || isPushingExisting || !selectedExistingTag
+                    }
                     isLoading={isDeleting}
-                    leftIcon={!isDeleting ? <Trash2 className="w-3.5 h-3.5" /> : undefined}
+                    leftIcon={
+                      !isDeleting ? (
+                        <Trash2 className="w-3.5 h-3.5" />
+                      ) : undefined
+                    }
                   >
                     Delete Tag
                   </Button>
@@ -848,12 +999,12 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
                   >
                     Done
                   </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Unsaved Changes Confirmation Dialog */}
       <ConfirmDialog
@@ -861,7 +1012,7 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         title="Unsaved Tag Changes"
         description="You have unsaved changes in this tag. If you leave now, your tag name and message will be discarded."
         discardText="Discard Changes"
-        saveText={tagName.trim() ? 'Create Tag' : undefined}
+        saveText={tagName.trim() ? "Create Tag" : undefined}
         cancelText="Keep Editing"
         isSaving={isSubmitting}
         onDiscard={confirmDiscard}
@@ -871,6 +1022,6 @@ export const CreateTagModal: React.FC<CreateTagModalProps> = ({
         onCancel={cancelDiscard}
       />
     </div>,
-    document.body
+    document.body,
   );
 };

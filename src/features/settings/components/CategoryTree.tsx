@@ -1,9 +1,5 @@
 import React from 'react';
-import {
-  Sparkles,
-  Sliders,
-  ChevronRight,
-} from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import {
   CATEGORY_METADATA,
   SettingCategory,
@@ -38,19 +34,10 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
     return counts;
   }, [isModified]);
 
-  const getCategoryIcon = (cat: SettingCategory) => {
-    switch (cat) {
-      case 'ai':
-        return <Sparkles className="w-3.5 h-3.5 text-commito-coral shrink-0" />;
-      default:
-        return <Sliders className="w-3.5 h-3.5 text-text-muted shrink-0" />;
-    }
-  };
-
   return (
     <nav
       style={style}
-      className={`bg-base-1/50 p-2.5 space-y-1 select-none overflow-y-auto scrollbar-thin shrink-0 border-r border-border ${className}`}
+      className={`bg-base-1/40 p-2.5 space-y-1 select-none overflow-y-auto scrollbar-thin shrink-0 border-r border-border ${className}`}
     >
       <div className="px-2 py-1 text-[10px] font-mono font-semibold text-text-muted uppercase tracking-wider">
         Categories
@@ -72,10 +59,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
                   : 'text-text-secondary hover:bg-base-2/60 hover:text-text-primary border border-transparent'
               }`}
             >
-              <div className="flex items-center gap-2 min-w-0">
-                {getCategoryIcon(cat)}
-                <span className="truncate">{meta.label}</span>
-              </div>
+              <span className="truncate">{meta.label}</span>
 
               {count > 0 && (
                 <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[9.5px] font-mono font-bold rounded-xs">
@@ -86,7 +70,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
 
             {/* Subcategories hierarchy for active selected category */}
             {isSelected && meta.subcategories.length > 1 && (
-              <div className="ml-3.5 pl-2.5 border-l border-border/80 space-y-0.5 py-1 my-0.5">
+              <div className="ml-3 pl-2 border-l border-border/80 space-y-0.5 py-1 my-0.5">
                 {meta.subcategories.map((subcat) => {
                   const isSubSelected = selectedSubcategory === subcat;
                   return (

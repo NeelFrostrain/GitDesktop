@@ -246,9 +246,9 @@ export const RepoCard: React.FC<RepoCardProps> = ({
         >
           {/* Left: Icon + Name + Provider + Branch + Path */}
           <div className="flex items-center gap-2.5 min-w-0 max-w-[340px] shrink-0">
-            <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
+            {/* <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
               <FolderGit2 className="w-4 h-4" />
-            </div>
+            </div> */}
             <div className="min-w-0 flex flex-col gap-0.5">
               <div className="flex items-center gap-1.5 flex-wrap">
                 <h3

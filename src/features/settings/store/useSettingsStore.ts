@@ -101,12 +101,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   setSettingValue: async (id: string, value: any) => {
     const { activeScope, activeRepoPath, appOverrides, repoOverrides } = get();
     const def = defsMap.get(id);
-    if (!def) return;
 
-    const isApp = def.scope === 'app' || activeScope === 'app' || !activeRepoPath;
+    const isApp = !def || def.scope === 'app' || activeScope === 'app' || !activeRepoPath;
 
     // Apply live to DOM if setting has a CSS Custom Property
-    if (def.cssVar) {
+    if (def?.cssVar) {
       applySettingToDom(def.cssVar, value, def);
     }
 

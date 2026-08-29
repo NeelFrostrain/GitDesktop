@@ -53,6 +53,16 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     commonlyUsed: true,
   },
   {
+    id: 'ai.gemini_api_keys',
+    label: 'Google Gemini API Keys Pool',
+    description: 'List of Google Gemini API keys for rotation.',
+    category: 'ai',
+    subcategory: 'API Keys & Providers',
+    type: 'text',
+    default: '',
+    scope: 'app',
+  },
+  {
     id: 'ai.model',
     label: 'Commit-AI Model',
     description: 'The Google Gemini model used for analyzing diffs and generating conventional commit messages.',

@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  Sparkles,
   Key,
-  Cpu,
   Plus,
   Trash2,
   Check,
@@ -11,7 +9,7 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  CheckCircle2,
+  ChevronDown,
 } from 'lucide-react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useToastStore } from '../../../store/useToastStore';
@@ -63,26 +61,65 @@ const MODEL_OPTIONS = [
 ];
 
 export const AiSettingsTab: React.FC = () => {
-  const { getEffectiveValue, setSettingValue } = useSettingsStore();
+  const appOverrides = useSettingsStore((s) => s.appOverrides);
+  const setSettingValue = useSettingsStore((s) => s.setSettingValue);
+  const selectedSubcategory = useSettingsStore((s) => s.selectedSubcategory);
   const { showToast } = useToastStore();
 
   const [newKeyInput, setNewKeyInput] = useState('');
   const [newKeyError, setNewKeyError] = useState<string | null>(null);
   const [visibleKeyIndices, setVisibleKeyIndices] = useState<Record<number, boolean>>({});
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
+  const [openUpwards, setOpenUpwards] = useState(false);
 
-  // Retrieve keys list from settings
+  const modelDropdownRef = useRef<HTMLDivElement>(null);
+  const STORAGE_KEY = 'git_desktop_gemini_keys_pool';
+
+  const toggleModelDropdown = () => {
+    if (!isModelDropdownOpen && modelDropdownRef.current) {
+      const rect = modelDropdownRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      setOpenUpwards(spaceBelow < 290);
+    }
+    setIsModelDropdownOpen((v) => !v);
+  };
+
+  // Close model dropdown on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        modelDropdownRef.current &&
+        !modelDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsModelDropdownOpen(false);
+      }
+    };
+    if (isModelDropdownOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+    }
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isModelDropdownOpen]);
+
+  // Retrieve keys list from settings & local storage (reactive to appOverrides)
   const rawGeminiKeys =
-    getEffectiveValue('ai.gemini_api_keys') ||
-    getEffectiveValue('ai.google_api_keys') ||
-    getEffectiveValue('ai.groq_api_keys');
+    appOverrides['ai.gemini_api_keys'] ||
+    appOverrides['ai.google_api_keys'] ||
+    appOverrides['ai.groq_api_keys'];
   const activeKey = String(
-    getEffectiveValue('ai.active_api_key') || getEffectiveValue('ai.gemini_api_key') || '',
+    appOverrides['ai.active_api_key'] || appOverrides['ai.gemini_api_key'] || '',
   );
-  const selectedModel = String(getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
+  const selectedModel = String(appOverrides['ai.model'] || 'gemini-2.5-flash-lite');
+
+  const showKeysSection = !selectedSubcategory || selectedSubcategory === 'API Keys & Providers';
+  const showModelSection = !selectedSubcategory || selectedSubcategory === 'Model Configuration';
+
+  const currentModel = MODEL_OPTIONS.find((m) => m.id === selectedModel) || MODEL_OPTIONS[0];
 
   const keysList: string[] = React.useMemo(() => {
     let list: string[] = [];
+
+    // 1. Try from settings store
     if (Array.isArray(rawGeminiKeys)) {
       list = rawGeminiKeys.map(String).map((s) => s.trim()).filter(Boolean);
     } else if (typeof rawGeminiKeys === 'string' && rawGeminiKeys.trim()) {
@@ -98,12 +135,39 @@ export const AiSettingsTab: React.FC = () => {
       }
     }
 
+    // 2. Try from localStorage if store list is empty
+    if (list.length === 0 && typeof window !== 'undefined') {
+      try {
+        const local = localStorage.getItem(STORAGE_KEY);
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed)) {
+            list = parsed.map(String).map((s) => s.trim()).filter(Boolean);
+          }
+        }
+      } catch {}
+    }
+
+    // 3. Ensure active key is included
     if (activeKey.trim() && !list.includes(activeKey.trim())) {
       list.unshift(activeKey.trim());
     }
 
     return Array.from(new Set(list));
   }, [rawGeminiKeys, activeKey]);
+
+  const savePool = async (newList: string[], newActiveKey?: string) => {
+    const deduped = Array.from(new Set(newList.map((s) => s.trim()).filter(Boolean)));
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(deduped));
+      } catch {}
+    }
+    await setSettingValue('ai.gemini_api_keys', deduped);
+    if (newActiveKey !== undefined) {
+      await setSettingValue('ai.active_api_key', newActiveKey);
+    }
+  };
 
   const handleAddKey = async () => {
     const trimmed = newKeyInput.trim();
@@ -118,21 +182,25 @@ export const AiSettingsTab: React.FC = () => {
     }
 
     const updatedList = [...keysList, trimmed];
-    await setSettingValue('ai.gemini_api_keys', updatedList);
-    await setSettingValue('ai.active_api_key', trimmed);
+    await savePool(updatedList, trimmed);
 
     setNewKeyInput('');
     setNewKeyError(null);
     showToast({
       type: 'success',
       title: 'Google Gemini Key Added',
-      message: `Added key (...${trimmed.slice(-4)}) to rotation pool.`,
+      message: `Added key (...${trimmed.slice(-4)}) to rotation pool (${updatedList.length} total).`,
     });
   };
 
   const handleClearAllKeys = async () => {
     if (!window.confirm('Remove all API keys from your local pool?')) return;
 
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {}
+    }
     await setSettingValue('ai.gemini_api_keys', []);
     await setSettingValue('ai.google_api_keys', []);
     await setSettingValue('ai.groq_api_keys', []);
@@ -148,12 +216,8 @@ export const AiSettingsTab: React.FC = () => {
   const handleRemoveKey = async (index: number) => {
     const targetKey = keysList[index];
     const updatedList = keysList.filter((_, i) => i !== index);
-    await setSettingValue('ai.gemini_api_keys', updatedList);
-
-    if (activeKey === targetKey) {
-      const nextActive = updatedList[0] || '';
-      await setSettingValue('ai.active_api_key', nextActive);
-    }
+    const nextActive = activeKey === targetKey ? (updatedList[0] || '') : activeKey;
+    await savePool(updatedList, nextActive);
 
     showToast({
       type: 'info',
@@ -165,8 +229,7 @@ export const AiSettingsTab: React.FC = () => {
   const handleSetPrimary = async (key: string) => {
     const without = keysList.filter((k) => k !== key);
     const updatedList = [key, ...without];
-    await setSettingValue('ai.gemini_api_keys', updatedList);
-    await setSettingValue('ai.active_api_key', key);
+    await savePool(updatedList, key);
 
     showToast({
       type: 'success',
@@ -201,237 +264,278 @@ export const AiSettingsTab: React.FC = () => {
 
   return (
     <div className="space-y-4 select-none font-sans text-xs text-text-primary">
-      {/* ── 1. Hero Engine Banner ── */}
-      <div className="p-4 rounded-sm border border-border bg-base-1/50 flex items-start justify-between gap-4 shadow-2xs">
-        <div className="flex items-start gap-3">
-          <div className="w-8 h-8 rounded-sm bg-commito-coral/10 border border-commito-coral/25 flex items-center justify-center text-commito-coral shrink-0 mt-0.5 shadow-2xs">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-xs font-bold text-text-primary tracking-tight">
-                Google Gemini Commit-AI Engine
-              </h2>
-              <span className="inline-flex items-center gap-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
-                <ShieldCheck className="w-2.5 h-2.5" />
-                <span>Zero Data Retention</span>
-              </span>
-            </div>
-            <p className="text-[11px] text-text-muted mt-1 leading-relaxed max-w-xl">
-              Generates intelligent conventional commit titles, scope tags, and deep technical summaries
-              powered by Google Gemini Flash Lite models with high speed and free quotas.
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
-          className="h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
-        >
-          <span>Get Free Google API Key</span>
-          <ExternalLink className="w-3 h-3 opacity-80" />
-        </button>
-      </div>
-
-      {/* ── 2. Google Gemini API Keys Pool ── */}
-      <div className="p-4 rounded-sm border border-border bg-base-1/50 space-y-3 shadow-2xs">
-        <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Key className="w-3.5 h-3.5 text-commito-coral" />
-            <h3 className="font-semibold text-xs text-text-primary">
-              Google Gemini API Keys Pool
-            </h3>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted">
-              {keysList.length}
-            </span>
-          </div>
-
-          {keysList.length > 0 && (
-            <button
-              type="button"
-              onClick={handleClearAllKeys}
-              className="text-[10.5px] font-mono text-text-muted hover:text-git-removed transition cursor-pointer"
-            >
-              Clear All Keys
-            </button>
-          )}
-        </div>
-
-        {/* Add Key Input */}
-        <div className="flex flex-col gap-1.5">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newKeyInput}
-              onChange={(e) => {
-                setNewKeyInput(e.target.value);
-                if (newKeyError) setNewKeyError(null);
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
-              placeholder="Paste Google Gemini API Key (AIza...)"
-              className="flex-1 h-8 px-3 rounded-sm bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral font-mono text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
-            />
-            <button
-              type="button"
-              onClick={handleAddKey}
-              className="h-8 px-3.5 rounded-sm bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs active:scale-[0.98]"
-            >
-              <Plus className="w-3.5 h-3.5 text-commito-coral" />
-              <span>Add Key</span>
-            </button>
-          </div>
-          {newKeyError && (
-            <span className="text-[11px] text-git-removed font-medium pl-0.5">{newKeyError}</span>
-          )}
-        </div>
-
-        {/* Keys List */}
-        <div className="space-y-1.5 pt-0.5">
-          {keysList.length > 0 ? (
-            keysList.map((key, index) => {
-              const isPrimary = activeKey === key || (index === 0 && !activeKey);
-              const isVisible = visibleKeyIndices[index];
-
-              return (
-                <div
-                  key={key}
-                  className={`px-3 py-2 rounded-sm border flex items-center justify-between gap-3 transition ${
-                    isPrimary
-                      ? 'bg-base-0 border-commito-coral/40 shadow-xs'
-                      : 'bg-base-0/60 border-border hover:border-border-strong'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {isPrimary ? (
-                      <span className="px-1.5 py-0.2 rounded-xs bg-commito-coral/15 border border-commito-coral/30 text-[9px] font-mono font-bold uppercase text-commito-coral shrink-0">
-                        PRIMARY
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => handleSetPrimary(key)}
-                        className="px-1.5 py-0.2 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-[9px] font-mono text-text-muted hover:text-text-primary transition cursor-pointer shrink-0"
-                        title="Set as primary key"
-                      >
-                        SET PRIMARY
-                      </button>
-                    )}
-                    <span className="font-mono text-xs text-text-primary truncate select-all">
-                      {isVisible ? key : maskKey(key)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => toggleKeyVisibility(index)}
-                      className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer"
-                      title={isVisible ? 'Hide Key' : 'Reveal Key'}
-                    >
-                      {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-text-muted" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyKey(key, index)}
-                      className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer"
-                      title="Copy Key"
-                    >
-                      {copiedIndex === index ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveKey(index)}
-                      className="p-1 rounded-xs text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
-                      title="Remove Key"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div className="p-4 rounded-sm border border-dashed border-border bg-base-0/30 text-center space-y-1">
-              <p className="font-semibold text-xs text-text-primary">No Google Gemini API Keys Configured</p>
-              <p className="text-[11px] text-text-muted">
-                Add a free API key from{' '}
-                <button
-                  type="button"
-                  onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
-                  className="text-commito-coral hover:underline font-mono cursor-pointer"
-                >
-                  aistudio.google.com/app/apikey
-                </button>{' '}
-                to enable AI-powered commit messages.
+      {/* ── 1. Keys & Providers Subcategory ── */}
+      {showKeysSection && (
+        <>
+          {/* Hero Engine Banner */}
+          <div className="p-4 rounded-sm border border-border bg-base-1/50 flex items-start justify-between gap-4 shadow-2xs">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xs font-bold text-text-primary tracking-tight">
+                  Google Gemini Commit-AI Engine
+                </h2>
+                <span className="inline-flex items-center gap-1 text-[9.5px] font-mono px-1.5 py-0.2 rounded-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">
+                  <ShieldCheck className="w-2.5 h-2.5" />
+                  <span>Zero Data Retention</span>
+                </span>
+              </div>
+              <p className="text-[11px] text-text-muted mt-1 leading-relaxed max-w-xl">
+                Generates intelligent conventional commit titles, scope tags, and deep technical summaries
+                powered by Google Gemini Flash Lite models with high speed and free quotas.
               </p>
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* ── 3. Model Selection ── */}
-      <div className="p-4 rounded-sm border border-border bg-base-1/50 space-y-3 shadow-2xs">
-        <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-3.5 h-3.5 text-commito-coral" />
+            <button
+              type="button"
+              onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
+              className="h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-xs active:scale-[0.98]"
+            >
+              <span>Get Free Google API Key</span>
+              <ExternalLink className="w-3 h-3 opacity-80" />
+            </button>
+          </div>
+
+          {/* Google Gemini API Keys Pool */}
+          <div className="p-4 rounded-sm border border-border bg-base-1/50 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Key className="w-3.5 h-3.5 text-commito-coral" />
+                <h3 className="font-semibold text-xs text-text-primary">
+                  Google Gemini API Keys Pool
+                </h3>
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted">
+                  {keysList.length}
+                </span>
+              </div>
+
+              {keysList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleClearAllKeys}
+                  className="text-[10.5px] font-mono text-text-muted hover:text-git-removed transition cursor-pointer"
+                >
+                  Clear All Keys
+                </button>
+              )}
+            </div>
+
+            {/* Add Key Input */}
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newKeyInput}
+                  onChange={(e) => {
+                    setNewKeyInput(e.target.value);
+                    if (newKeyError) setNewKeyError(null);
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddKey()}
+                  placeholder="Paste Google Gemini API Key (AIza...)"
+                  className="flex-1 h-8 px-3 rounded-sm bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral font-mono text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddKey}
+                  className="h-8 px-3.5 rounded-sm bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs active:scale-[0.98]"
+                >
+                  <Plus className="w-3.5 h-3.5 text-commito-coral" />
+                  <span>Add Key</span>
+                </button>
+              </div>
+              {newKeyError && (
+                <span className="text-[11px] text-git-removed font-medium pl-0.5">{newKeyError}</span>
+              )}
+            </div>
+
+            {/* Keys List */}
+            <div className="space-y-1.5 pt-0.5">
+              {keysList.length > 0 ? (
+                keysList.map((key, index) => {
+                  const isPrimary = activeKey === key || (index === 0 && !activeKey);
+                  const isVisible = visibleKeyIndices[index];
+
+                  return (
+                    <div
+                      key={key}
+                      className={`px-3 py-2 rounded-sm border flex items-center justify-between gap-3 transition ${
+                        isPrimary
+                          ? 'bg-base-0 border-commito-coral/40 shadow-xs'
+                          : 'bg-base-0/60 border-border hover:border-border-strong'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        {isPrimary ? (
+                          <span className="px-1.5 py-0.2 rounded-xs bg-commito-coral/15 border border-commito-coral/30 text-[9px] font-mono font-bold uppercase text-commito-coral shrink-0">
+                            PRIMARY
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetPrimary(key)}
+                            className="px-1.5 py-0.2 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-[9px] font-mono text-text-muted hover:text-text-primary transition cursor-pointer shrink-0"
+                            title="Set as primary key"
+                          >
+                            SET PRIMARY
+                          </button>
+                        )}
+                        <span className="font-mono text-xs text-text-primary truncate select-all">
+                          {isVisible ? key : maskKey(key)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => toggleKeyVisibility(index)}
+                          className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer"
+                          title={isVisible ? 'Hide Key' : 'Reveal Key'}
+                        >
+                          {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-text-muted" />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleCopyKey(key, index)}
+                          className="p-1 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-1 transition cursor-pointer"
+                          title="Copy Key"
+                        >
+                          {copiedIndex === index ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveKey(index)}
+                          className="p-1 rounded-xs text-text-muted hover:text-git-removed hover:bg-git-removed-bg transition cursor-pointer"
+                          title="Remove Key"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="p-4 rounded-sm border border-dashed border-border bg-base-0/30 text-center space-y-1">
+                  <p className="font-semibold text-xs text-text-primary">No Google Gemini API Keys Configured</p>
+                  <p className="text-[11px] text-text-muted">
+                    Add a free API key from{' '}
+                    <button
+                      type="button"
+                      onClick={() => openUrl('https://aistudio.google.com/app/apikey')}
+                      className="text-commito-coral hover:underline font-mono cursor-pointer"
+                    >
+                      aistudio.google.com/app/apikey
+                    </button>{' '}
+                    to enable AI-powered commit messages.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── 2. Model Configuration Subcategory (Dropdown) ── */}
+      {showModelSection && (
+        <div className="p-4 rounded-sm border border-border bg-base-1/50 space-y-3 shadow-2xs">
+          <div className="flex items-center justify-between border-b border-border/70 pb-2.5">
             <h3 className="font-semibold text-xs text-text-primary">
               Google Gemini Model Selection
             </h3>
+            <span className="text-[10.5px] text-text-muted font-mono">
+              Diff analysis engine
+            </span>
           </div>
-          <span className="text-[10.5px] text-text-muted font-mono">
-            Diff analysis engine
-          </span>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-          {MODEL_OPTIONS.map((m) => {
-            const isSelected = selectedModel === m.id;
-            return (
-              <div
-                key={m.id}
-                onClick={() => handleSelectModel(m.id)}
-                className={`p-3 rounded-sm border cursor-pointer transition-all select-none flex flex-col justify-between gap-2 shadow-2xs ${
-                  isSelected
-                    ? 'bg-base-0 border-commito-coral/50 ring-1 ring-commito-coral/25 shadow-xs'
-                    : 'bg-base-0/60 border-border hover:border-border-strong hover:bg-base-0'
-                }`}
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-1.5">
-                    <span className="font-semibold text-xs text-text-primary leading-tight">
-                      {m.name}
+          <div className="relative" ref={modelDropdownRef}>
+            {/* Trigger Button */}
+            <button
+              type="button"
+              onClick={toggleModelDropdown}
+              className={`w-full p-2.5 rounded-sm border transition-all duration-150 flex items-center justify-between gap-3 cursor-pointer select-none shadow-2xs ${
+                isModelDropdownOpen
+                  ? 'bg-base-0 border-border-strong text-text-primary ring-1 ring-border-strong'
+                  : 'bg-base-0 hover:bg-base-0/80 border-border hover:border-border-strong text-text-primary'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="text-left min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs text-text-primary truncate">
+                      {currentModel?.name || selectedModel}
                     </span>
-                    <span
-                      className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs shrink-0 ${
-                        isSelected
-                          ? 'bg-commito-coral/15 border border-commito-coral/30 text-commito-coral'
-                          : 'bg-base-1 border border-border text-text-muted'
-                      }`}
-                    >
-                      {m.badge}
-                    </span>
+                    {currentModel && (
+                      <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs bg-commito-coral/15 border border-commito-coral/30 text-commito-coral shrink-0">
+                        {currentModel.badge}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[10.5px] text-text-muted mt-1 leading-relaxed">{m.desc}</p>
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-[10px] font-mono text-text-muted">
-                  <span className="truncate">{m.id}</span>
-                  {isSelected ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                  ) : (
-                    <span className="w-3 h-3 rounded-full border border-border/80" />
-                  )}
+                  <p className="text-[11px] text-text-muted mt-0.5 truncate font-mono">
+                    {currentModel?.id || selectedModel}
+                  </p>
                 </div>
               </div>
-            );
-          })}
+
+              <ChevronDown
+                className={`w-4 h-4 text-text-muted transition-transform duration-150 shrink-0 ${
+                  isModelDropdownOpen ? 'rotate-180 text-commito-coral' : ''
+                }`}
+              />
+            </button>
+
+            {/* Dropdown Menu */}
+            {isModelDropdownOpen && (
+              <div
+                className={`absolute left-0 right-0 ${
+                  openUpwards ? 'bottom-full mb-1.5' : 'top-full mt-1.5'
+                } bg-base-1 border border-border rounded-sm shadow-2xl z-50 p-1 space-y-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/40 max-h-60 overflow-y-auto scrollbar-thin`}
+              >
+                {MODEL_OPTIONS.map((m) => {
+                  const isSelected = selectedModel === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        handleSelectModel(m.id);
+                        setIsModelDropdownOpen(false);
+                      }}
+                      className={`w-full p-2.5 rounded-xs text-left transition cursor-pointer flex items-start justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-base-2 text-text-primary font-semibold'
+                          : 'hover:bg-base-2/70 text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-text-primary truncate">
+                            {m.name}
+                          </span>
+                          <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted shrink-0">
+                            {m.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-text-muted mt-0.5 leading-relaxed">
+                          {m.desc}
+                        </p>
+                        <p className="text-[10px] font-mono text-text-muted/80 mt-1">
+                          {m.id}
+                        </p>
+                      </div>
+
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-commito-coral shrink-0 mt-0.5" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

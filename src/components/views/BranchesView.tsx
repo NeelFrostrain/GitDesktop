@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   GitBranch,
   Search,
@@ -11,13 +11,13 @@ import {
   GitPullRequest,
   X,
   Globe,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
-import { GitService } from '../../services/git/gitService';
-import { toAppError } from '../../shared/utils/errorUtils';
-import { BranchInfo } from '../../types/git';
-import { Button } from '../common/Button';
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useLogStore } from "../../store/useLogStore";
+import { GitService } from "../../services/git/gitService";
+import { toAppError } from "../../shared/utils/errorUtils";
+import { BranchInfo } from "../../types/git";
+import { Button } from "../common/Button";
 
 /**
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
@@ -32,12 +32,12 @@ export const BranchesView: React.FC = () => {
     setIsMergeRequestModalOpen,
   } = useGitStore();
 
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchName, setNewBranchName] = useState("");
   const [editingBranch, setEditingBranch] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [renameValue, setRenameValue] = useState("");
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
@@ -47,7 +47,7 @@ export const BranchesView: React.FC = () => {
       const res = await GitService.listBranches(activeRepoPath);
       setBranches(res || []);
     } catch (error: unknown) {
-      setError(toAppError(error, 'BRANCH_ERROR'));
+      setError(toAppError(error, "BRANCH_ERROR"));
     } finally {
       setIsLoading(false);
     }
@@ -62,13 +62,15 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.checkoutBranch(activeRepoPath, branchName);
-      useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
+      useLogStore
+        .getState()
+        .addLog("success", "Git", `Checked out branch '${branchName}'`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CHECKOUT_ERROR'));
+      setError(toAppError(error, "CHECKOUT_ERROR"));
     }
   };
 
@@ -78,15 +80,21 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.createBranch(activeRepoPath, newBranchName.trim());
-      useLogStore.getState().addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
-      setNewBranchName('');
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git",
+          `Created branch '${newBranchName.trim()}' and checked out`,
+        );
+      setNewBranchName("");
       setShowCreateModal(false);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
+      setError(toAppError(error, "CREATE_BRANCH_ERROR"));
     }
   };
 
@@ -94,16 +102,26 @@ export const BranchesView: React.FC = () => {
     if (!activeRepoPath || !renameValue.trim()) return;
 
     try {
-      await GitService.renameBranch(activeRepoPath, oldName, renameValue.trim());
-      useLogStore.getState().addLog('info', 'Git', `Renamed branch '${oldName}' to '${renameValue.trim()}'`);
+      await GitService.renameBranch(
+        activeRepoPath,
+        oldName,
+        renameValue.trim(),
+      );
+      useLogStore
+        .getState()
+        .addLog(
+          "info",
+          "Git",
+          `Renamed branch '${oldName}' to '${renameValue.trim()}'`,
+        );
       setEditingBranch(null);
-      setRenameValue('');
+      setRenameValue("");
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'RENAME_BRANCH_ERROR'));
+      setError(toAppError(error, "RENAME_BRANCH_ERROR"));
     }
   };
 
@@ -116,10 +134,12 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.deleteBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${branchName}'`);
+      useLogStore
+        .getState()
+        .addLog("info", "Git", `Deleted branch '${branchName}'`);
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
+      setError(toAppError(error, "DELETE_BRANCH_ERROR"));
     }
   };
 
@@ -128,17 +148,26 @@ export const BranchesView: React.FC = () => {
 
     try {
       await GitService.pushBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('success', 'Git', `Pushed branch '${branchName}' to origin with upstream set`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git",
+          `Pushed branch '${branchName}' to origin with upstream set`,
+        );
       loadBranches();
     } catch (error: unknown) {
-      setError(toAppError(error, 'PUSH_BRANCH_ERROR'));
+      setError(toAppError(error, "PUSH_BRANCH_ERROR"));
     }
   };
 
-  const [branchTab, setBranchTab] = useState<'all' | 'local' | 'remote'>('all');
+  const [branchTab, setBranchTab] = useState<"all" | "local" | "remote">("all");
 
   const validRemoteBranches = useMemo(() => {
-    return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD') && !b.name.endsWith('\\HEAD'));
+    return branches.filter(
+      (b: BranchInfo) =>
+        b.is_remote && !b.name.endsWith("/HEAD") && !b.name.endsWith("\\HEAD"),
+    );
   }, [branches]);
 
   const localBranches = useMemo(() => {
@@ -148,11 +177,15 @@ export const BranchesView: React.FC = () => {
   const queryLower = filter.trim().toLowerCase();
 
   const filteredLocal = useMemo(() => {
-    return localBranches.filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
+    return localBranches.filter((b: BranchInfo) =>
+      b.name.toLowerCase().includes(queryLower),
+    );
   }, [localBranches, queryLower]);
 
   const filteredRemote = useMemo(() => {
-    return validRemoteBranches.filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
+    return validRemoteBranches.filter((b: BranchInfo) =>
+      b.name.toLowerCase().includes(queryLower),
+    );
   }, [validRemoteBranches, queryLower]);
 
   return (
@@ -161,12 +194,16 @@ export const BranchesView: React.FC = () => {
       <div className="flex items-center justify-between">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <h2 className="text-base font-bold text-text-primary tracking-tight">Branches</h2>
+            <h2 className="text-base font-bold text-text-primary tracking-tight">
+              Branches
+            </h2>
             <span className="px-1.5 py-0.2 bg-base-2 text-text-muted text-[10.5px] font-mono font-medium rounded-sm border border-border/70">
               {localBranches.length + validRemoteBranches.length}
             </span>
           </div>
-          <p className="text-xs text-text-muted">Manage local repository and remote tracking branches</p>
+          <p className="text-xs text-text-muted">
+            Manage local repository and remote tracking branches
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -182,7 +219,7 @@ export const BranchesView: React.FC = () => {
             {filter && (
               <button
                 type="button"
-                onClick={() => setFilter('')}
+                onClick={() => setFilter("")}
                 className="absolute right-2 top-2 text-text-muted hover:text-text-primary p-0.5 rounded cursor-pointer"
               >
                 <X className="w-3 h-3" />
@@ -197,7 +234,9 @@ export const BranchesView: React.FC = () => {
             className="p-1.5 bg-base-2 hover:bg-base-3 border border-border/70 rounded-sm text-text-muted hover:text-text-primary transition shadow-xs cursor-pointer disabled:opacity-50"
             title="Refresh branches"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-commito-coral' : ''}`} />
+            <RefreshCw
+              className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-commito-coral" : ""}`}
+            />
           </button>
 
           <Button
@@ -217,11 +256,11 @@ export const BranchesView: React.FC = () => {
         <div className="flex items-center gap-1 bg-base-2 p-0.5 rounded-sm border border-border/60">
           <button
             type="button"
-            onClick={() => setBranchTab('all')}
+            onClick={() => setBranchTab("all")}
             className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
-              branchTab === 'all'
-                ? 'bg-base-1 text-text-primary shadow-2xs border border-border/80'
-                : 'text-text-muted hover:text-text-primary'
+              branchTab === "all"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
             }`}
           >
             <span>All Branches</span>
@@ -232,11 +271,11 @@ export const BranchesView: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setBranchTab('local')}
+            onClick={() => setBranchTab("local")}
             className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
-              branchTab === 'local'
-                ? 'bg-base-1 text-text-primary shadow-2xs border border-border/80'
-                : 'text-text-muted hover:text-text-primary'
+              branchTab === "local"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
             }`}
           >
             <GitBranch className="w-3 h-3 text-commito-coral" />
@@ -248,11 +287,11 @@ export const BranchesView: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setBranchTab('remote')}
+            onClick={() => setBranchTab("remote")}
             className={`px-3 py-1 text-xs font-semibold rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
-              branchTab === 'remote'
-                ? 'bg-base-1 text-text-primary shadow-2xs border border-border/80'
-                : 'text-text-muted hover:text-text-primary'
+              branchTab === "remote"
+                ? "bg-base-1 text-text-primary shadow-2xs border border-border/80"
+                : "text-text-muted hover:text-text-primary"
             }`}
           >
             <Globe className="w-3 h-3 text-gitlab-blue" />
@@ -271,13 +310,16 @@ export const BranchesView: React.FC = () => {
           className="p-4 bg-base-2 border border-border/80 rounded-sm space-y-3 shadow-md animate-in fade-in duration-100 ring-1 ring-black/20"
         >
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
+            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
               <Plus className="w-3.5 h-3.5" />
-            </div>
+            </div> */}
             <div>
-              <h3 className="text-xs font-bold text-text-primary">Create New Branch</h3>
+              <h3 className="text-xs font-bold text-text-primary">
+                Create New Branch
+              </h3>
               <p className="text-[11px] text-text-muted">
-                Branch will be created from HEAD ({branches.find((b) => b.is_current)?.name || 'active branch'})
+                Branch will be created from HEAD (
+                {branches.find((b) => b.is_current)?.name || "active branch"})
               </p>
             </div>
           </div>
@@ -315,13 +357,15 @@ export const BranchesView: React.FC = () => {
       )}
 
       {/* Local Branches Section */}
-      {(branchTab === 'all' || branchTab === 'local') && (
+      {(branchTab === "all" || branchTab === "local") && (
         <div className="space-y-2">
-          {branchTab === 'all' && (
+          {branchTab === "all" && (
             <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary tracking-tight">
               <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
               <span>Local Branches</span>
-              <span className="text-[10px] text-text-muted font-mono font-normal">({filteredLocal.length})</span>
+              <span className="text-[10px] text-text-muted font-mono font-normal">
+                ({filteredLocal.length})
+              </span>
             </div>
           )}
 
@@ -334,7 +378,9 @@ export const BranchesView: React.FC = () => {
               {filteredLocal.map((b: BranchInfo) => {
                 const isEditing = editingBranch === b.name;
                 const matchingRemote = validRemoteBranches.find(
-                  (r: BranchInfo) => r.name === `origin/${b.name}` || r.name.endsWith(`/${b.name}`)
+                  (r: BranchInfo) =>
+                    r.name === `origin/${b.name}` ||
+                    r.name.endsWith(`/${b.name}`),
                 );
 
                 return (
@@ -342,16 +388,16 @@ export const BranchesView: React.FC = () => {
                     key={b.name}
                     className={`p-2.5 rounded-sm border flex items-center justify-between transition-all duration-150 ${
                       b.is_current
-                        ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
-                        : 'bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary shadow-xs'
+                        ? "bg-base-2 border-border-strong text-text-primary shadow-xs"
+                        : "bg-base-2/60 border-border/60 hover:bg-base-2 hover:border-border-strong text-text-primary shadow-xs"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-4">
                       <div
                         className={`w-6 h-6 rounded-sm flex items-center justify-center shrink-0 ${
                           b.is_current
-                            ? 'bg-commito-coral/20 text-commito-coral'
-                            : 'bg-base-1 text-text-muted'
+                            ? "bg-commito-coral/20 text-commito-coral"
+                            : "bg-base-1 text-text-muted"
                         }`}
                       >
                         <GitBranch className="w-3.5 h-3.5" />
@@ -379,7 +425,9 @@ export const BranchesView: React.FC = () => {
                         <div className="flex items-center gap-2 truncate">
                           <span
                             className={`font-mono text-xs truncate ${
-                              b.is_current ? 'font-bold text-commito-coral' : 'font-semibold text-text'
+                              b.is_current
+                                ? "font-bold text-commito-coral"
+                                : "font-semibold text-text"
                             }`}
                           >
                             {b.name}
@@ -461,13 +509,15 @@ export const BranchesView: React.FC = () => {
       )}
 
       {/* Remote Tracking Branches Section */}
-      {(branchTab === 'all' || branchTab === 'remote') && (
+      {(branchTab === "all" || branchTab === "remote") && (
         <div className="space-y-2 pt-3">
-          {branchTab === 'all' && (
+          {branchTab === "all" && (
             <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary tracking-tight">
               <Globe className="w-3.5 h-3.5 text-gitlab-blue" />
               <span>Remote Tracking Branches</span>
-              <span className="text-[10px] text-text-muted font-mono font-normal">({filteredRemote.length})</span>
+              <span className="text-[10px] text-text-muted font-mono font-normal">
+                ({filteredRemote.length})
+              </span>
             </div>
           )}
 
@@ -478,10 +528,14 @@ export const BranchesView: React.FC = () => {
           ) : (
             <div className="space-y-1.5 font-sans">
               {filteredRemote.map((b: BranchInfo) => {
-                const slashIdx = b.name.indexOf('/');
-                const prefix = slashIdx !== -1 ? b.name.slice(0, slashIdx + 1) : '';
-                const cleanName = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
-                const isTrackedLocally = localBranches.some((lb: BranchInfo) => lb.name === cleanName);
+                const slashIdx = b.name.indexOf("/");
+                const prefix =
+                  slashIdx !== -1 ? b.name.slice(0, slashIdx + 1) : "";
+                const cleanName =
+                  slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+                const isTrackedLocally = localBranches.some(
+                  (lb: BranchInfo) => lb.name === cleanName,
+                );
 
                 return (
                   <div
@@ -493,8 +547,14 @@ export const BranchesView: React.FC = () => {
                         <Globe className="w-3.5 h-3.5" />
                       </div>
                       <div className="flex items-center gap-2 truncate font-mono text-xs">
-                        {prefix && <span className="text-text-muted text-[11px] font-normal">{prefix}</span>}
-                        <span className="font-semibold text-text">{cleanName}</span>
+                        {prefix && (
+                          <span className="text-text-muted text-[11px] font-normal">
+                            {prefix}
+                          </span>
+                        )}
+                        <span className="font-semibold text-text">
+                          {cleanName}
+                        </span>
                         {isTrackedLocally && (
                           <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 rounded-xs text-[9px] font-mono shrink-0">
                             tracked locally
