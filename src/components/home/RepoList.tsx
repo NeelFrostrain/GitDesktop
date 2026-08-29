@@ -112,6 +112,11 @@ export const RepoList: React.FC = () => {
   }, [repos, statuses, searchQuery, filterTab]);
 
   const pinnedRepos = useMemo(() => repos.filter((r) => r.pinned), [repos]);
+  const unpinnedFilteredRepos = useMemo(
+    () => filteredRepos.filter((r) => !r.pinned),
+    [filteredRepos],
+  );
+
   const dirtyCount = useMemo(() => {
     let count = 0;
     Object.values(statuses).forEach((s) => {
@@ -121,13 +126,12 @@ export const RepoList: React.FC = () => {
   }, [statuses]);
 
   return (
-    <div className="space-y-4 select-none font-sans">
+    <div className="space-y-4 select-none font-sans w-full">
       {/* Top Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Left: Filter Tabs */}
         <div className="flex items-center gap-1.5 flex-wrap">
-          {/* Filter Pills */}
-          <div className="h-7 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs">
+          <div className="h-7.5 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs">
             <button
               type="button"
               onClick={() => setFilterTab("all")}
@@ -167,13 +171,13 @@ export const RepoList: React.FC = () => {
                 onClick={() => setFilterTab("dirty")}
                 className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer flex items-center gap-1.5 leading-none ${
                   filterTab === "dirty"
-                    ? "bg-git-modified-bg text-git-modified font-semibold shadow-xs border border-git-modified/30"
+                    ? "bg-amber-500/15 text-amber-400 font-semibold shadow-xs border border-amber-500/30"
                     : "text-text-muted hover:text-text-primary"
                 }`}
               >
                 <FileEdit className="w-3 h-3" />
                 <span>Changes</span>
-                <span className="text-[10px] font-mono text-git-modified">
+                <span className="text-[10px] font-mono text-amber-400">
                   {dirtyCount}
                 </span>
               </button>
@@ -205,10 +209,10 @@ export const RepoList: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Search, View Mode & Action Buttons */}
+        {/* Right: Search & View Mode */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Search Box with Shortcut Badge */}
-          <div className="relative w-48 sm:w-60 h-7 flex items-center">
+          <div className="relative w-48 sm:w-60 h-7.5 flex items-center">
             <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 pointer-events-none" />
             <input
               ref={searchInputRef}
@@ -216,7 +220,7 @@ export const RepoList: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search repositories..."
-              className="w-full h-full bg-base-1 border border-border hover:border-border-strong rounded-sm pl-8 pr-12 text-xs text-text-primary/90 placeholder:text-text-muted focus:outline-none focus:border-border-strong transition"
+              className="w-full h-full bg-base-1 border border-border hover:border-border-strong rounded-sm pl-8 pr-12 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-border-strong transition shadow-2xs"
             />
             {searchQuery ? (
               <button
@@ -235,7 +239,7 @@ export const RepoList: React.FC = () => {
           </div>
 
           {/* View mode toggle */}
-          <div className="h-7 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 flex-shrink-0 shadow-2xs">
+          <div className="h-7.5 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 flex-shrink-0 shadow-2xs">
             <button
               type="button"
               onClick={() => setView("grid")}
@@ -264,45 +268,58 @@ export const RepoList: React.FC = () => {
         </div>
       </div>
 
-      {/* Spotlight: Pinned Favorites (when in 'All' view with pinned repos) */}
+      {/* Spotlight: Pinned Favorites (Deduplicated Section) */}
       {filterTab === "all" && !searchQuery && pinnedRepos.length > 0 && (
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary">
-            <span className="flex items-center gap-1.5">
-              {/* <Sparkles className="w-3.5 h-3.5 text-commito-coral" /> */}
-              <span>Pinned Favorites</span>
+            <span className="flex items-center gap-1.5 text-commito-coral">
+              <Pin className="w-3.5 h-3.5 fill-commito-coral/20" />
+              <span className="text-text-primary">Pinned Favorites</span>
             </span>
             <span className="text-[11px] font-mono text-text-muted">
               {pinnedRepos.length} pinned
             </span>
           </div>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))",
-              gap: "12px",
-            }}
-          >
-            {pinnedRepos.map((repo) => (
-              <RepoCard
-                key={`pinned-${repo.id}`}
-                repo={repo}
-                status={statuses[repo.path]}
-                viewMode="grid"
-              />
-            ))}
-          </div>
+          {viewMode === "grid" ? (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                gap: "12px",
+              }}
+            >
+              {pinnedRepos.map((repo) => (
+                <RepoCard
+                  key={`pinned-${repo.id}`}
+                  repo={repo}
+                  status={statuses[repo.path]}
+                  viewMode="grid"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1.5">
+              {pinnedRepos.map((repo) => (
+                <RepoCard
+                  key={`pinned-${repo.id}`}
+                  repo={repo}
+                  status={statuses[repo.path]}
+                  viewMode="list"
+                />
+              ))}
+            </div>
+          )}
           <div className="h-px bg-border my-2" />
         </div>
       )}
 
-      {/* Repositories Display */}
+      {/* Repositories Display (Deduplicated with Pinned when in All mode) */}
       {filteredRepos.length > 0 ? (
         viewMode === "grid" ? (
           <div className="space-y-2">
             {filterTab === "all" && !searchQuery && pinnedRepos.length > 0 && (
               <div className="text-xs font-semibold text-text-secondary">
-                All Repositories ({filteredRepos.length})
+                All Repositories ({repos.length})
               </div>
             )}
             <div
@@ -310,10 +327,14 @@ export const RepoList: React.FC = () => {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "14px",
+                gap: "12px",
               }}
             >
-              {filteredRepos.map((repo) => (
+              {/* If in All mode with pinned repos, render unpinned repos here so there's no duplication */}
+              {(filterTab === "all" && !searchQuery && pinnedRepos.length > 0
+                ? unpinnedFilteredRepos
+                : filteredRepos
+              ).map((repo) => (
                 <RepoCard
                   key={repo.id}
                   repo={repo}
@@ -325,9 +346,9 @@ export const RepoList: React.FC = () => {
               {/* Quick Add Card */}
               <div
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/30 rounded-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-35 shadow-2xs"
+                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/30 hover:bg-base-1/60 rounded-sm p-4 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[142px] shadow-2xs"
               >
-                <div className="w-8 h-8 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors mb-2">
+                <div className="w-8 h-8 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors mb-2 shadow-2xs">
                   <Plus className="w-4 h-4" />
                 </div>
                 <span className="text-xs font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
@@ -341,8 +362,11 @@ export const RepoList: React.FC = () => {
           </div>
         ) : (
           /* List View */
-          <div className="flex flex-col gap-2 animate-in fade-in duration-200">
-            {filteredRepos.map((repo) => (
+          <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+            {(filterTab === "all" && !searchQuery && pinnedRepos.length > 0
+              ? unpinnedFilteredRepos
+              : filteredRepos
+            ).map((repo) => (
               <RepoCard
                 key={repo.id}
                 repo={repo}
@@ -354,10 +378,10 @@ export const RepoList: React.FC = () => {
             {/* Add Row */}
             <div
               onClick={handleCreateRepo}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-base-1/30 hover:bg-base-1/70 border border-dashed border-border-strong hover:border-commito-coral rounded-sm cursor-pointer transition-all duration-150 text-text-muted hover:text-text-primary text-xs font-medium group"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-base-1/30 hover:bg-base-1/70 border border-dashed border-border-strong hover:border-commito-coral rounded-sm cursor-pointer transition-all duration-150 text-text-muted hover:text-text-primary text-xs font-medium group"
             >
               <Plus className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-commito-coral transition-colors" />
-              <span className="group-hover:text-commito-coral transition-colors">
+              <span className="group-hover:text-commito-coral transition-colors font-medium">
                 Create or Add New Repository
               </span>
             </div>
@@ -385,7 +409,7 @@ export const RepoList: React.FC = () => {
             <FolderGit2 className="w-6 h-6 text-commito-coral" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-text-primary/95">
+            <h3 className="text-sm font-bold text-text-primary">
               No Repositories Yet
             </h3>
             <p className="text-xs text-text-secondary max-w-sm leading-relaxed">

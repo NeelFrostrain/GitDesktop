@@ -15,11 +15,11 @@
    ========================================================================== */
 :root {
   /* --- Unified Surfaces & Backgrounds --- */
-  --surface: #0b0a0e;                 /* Main workspace background */
-  --surface-subtle: #070708;          /* Deep frame / Sidebar background */
-  --surface-elevated: #111013;        /* Elevated cards, panels & modals */
-  --surface-hover: #1c1b1f;           /* Hover state on rows and cards */
-  --surface-active: #281d1c;          /* Pressed/selected active background */
+  --surface: #181818;                 /* Main workspace canvas background */
+  --surface-subtle: #131313;          /* Deep sidebar & frame background */
+  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
+  --surface-hover: #2b292f;           /* Hover state on rows, items and cards */
+  --surface-active: #382221;          /* Pressed/selected active background */
 
   /* Legacy surface aliases */
   --app-bg-primary: var(--surface);
@@ -36,8 +36,8 @@
 
   /* --- Unified Scrollbars --- */
   --scrollbar-track: transparent;
-  --scrollbar-thumb: #3d3a42;
-  --scrollbar-thumb-hover: #5c5863;
+  --scrollbar-thumb: #36353d;
+  --scrollbar-thumb-hover: #46454e;
 
   /* Legacy border aliases */
   --app-border: var(--border);
@@ -65,7 +65,7 @@
   --accent-hover: #f06344;            /* Primary accent hover */
   --accent-active: #c74327;           /* Primary accent active */
   --accent-muted: rgba(224, 86, 56, 0.15); /* Low-opacity accent highlight */
-  --focus-ring: var(--accent);        /* Focus ring indicator */
+  --focus-ring: #e05638;              /* Focus ring indicator */
 
   /* Legacy accent aliases */
   --app-accent: var(--accent);
@@ -87,7 +87,7 @@
   --app-info: var(--info);
 
   /* --- Git Semantic Status Colors --- */
-  --git-branch: var(--accent);
+  --git-branch: #e05638;
   --git-tag: #c084fc;
   --git-remote: #38bdf8;
   --git-local: var(--text);
@@ -121,7 +121,7 @@
   --brand-commito-active-bg: #382221;
   --brand-commito-active-text: #f5a494;
   --brand-commito-green: #22c55e;
-  --brand-commito-card: #1e1c21;
+  --brand-commito-card: #201e22;
 
   /* --- Brand Tokens: GitLab --- */
   --brand-gitlab-orange: #e05638;
@@ -237,118 +237,6 @@
 }
 
 /* ==========================================================================
-   Pure CSS Theme Presets ([data-theme="..."])
-   ========================================================================== */
-[data-theme="commito-dark"],
-[data-theme="dark"] {
-  --surface: #171619;
-  --surface-subtle: #121113;
-  --surface-elevated: #201e22;
-  --surface-hover: #2b292f;
-  --surface-active: #382221;
-  --border: #29272b;
-  --border-subtle: #201e22;
-  --border-strong: #3d3a42;
-  --text: #e6e4e8;
-  --text-subtle: #b3b0b8;
-  --text-muted: #85818c;
-  --text-faint: #5c5863;
-  --accent: #e05638;
-  --accent-hover: #f06344;
-  --scrollbar-thumb: #36353d;
-  --scrollbar-thumb-hover: #46454e;
-  --terminal-bg: #121113;
-  --terminal-fg: #e6e4e8;
-}
-
-[data-theme="oled-dark"],
-[data-theme="oled"] {
-  --surface: #0a0a0a;
-  --surface-subtle: #000000;
-  --surface-elevated: #141414;
-  --surface-hover: #1f1f1f;
-  --surface-active: #2d1a19;
-  --border: #202020;
-  --border-subtle: #141414;
-  --border-strong: #333333;
-  --text: #f0f0f0;
-  --text-subtle: #b0b0b0;
-  --text-muted: #787878;
-  --text-faint: #505050;
-  --accent: #e05638;
-  --accent-hover: #f06344;
-  --scrollbar-thumb: #282828;
-  --scrollbar-thumb-hover: #383838;
-  --terminal-bg: #000000;
-  --terminal-fg: #f0f0f0;
-}
-
-[data-theme="commito-light"],
-[data-theme="light"] {
-  --surface: #ffffff;
-  --surface-subtle: #f6f8fa;
-  --surface-elevated: #ffffff;
-  --surface-hover: #f1f3f5;
-  --surface-active: #faebe7;
-  --border: #d0d7de;
-  --border-subtle: #e1e4e8;
-  --border-strong: #afb8c1;
-  --text: #1f2328;
-  --text-subtle: #4b5563;
-  --text-muted: #6e7781;
-  --text-faint: #8c959f;
-  --accent: #e05638;
-  --accent-hover: #cf4325;
-  --scrollbar-thumb: #c1c9d2;
-  --scrollbar-thumb-hover: #a0abb6;
-  --scrollbar-track: #f6f8fa;
-  --terminal-bg: #1e1e24;
-  --terminal-fg: #e6e4e8;
-}
-
-[data-theme="github-dark"] {
-  --surface: #0d1117;
-  --surface-subtle: #010409;
-  --surface-elevated: #161b22;
-  --surface-hover: #21262d;
-  --surface-active: #1f2c3f;
-  --border: #30363d;
-  --border-subtle: #21262d;
-  --border-strong: #484f58;
-  --text: #e6edf3;
-  --text-subtle: #8d96a0;
-  --text-muted: #7d8590;
-  --text-faint: #656c76;
-  --accent: #1f75cb;
-  --accent-hover: #388bfd;
-  --scrollbar-thumb: #30363d;
-  --scrollbar-thumb-hover: #484f58;
-  --terminal-bg: #0d1117;
-  --terminal-fg: #e6edf3;
-}
-
-[data-theme="gitlab-dark"] {
-  --surface: #18171d;
-  --surface-subtle: #111015;
-  --surface-elevated: #222129;
-  --surface-hover: #2d2b37;
-  --surface-active: #3e2825;
-  --border: #2e2b3b;
-  --border-subtle: #222129;
-  --border-strong: #444055;
-  --text: #ececef;
-  --text-subtle: #a2a0ab;
-  --text-muted: #797687;
-  --text-faint: #585565;
-  --accent: #e24329;
-  --accent-hover: #fc6d26;
-  --scrollbar-thumb: #363345;
-  --scrollbar-thumb-hover: #4c4860;
-  --terminal-bg: #111015;
-  --terminal-fg: #ececef;
-}
-
-/* ==========================================================================
    3. Tailwind v4 Token Bridge
    Binds runtime CSS custom properties into Tailwind utility classes.
    ========================================================================== */
@@ -418,33 +306,28 @@
   --color-git-behind: var(--git-behind);
   --color-git-clean: var(--git-clean);
   --color-git-dirty: var(--git-dirty);
+
   --color-git-added-bg: var(--git-added-bg);
   --color-git-removed-bg: var(--git-removed-bg);
   --color-git-modified-bg: var(--git-modified-bg);
   --color-git-conflict-bg: var(--git-conflict-bg);
 
-  /* Commito Brand */
+  /* Brand Tokens: Commito */
   --color-commito-coral: var(--brand-commito-coral);
-  --color-commito-coral-hover: var(--brand-commito-coral-hover);
-  --color-commito-coralHover: var(--brand-commito-coral-hover);
-  --color-commito-coral-light: var(--brand-commito-coral-hover);
   --color-commito-coralLight: var(--brand-commito-coral-hover);
   --color-commito-active-bg: var(--brand-commito-active-bg);
-  --color-commito-activeBg: var(--brand-commito-active-bg);
   --color-commito-active-text: var(--brand-commito-active-text);
-  --color-commito-activeText: var(--brand-commito-active-text);
   --color-commito-green: var(--brand-commito-green);
   --color-commito-card: var(--brand-commito-card);
 
-  /* GitLab Brand */
+  /* Brand Tokens: GitLab */
   --color-gitlab-orange: var(--brand-gitlab-orange);
   --color-gitlab-purple: var(--brand-gitlab-purple);
   --color-gitlab-purple-light: var(--brand-gitlab-purple-light);
-  --color-gitlab-purpleLight: var(--brand-gitlab-purple-light);
   --color-gitlab-teal: var(--brand-gitlab-teal);
   --color-gitlab-blue: var(--brand-gitlab-blue);
 
-  /* GitHub Brand */
+  /* Brand Tokens: GitHub */
   --color-github-dark-bg: var(--brand-github-dark-bg);
   --color-github-dark-sidebar: var(--brand-github-dark-sidebar);
   --color-github-dark-header: var(--brand-github-dark-header);
@@ -457,14 +340,20 @@
   --color-github-dark-text: var(--brand-github-dark-text);
   --color-github-dark-heading: var(--brand-github-dark-heading);
 
-  /* Typography */
-  --font-sans: var(--app-font-family);
-  --font-mono: var(--terminal-font-family);
+  /* Provider Tokens */
+  --color-provider-github: var(--provider-github);
+  --color-provider-gitlab: var(--provider-gitlab);
 
-  /* Radii */
+  /* Terminal Colors */
+  --color-terminal-bg: var(--terminal-bg);
+  --color-terminal-fg: var(--terminal-fg);
+  --color-terminal-cursor: var(--terminal-cursor);
+  --color-terminal-selection: var(--terminal-selection);
+
+  /* Spacing and Radii */
+  --radius-xs: 2px;
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
-  --radius: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
   --radius-pill: var(--radius-pill);
@@ -472,7 +361,6 @@
   /* Shadows */
   --shadow-sm: var(--shadow-sm);
   --shadow-md: var(--shadow-md);
-  --shadow: var(--shadow-md);
   --shadow-lg: var(--shadow-lg);
   --shadow-overlay: var(--shadow-overlay);
   --shadow-popover: var(--shadow-popover);
@@ -481,512 +369,45 @@
 }
 
 /* ==========================================================================
-   4. Base / Global Styles
+   4. Global Base Elements & Typography
    ========================================================================== */
-@layer base {
-  *, ::before, ::after {
-    border-color: var(--border);
-  }
-
-  body {
-    @apply bg-base-0 text-text-primary antialiased font-sans select-none overflow-hidden text-[13px];
-  }
-
-  /* Fix: Tauri WebView applies dark system :active style to buttons without bg. */
-  button {
-    -webkit-tap-highlight-color: transparent;
-    -webkit-appearance: none;
-    appearance: none;
-    background-color: transparent;
-  }
-
-  button:active {
-    background-color: inherit;
-  }
-
-  button:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible,
-  [tabindex]:focus-visible {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: 1px;
-  }
-
-  ::selection {
-    background-color: var(--accent-muted);
-    color: var(--text);
-  }
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--app-font-family);
+  line-height: var(--app-line-height);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* ==========================================================================
-   5. Desktop / Tauri Window Behavior
-   ========================================================================== */
-.titlebar-drag {
-  -webkit-app-region: drag;
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-.titlebar-no-drag {
-  -webkit-app-region: no-drag;
-}
-
-/* ==========================================================================
-   6. Scrollbars (Universal Custom Styling & Windows Override)
-   ========================================================================== */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb, #3d3a42) var(--scrollbar-track, transparent);
-}
-
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  width: 6px;
-  height: 6px;
-  background: var(--scrollbar-track, transparent);
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb, #3d3a42);
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover, #5c5863);
+  background: var(--scrollbar-thumb-hover);
 }
-
-::-webkit-scrollbar-button {
-  display: none !important;
-  width: 0 !important;
-  height: 0 !important;
-}
-
-::-webkit-scrollbar-corner {
-  background: transparent;
-}
-
-::-webkit-resizer {
-  background: transparent;
-}
-
-/* ==========================================================================
-   7. Global Animations
-   ========================================================================== */
-@keyframes progress-sweep {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  60% {
-    transform: translateX(250%);
-  }
-
-  100% {
-    transform: translateX(250%);
-  }
-}
-
-/* ==========================================================================
-   8. Application-Specific Global Utilities
-   ========================================================================== */
-.terminal-panel-container {
-  background-color: var(--app-bg-primary);
-}
-
-/* ==========================================================================
-   9. Markdown Typography & Viewer
-   ========================================================================== */
-.markdown-body {
-  font-family: inherit;
-  color: var(--text-subtle);
-}
-
-.markdown-body h1,
-.markdown-body h2,
-.markdown-body h3,
-.markdown-body h4 {
-  color: var(--text);
-  font-weight: 600;
-  margin-top: 0.75rem;
-  margin-bottom: 0.4rem;
-  line-height: 1.25;
-}
-
-.markdown-body h1 {
-  font-size: 1.15rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.25rem;
-}
-
-.markdown-body h2 {
-  font-size: 1.05rem;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0.2rem;
-}
-
-.markdown-body h3 {
-  font-size: 0.95rem;
-}
-
-.markdown-body h4 {
-  font-size: 0.85rem;
-}
-
-.markdown-body p {
-  margin-bottom: 0.5rem;
-}
-
-.markdown-body strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.markdown-body em {
-  font-style: italic;
-}
-
-.markdown-body ul,
-.markdown-body ol {
-  padding-left: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.markdown-body ul {
-  list-style-type: disc;
-}
-
-.markdown-body ol {
-  list-style-type: decimal;
-}
-
-.markdown-body li {
-  margin-top: 0.15rem;
-  margin-bottom: 0.15rem;
-}
-
-.markdown-body a {
-  color: var(--accent);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 0.1s;
-}
-
-.markdown-body a:hover {
-  color: var(--accent-hover);
-}
-
-.markdown-body code {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.85em;
-  background-color: var(--surface-subtle);
-  border: 1px solid var(--border);
-  padding: 0.1rem 0.3rem;
-  border-radius: 2px;
-  color: var(--text);
-}
-
-.markdown-body pre {
-  background-color: var(--surface-subtle);
-  border: 1px solid var(--border);
-  padding: 0.75rem;
-  border-radius: 4px;
-  overflow-x: auto;
-  margin-bottom: 0.75rem;
-}
-
-.markdown-body pre code {
-  background-color: transparent;
-  border: none;
-  padding: 0;
-}
-
-.markdown-body blockquote {
-  border-left: 3px solid var(--accent);
-  padding-left: 0.75rem;
-  color: var(--text-muted);
-  margin-left: 0;
-  margin-right: 0;
-  margin-bottom: 0.5rem;
-}
-
-.markdown-body hr {
-  border: 0;
-  border-top: 1px solid var(--border);
-  margin: 1rem 0;
-}
-
-/* ==========================================================================
-   Tactile 3D Glossy Button Utilities
-   ========================================================================== */
-.btn-3d {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  user-select: none;
-  cursor: pointer;
-  border-radius: 4px;
-  transition: all 0.1s ease-out;
-  outline: none;
-}
-
-.btn-3d:active {
-  transform: translateY(0.5px) scale(0.98);
-}
-
-.btn-3d:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-/* Red / Danger Button */
-.btn-3d-danger,
-.btn-3d-red {
-  background: linear-gradient(to bottom, #f83a3a, #e52020 50%, #c81414);
-  color: #ffffff;
-  border: 1px solid #9b0e0e;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.btn-3d-danger:hover,
-.btn-3d-red:hover {
-  background: linear-gradient(to bottom, #ff4d4d, #f02d2d 50%, #db1c1c);
-}
-
-/* Coral / Primary Button */
-.btn-3d-primary,
-.btn-3d-coral {
-  background: linear-gradient(to bottom, #ff5e48, #eb422b 50%, #ce311b);
-  color: #ffffff;
-  border: 1px solid #9b200e;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.btn-3d-primary:hover,
-.btn-3d-coral:hover {
-  background: linear-gradient(to bottom, #ff735f, #f4513b 50%, #dd3c25);
-}
-
-/* Emerald / Green / Success Button */
-.btn-3d-success,
-.btn-3d-green,
-.btn-3d-emerald {
-  background: linear-gradient(to bottom, #10b981, #059669 50%, #047857);
-  color: #ffffff;
-  border: 1px solid #03543c;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.btn-3d-success:hover,
-.btn-3d-green:hover,
-.btn-3d-emerald:hover {
-  background: linear-gradient(to bottom, #26d098, #0eb37f 50%, #058a64);
-}
-
-/* Blue / Info Button */
-.btn-3d-info,
-.btn-3d-blue {
-  background: linear-gradient(to bottom, #3b82f6, #2563eb 50%, #1d4ed8);
-  color: #ffffff;
-  border: 1px solid #14399b;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.btn-3d-info:hover,
-.btn-3d-blue:hover {
-  background: linear-gradient(to bottom, #5b98f8, #3b78f0 50%, #2257e8);
-}
-
-/* Amber / Warning Button */
-.btn-3d-warning,
-.btn-3d-amber {
-  background: linear-gradient(to bottom, #f59e0b, #d97706 50%, #b45309);
-  color: #ffffff;
-  border: 1px solid #843a05;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.4);
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.6);
-}
-.btn-3d-warning:hover,
-.btn-3d-amber:hover {
-  background: linear-gradient(to bottom, #fab334, #e68612 50%, #c65e0e);
-}
-
-/* Secondary / Dark Obsidian Button */
-.btn-3d-secondary,
-.btn-3d-dark {
-  background: linear-gradient(to bottom, #2e2c34, #232128 50%, #1a191f);
-  color: var(--text, #e6e4e8);
-  border: 1px solid #3d3a44;
-  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14), 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-}
-.btn-3d-secondary:hover,
-.btn-3d-dark:hover {
-  background: linear-gradient(to bottom, #3a3842, #2b2931 50%, #201f25);
-  color: #ffffff;
-}
-
-/* ==========================================================================
-   Markdown Preview & AI Agent Formatting
-   ========================================================================== */
-.agent-markdown,
-.markdown-body {
-  font-size: 0.75rem;
-  line-height: 1.6;
-  color: var(--text, #e6e4e8);
-}
-
-.agent-markdown h1,
-.markdown-body h1 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text, #ffffff);
-  margin-top: 0.65rem;
-  margin-bottom: 0.3rem;
-}
-
-.agent-markdown h2,
-.markdown-body h2 {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--commito-coral, #ff6b6b);
-  margin-top: 0.55rem;
-  margin-bottom: 0.25rem;
-}
-
-.agent-markdown h3,
-.agent-markdown h4,
-.markdown-body h3,
-.markdown-body h4 {
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text, #e6e4e8);
-  margin-top: 0.45rem;
-  margin-bottom: 0.2rem;
-}
-
-.agent-markdown p,
-.markdown-body p {
-  margin-top: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-.agent-markdown ul,
-.markdown-body ul {
-  list-style-type: disc;
-  padding-left: 1.2rem;
-  margin-top: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-.agent-markdown ol,
-.markdown-body ol {
-  list-style-type: decimal;
-  padding-left: 1.2rem;
-  margin-top: 0.35rem;
-  margin-bottom: 0.5rem;
-}
-
-.agent-markdown li,
-.markdown-body li {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
-}
-
-.agent-markdown li::marker,
-.markdown-body li::marker {
-  color: var(--commito-coral, #ff6b6b);
-  font-weight: bold;
-}
-
-.agent-markdown strong,
-.markdown-body strong {
-  font-weight: 700;
-  color: var(--text, #ffffff);
-}
-
-.agent-markdown em,
-.markdown-body em {
-  font-style: italic;
-  color: var(--text-subtle, #b3b0b8);
-}
-
-.agent-markdown code,
-.markdown-body code {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.7rem;
-  padding: 0.1rem 0.3rem;
-  border-radius: 0.2rem;
-  background-color: var(--surface-subtle, #070708);
-  border: 1px solid rgba(255, 107, 107, 0.28);
-  color: var(--commito-coral, #ff6b6b);
-  font-weight: 500;
-}
-
-.agent-markdown pre,
-.markdown-body pre {
-  margin-top: 0.4rem;
-  margin-bottom: 0.4rem;
-  padding: 0.5rem 0.7rem;
-  border-radius: 0.25rem;
-  background-color: rgba(0, 0, 0, 0.5);
-  border: 1px solid var(--border, #29272b);
-  overflow-x: auto;
-}
-
-.agent-markdown pre code,
-.markdown-body pre code {
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--text, #e6e4e8);
-  font-size: 0.7rem;
-}
-
-.agent-markdown hr,
-.markdown-body hr {
-  border: none;
-  border-top: 1px solid var(--border, #29272b);
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.agent-markdown blockquote,
-.markdown-body blockquote {
-  border-left: 3px solid var(--commito-coral, #ff6b6b);
-  padding-left: 0.55rem;
-  margin-top: 0.3rem;
-  margin-bottom: 0.3rem;
-  color: var(--text-muted, #85818c);
-  font-style: italic;
-}
-
-.agent-markdown a,
-.markdown-body a {
-  color: var(--commito-coral, #ff6b6b);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.agent-markdown a:hover,
-.markdown-body a:hover {
-  color: #ff8585;
-}
-
-/* --- Progress Bar Animation --- */
-@keyframes progress {
-  0% {
-    transform: translateX(-100%) scaleX(0.2);
-  }
-  50% {
-    transform: translateX(40%) scaleX(0.7);
-  }
-  100% {
-    transform: translateX(180%) scaleX(0.2);
-  }
-}
-

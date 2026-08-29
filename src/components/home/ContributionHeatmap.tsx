@@ -17,7 +17,7 @@ import { UserAvatar } from "../common/UserAvatar";
 
 // Authentic contribution colors with Level 0 harmonized to bg-base-1
 const LEVEL_CLASSES = [
-  "bg-base-1 border-border/80 hover:border-border-strong", // 0 (empty)
+  "bg-base-2/50 border-border hover:border-border-strong", // 0 (empty)
   "bg-[#0e4429] border-[#0e4429] hover:border-[#146c3e]", // 1 (1-2)
   "bg-[#006d32] border-[#006d32] hover:border-[#008f42]", // 2 (3-5)
   "bg-[#26a641] border-[#26a641] hover:border-[#38c858]", // 3 (6-9)
@@ -109,17 +109,17 @@ export const ContributionHeatmap: React.FC = () => {
   };
 
   return (
-    <div className="p-3.5 sm:p-4 bg-base-1/50 border border-border/60 rounded-md shadow-2xs space-y-3.5 select-none font-sans relative">
+    <div className="p-3.5 sm:p-4 bg-base-1/50 border border-border rounded-sm shadow-2xs space-y-3.5 select-none font-sans relative">
       {/* ── 1. Top Section Header with KPIs & Account Switcher ── */}
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-border/60">
         {/* Left: Title & Quick Metrics */}
         <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-sm bg-commito-coral/10 border border-commito-coral/25 flex items-center justify-center text-commito-coral shrink-0">
+          {/* <div className="w-7.5 h-7.5 rounded-sm bg-commito-coral/10 border border-commito-coral/25 flex items-center justify-center text-commito-coral shrink-0 shadow-2xs">
             <Activity className="w-3.5 h-3.5" />
-          </div>
+          </div> */}
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-sm font-semibold text-text-primary tracking-tight">
+              <h2 className="text-xs font-semibold text-text-primary tracking-tight">
                 Contribution Activity
               </h2>
               <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-xs bg-base-1 border border-border text-commito-coral">
@@ -167,35 +167,43 @@ export const ContributionHeatmap: React.FC = () => {
         </div>
 
         {/* Right: Account Dropdown & Refresh */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Account Filter Dropdown */}
           <div className="relative" ref={accountMenuRef}>
             <button
               type="button"
               onClick={() => setIsAccountMenuOpen((v) => !v)}
-              className="h-7.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-medium flex items-center gap-2 transition cursor-pointer shadow-2xs"
+              className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-2 cursor-pointer select-none shadow-2xs text-xs font-medium ${
+                isAccountMenuOpen
+                  ? "bg-base-2 border-border-strong text-text-primary"
+                  : "bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border hover:border-border-strong text-text-primary"
+              }`}
             >
               {selectedAccountId === "all" ? (
-                <Layers className="w-3.5 h-3.5 text-commito-coral" />
+                <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
               ) : selectedAccountId === "local" ? (
-                <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
+                <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
               ) : (
                 <UserAvatar
                   url={calendar?.account_avatar}
                   name={getActiveAccountLabel()}
-                  className="w-4 h-4 rounded-full border border-border"
+                  className="w-4 h-4 rounded-sm border border-border shrink-0"
                 />
               )}
               <span className="truncate max-w-[150px]">
                 {getActiveAccountLabel()}
               </span>
-              <ChevronDown className="w-3 h-3 text-text-muted ml-0.5" />
+              <ChevronDown
+                className={`w-3 h-3 text-text-muted transition-transform duration-150 ml-0.5 shrink-0 ${
+                  isAccountMenuOpen ? "rotate-180 text-commito-coral" : ""
+                }`}
+              />
             </button>
 
             {/* Dropdown Menu */}
             {isAccountMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-surface-elevated border border-border rounded-md shadow-2xl z-50 py-1 divide-y divide-border/50 animate-in fade-in zoom-in-95 duration-100 font-sans">
-                <div className="p-1">
+              <div className="absolute right-0 top-full mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 text-xs select-none font-sans text-text-primary animate-in fade-in zoom-in-95 duration-100 ring-1 ring-black/40">
+                <div className="p-1 space-y-0.5">
                   <button
                     type="button"
                     onClick={() => {
@@ -204,8 +212,8 @@ export const ContributionHeatmap: React.FC = () => {
                     }}
                     className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
                       selectedAccountId === "all"
-                        ? "bg-commito-coral/10 text-commito-coral font-medium"
-                        : "text-text-primary hover:bg-base-2"
+                        ? "bg-base-2 text-text-primary font-semibold"
+                        : "text-text-secondary hover:text-text-primary hover:bg-base-2"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -213,7 +221,7 @@ export const ContributionHeatmap: React.FC = () => {
                       <span>All Accounts (Merged)</span>
                     </div>
                     {selectedAccountId === "all" && (
-                      <Check className="w-3.5 h-3.5 text-commito-coral" />
+                      <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                     )}
                   </button>
 
@@ -225,8 +233,8 @@ export const ContributionHeatmap: React.FC = () => {
                     }}
                     className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
                       selectedAccountId === "local"
-                        ? "bg-commito-coral/10 text-commito-coral font-medium"
-                        : "text-text-primary hover:bg-base-2"
+                        ? "bg-base-2 text-text-primary font-semibold"
+                        : "text-text-secondary hover:text-text-primary hover:bg-base-2"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -234,54 +242,57 @@ export const ContributionHeatmap: React.FC = () => {
                       <span>Local Git Repos Only</span>
                     </div>
                     {selectedAccountId === "local" && (
-                      <Check className="w-3.5 h-3.5 text-commito-coral" />
+                      <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                     )}
                   </button>
                 </div>
 
                 {accounts.length > 0 && (
-                  <div className="p-1 max-h-48 overflow-y-auto">
-                    <p className="px-2.5 py-1 text-[10px] font-semibold uppercase text-text-muted">
-                      Linked Provider Accounts
-                    </p>
-                    {accounts.map((acc) => {
-                      const isSelected = selectedAccountId === acc.id;
-                      return (
-                        <button
-                          key={acc.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedAccountId(acc.id);
-                            setIsAccountMenuOpen(false);
-                          }}
-                          className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
-                            isSelected
-                              ? "bg-commito-coral/10 text-commito-coral font-medium"
-                              : "text-text-primary hover:bg-base-2"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <UserAvatar
-                              url={acc.avatar_url}
-                              name={acc.display_name || acc.handle}
-                              className="w-4 h-4 rounded-full border border-border shrink-0"
-                            />
-                            <div className="truncate text-left">
-                              <p className="truncate">
-                                {acc.display_name || acc.handle}
-                              </p>
-                              <p className="text-[10px] text-text-muted uppercase">
-                                {acc.provider}
-                              </p>
+                  <>
+                    <div className="h-px bg-border my-1" />
+                    <div className="p-1 max-h-48 overflow-y-auto space-y-0.5">
+                      <p className="px-2.5 py-1 text-[10px] font-mono font-semibold uppercase tracking-wider text-text-muted">
+                        Linked Provider Accounts
+                      </p>
+                      {accounts.map((acc) => {
+                        const isSelected = selectedAccountId === acc.id;
+                        return (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedAccountId(acc.id);
+                              setIsAccountMenuOpen(false);
+                            }}
+                            className={`w-full px-2.5 py-1.5 rounded-xs text-xs flex items-center justify-between transition cursor-pointer ${
+                              isSelected
+                                ? "bg-base-2 text-text-primary font-semibold"
+                                : "text-text-secondary hover:text-text-primary hover:bg-base-2"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <UserAvatar
+                                url={acc.avatar_url}
+                                name={acc.display_name || acc.handle}
+                                className="w-4 h-4 rounded-sm border border-border shrink-0"
+                              />
+                              <div className="truncate text-left">
+                                <p className="truncate font-medium text-xs">
+                                  {acc.display_name || acc.handle}
+                                </p>
+                                <p className="text-[10px] text-text-muted uppercase font-mono">
+                                  {acc.provider}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                          {isSelected && (
-                            <Check className="w-3.5 h-3.5 text-commito-coral shrink-0 ml-1" />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+                            {isSelected && (
+                              <Check className="w-3.5 h-3.5 text-commito-coral shrink-0 ml-1" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -303,152 +314,152 @@ export const ContributionHeatmap: React.FC = () => {
 
       {/* ── 2. Heatmap Calendar (Full width within card) ── */}
       <div className="p-3 sm:p-3.5 bg-surface-subtle/80 border border-border/70 rounded-sm flex flex-col justify-between relative overflow-hidden">
-          {/* Scrollable Grid Canvas */}
-          <div
-            ref={scrollContainerRef}
-            className="overflow-x-auto pb-2 focus:outline-none"
-            style={{
-              scrollbarWidth: "thin",
-              scrollbarColor: "var(--border) transparent",
-            }}
-          >
-            <div className="min-w-fit flex gap-2.5">
-              {/* Left Column: Weekday labels aligned with 7 day rows */}
-              <div className="flex flex-col gap-[3px] pt-[20px] text-[9.5px] text-text-muted font-medium select-none pr-1 shrink-0">
-                <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                  Sun
-                </span>
-                <span className="h-[10.5px] leading-[10.5px]">Mon</span>
-                <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                  Tue
-                </span>
-                <span className="h-[10.5px] leading-[10.5px]">Wed</span>
-                <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                  Thu
-                </span>
-                <span className="h-[10.5px] leading-[10.5px]">Fri</span>
-                <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
-                  Sat
-                </span>
-              </div>
-
-              {/* Matrix Columns */}
-              <div className="flex-1 space-y-1.5 min-w-0">
-                {/* Month Labels Row on Top */}
-                <div className="flex gap-[3px] text-[10px] text-text-muted font-medium h-[15px] relative select-none">
-                  {calendar?.weeks.map((week, wIdx) => (
-                    <div
-                      key={week.first_day || wIdx}
-                      className="w-[10.5px] shrink-0 text-left relative"
-                    >
-                      {week.month_label && (
-                        <span className="absolute top-0 left-0 text-[10px] text-text-muted font-normal whitespace-nowrap leading-none">
-                          {week.month_label}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-
-                {/* Heatmap Columns with Small Crisp Squares */}
-                <div className="flex gap-[3px]">
-                  {calendar?.weeks.map((week, wIdx) => (
-                    <div
-                      key={week.first_day || wIdx}
-                      className="flex flex-col gap-[3px] shrink-0"
-                    >
-                      {week.days.map((day) => {
-                        const isSelected = selectedDate === day.date;
-                        const levelClass = day.is_future
-                          ? "bg-base-0/30 border-transparent opacity-20 cursor-not-allowed"
-                          : LEVEL_CLASSES[day.level] || LEVEL_CLASSES[0];
-
-                        return (
-                          <div
-                            key={day.date}
-                            onClick={() => {
-                              if (!day.is_future) {
-                                setSelectedDate(isSelected ? null : day.date);
-                              }
-                            }}
-                            onMouseEnter={(e) => {
-                              if (!day.is_future) {
-                                const rect =
-                                  e.currentTarget.getBoundingClientRect();
-                                setHoveredDay({
-                                  date: day.date,
-                                  count: day.count,
-                                  x: rect.left + rect.width / 2,
-                                  y: rect.top,
-                                });
-                              }
-                            }}
-                            onMouseLeave={() => setHoveredDay(null)}
-                            className={`w-[10.5px] h-[10.5px] rounded-2xs border transition-all duration-75 cursor-pointer ${levelClass} ${
-                              isSelected
-                                ? "ring-2 ring-commito-coral ring-offset-1 ring-offset-surface scale-125 z-10"
-                                : "hover:ring-1 hover:ring-text-primary/70 hover:scale-110"
-                            }`}
-                          />
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Heatmap Footer Bar: Active Account & Scale */}
-          <div className="mt-2.5 pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-[11px] text-text-muted font-sans">
-            <div className="flex items-center gap-2">
-              {getActiveAccountProvider() === "all" ? (
-                <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-              ) : getActiveAccountProvider() === "local" ? (
-                <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
-              ) : (
-                <span
-                  className={`text-[8.5px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border shrink-0 ${
-                    getActiveAccountProvider() === "github"
-                      ? "text-purple-400 bg-purple-950/40 border-purple-800/40"
-                      : getActiveAccountProvider() === "bitbucket"
-                        ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
-                        : "text-commito-coral bg-commito-coral/10 border-commito-coral/30"
-                  }`}
-                >
-                  {getActiveAccountProvider()}
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setSelectedDate(null)}
-                className="hover:text-text-primary hover:underline transition cursor-pointer text-[10.5px] truncate"
-              >
-                Showing {getActiveAccountLabel()} commit activity
-              </button>
+        {/* Scrollable Grid Canvas */}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-x-auto pb-2 focus:outline-none"
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor: "var(--border) transparent",
+          }}
+        >
+          <div className="min-w-fit flex gap-2.5">
+            {/* Left Column: Weekday labels aligned with 7 day rows */}
+            <div className="flex flex-col gap-[3px] pt-[20px] text-[9.5px] text-text-muted font-medium select-none pr-1 shrink-0">
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
+                Sun
+              </span>
+              <span className="h-[10.5px] leading-[10.5px]">Mon</span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
+                Tue
+              </span>
+              <span className="h-[10.5px] leading-[10.5px]">Wed</span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
+                Thu
+              </span>
+              <span className="h-[10.5px] leading-[10.5px]">Fri</span>
+              <span className="h-[10.5px] leading-[10.5px] opacity-0 select-none">
+                Sat
+              </span>
             </div>
 
-            {/* Color Scale Legend: Less -> More */}
-            <div className="flex items-center gap-1.5 text-[10.5px]">
-              <span>Less</span>
-              <div className="flex gap-[3px] items-center">
-                {LEVEL_CLASSES.map((colorClass, idx) => (
+            {/* Matrix Columns */}
+            <div className="flex-1 space-y-1.5 min-w-0">
+              {/* Month Labels Row on Top */}
+              <div className="flex gap-[3px] text-[10px] text-text-muted font-medium h-[15px] relative select-none">
+                {calendar?.weeks.map((week, wIdx) => (
                   <div
-                    key={idx}
-                    className={`w-[10px] h-[10px] rounded-2xs border ${colorClass}`}
-                    title={`Level ${idx}`}
-                  />
+                    key={week.first_day || wIdx}
+                    className="w-[10.5px] shrink-0 text-left relative"
+                  >
+                    {week.month_label && (
+                      <span className="absolute top-0 left-0 text-[10px] text-text-muted font-normal whitespace-nowrap leading-none">
+                        {week.month_label}
+                      </span>
+                    )}
+                  </div>
                 ))}
               </div>
-              <span>More</span>
+
+              {/* Heatmap Columns with Small Crisp Squares */}
+              <div className="flex gap-[3px]">
+                {calendar?.weeks.map((week, wIdx) => (
+                  <div
+                    key={week.first_day || wIdx}
+                    className="flex flex-col gap-[3px] shrink-0"
+                  >
+                    {week.days.map((day) => {
+                      const isSelected = selectedDate === day.date;
+                      const levelClass = day.is_future
+                        ? "bg-base-0/30 border-transparent opacity-20 cursor-not-allowed"
+                        : LEVEL_CLASSES[day.level] || LEVEL_CLASSES[0];
+
+                      return (
+                        <div
+                          key={day.date}
+                          onClick={() => {
+                            if (!day.is_future) {
+                              setSelectedDate(isSelected ? null : day.date);
+                            }
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!day.is_future) {
+                              const rect =
+                                e.currentTarget.getBoundingClientRect();
+                              setHoveredDay({
+                                date: day.date,
+                                count: day.count,
+                                x: rect.left + rect.width / 2,
+                                y: rect.top,
+                              });
+                            }
+                          }}
+                          onMouseLeave={() => setHoveredDay(null)}
+                          className={`w-[10.5px] h-[10.5px] rounded-2xs border transition-all duration-75 cursor-pointer ${levelClass} ${
+                            isSelected
+                              ? "ring-2 ring-commito-coral ring-offset-1 ring-offset-surface scale-125 z-10"
+                              : "hover:ring-1 hover:ring-text-primary/70 hover:scale-110"
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Heatmap Footer Bar: Active Account & Scale */}
+        <div className="mt-2.5 pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-[11px] text-text-muted font-sans">
+          <div className="flex items-center gap-2">
+            {getActiveAccountProvider() === "all" ? (
+              <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+            ) : getActiveAccountProvider() === "local" ? (
+              <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            ) : (
+              <span
+                className={`text-[8.5px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border shrink-0 ${
+                  getActiveAccountProvider() === "github"
+                    ? "text-purple-400 bg-purple-950/40 border-purple-800/40"
+                    : getActiveAccountProvider() === "bitbucket"
+                      ? "text-blue-400 bg-blue-950/40 border-blue-800/40"
+                      : "text-commito-coral bg-commito-coral/10 border-commito-coral/30"
+                }`}
+              >
+                {getActiveAccountProvider()}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => setSelectedDate(null)}
+              className="hover:text-text-primary hover:underline transition cursor-pointer text-[10.5px] truncate"
+            >
+              Showing {getActiveAccountLabel()} commit activity
+            </button>
+          </div>
+
+          {/* Color Scale Legend: Less -> More */}
+          <div className="flex items-center gap-1.5 text-[10.5px]">
+            <span>Less</span>
+            <div className="flex gap-[3px] items-center">
+              {LEVEL_CLASSES.map((colorClass, idx) => (
+                <div
+                  key={idx}
+                  className={`w-[10px] h-[10px] rounded-2xs border ${colorClass}`}
+                  title={`Level ${idx}`}
+                />
+              ))}
+            </div>
+            <span>More</span>
+          </div>
+        </div>
       </div>
 
       {/* ── 3. Bottom Section: Commit Activity Inspector ── */}
       <ContributionCommitList />
 
-      {/* ── Floating Tooltip (Matching App Dark Balloon Theme) ── */}
+      {/* ── Floating Tooltip ── */}
       {hoveredDay && (
         <div
           className="fixed pointer-events-none z-50 px-2.5 py-1 bg-surface-elevated text-text-primary text-[11px] font-medium rounded-sm shadow-2xl border border-border-strong transform -translate-x-1/2 -translate-y-full mb-1.5 whitespace-nowrap animate-in fade-in zoom-in-95 duration-75 font-sans"

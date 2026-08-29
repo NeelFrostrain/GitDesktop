@@ -53,7 +53,7 @@ export const ContributionCommitList: React.FC = () => {
   };
 
   return (
-    <div className="mt-3 pt-3 border-t border-border/50 space-y-2 select-none font-sans">
+    <div className="pt-3 border-t border-border/60 space-y-2 select-none font-sans">
       {/* Header with Title and Clear Filter */}
       <div className="flex items-center justify-between gap-2 px-0.5">
         <div className="flex items-center gap-1.5 min-w-0">
@@ -62,7 +62,7 @@ export const ContributionCommitList: React.FC = () => {
             {selectedDate ? (
               <>
                 Commits on{" "}
-                <span className="text-text-primary">
+                <span className="text-text-primary font-semibold">
                   {formatDateTitle(selectedDate)}
                 </span>
                 <span className="ml-1.5 text-[11px] font-normal text-text-muted">
@@ -74,7 +74,7 @@ export const ContributionCommitList: React.FC = () => {
               <>
                 Recent Commit Activity
                 <span className="ml-1.5 text-[11px] font-normal text-text-muted">
-                  (Showing latest {commits.length} commits)
+                  (Latest {commits.length} commits)
                 </span>
               </>
             )}
@@ -85,7 +85,7 @@ export const ContributionCommitList: React.FC = () => {
           <button
             type="button"
             onClick={() => setSelectedDate(null)}
-            className="text-[11px] text-text-muted hover:text-text-primary hover:bg-base-2 px-2 py-0.5 rounded-xs flex items-center gap-1 transition cursor-pointer font-medium"
+            className="text-[11px] text-text-muted hover:text-text-primary hover:bg-base-2 px-2 py-0.5 rounded-xs flex items-center gap-1 transition cursor-pointer font-medium border border-border"
             title="Clear date filter"
           >
             <X className="w-3 h-3" />
@@ -101,17 +101,17 @@ export const ContributionCommitList: React.FC = () => {
             <div
               key={commit.id}
               onClick={() => handleOpenRepo(commit.repo_path, commit.repo_name)}
-              className="group px-3.5 py-2.5 bg-base-1/30 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
+              className="group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-all duration-150 ease-out hover:translate-x-0.5 active:scale-[0.998] cursor-pointer flex items-center justify-between gap-4 select-none animate-in fade-in duration-150 shadow-2xs"
             >
               {/* Left: Commit info */}
               <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors shrink-0">
+                <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors shrink-0 shadow-2xs">
                   <GitCommit className="w-4 h-4" />
                 </div>
 
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-xs font-medium text-text-primary/95 truncate tracking-tight">
+                    <p className="text-xs font-semibold text-text-primary truncate tracking-tight">
                       {commit.message}
                     </p>
                     <span className="font-mono text-[10px] px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted shrink-0">
@@ -142,7 +142,7 @@ export const ContributionCommitList: React.FC = () => {
                   e.stopPropagation();
                   handleOpenRepo(commit.repo_path, commit.repo_name);
                 }}
-                className="opacity-0 group-hover:opacity-100 h-6 px-2 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary text-[10.5px] font-medium rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
+                className="opacity-0 group-hover:opacity-100 h-6 px-2.5 bg-base-2 hover:bg-base-3 border border-border text-text-secondary hover:text-text-primary text-[10.5px] font-medium rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
                 title={`Open repository ${commit.repo_name}`}
               >
                 <span>Open</span>
@@ -152,16 +152,11 @@ export const ContributionCommitList: React.FC = () => {
           ))}
         </div>
       ) : (
-        /* Empty state for the selected day or feed */
-        <div className="py-4 px-4 bg-base-1/40 border border-border/40 rounded-sm text-center">
+        <div className="py-5 px-4 bg-base-1/40 border border-border/40 rounded-sm text-center">
           <p className="text-xs text-text-muted">
             {selectedDate
               ? `No local commit records found for ${formatDateTitle(selectedDate)}.`
               : "No recent commit activity detected in local repositories."}
-          </p>
-          <p className="text-[10px] text-text-muted/70 mt-0.5">
-            Remote merges, PRs, and issues are reflected in the total
-            contribution count.
           </p>
         </div>
       )}
