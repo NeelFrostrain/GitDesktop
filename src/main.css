@@ -245,14 +245,10 @@
   --scrollbar-track: transparent;
 }
 
-/* Apply UI Scale transform to body — only when scale is not 1.0 to avoid
-   creating an unnecessary GPU compositing layer at the default scale. */
-body {
-  transform-origin: top center;
-}
-
-body:not([style*='--app-ui-scale-value: 1']) {
-  transform: scale(var(--app-ui-scale-value, 1));
+/* UI Scale: uses native browser/WebView zoom to scale interface density
+   without shrinking the viewport or causing black margins. */
+html {
+  zoom: var(--app-ui-scale-value, 1);
 }
 
 /* ==========================================================================

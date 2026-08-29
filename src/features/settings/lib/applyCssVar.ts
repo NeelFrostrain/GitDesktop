@@ -31,10 +31,11 @@ export function applySettingToDom(
   const formatted = formatCssValue(definition, value);
   document.documentElement.style.setProperty(cssVar, formatted);
 
-  // Handle UI Scale - apply percentage transform
+  // Handle UI Scale - apply native zoom scaling without viewport shrinking or black borders
   if (cssVar === '--app-ui-scale') {
     const scale = (value as number) / 100;
     document.documentElement.style.setProperty('--app-ui-scale-value', String(scale));
+    (document.documentElement.style as any).zoom = String(scale);
     document.documentElement.setAttribute('data-ui-scale', String(value));
   }
 

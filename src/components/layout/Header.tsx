@@ -319,86 +319,91 @@ export const Header: React.FC = () => {
           )}
 
         {!isHome && (
-          <>
+          <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-sm p-0.5 shadow-2xs">
             {/* Sync / Push Smart Button */}
             <SmartGitActionButton />
+
+            <div className="w-px h-3.5 bg-border/60 mx-0.5" />
 
             {/* Active Branch Switcher */}
             <BranchDropdown />
 
             {/* Remote Web Browser Redirect Button */}
             {remotes.length > 0 && (
-              <div className="relative shrink-0" ref={remoteMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (remotes.length === 1) {
-                      const webUrl = getWebUrlFromRemoteUrl(remotes[0].url);
-                      if (webUrl) SystemService.openInBrowser(webUrl);
-                    } else {
-                      setIsRemoteMenuOpen((v) => !v);
+              <>
+                <div className="w-px h-3.5 bg-border/60 mx-0.5" />
+                <div className="relative shrink-0" ref={remoteMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (remotes.length === 1) {
+                        const webUrl = getWebUrlFromRemoteUrl(remotes[0].url);
+                        if (webUrl) SystemService.openInBrowser(webUrl);
+                      } else {
+                        setIsRemoteMenuOpen((v) => !v);
+                      }
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setIsRemoteMenuOpen(true);
+                    }}
+                    className="h-6.5 w-6.5 flex items-center justify-center rounded-xs text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer active:scale-95"
+                    title={
+                      remotes.length === 1
+                        ? `Open ${remotes[0].name} in browser (${remotes[0].url})`
+                        : `Open Remote in Browser (${remotes.length} remotes available)`
                     }
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    setIsRemoteMenuOpen(true);
-                  }}
-                  className="h-7.5 w-7.5 flex items-center justify-center rounded-sm bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong text-text-muted hover:text-commito-coral transition cursor-pointer active:scale-95 shadow-2xs group"
-                  title={
-                    remotes.length === 1
-                      ? `Open ${remotes[0].name} in browser (${remotes[0].url})`
-                      : `Open Remote in Browser (${remotes.length} remotes available)`
-                  }
-                >
-                  <Globe className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
-                </button>
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                  </button>
 
-                {/* Remote Options Menu (when multiple remotes exist or opened) */}
-                {isRemoteMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1.5 w-64 bg-[#19191d] border border-border-strong rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
-                      <span>Open Remote in Browser</span>
-                      <span className="text-[9px] font-mono text-commito-coral">Web</span>
-                    </div>
+                  {/* Remote Options Menu (when multiple remotes exist or opened) */}
+                  {isRemoteMenuOpen && (
+                    <div className="absolute top-full right-0 mt-1.5 w-64 bg-[#19191d] border border-border-strong rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
+                      <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
+                        <span>Open Remote in Browser</span>
+                        <span className="text-[9px] font-mono text-commito-coral">Web</span>
+                      </div>
 
-                    <div className="py-1">
-                      {remotes.map((r) => {
-                        const webUrl = getWebUrlFromRemoteUrl(r.url);
-                        const isCurrent = r.name === (activeRemote || remotes[0]?.name);
-                        return (
-                          <button
-                            key={r.name}
-                            type="button"
-                            onClick={() => {
-                              setActiveRemote(r.name);
-                              setIsRemoteMenuOpen(false);
-                              if (webUrl) SystemService.openInBrowser(webUrl);
-                            }}
-                            className="w-full px-2.5 py-1.5 flex items-center justify-between gap-2 hover:bg-base-2 text-left cursor-pointer transition group/item"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <div className="font-mono text-xs font-semibold text-text-primary flex items-center gap-1.5">
-                                <span>{r.name}</span>
-                                {isCurrent && (
-                                  <span className="text-[9px] px-1 py-0.2 rounded-xs bg-base-0 border border-border text-commito-coral font-sans">
-                                    active
-                                  </span>
-                                )}
+                      <div className="py-1">
+                        {remotes.map((r) => {
+                          const webUrl = getWebUrlFromRemoteUrl(r.url);
+                          const isCurrent = r.name === (activeRemote || remotes[0]?.name);
+                          return (
+                            <button
+                              key={r.name}
+                              type="button"
+                              onClick={() => {
+                                setActiveRemote(r.name);
+                                setIsRemoteMenuOpen(false);
+                                if (webUrl) SystemService.openInBrowser(webUrl);
+                              }}
+                              className="w-full px-2.5 py-1.5 flex items-center justify-between gap-2 hover:bg-base-2 text-left cursor-pointer transition group/item"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="font-mono text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                                  <span>{r.name}</span>
+                                  {isCurrent && (
+                                    <span className="text-[9px] px-1 py-0.2 rounded-xs bg-base-0 border border-border text-commito-coral font-sans">
+                                      active
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-text-muted truncate font-mono mt-0.5">
+                                  {r.url}
+                                </div>
                               </div>
-                              <div className="text-[10px] text-text-muted truncate font-mono mt-0.5">
-                                {r.url}
-                              </div>
-                            </div>
-                            <ExternalLink className="w-3.5 h-3.5 text-text-muted group-hover/item:text-commito-coral shrink-0 transition" />
-                          </button>
-                        );
-                      })}
+                              <ExternalLink className="w-3.5 h-3.5 text-text-muted group-hover/item:text-commito-coral shrink-0 transition" />
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              </>
             )}
-          </>
+          </div>
         )}
       </div>
     </header>

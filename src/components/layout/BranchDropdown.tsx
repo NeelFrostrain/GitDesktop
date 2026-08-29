@@ -369,10 +369,10 @@ export const BranchDropdown: React.FC = () => {
         ref={triggerRef}
         type="button"
         onClick={handleToggle}
-        className={`h-7.5 px-2.5 rounded-sm border transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none shadow-2xs active:scale-95 group ${
+        className={`h-6.5 px-2 rounded-xs transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none active:scale-95 group ${
           isOpen
-            ? 'bg-base-2 border-border-strong text-text-primary'
-            : 'bg-base-1 hover:bg-base-2 active:bg-base-3 border-border hover:border-border-strong text-text-primary'
+            ? 'bg-base-2 text-text-primary font-semibold'
+            : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
         }`}
         title={`Current branch: ${currentBranch}`}
       >
@@ -382,7 +382,7 @@ export const BranchDropdown: React.FC = () => {
         </span>
 
         {currentPR && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
+          <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
             <span>#{currentPR.iid || currentPR.id}</span>
             <Check className="w-2.5 h-2.5 text-emerald-400" />
           </span>

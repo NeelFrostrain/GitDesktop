@@ -373,11 +373,10 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
             </div>
 
             <div className="space-y-0.5 max-w-[260px]">
-              <h3 className="text-xs font-semibold text-text-primary">
-                AI Assistant
-              </h3>
+              <h3 className="text-xs font-semibold text-text-primary">AI Assistant</h3>
               <p className="text-[11px] text-text-muted leading-relaxed">
-                Ask questions about your git repository, explain diffs, draft commits, or execute commands.
+                Ask questions about your git repository, explain diffs, draft commits, or execute
+                commands.
               </p>
             </div>
           </div>
@@ -520,7 +519,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
               type="button"
               onClick={handleSend}
               disabled={!inputVal.trim() || isThinking}
-              className="w-7 h-7 rounded-xl bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 disabled:opacity-25 disabled:hover:bg-commito-coral text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs shrink-0"
+              className="w-7 h-7 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 disabled:opacity-25 disabled:hover:bg-commito-coral text-white flex items-center justify-center transition cursor-pointer active:scale-95 shadow-xs shrink-0"
               title="Send Message (Enter)"
             >
               <ArrowUp className="w-4 h-4 stroke-[2.5]" />

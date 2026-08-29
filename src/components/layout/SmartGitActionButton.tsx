@@ -36,16 +36,16 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const primaryCls =
-    'h-7 px-2.5 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
+    'h-6.5 px-2 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
   const secondaryCls =
-    'h-7 px-2.5 rounded-sm bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-xs cursor-pointer active:scale-95 select-none';
+    'h-6.5 px-2 rounded-xs bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
   const mutedCls =
-    'h-7 px-2.5 rounded-sm border border-border bg-base-1 text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-2xs';
+    'h-6.5 px-2 rounded-xs text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
   const warnCls =
-    'h-7 px-2.5 rounded-sm border border-warning/80 bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none shadow-xs';
+    'h-6.5 px-2 rounded-xs bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
 
   const neutralCls =
-    'h-7.5 px-2.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none group';
+    'h-6.5 px-2 rounded-xs hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition cursor-pointer active:scale-95 select-none group relative overflow-hidden';
 
   if (!hasRepo) {
     return {

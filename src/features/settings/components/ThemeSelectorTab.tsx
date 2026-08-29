@@ -41,11 +41,11 @@ export const ThemeSelectorTab: React.FC = () => {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center bg-base-1 border border-border rounded-lg p-0.5 gap-0.5 shadow-2xs text-[11px]">
+        <div className="flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs text-[11px]">
           <button
             type="button"
             onClick={() => setFilter('all')}
-            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer ${
+            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer ${
               filter === 'all'
                 ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
                 : 'text-text-muted hover:text-text-primary'
@@ -56,7 +56,7 @@ export const ThemeSelectorTab: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter('dark')}
-            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer flex items-center gap-1 ${
               filter === 'dark'
                 ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
                 : 'text-text-muted hover:text-text-primary'
@@ -68,7 +68,7 @@ export const ThemeSelectorTab: React.FC = () => {
           <button
             type="button"
             onClick={() => setFilter('light')}
-            className={`px-2.5 py-1 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer flex items-center gap-1 ${
               filter === 'light'
                 ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
                 : 'text-text-muted hover:text-text-primary'
@@ -96,7 +96,7 @@ export const ThemeSelectorTab: React.FC = () => {
             <div
               key={theme.id}
               onClick={() => handleThemeChange(theme.id)}
-              className={`group relative rounded-xl border transition-all duration-150 cursor-pointer overflow-hidden p-3 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${
+              className={`group relative rounded-sm border transition-all duration-150 cursor-pointer overflow-hidden p-3 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md hover:-translate-y-0.5 active:scale-[0.99] ${
                 isActive
                   ? 'border-commito-coral bg-base-1/90 shadow-[0_0_12px_rgba(224,86,56,0.15)] ring-1 ring-commito-coral/50'
                   : 'border-border/80 hover:border-border-strong bg-base-1/50 hover:bg-base-1/80'
@@ -104,7 +104,7 @@ export const ThemeSelectorTab: React.FC = () => {
             >
               {/* Top Row: Mini Visual UI Preview Box */}
               <div
-                className="w-full h-18 rounded-lg border p-1.5 flex gap-1.5 overflow-hidden transition-transform duration-200 group-hover:scale-[1.01]"
+                className="w-full h-18 rounded-sm border p-1.5 flex gap-1.5 overflow-hidden transition-transform duration-200 group-hover:scale-[1.01]"
                 style={{
                   backgroundColor: bgSubtle,
                   borderColor: borderColor,
@@ -115,10 +115,22 @@ export const ThemeSelectorTab: React.FC = () => {
                   className="w-1/4 h-full rounded-xs p-1 flex flex-col gap-1 shrink-0"
                   style={{ backgroundColor: bgElevated }}
                 >
-                  <div className="w-2.5 h-1 rounded-full" style={{ backgroundColor: accentColor }} />
-                  <div className="w-full h-0.5 rounded-full opacity-30" style={{ backgroundColor: textColor }} />
-                  <div className="w-3/4 h-0.5 rounded-full opacity-20" style={{ backgroundColor: textColor }} />
-                  <div className="w-2/3 h-0.5 rounded-full opacity-20" style={{ backgroundColor: textColor }} />
+                  <div
+                    className="w-2.5 h-1 rounded-full"
+                    style={{ backgroundColor: accentColor }}
+                  />
+                  <div
+                    className="w-full h-0.5 rounded-full opacity-30"
+                    style={{ backgroundColor: textColor }}
+                  />
+                  <div
+                    className="w-3/4 h-0.5 rounded-full opacity-20"
+                    style={{ backgroundColor: textColor }}
+                  />
+                  <div
+                    className="w-2/3 h-0.5 rounded-full opacity-20"
+                    style={{ backgroundColor: textColor }}
+                  />
                 </div>
 
                 {/* Mini Main Canvas */}
@@ -128,11 +140,23 @@ export const ThemeSelectorTab: React.FC = () => {
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <div className="w-8 h-1 rounded-full opacity-70" style={{ backgroundColor: textColor }} />
-                      <div className="w-3 h-1 rounded-full" style={{ backgroundColor: accentColor }} />
+                      <div
+                        className="w-8 h-1 rounded-full opacity-70"
+                        style={{ backgroundColor: textColor }}
+                      />
+                      <div
+                        className="w-3 h-1 rounded-full"
+                        style={{ backgroundColor: accentColor }}
+                      />
                     </div>
-                    <div className="w-full h-0.5 rounded-full opacity-20" style={{ backgroundColor: textColor }} />
-                    <div className="w-4/5 h-0.5 rounded-full opacity-15" style={{ backgroundColor: textColor }} />
+                    <div
+                      className="w-full h-0.5 rounded-full opacity-20"
+                      style={{ backgroundColor: textColor }}
+                    />
+                    <div
+                      className="w-4/5 h-0.5 rounded-full opacity-15"
+                      style={{ backgroundColor: textColor }}
+                    />
                   </div>
 
                   {/* Mini Accent Action Pill */}
@@ -166,7 +190,7 @@ export const ThemeSelectorTab: React.FC = () => {
                       Active
                     </span>
                   ) : (
-                    <span className="text-[9.5px] font-mono text-text-muted px-1.5 py-0.2 rounded-md bg-base-2 border border-border shrink-0">
+                    <span className="text-[9.5px] font-mono text-text-muted px-1.5 py-0.2 rounded-sm bg-base-2 border border-border shrink-0">
                       {theme.isDark ? 'Dark' : 'Light'}
                     </span>
                   )}
@@ -182,7 +206,7 @@ export const ThemeSelectorTab: React.FC = () => {
       </div>
 
       {/* ── Active Theme Palette Live Inspector ── */}
-      <div className="p-3.5 bg-base-1/40 border border-border/80 rounded-xl space-y-2.5">
+      <div className="p-3.5 bg-base-1/40 border border-border/80 rounded-sm space-y-2.5">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 font-semibold text-text-primary">
             <Eye className="w-3.5 h-3.5 text-commito-coral" />
@@ -194,7 +218,7 @@ export const ThemeSelectorTab: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Canvas Surface</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -205,7 +229,7 @@ export const ThemeSelectorTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Sidebar Surface</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -216,7 +240,7 @@ export const ThemeSelectorTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Elevated Card</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -227,7 +251,7 @@ export const ThemeSelectorTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Brand Accent</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -238,7 +262,7 @@ export const ThemeSelectorTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Git Added</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -249,7 +273,7 @@ export const ThemeSelectorTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-2 rounded-lg bg-base-2/60 border border-border space-y-1">
+          <div className="p-2 rounded-sm bg-base-2/60 border border-border space-y-1">
             <div className="text-[9.5px] font-mono text-text-muted">Git Modified</div>
             <div className="flex items-center gap-1.5">
               <div
@@ -264,4 +288,3 @@ export const ThemeSelectorTab: React.FC = () => {
     </div>
   );
 };
-
