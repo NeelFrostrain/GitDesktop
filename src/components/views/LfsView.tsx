@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Lock,
   Unlock,
@@ -16,24 +16,25 @@ import {
   CheckCircle2,
   Database,
   ExternalLink,
-} from 'lucide-react';
-import { useGitStore } from '../../store/useGitStore';
-import { useToastStore } from '../../store/useToastStore';
-import { useLogStore } from '../../store/useLogStore';
-import { LfsFile, LfsLock } from '../../types/git';
-import { GitService } from '../../services/git/gitService';
-import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
-import { getFileIcon } from '../sidebar/changes/FileTreeItem';
+  Loader2,
+} from "lucide-react";
+import { useGitStore } from "../../store/useGitStore";
+import { useToastStore } from "../../store/useToastStore";
+import { useLogStore } from "../../store/useLogStore";
+import { LfsFile, LfsLock } from "../../types/git";
+import { GitService } from "../../services/git/gitService";
+import { toAppError, getErrorMessage } from "../../shared/utils/errorUtils";
+import { getFileIcon } from "../sidebar/changes/FileTreeItem";
 
 const PRESET_PATTERNS = [
-  { label: 'ML Models', pattern: '*.onnx', desc: 'Neural network weights' },
-  { label: 'Binaries', pattern: '*.bin', desc: 'Binary payloads' },
-  { label: 'PyTorch', pattern: '*.pt', desc: 'Model checkpoints' },
-  { label: 'Archives', pattern: '*.zip', desc: 'Compressed assets' },
-  { label: 'Photoshop', pattern: '*.psd', desc: 'Design layers' },
-  { label: 'Video', pattern: '*.mp4', desc: 'Media captures' },
-  { label: '3D Mesh', pattern: '*.fbx', desc: '3D assets' },
-  { label: 'Database', pattern: '*.sqlite', desc: 'Embedded database' },
+  { label: "ML Models", pattern: "*.onnx", desc: "Neural network weights" },
+  { label: "Binaries", pattern: "*.bin", desc: "Binary payloads" },
+  { label: "PyTorch", pattern: "*.pt", desc: "Model checkpoints" },
+  { label: "Archives", pattern: "*.zip", desc: "Compressed assets" },
+  { label: "Photoshop", pattern: "*.psd", desc: "Design layers" },
+  { label: "Video", pattern: "*.mp4", desc: "Media captures" },
+  { label: "3D Mesh", pattern: "*.fbx", desc: "3D assets" },
+  { label: "Database", pattern: "*.sqlite", desc: "Embedded database" },
 ];
 
 /**
@@ -48,9 +49,9 @@ export const LfsView: React.FC = () => {
   const [lfsFiles, setLfsFiles] = useState<LfsFile[]>([]);
   const [lfsLocks, setLfsLocks] = useState<LfsLock[]>([]);
   const [trackedPatterns, setTrackedPatterns] = useState<string[]>([]);
-  const [trackPattern, setTrackPattern] = useState('');
-  const [lockFilePath, setLockFilePath] = useState('');
-  const [fileFilter, setFileFilter] = useState('');
+  const [trackPattern, setTrackPattern] = useState("");
+  const [lockFilePath, setLockFilePath] = useState("");
+  const [fileFilter, setFileFilter] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isOperating, setIsOperating] = useState<string | null>(null);
   const [copiedOid, setCopiedOid] = useState<string | null>(null);
@@ -76,9 +77,10 @@ export const LfsView: React.FC = () => {
         GitService.listLfsTrackedPatterns(activeRepoPath),
       ]);
 
-      if (files.status === 'fulfilled') setLfsFiles(files.value || []);
-      if (locks.status === 'fulfilled') setLfsLocks(locks.value || []);
-      if (patterns.status === 'fulfilled') setTrackedPatterns(patterns.value || []);
+      if (files.status === "fulfilled") setLfsFiles(files.value || []);
+      if (locks.status === "fulfilled") setLfsLocks(locks.value || []);
+      if (patterns.status === "fulfilled")
+        setTrackedPatterns(patterns.value || []);
     } catch {
       // Ignore background load errors
     } finally {
@@ -88,18 +90,20 @@ export const LfsView: React.FC = () => {
 
   const handleInstallLfs = async () => {
     if (!activeRepoPath) return;
-    setIsOperating('install');
+    setIsOperating("install");
     try {
       await GitService.installLfs(activeRepoPath);
-      useLogStore.getState().addLog('success', 'Git LFS', 'Installed and configured Git LFS hooks');
+      useLogStore
+        .getState()
+        .addLog("success", "Git LFS", "Installed and configured Git LFS hooks");
       showToast({
-        type: 'success',
-        title: 'Git LFS Initialized',
-        message: 'Git LFS hooks successfully configured for this repository.',
+        type: "success",
+        title: "Git LFS Initialized",
+        message: "Git LFS hooks successfully configured for this repository.",
       });
       loadLfsData();
     } catch (err: unknown) {
-      setError(toAppError(err, 'LFS_ERROR'));
+      setError(toAppError(err, "LFS_ERROR"));
     } finally {
       setIsOperating(null);
     }
@@ -107,18 +111,26 @@ export const LfsView: React.FC = () => {
 
   const handleLfsPull = async () => {
     if (!activeRepoPath) return;
-    setIsOperating('pull');
+    setIsOperating("pull");
     try {
       const output = await GitService.lfsPull(activeRepoPath);
-      useLogStore.getState().addLog('success', 'Git LFS', `Pulled LFS objects: ${output || 'Complete'}`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git LFS",
+          `Pulled LFS objects: ${output || "Complete"}`,
+        );
       showToast({
-        type: 'success',
-        title: 'LFS Objects Pulled',
-        message: output ? output.slice(0, 100) : 'All LFS pointers downloaded to local working tree.',
+        type: "success",
+        title: "LFS Objects Pulled",
+        message: output
+          ? output.slice(0, 100)
+          : "All LFS pointers downloaded to local working tree.",
       });
       loadLfsData();
     } catch (err: unknown) {
-      setError(toAppError(err, 'LFS_ERROR'));
+      setError(toAppError(err, "LFS_ERROR"));
     } finally {
       setIsOperating(null);
     }
@@ -126,18 +138,26 @@ export const LfsView: React.FC = () => {
 
   const handleLfsFetch = async () => {
     if (!activeRepoPath) return;
-    setIsOperating('fetch');
+    setIsOperating("fetch");
     try {
       const output = await GitService.lfsFetch(activeRepoPath);
-      useLogStore.getState().addLog('success', 'Git LFS', `Fetched LFS objects: ${output || 'Complete'}`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git LFS",
+          `Fetched LFS objects: ${output || "Complete"}`,
+        );
       showToast({
-        type: 'info',
-        title: 'LFS Fetch Complete',
-        message: output ? output.slice(0, 100) : 'Fetched latest LFS metadata from remotes.',
+        type: "info",
+        title: "LFS Fetch Complete",
+        message: output
+          ? output.slice(0, 100)
+          : "Fetched latest LFS metadata from remotes.",
       });
       loadLfsData();
     } catch (err: unknown) {
-      setError(toAppError(err, 'LFS_ERROR'));
+      setError(toAppError(err, "LFS_ERROR"));
     } finally {
       setIsOperating(null);
     }
@@ -145,18 +165,26 @@ export const LfsView: React.FC = () => {
 
   const handleLfsPush = async () => {
     if (!activeRepoPath) return;
-    setIsOperating('push');
+    setIsOperating("push");
     try {
       const output = await GitService.lfsPush(activeRepoPath);
-      useLogStore.getState().addLog('success', 'Git LFS', `Pushed LFS objects: ${output || 'Complete'}`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git LFS",
+          `Pushed LFS objects: ${output || "Complete"}`,
+        );
       showToast({
-        type: 'success',
-        title: 'LFS Objects Pushed',
-        message: output ? output.slice(0, 100) : 'Uploaded LFS objects to remote storage.',
+        type: "success",
+        title: "LFS Objects Pushed",
+        message: output
+          ? output.slice(0, 100)
+          : "Uploaded LFS objects to remote storage.",
       });
       loadLfsData();
     } catch (err: unknown) {
-      setError(toAppError(err, 'LFS_ERROR'));
+      setError(toAppError(err, "LFS_ERROR"));
     } finally {
       setIsOperating(null);
     }
@@ -168,16 +196,22 @@ export const LfsView: React.FC = () => {
 
     try {
       await GitService.trackLfsPattern(activeRepoPath, trackPattern.trim());
-      useLogStore.getState().addLog('success', 'Git LFS', `Tracking pattern '${trackPattern.trim()}'`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git LFS",
+          `Tracking pattern '${trackPattern.trim()}'`,
+        );
       showToast({
-        type: 'success',
-        title: 'Pattern Tracked',
+        type: "success",
+        title: "Pattern Tracked",
         message: `Added '${trackPattern.trim()}' to .gitattributes filter=lfs`,
       });
-      setTrackPattern('');
+      setTrackPattern("");
       loadLfsData();
     } catch (error: unknown) {
-      setError(toAppError(error, 'LFS_ERROR'));
+      setError(toAppError(error, "LFS_ERROR"));
     }
   };
 
@@ -185,15 +219,17 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath) return;
     try {
       await GitService.trackLfsPattern(activeRepoPath, pattern);
-      useLogStore.getState().addLog('success', 'Git LFS', `Tracking pattern '${pattern}'`);
+      useLogStore
+        .getState()
+        .addLog("success", "Git LFS", `Tracking pattern '${pattern}'`);
       showToast({
-        type: 'success',
-        title: 'Pattern Tracked',
+        type: "success",
+        title: "Pattern Tracked",
         message: `Added '${pattern}' to .gitattributes`,
       });
       loadLfsData();
     } catch (error: unknown) {
-      setError(toAppError(error, 'LFS_ERROR'));
+      setError(toAppError(error, "LFS_ERROR"));
     }
   };
 
@@ -201,15 +237,17 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath) return;
     try {
       await GitService.untrackLfsPattern(activeRepoPath, pattern);
-      useLogStore.getState().addLog('info', 'Git LFS', `Untracked LFS pattern '${pattern}'`);
+      useLogStore
+        .getState()
+        .addLog("info", "Git LFS", `Untracked LFS pattern '${pattern}'`);
       showToast({
-        type: 'info',
-        title: 'Pattern Untracked',
+        type: "info",
+        title: "Pattern Untracked",
         message: `Removed '${pattern}' from LFS tracking.`,
       });
       loadLfsData();
     } catch (error: unknown) {
-      setError(toAppError(error, 'LFS_ERROR'));
+      setError(toAppError(error, "LFS_ERROR"));
     }
   };
 
@@ -219,16 +257,22 @@ export const LfsView: React.FC = () => {
 
     try {
       await GitService.lockLfsFile(activeRepoPath, lockFilePath.trim());
-      useLogStore.getState().addLog('success', 'Git LFS', `Locked LFS file '${lockFilePath.trim()}'`);
+      useLogStore
+        .getState()
+        .addLog(
+          "success",
+          "Git LFS",
+          `Locked LFS file '${lockFilePath.trim()}'`,
+        );
       showToast({
-        type: 'success',
-        title: 'File Locked',
+        type: "success",
+        title: "File Locked",
         message: `Acquired exclusive lock for ${lockFilePath.trim()}`,
       });
-      setLockFilePath('');
+      setLockFilePath("");
       loadLfsData();
     } catch (error: unknown) {
-      setError(toAppError(error, 'LFS_ERROR'));
+      setError(toAppError(error, "LFS_ERROR"));
     }
   };
 
@@ -236,15 +280,17 @@ export const LfsView: React.FC = () => {
     if (!activeRepoPath) return;
     try {
       await GitService.unlockLfsFile(activeRepoPath, path, force);
-      useLogStore.getState().addLog('info', 'Git LFS', `Unlocked LFS file '${path}'`);
+      useLogStore
+        .getState()
+        .addLog("info", "Git LFS", `Unlocked LFS file '${path}'`);
       showToast({
-        type: 'info',
-        title: 'File Unlocked',
+        type: "info",
+        title: "File Unlocked",
         message: `Released lock for ${path}`,
       });
       loadLfsData();
     } catch (error: unknown) {
-      setError(toAppError(error, 'LFS_ERROR'));
+      setError(toAppError(error, "LFS_ERROR"));
     }
   };
 
@@ -258,12 +304,14 @@ export const LfsView: React.FC = () => {
     if (!fileFilter.trim()) return lfsFiles;
     const lower = fileFilter.toLowerCase();
     return lfsFiles.filter(
-      (f) => f.path.toLowerCase().includes(lower) || f.oid.toLowerCase().includes(lower)
+      (f) =>
+        f.path.toLowerCase().includes(lower) ||
+        f.oid.toLowerCase().includes(lower),
     );
   }, [lfsFiles, fileFilter]);
 
   return (
-    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-4 md:p-6 select-none space-y-5 scrollbar-thin">
+    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-2 md:p-3 select-none space-y-5 scrollbar-thin">
       {/* ── Top Header Banner & Quick Actions ── */}
       <div className="p-4 rounded-sm border border-border bg-base-1/50 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div>
@@ -274,7 +322,8 @@ export const LfsView: React.FC = () => {
             </h2>
           </div>
           <p className="text-[11px] text-text-muted mt-0.5">
-            Manage heavy binary assets, model weights, archives, and exclusive lock states across team members.
+            Manage heavy binary assets, model weights, archives, and exclusive
+            lock states across team members.
           </p>
         </div>
 
@@ -283,33 +332,45 @@ export const LfsView: React.FC = () => {
           <button
             type="button"
             onClick={handleInstallLfs}
-            disabled={isOperating === 'install'}
+            disabled={isOperating === "install"}
             className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title="Run 'git lfs install' to configure local hooks"
           >
-            <Sparkles className={`w-3.5 h-3.5 text-commito-coral ${isOperating === 'install' ? 'animate-spin' : ''}`} />
+            {isOperating === "install" ? (
+              <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+            ) : (
+              <Sparkles className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+            )}
             <span>Init LFS</span>
           </button>
 
           <button
             type="button"
             onClick={handleLfsPull}
-            disabled={isOperating === 'pull'}
+            disabled={isOperating === "pull"}
             className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title="Download LFS binaries for current commits"
           >
-            <Download className={`w-3.5 h-3.5 text-git-added ${isOperating === 'pull' ? 'animate-spin' : ''}`} />
+            {isOperating === "pull" ? (
+              <Loader2 className="w-3.5 h-3.5 text-git-added animate-spin shrink-0" />
+            ) : (
+              <Download className="w-3.5 h-3.5 text-git-added shrink-0" />
+            )}
             <span>LFS Pull</span>
           </button>
 
           <button
             type="button"
             onClick={handleLfsPush}
-            disabled={isOperating === 'push'}
+            disabled={isOperating === "push"}
             className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title="Push all local LFS binary objects to remote"
           >
-            <Upload className={`w-3.5 h-3.5 text-sky-400 ${isOperating === 'push' ? 'animate-spin' : ''}`} />
+            {isOperating === "push" ? (
+              <Loader2 className="w-3.5 h-3.5 text-sky-400 animate-spin shrink-0" />
+            ) : (
+              <Upload className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            )}
             <span>LFS Push</span>
           </button>
 
@@ -320,7 +381,11 @@ export const LfsView: React.FC = () => {
             className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
             title="Refresh LFS files & active lock status"
           >
-            <RefreshCw className={`w-3.5 h-3.5 text-text-muted ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 text-text-muted animate-spin shrink-0" />
+            ) : (
+              <RefreshCw className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            )}
             <span>Refresh</span>
           </button>
         </div>
@@ -330,7 +395,8 @@ export const LfsView: React.FC = () => {
         <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-400 text-xs flex items-center gap-2.5 shadow-2xs">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
-            Git LFS binary was not detected on system PATH. Install Git LFS to utilize heavy binary tracking.
+            Git LFS binary was not detected on system PATH. Install Git LFS to
+            utilize heavy binary tracking.
           </span>
         </div>
       )}
@@ -347,7 +413,9 @@ export const LfsView: React.FC = () => {
               </h3>
             </div>
             <span className="text-[10px] font-mono text-text-muted">
-              {trackedPatterns.length} {trackedPatterns.length === 1 ? 'rule' : 'rules'} in .gitattributes
+              {trackedPatterns.length}{" "}
+              {trackedPatterns.length === 1 ? "rule" : "rules"} in
+              .gitattributes
             </span>
           </div>
 
@@ -382,11 +450,15 @@ export const LfsView: React.FC = () => {
                   <button
                     key={p.pattern}
                     type="button"
-                    onClick={() => (isTracked ? handleUntrackPattern(p.pattern) : handleTrackPreset(p.pattern))}
+                    onClick={() =>
+                      isTracked
+                        ? handleUntrackPattern(p.pattern)
+                        : handleTrackPreset(p.pattern)
+                    }
                     className={`px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer flex items-center gap-1 border shadow-2xs ${
                       isTracked
-                        ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-bold'
-                        : 'bg-base-0 hover:bg-base-2 border-border text-text-muted hover:text-text-primary'
+                        ? "bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-bold"
+                        : "bg-base-0 hover:bg-base-2 border-border text-text-muted hover:text-text-primary"
                     }`}
                     title={`${p.desc} (${p.pattern})`}
                   >
@@ -411,7 +483,9 @@ export const LfsView: React.FC = () => {
                   key={pat}
                   className="px-2.5 py-1.5 bg-base-0 border border-border rounded-sm flex items-center justify-between text-xs font-mono group hover:border-border-strong transition"
                 >
-                  <span className="text-text-primary font-medium truncate">{pat}</span>
+                  <span className="text-text-primary font-medium truncate">
+                    {pat}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleUntrackPattern(pat)}
@@ -436,7 +510,8 @@ export const LfsView: React.FC = () => {
               </h3>
             </div>
             <span className="text-[10px] font-mono text-text-muted">
-              {lfsLocks.length} {lfsLocks.length === 1 ? 'lock' : 'locks'} active
+              {lfsLocks.length} {lfsLocks.length === 1 ? "lock" : "locks"}{" "}
+              active
             </span>
           </div>
 
@@ -476,7 +551,12 @@ export const LfsView: React.FC = () => {
                       {lock.path}
                     </div>
                     <div className="text-[10px] text-text-muted flex items-center gap-2 mt-0.5">
-                      <span>Owner: <strong className="text-text-secondary">{lock.owner}</strong></span>
+                      <span>
+                        Owner:{" "}
+                        <strong className="text-text-secondary">
+                          {lock.owner}
+                        </strong>
+                      </span>
                       <span>•</span>
                       <span>{lock.locked_at}</span>
                     </div>
@@ -536,7 +616,9 @@ export const LfsView: React.FC = () => {
         <div className="space-y-1 max-h-72 overflow-y-auto scrollbar-thin">
           {filteredLfsFiles.length === 0 ? (
             <div className="p-4 text-center rounded-sm border border-dashed border-border bg-base-0/30 text-text-muted text-xs">
-              {fileFilter ? `No LFS files matching "${fileFilter}"` : 'No LFS tracked objects committed in repository yet.'}
+              {fileFilter
+                ? `No LFS files matching "${fileFilter}"`
+                : "No LFS tracked objects committed in repository yet."}
             </div>
           ) : (
             filteredLfsFiles.map((file) => (
@@ -573,7 +655,9 @@ export const LfsView: React.FC = () => {
                     type="button"
                     onClick={() => {
                       setLockFilePath(file.path);
-                      handleLockFile({ preventDefault: () => {} } as React.FormEvent);
+                      handleLockFile({
+                        preventDefault: () => {},
+                      } as React.FormEvent);
                     }}
                     className="px-2 py-0.5 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary text-[10px] font-sans font-medium transition cursor-pointer"
                     title="Lock this file"
