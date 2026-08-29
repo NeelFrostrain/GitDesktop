@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   PackagePlus,
   ExternalLink,
+  Database,
 } from "lucide-react";
 import { useGitStore } from "../../store/useGitStore";
 import { useRemoteStore } from "../../store/remoteStore";
@@ -30,6 +31,7 @@ export const Header: React.FC = () => {
     error,
     setError,
     currentNavView,
+    setCurrentNavView,
     setIsMergeRequestModalOpen,
     setIsCreateTagModalOpen,
     setIsCreateReleaseModalOpen,
@@ -139,6 +141,20 @@ export const Header: React.FC = () => {
                 >
                   <GitPullRequest className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
                 </button>
+
+                {/* Git LFS & Locks Manager */}
+                <button
+                  type="button"
+                  onClick={() => setCurrentNavView(currentNavView === 'locks' ? 'changes' : 'locks')}
+                  className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
+                    currentNavView === 'locks'
+                      ? 'border-border-strong bg-base-2 text-commito-coral font-semibold'
+                      : 'border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-commito-coral'
+                  }`}
+                  title="Git LFS & File Locks"
+                >
+                  <Database className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
+                </button>
               </>
             ) : null}
 
@@ -177,79 +193,96 @@ export const Header: React.FC = () => {
               )}
             </button>
 
-            {/* 3-Dot More Actions Dropdown (shown when not full wide mode) */}
-            {!isWide && (
-              <div className="relative shrink-0" ref={moreMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setIsMoreMenuOpen((v) => !v)}
-                  className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
-                    isMoreMenuOpen
-                      ? "border-border-strong bg-base-2 text-text-primary"
-                      : "border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary"
-                  }`}
-                  title="More repository actions..."
-                >
-                  <MoreHorizontal className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
-                </button>
+            {/* 3-Dot More Actions Dropdown */}
+            <div className="relative shrink-0" ref={moreMenuRef}>
+              <button
+                type="button"
+                onClick={() => setIsMoreMenuOpen((v) => !v)}
+                className={`h-7 w-7 flex items-center justify-center rounded-sm border transition cursor-pointer active:scale-95 group shadow-2xs ${
+                  isMoreMenuOpen
+                    ? "border-border-strong bg-base-2 text-text-primary"
+                    : "border-border hover:border-border-strong bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary"
+                }`}
+                title="More repository actions..."
+              >
+                <MoreHorizontal className="w-3.5 h-3.5 group-hover:scale-105 transition-transform" />
+              </button>
 
-                {isMoreMenuOpen && (
-                  <div className="absolute top-full left-0 mt-1 w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
-                    <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50">
-                      Repository Actions
-                    </div>
-
-                    <div className="py-1 space-y-0.5">
-                      {/* Draft Release */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingRelease(null);
-                          setIsCreateReleaseModalOpen(true);
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-commito-coral hover:bg-base-2 cursor-pointer transition"
-                      >
-                        <PackagePlus className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                        <span className="text-[11.5px] font-medium">
-                          Draft Release...
-                        </span>
-                      </button>
-
-                      {/* Create Tag */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsCreateTagModalOpen(true);
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-amber-400 hover:bg-base-2 cursor-pointer transition"
-                      >
-                        <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="text-[11.5px] font-medium">
-                          Create Git Tag...
-                        </span>
-                      </button>
-
-                      {/* Create Merge / Pull Request */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsMergeRequestModalOpen(true);
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-commito-coral hover:bg-base-2 cursor-pointer transition"
-                      >
-                        <GitPullRequest className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                        <span className="text-[11.5px] font-medium">
-                          Create Pull / Merge Request
-                        </span>
-                      </button>
-                    </div>
+              {isMoreMenuOpen && (
+                <div className="absolute top-full left-0 mt-1 w-52 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50">
+                    Repository Actions
                   </div>
-                )}
-              </div>
-            )}
+
+                  <div className="py-1 space-y-0.5">
+                    {/* Draft Release */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingRelease(null);
+                        setIsCreateReleaseModalOpen(true);
+                        setIsMoreMenuOpen(false);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-commito-coral hover:bg-base-2 cursor-pointer transition"
+                    >
+                      <PackagePlus className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                      <span className="text-[11.5px] font-medium">
+                        Draft Release...
+                      </span>
+                    </button>
+
+                    {/* Create Tag */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateTagModalOpen(true);
+                        setIsMoreMenuOpen(false);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-amber-400 hover:bg-base-2 cursor-pointer transition"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="text-[11.5px] font-medium">
+                        Create Git Tag...
+                      </span>
+                    </button>
+
+                    {/* Create Merge / Pull Request */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMergeRequestModalOpen(true);
+                        setIsMoreMenuOpen(false);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-commito-coral hover:bg-base-2 cursor-pointer transition"
+                    >
+                      <GitPullRequest className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                      <span className="text-[11.5px] font-medium">
+                        Create Pull / Merge Request
+                      </span>
+                    </button>
+
+                    {/* Git LFS & Locks Manager */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentNavView(currentNavView === 'locks' ? 'changes' : 'locks');
+                        setIsMoreMenuOpen(false);
+                      }}
+                      className={`w-full px-2.5 py-1.5 flex items-center gap-2 text-left cursor-pointer transition ${
+                        currentNavView === 'locks'
+                          ? 'bg-base-2 text-commito-coral font-semibold'
+                          : 'text-text-secondary hover:text-commito-coral hover:bg-base-2'
+                      }`}
+                    >
+                      <Database className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                      <span className="text-[11.5px] font-medium">
+                        Git LFS & File Locks
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </>
         )}
       </div>
