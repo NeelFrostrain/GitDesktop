@@ -17,21 +17,13 @@ export const RemoteNotFoundModal: React.FC = () => {
   } = useGitStore();
 
   const handleClose = useCallback(() => {
-    // Unlink the dead remote so UI permanently recognizes it as ready to publish
-    if (status) {
-      setStatus({
-        ...status,
-        has_remote: false,
-        remote_url: null,
-      });
-    }
     setIsRemoteNotFoundModalOpen(false);
-  }, [status, setStatus, setIsRemoteNotFoundModalOpen]);
+  }, [setIsRemoteNotFoundModalOpen]);
 
   const handlePublish = useCallback(() => {
-    handleClose();
+    setIsRemoteNotFoundModalOpen(false);
     setIsPublishRepoModalOpen(true);
-  }, [handleClose, setIsPublishRepoModalOpen]);
+  }, [setIsRemoteNotFoundModalOpen, setIsPublishRepoModalOpen]);
 
   // Keyboard shortcut: Escape to close
   useEffect(() => {
