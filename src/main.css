@@ -234,11 +234,21 @@
   /* --- Density Mode --- */
   --app-density: comfortable;
 
+  /* --- UI Scale & Layout --- */
+  --app-ui-scale: 100%;
+  --app-ui-scale-value: 1;
+
   /* --- Scrollbar Tokens --- */
   --scrollbar-thumb: rgba(255, 255, 255, 0.09);
   --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
   --scrollbar-thumb-active: rgba(255, 255, 255, 0.3);
   --scrollbar-track: transparent;
+}
+
+/* Apply UI Scale transform to body */
+body {
+  transform-origin: top center;
+  transform: scale(var(--app-ui-scale-value, 1));
 }
 
 /* ==========================================================================
