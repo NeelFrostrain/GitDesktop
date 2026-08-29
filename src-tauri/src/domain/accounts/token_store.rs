@@ -269,30 +269,43 @@ pub fn list_accounts() -> Vec<ProviderAccount> {
     let active_id = reg.active_account_id.clone();
     for acc in &mut reg.accounts {
         acc.is_active = active_id.as_deref() == Some(&acc.id);
-        if acc.token_status == TokenStatus::NeedsReauth {
-            continue;
-        }
-        if let Some(ref_exp) = acc.refresh_token_expires_at {
-            if ref_exp - now <= 0 {
-                acc.token_status = TokenStatus::NeedsReauth;
-                continue;
-            }
-        }
-        if let Some(exp) = acc.expires_at {
-            let diff = exp - now;
-            if diff <= 0 {
-                acc.token_status = TokenStatus::Expired;
-            } else if diff < 86400 {
-                acc.token_status = TokenStatus::ExpiringSoon;
-            } else {
-                acc.token_status = TokenStatus::Valid;
-            }
-        } else {
-            acc.token_status = TokenStatus::Valid;
-        }
+        acc.token_status = compute_token_status(
+            acc.expires_at,
+            acc.refresh_token_expires_at,
+            now,
+            acc.token_status,
+        );
     }
 
     reg.accounts
+}
+
+pub fn compute_token_status(
+    expires_at: Option<i64>,
+    refresh_token_expires_at: Option<i64>,
+    now: i64,
+    current_status: TokenStatus,
+) -> TokenStatus {
+    if current_status == TokenStatus::NeedsReauth {
+        return TokenStatus::NeedsReauth;
+    }
+    if let Some(ref_exp) = refresh_token_expires_at {
+        if ref_exp - now <= 0 {
+            return TokenStatus::NeedsReauth;
+        }
+    }
+    if let Some(exp) = expires_at {
+        let diff = exp - now;
+        if diff <= 0 {
+            TokenStatus::Expired
+        } else if diff <= 300 {
+            TokenStatus::ExpiringSoon
+        } else {
+            TokenStatus::Valid
+        }
+    } else {
+        TokenStatus::Valid
+    }
 }
 
 pub fn save_account(
@@ -718,6 +731,15 @@ pub async fn get_valid_token(account_id: &str) -> Result<Option<String>, AppErro
     Ok(fallback)
 }
 
+/// Synchronous wrapper for get_valid_token, usable by blocking Git commands
+pub fn get_valid_token_sync(account_id: &str) -> Result<Option<String>, AppError> {
+    if let Ok(handle) = tokio::runtime::Handle::try_current() {
+        tokio::task::block_in_place(|| handle.block_on(get_valid_token(account_id)))
+    } else {
+        get_token(account_id)
+    }
+}
+
 fn store_token(account_id: &str, token: &str) -> Result<(), AppError> {
     // 1. Primary: OS Keyring
     let sanitized = sanitize_keyring_target(account_id);
@@ -854,6 +876,76 @@ mod tests {
             let token = token_res.expect("Token lookup should succeed");
             assert_eq!(token, Some("token_12345".to_string()));
         }
+
+        // Clean up test account so it does not persist in the UI
+        let _ = remove_account(account_id);
+    }
+
+    #[test]
+    fn test_cleanup_mock_accounts() {
+        let _ = remove_account("test:concurrency:account_mock_1");
+        let _ = remove_account("test:github:8h");
+        let _ = remove_account("test:github:2m");
+        let _ = remove_account("test:github:exp");
+    }
+
+    #[test]
+    fn test_token_status_expiration_thresholds() {
+        let now = chrono::Utc::now().timestamp();
+
+        // 1. An 8-hour GitHub App token (28800s in the future) should be Valid, NOT ExpiringSoon
+        let status_8h = compute_token_status(
+            Some(now + 28800),
+            Some(now + 15811200),
+            now,
+            TokenStatus::Valid,
+        );
+        assert_eq!(status_8h, TokenStatus::Valid);
+
+        // 2. A 2-hour GitLab token (7200s in the future) should be Valid
+        let status_2h = compute_token_status(
+            Some(now + 7200),
+            None,
+            now,
+            TokenStatus::Valid,
+        );
+        assert_eq!(status_2h, TokenStatus::Valid);
+
+        // 3. A token with only 2 minutes remaining (120s) should be ExpiringSoon
+        let status_2m = compute_token_status(
+            Some(now + 120),
+            Some(now + 15811200),
+            now,
+            TokenStatus::Valid,
+        );
+        assert_eq!(status_2m, TokenStatus::ExpiringSoon);
+
+        // 4. An expired access token should be Expired
+        let status_exp = compute_token_status(
+            Some(now - 10),
+            Some(now + 15811200),
+            now,
+            TokenStatus::Valid,
+        );
+        assert_eq!(status_exp, TokenStatus::Expired);
+
+        // 5. An expired refresh token should be NeedsReauth
+        let status_ref_exp = compute_token_status(
+            Some(now + 28800),
+            Some(now - 10),
+            now,
+            TokenStatus::Valid,
+        );
+        assert_eq!(status_ref_exp, TokenStatus::NeedsReauth);
+
+        // 6. An existing NeedsReauth status stays NeedsReauth
+        let status_reauth = compute_token_status(
+            Some(now + 28800),
+            Some(now + 15811200),
+            now,
+            TokenStatus::NeedsReauth,
+        );
+        assert_eq!(status_reauth, TokenStatus::NeedsReauth);
     }
 }
 
