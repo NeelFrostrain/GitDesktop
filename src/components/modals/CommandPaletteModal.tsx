@@ -76,11 +76,19 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
       },
       {
         id: 'nav-history',
-        title: 'Go to Commit History & Graph',
+        title: 'Go to Commit History',
         category: 'Navigation',
         icon: <History className="w-4 h-4 text-commito-coral" />,
         action: () => setCurrentNavView('history'),
-        keywords: ['log', 'timeline', 'graph', 'commits'],
+        keywords: ['log', 'timeline', 'commits'],
+      },
+      {
+        id: 'nav-graph',
+        title: 'Go to Visual Git Graph Table',
+        category: 'Navigation',
+        icon: <GitBranch className="w-4 h-4 text-blue-400" />,
+        action: () => setCurrentNavView('graph'),
+        keywords: ['graph', 'tree', 'railway', 'network', 'timeline', 'branches'],
       },
       {
         id: 'nav-files',

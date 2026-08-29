@@ -7,14 +7,14 @@ interface GitGraphLaneProps {
   isSelected?: boolean;
 }
 
-const LANE_WIDTH = 13;
+const LANE_WIDTH = 12;
 const NODE_RADIUS = 3.5;
 const MERGE_RADIUS = 4;
-const PADDING_LEFT = 8;
+const PADDING_LEFT = 10;
 
 export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
   node,
-  rowHeight = 56,
+  rowHeight = 44,
   isSelected = false,
 }) => {
   if (!node) {
@@ -24,21 +24,25 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
   const { lane, colorIndex, isHead, isMerge, outSegments, activeLanes } = node;
   const nodeX = PADDING_LEFT + lane * LANE_WIDTH;
   const centerY = rowHeight / 2;
-  const nodeColor = LANE_COLORS[colorIndex] || LANE_COLORS[0];
+  const nodeColor = LANE_COLORS[colorIndex % LANE_COLORS.length] || LANE_COLORS[0];
 
   // Calculate required width
   const maxLane = Math.max(lane, ...(activeLanes || [0]), ...outSegments.map((s) => s.toLane));
-  const svgWidth = Math.max(22, PADDING_LEFT + (maxLane + 1) * LANE_WIDTH);
+  const svgWidth = Math.max(22, PADDING_LEFT + (maxLane + 1) * LANE_WIDTH + 4);
 
   return (
-    <div className="shrink-0 self-stretch flex items-center justify-center pointer-events-none select-none">
+    <div
+      className="shrink-0 flex items-center justify-center pointer-events-none select-none h-full"
+      style={{ width: `${svgWidth}px`, height: `${rowHeight}px` }}
+    >
       <svg
         width={svgWidth}
         height={rowHeight}
-        className="overflow-visible"
-        style={{ minWidth: `${svgWidth}px` }}
+        viewBox={`0 0 ${svgWidth} ${rowHeight}`}
+        className="block overflow-visible"
+        style={{ width: `${svgWidth}px`, height: `${rowHeight}px` }}
       >
-        {/* 1. Passing continuous lines (lanes running through without a commit node here) */}
+        {/* 1. Passing continuous vertical lines through this row */}
         {activeLanes.map((lIdx) => {
           const x = PADDING_LEFT + lIdx * LANE_WIDTH;
           const color = LANE_COLORS[lIdx % LANE_COLORS.length];
@@ -50,13 +54,13 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
               x2={x}
               y2={rowHeight}
               stroke={color}
-              strokeWidth={1.75}
-              strokeOpacity={0.65}
+              strokeWidth={2}
+              strokeOpacity={0.7}
             />
           );
         })}
 
-        {/* 2. Incoming top line into current node */}
+        {/* 2. Incoming top line into current commit node */}
         <line
           x1={nodeX}
           y1={0}
@@ -64,7 +68,7 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
           y2={centerY}
           stroke={nodeColor}
           strokeWidth={2}
-          strokeOpacity={0.85}
+          strokeOpacity={0.9}
         />
 
         {/* 3. Outgoing bottom lines to parent commits */}
@@ -83,12 +87,12 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
                 y2={rowHeight}
                 stroke={segColor}
                 strokeWidth={2}
-                strokeOpacity={0.85}
+                strokeOpacity={0.9}
               />
             );
           }
 
-          // Curved bezier line for branch fork or merge
+          // Smooth cubic bezier curve for branch fork / merge connection
           const midY = (centerY + rowHeight) / 2;
           const pathData = `M ${fromX} ${centerY} C ${fromX} ${midY}, ${toX} ${midY}, ${toX} ${rowHeight}`;
           return (
@@ -97,8 +101,8 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
               d={pathData}
               fill="none"
               stroke={segColor}
-              strokeWidth={1.75}
-              strokeOpacity={0.75}
+              strokeWidth={2}
+              strokeOpacity={0.85}
             />
           );
         })}
@@ -114,7 +118,7 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
               fill="none"
               stroke={nodeColor}
               strokeWidth={1.5}
-              strokeOpacity={0.5}
+              strokeOpacity={0.6}
             />
             <circle
               cx={nodeX}
@@ -132,9 +136,9 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
               <circle
                 cx={nodeX}
                 cy={centerY}
-                r={NODE_RADIUS + 2.5}
+                r={NODE_RADIUS + 3}
                 fill={nodeColor}
-                fillOpacity={0.25}
+                fillOpacity={0.3}
                 className="animate-pulse"
               />
             )}

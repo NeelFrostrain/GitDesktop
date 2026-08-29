@@ -72,9 +72,6 @@ export const HistoryPanel: React.FC = () => {
       if (res && res.length > 0) {
         setCommits(res);
         setHasMore(res.length === PAGE_SIZE);
-        if (!selectedCommitSha) {
-          setSelectedCommitSha(res[0].sha);
-        }
       } else {
         setCommits([]);
         setHasMore(false);
@@ -85,7 +82,7 @@ export const HistoryPanel: React.FC = () => {
     } finally {
       setIsLoadingInitial(false);
     }
-  }, [activeRepoPath, selectedCommitSha, setSelectedCommitSha, setTags]);
+  }, [activeRepoPath, setTags]);
 
   useEffect(() => {
     if (activeTab === 'history') {

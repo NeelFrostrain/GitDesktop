@@ -29,6 +29,7 @@ export type NavView =
   | 'files'
   | 'changes'
   | 'history'
+  | 'graph'
   | 'branches'
   | 'locks'
   | 'stashes'

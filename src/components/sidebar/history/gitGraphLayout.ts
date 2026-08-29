@@ -1,10 +1,5 @@
 import { CommitInfo } from '../../../types/git';
 
-export interface GraphPoint {
-  x: number;
-  y: number;
-}
-
 export interface GraphSegment {
   fromLane: number;
   toLane: number;
@@ -18,23 +13,25 @@ export interface CommitGraphNode {
   colorIndex: number;
   isHead: boolean;
   isMerge: boolean;
-  inSegments: GraphSegment[];  // Lines entering from top (newer commits)
-  outSegments: GraphSegment[]; // Lines leaving to bottom (older commits)
-  activeLanes: number[];       // All lanes passing through this row
+  hasIncoming: boolean;        // Whether there is a child commit connecting from above
+  outSegments: GraphSegment[]; // Lines leaving to bottom (toward older commits)
+  activeLanes: number[];       // All lanes passing straight through this row from above
 }
 
 export const LANE_COLORS = [
-  '#e05638', // Commito Coral
-  '#60a5fa', // Blue
-  '#34d399', // Emerald
-  '#fbbf24', // Amber
-  '#c084fc', // Purple
-  '#38bdf8', // Sky
-  '#f472b6', // Pink
+  '#3b82f6', // Bright Blue
+  '#ec4899', // Magenta / Pink
+  '#10b981', // Emerald Green
+  '#f59e0b', // Amber
+  '#8b5cf6', // Purple
+  '#06b6d4', // Cyan
+  '#f97316', // Orange
+  '#14b8a6', // Teal
+  '#e11d48', // Rose
 ];
 
 /**
- * Computes graph layout metadata for a slice of commits.
+ * Computes topological graph layout metadata for a sequence of commits.
  */
 export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, CommitGraphNode> {
   const result = new Map<string, CommitGraphNode>();
@@ -63,19 +60,27 @@ export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, Commit
     const isMerge = parents.length > 1;
     const isHead = idx === 0;
 
-    // Determine this commit's lane
-    let lane = activeLanes.indexOf(commit.sha);
+    // Check if a newer commit above already allocated a lane for this commit
+    const existingLane = activeLanes.indexOf(commit.sha);
+    const hasIncoming = existingLane !== -1;
+
+    let lane = existingLane;
     if (lane === -1) {
       lane = getLaneForSha(commit.sha);
     }
 
     const colorIndex = lane % LANE_COLORS.length;
 
-    // Outgoing segments
-    const outSegments: GraphSegment[] = [];
+    // 1. Capture passing lanes entering this row from ABOVE before allocating new parent lanes
+    const passingLanes = activeLanes
+      .map((target, lIdx) => (target !== null && lIdx !== lane ? lIdx : -1))
+      .filter((l) => l !== -1);
 
     // Free current commit from its lane
     activeLanes[lane] = null;
+
+    // Outgoing segments
+    const outSegments: GraphSegment[] = [];
 
     // Allocate lanes for parents
     if (parents.length > 0) {
@@ -94,7 +99,7 @@ export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, Commit
         colorIndex: lane % LANE_COLORS.length,
       });
 
-      // Subsequent parents (merges)
+      // Subsequent parents (merges from other branches)
       for (let p = 1; p < parents.length; p++) {
         const otherParent = parents[p];
         const otherLane = getLaneForSha(otherParent);
@@ -107,18 +112,13 @@ export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, Commit
       }
     }
 
-    // Capture snapshot of currently passing active lanes
-    const passingLanes = activeLanes
-      .map((target, lIdx) => (target !== null && lIdx !== lane ? lIdx : -1))
-      .filter((l) => l !== -1);
-
     result.set(commit.sha, {
       commitSha: commit.sha,
       lane,
       colorIndex,
       isHead,
       isMerge,
-      inSegments: [],
+      hasIncoming,
       outSegments,
       activeLanes: passingLanes,
     });

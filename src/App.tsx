@@ -82,6 +82,11 @@ const BlameViewer = lazy(() =>
     default: m.BlameViewer,
   }))
 );
+const GitGraphView = lazy(() =>
+  import('./components/views/GitGraphView').then((m) => ({
+    default: m.GitGraphView,
+  }))
+);
 
 // Lazy-loaded Modals & Panels (loaded only when triggered by user actions)
 const RepoModal = lazy(() =>
@@ -470,6 +475,8 @@ export const App: React.FC = () => {
         return <TagsView />;
       case 'submodules':
         return <SubmodulesView />;
+      case 'graph':
+        return <GitGraphView />;
       case 'history':
       case 'changes':
       case 'workspace':
