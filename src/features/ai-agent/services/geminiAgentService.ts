@@ -75,26 +75,45 @@ export class GeminiAgentService {
       .filter(Boolean)
       .join('\n\n');
 
-    // Build Gemini contents array from conversation history
+    // Build Gemini contents array from conversation history with strictly alternating user/model
     const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
     for (const msg of messages) {
       if (msg.role === 'system') continue;
 
-      let partText = msg.content;
+      let partText = msg.content || '';
 
       // Append any message attachments (like diffs, terminal logs, status) formatted with TOON
       if (msg.attachments && msg.attachments.length > 0) {
         const attachmentTexts = msg.attachments
           .map((a) => ToonService.formatAttachmentForPrompt(a))
           .join('\n\n');
-        partText = `${partText}\n\n${attachmentTexts}`;
+        partText = partText ? `${partText}\n\n${attachmentTexts}` : attachmentTexts;
       }
 
-      contents.push({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: partText }],
-      });
+      if (!partText.trim()) continue;
+
+      const role: 'user' | 'model' = msg.role === 'user' ? 'user' : 'model';
+
+      const lastContent = contents[contents.length - 1];
+      if (lastContent && lastContent.role === role) {
+        // Merge adjacent messages of the same role into a single multi-part turn
+        lastContent.parts[0].text += `\n\n${partText}`;
+      } else {
+        contents.push({
+          role,
+          parts: [{ text: partText }],
+        });
+      }
+    }
+
+    // Gemini API requires the conversation contents to start with role 'user'
+    while (contents.length > 0 && contents[0].role !== 'user') {
+      contents.shift();
+    }
+
+    if (contents.length === 0) {
+      throw new Error('No user prompt found to regenerate.');
     }
 
     const payload = {

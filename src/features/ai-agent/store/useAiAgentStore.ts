@@ -457,10 +457,18 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     if (msgIndex === -1) return;
 
     const targetMsg = currentSession.messages[msgIndex];
-    const historyBefore =
-      targetMsg.role === 'user'
-        ? currentSession.messages.slice(0, msgIndex + 1)
-        : currentSession.messages.slice(0, msgIndex);
+    let historyBefore: AgentMessage[] = [];
+
+    if (targetMsg.role === 'user') {
+      historyBefore = currentSession.messages.slice(0, msgIndex + 1);
+    } else {
+      // If regenerating an assistant response, slice up to this response
+      historyBefore = currentSession.messages.slice(0, msgIndex);
+      // If this was the first message in session, treat it as a prompt to evaluate
+      if (historyBefore.length === 0) {
+        historyBefore = [{ ...targetMsg, role: 'user' }];
+      }
+    }
 
     if (historyBefore.length === 0) return;
 
@@ -487,19 +495,27 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     const selectedModel = String(settings.getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
 
     let keyPool: string[] = [];
-    if (rawKeys) {
+    if (Array.isArray(rawKeys)) {
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
+    } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed))
+        if (Array.isArray(parsed)) {
           keyPool = parsed
             .map(String)
             .map((k) => k.trim())
             .filter(Boolean);
-        else keyPool = [rawKeys.trim()];
+        } else {
+          keyPool = [rawKeys.trim()];
+        }
       } catch {
         keyPool = [rawKeys.trim()];
       }
     }
+
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
       keyPool.unshift(activeKey.trim());
     }
