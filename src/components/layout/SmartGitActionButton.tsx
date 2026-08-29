@@ -61,10 +61,10 @@ function getButtonConfig(
     const opLabel = isPushing
       ? 'Pushing...'
       : isPulling
-      ? 'Pulling...'
-      : isFetching
-      ? 'Fetching...'
-      : 'Working...';
+        ? 'Pulling...'
+        : isFetching
+          ? 'Fetching...'
+          : 'Working...';
     const busyVariantCls = isPulling
       ? `${secondaryCls} opacity-90 cursor-wait active:scale-100`
       : `${primaryCls} opacity-90 cursor-wait active:scale-100`;
@@ -121,7 +121,8 @@ function getButtonConfig(
       return {
         icon: <Upload className="w-3.5 h-3.5" />,
         label: 'Publish repository',
-        tooltip: 'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
+        tooltip:
+          'No remote configured. Click to publish this repository to GitHub, GitLab, or Bitbucket.',
         className: primaryCls,
         disabled: false,
       };
@@ -223,8 +224,7 @@ export const SmartGitActionButton: React.FC = () => {
     isFetching
   );
 
-  const showDirtyWarning =
-    !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
+  const showDirtyWarning = !isClean && (syncStatus === 'behind' || syncStatus === 'diverged');
 
   const handleClick = () => {
     if (isBusy) {

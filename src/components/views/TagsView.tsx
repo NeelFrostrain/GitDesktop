@@ -129,11 +129,21 @@ export const TagsView: React.FC = () => {
   // Delete release
   const handleDeleteRelease = async (release: ReleaseInfo) => {
     if (!activeRepoPath) return;
-    if (!confirm(`Delete release '${release.name || release.tag_name}' and remove its release tag?`)) return;
+    if (
+      !confirm(`Delete release '${release.name || release.tag_name}' and remove its release tag?`)
+    )
+      return;
 
     try {
-      await ReleaseService.deleteRelease(activeRepoPath, release.tag_name, true, selectedRemote || null);
-      useLogStore.getState().addLog('info', 'Git', `Deleted release '${release.name}' (${release.tag_name})`);
+      await ReleaseService.deleteRelease(
+        activeRepoPath,
+        release.tag_name,
+        true,
+        selectedRemote || null
+      );
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Deleted release '${release.name}' (${release.tag_name})`);
       useToastStore.getState().showToast({
         type: 'info',
         title: 'Release Deleted',
@@ -154,7 +164,11 @@ export const TagsView: React.FC = () => {
       await GitService.pushSpecificTag(activeRepoPath, tagName, selectedRemote || null);
       useLogStore
         .getState()
-        .addLog('success', 'Git', `Pushed release tag '${tagName}' to '${selectedRemote || 'origin'}'`);
+        .addLog(
+          'success',
+          'Git',
+          `Pushed release tag '${tagName}' to '${selectedRemote || 'origin'}'`
+        );
       useToastStore.getState().showToast({
         type: 'success',
         title: 'Published to Remote',
@@ -321,7 +335,9 @@ export const TagsView: React.FC = () => {
             <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
             <input
               type="text"
-              placeholder={activeTab === 'releases' ? 'Search releases & notes...' : 'Search tags & SHAs...'}
+              placeholder={
+                activeTab === 'releases' ? 'Search releases & notes...' : 'Search tags & SHAs...'
+              }
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
               className="w-full h-8 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint"
@@ -501,7 +517,13 @@ export const TagsView: React.FC = () => {
 
                       {/* Copy Notes */}
                       <button
-                        onClick={() => handleCopy(release.description, `release-${release.tag_name}`, 'Copied Release Notes')}
+                        onClick={() =>
+                          handleCopy(
+                            release.description,
+                            `release-${release.tag_name}`,
+                            'Copied Release Notes'
+                          )
+                        }
                         className="h-7 w-7 flex items-center justify-center bg-base-0 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary rounded-xs transition cursor-pointer shadow-2xs"
                         title="Copy markdown release notes"
                       >
@@ -560,7 +582,10 @@ export const TagsView: React.FC = () => {
                           >
                             <div className="flex items-center gap-2 min-w-0 flex-1">
                               <Package className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
-                              <span className="font-mono text-[11px] text-text-primary truncate" title={asset.name}>
+                              <span
+                                className="font-mono text-[11px] text-text-primary truncate"
+                                title={asset.name}
+                              >
                                 {asset.name}
                               </span>
                               {asset.size && (
@@ -571,7 +596,13 @@ export const TagsView: React.FC = () => {
                             </div>
                             {asset.url && (
                               <button
-                                onClick={() => handleCopy(asset.direct_asset_url || asset.url, `asset-${asset.name}-${aIdx}`, 'Copied asset link')}
+                                onClick={() =>
+                                  handleCopy(
+                                    asset.direct_asset_url || asset.url,
+                                    `asset-${asset.name}-${aIdx}`,
+                                    'Copied asset link'
+                                  )
+                                }
                                 className="p-1 text-text-muted hover:text-text-primary rounded-xs transition cursor-pointer"
                                 title="Copy Asset Link / Path"
                               >
@@ -592,147 +623,145 @@ export const TagsView: React.FC = () => {
             })}
           </div>
         )
-      ) : (
-        /* TAGS TAB CONTENT */
-        filteredTags.length === 0 ? (
-          <div className="p-12 text-center bg-base-1 border border-border/70 rounded-sm space-y-3">
-            <div className="w-10 h-10 mx-auto rounded-sm bg-base-2 border border-border flex items-center justify-center text-text-muted">
-              <Tag className="w-5 h-5" />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-text-primary">No Git Tags Found</h4>
-              <p className="text-[11px] text-text-muted mt-1 max-w-sm mx-auto">
-                {filter
-                  ? 'No git tags match your search filter.'
-                  : 'Create tags on branches or specific commits to mark milestones and release versions.'}
-              </p>
-            </div>
-            {!filter && (
-              <Button
-                type="button"
-                variant="coral"
-                size="sm"
-                onClick={() => setIsCreateTagModalOpen(true)}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-              >
-                Create First Tag
-              </Button>
-            )}
+      ) : /* TAGS TAB CONTENT */
+      filteredTags.length === 0 ? (
+        <div className="p-12 text-center bg-base-1 border border-border/70 rounded-sm space-y-3">
+          <div className="w-10 h-10 mx-auto rounded-sm bg-base-2 border border-border flex items-center justify-center text-text-muted">
+            <Tag className="w-5 h-5" />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-            {filteredTags.map((tag) => {
-              const isPushing = pushingItemMap[tag.name];
-              const isCopied = copiedId === tag.name;
+          <div>
+            <h4 className="text-xs font-bold text-text-primary">No Git Tags Found</h4>
+            <p className="text-[11px] text-text-muted mt-1 max-w-sm mx-auto">
+              {filter
+                ? 'No git tags match your search filter.'
+                : 'Create tags on branches or specific commits to mark milestones and release versions.'}
+            </p>
+          </div>
+          {!filter && (
+            <Button
+              type="button"
+              variant="coral"
+              size="sm"
+              onClick={() => setIsCreateTagModalOpen(true)}
+              leftIcon={<Plus className="w-3.5 h-3.5" />}
+            >
+              Create First Tag
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {filteredTags.map((tag) => {
+            const isPushing = pushingItemMap[tag.name];
+            const isCopied = copiedId === tag.name;
 
-              return (
-                <div
-                  key={tag.name}
-                  className="bg-base-1 border border-border hover:border-border-strong rounded-sm p-3 space-y-2 transition-colors flex flex-col justify-between shadow-2xs"
-                >
-                  <div className="space-y-1.5">
-                    {/* Tag Name & Annotations */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 truncate">
-                        <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span className="font-mono text-xs font-bold text-text-primary truncate">
-                          {tag.name}
+            return (
+              <div
+                key={tag.name}
+                className="bg-base-1 border border-border hover:border-border-strong rounded-sm p-3 space-y-2 transition-colors flex flex-col justify-between shadow-2xs"
+              >
+                <div className="space-y-1.5">
+                  {/* Tag Name & Annotations */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-1.5 truncate">
+                      <Tag className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                      <span className="font-mono text-xs font-bold text-text-primary truncate">
+                        {tag.name}
+                      </span>
+                      {tag.is_annotated && (
+                        <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[9px] font-bold rounded-xs">
+                          Annotated
                         </span>
-                        {tag.is_annotated && (
-                          <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[9px] font-bold rounded-xs">
-                            Annotated
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Commit SHA Badge */}
-                      {tag.sha && (
-                        <div className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted shrink-0">
-                          <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
-                          <span>{tag.sha.slice(0, 7)}</span>
-                        </div>
                       )}
                     </div>
 
-                    {/* Tag Message (if annotated) */}
-                    {tag.message && (
-                      <p className="text-[11px] text-text-secondary line-clamp-2 bg-base-0/60 p-1.5 rounded-xs border border-border/50 font-sans">
-                        {tag.message}
-                      </p>
-                    )}
-
-                    {/* Tagger Name */}
-                    {tag.tagger_name && (
-                      <div className="text-[10px] text-text-muted flex items-center gap-1">
-                        <User className="w-2.5 h-2.5 text-text-faint" />
-                        <span>Tagged by {tag.tagger_name}</span>
+                    {/* Commit SHA Badge */}
+                    {tag.sha && (
+                      <div className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted shrink-0">
+                        <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
+                        <span>{tag.sha.slice(0, 7)}</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Tag Action Controls */}
-                  <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
-                    {/* Convert to Release Button */}
+                  {/* Tag Message (if annotated) */}
+                  {tag.message && (
+                    <p className="text-[11px] text-text-secondary line-clamp-2 bg-base-0/60 p-1.5 rounded-xs border border-border/50 font-sans">
+                      {tag.message}
+                    </p>
+                  )}
+
+                  {/* Tagger Name */}
+                  {tag.tagger_name && (
+                    <div className="text-[10px] text-text-muted flex items-center gap-1">
+                      <User className="w-2.5 h-2.5 text-text-faint" />
+                      <span>Tagged by {tag.tagger_name}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tag Action Controls */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+                  {/* Convert to Release Button */}
+                  <button
+                    onClick={() => {
+                      setEditingRelease({
+                        tag_name: tag.name,
+                        name: `Release ${tag.name}`,
+                        description: tag.message || `Release notes for version ${tag.name}`,
+                        created_at: new Date().toISOString(),
+                      });
+                      setIsCreateReleaseModalOpen(true);
+                    }}
+                    className="px-2 py-1 bg-base-0 hover:bg-base-2 border border-border rounded-xs text-[10.5px] font-medium text-text-secondary hover:text-text-primary flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                    title="Draft and publish release notes for this tag"
+                  >
+                    <Sparkles className="w-3 h-3 text-commito-coral" />
+                    <span>Convert to Release</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {/* Copy Tag Name */}
                     <button
-                      onClick={() => {
-                        setEditingRelease({
-                          tag_name: tag.name,
-                          name: `Release ${tag.name}`,
-                          description: tag.message || `Release notes for version ${tag.name}`,
-                          created_at: new Date().toISOString(),
-                        });
-                        setIsCreateReleaseModalOpen(true);
-                      }}
-                      className="px-2 py-1 bg-base-0 hover:bg-base-2 border border-border rounded-xs text-[10.5px] font-medium text-text-secondary hover:text-text-primary flex items-center gap-1 transition cursor-pointer shadow-2xs"
-                      title="Draft and publish release notes for this tag"
+                      onClick={() => handleCopy(tag.name, tag.name, 'Copied Tag Name')}
+                      className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-base-2 border border-border rounded-xs text-text-muted hover:text-text-primary transition cursor-pointer shadow-2xs"
+                      title="Copy tag name"
                     >
-                      <Sparkles className="w-3 h-3 text-commito-coral" />
-                      <span>Convert to Release</span>
+                      {isCopied ? (
+                        <Check className="w-3 h-3 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3 h-3" />
+                      )}
                     </button>
 
-                    <div className="flex items-center gap-1">
-                      {/* Copy Tag Name */}
-                      <button
-                        onClick={() => handleCopy(tag.name, tag.name, 'Copied Tag Name')}
-                        className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-base-2 border border-border rounded-xs text-text-muted hover:text-text-primary transition cursor-pointer shadow-2xs"
-                        title="Copy tag name"
-                      >
-                        {isCopied ? (
-                          <Check className="w-3 h-3 text-emerald-400" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                      </button>
+                    {/* Push Tag */}
+                    <button
+                      onClick={() => handlePushItem(tag.name)}
+                      disabled={isPushing}
+                      className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-base-2 border border-border rounded-xs text-text-muted hover:text-commito-coral transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                      title={`Push tag to '${selectedRemote}'`}
+                    >
+                      {isPushing ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Upload className="w-3 h-3" />
+                      )}
+                    </button>
 
-                      {/* Push Tag */}
-                      <button
-                        onClick={() => handlePushItem(tag.name)}
-                        disabled={isPushing}
-                        className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-base-2 border border-border rounded-xs text-text-muted hover:text-commito-coral transition cursor-pointer disabled:opacity-50 shadow-2xs"
-                        title={`Push tag to '${selectedRemote}'`}
-                      >
-                        {isPushing ? (
-                          <Loader2 className="w-3 h-3 animate-spin" />
-                        ) : (
-                          <Upload className="w-3 h-3" />
-                        )}
-                      </button>
-
-                      {/* Delete Tag */}
-                      <button
-                        onClick={() => handleDeleteTag(tag.name)}
-                        className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 text-text-muted hover:text-git-removed rounded-xs transition cursor-pointer shadow-2xs"
-                        title="Delete tag"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
+                    {/* Delete Tag */}
+                    <button
+                      onClick={() => handleDeleteTag(tag.name)}
+                      className="h-6.5 w-6.5 flex items-center justify-center bg-base-0 hover:bg-git-removed-bg border border-border hover:border-git-removed/40 text-text-muted hover:text-git-removed rounded-xs transition cursor-pointer shadow-2xs"
+                      title="Delete tag"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Embedded Create Tag Modal */}

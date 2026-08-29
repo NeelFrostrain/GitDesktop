@@ -34,9 +34,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           />
         </div>
         {error && (
-          <span className="text-[10px] text-git-removed block pt-0.5 font-medium">
-            {error}
-          </span>
+          <span className="text-[10px] text-git-removed block pt-0.5 font-medium">{error}</span>
         )}
       </div>
     );

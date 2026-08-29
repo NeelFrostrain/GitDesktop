@@ -76,7 +76,10 @@ export function useGitUserConfig() {
         })
         .catch(() => {});
 
-      useAccountServicesStore.getState().loadAccounts().catch(() => {});
+      useAccountServicesStore
+        .getState()
+        .loadAccounts()
+        .catch(() => {});
 
       // 2. Fetch Git repo identity
       let repoIdentity: GitUserIdentity | null = null;
@@ -131,7 +134,12 @@ export function useGitUserConfig() {
     const list: AccountOption[] = [];
     const seenAccountKeys = new Set<string>();
 
-    const getAccountKeys = (provider: string, accountEmail?: string | null, username?: string | null, accountName?: string | null) => {
+    const getAccountKeys = (
+      provider: string,
+      accountEmail?: string | null,
+      username?: string | null,
+      accountName?: string | null
+    ) => {
       const keys: string[] = [];
       const prov = (provider || 'git').toLowerCase();
       if (accountEmail && accountEmail.trim()) {
@@ -147,7 +155,12 @@ export function useGitUserConfig() {
     // 1. Add from AccountServicesStore (current multi-provider source of truth: GitHub, GitLab, Bitbucket)
     for (const acc of accountServicesAccounts) {
       const cleanUsername = acc.handle.replace(/^@+/, '');
-      const accKeys = getAccountKeys(acc.provider, acc.commit_email, cleanUsername, acc.display_name);
+      const accKeys = getAccountKeys(
+        acc.provider,
+        acc.commit_email,
+        cleanUsername,
+        acc.display_name
+      );
       accKeys.forEach((k) => seenAccountKeys.add(k));
       list.push({
         id: acc.id,
@@ -163,8 +176,7 @@ export function useGitUserConfig() {
     if (user) {
       const userKeys = getAccountKeys(user.provider, user.email, user.username, user.name);
       const isAlreadyAdded =
-        userKeys.some((k) => seenAccountKeys.has(k)) ||
-        list.some((a) => a.id === String(user.id));
+        userKeys.some((k) => seenAccountKeys.has(k)) || list.some((a) => a.id === String(user.id));
       if (!isAlreadyAdded) {
         userKeys.forEach((k) => seenAccountKeys.add(k));
         list.push({
@@ -232,8 +244,12 @@ export function useGitUserConfig() {
         console.warn('Failed to switch active account:', err);
       }
 
-      const providerLabel = targetAccount.provider ? targetAccount.provider.toUpperCase() : 'Remote';
-      useLogStore.getState().addLog('info', 'Git', `Synced identity with ${providerLabel} account: ${syncName}`);
+      const providerLabel = targetAccount.provider
+        ? targetAccount.provider.toUpperCase()
+        : 'Remote';
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Synced identity with ${providerLabel} account: ${syncName}`);
     }
   };
 
@@ -296,7 +312,9 @@ export function useGitUserConfig() {
       };
       setUser(updatedUser);
 
-      useLogStore.getState().addLog('success', 'Git', `Configured Git user: '${trimmedName} <${trimmedEmail}>'`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Configured Git user: '${trimmedName} <${trimmedEmail}>'`);
 
       // Resume pending commit operation if one was waiting for user identity setup
       if (pendingCommitData && activeRepoPath) {
@@ -315,11 +333,13 @@ export function useGitUserConfig() {
           allowEmpty: opts.allowEmpty,
         });
 
-        useLogStore.getState().addLog(
-          'success',
-          'Git',
-          `Committed changes to ${activeRepoPath.split(/[/\\]/).pop()}: '${pendingCommitData.summary}'`
-        );
+        useLogStore
+          .getState()
+          .addLog(
+            'success',
+            'Git',
+            `Committed changes to ${activeRepoPath.split(/[/\\]/).pop()}: '${pendingCommitData.summary}'`
+          );
 
         const statusRes = await GitService.getRepoStatus(activeRepoPath);
         setStatus(statusRes);

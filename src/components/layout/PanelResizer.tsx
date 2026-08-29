@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Props {
-  direction: "horizontal" | "vertical";
+  direction: 'horizontal' | 'vertical';
   onResize: (delta: number) => void;
   onResizeEnd?: () => void;
   className?: string;
@@ -15,7 +15,7 @@ export const PanelResizer: React.FC<Props> = ({
   direction,
   onResize,
   onResizeEnd,
-  className = "",
+  className = '',
 }) => {
   const [isResizing, setIsResizing] = useState(false);
   const lastPos = useRef(0);
@@ -23,7 +23,7 @@ export const PanelResizer: React.FC<Props> = ({
   const handleMouseDown = (e: React.MouseEvent) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    lastPos.current = direction === "horizontal" ? e.clientX : e.clientY;
+    lastPos.current = direction === 'horizontal' ? e.clientX : e.clientY;
     setIsResizing(true);
   };
 
@@ -36,7 +36,7 @@ export const PanelResizer: React.FC<Props> = ({
       if (rafId !== null) return;
       rafId = requestAnimationFrame(() => {
         rafId = null;
-        const cur = direction === "horizontal" ? e.clientX : e.clientY;
+        const cur = direction === 'horizontal' ? e.clientX : e.clientY;
         const delta = cur - lastPos.current;
         lastPos.current = cur;
         onResize(delta);
@@ -50,39 +50,34 @@ export const PanelResizer: React.FC<Props> = ({
       }
       setIsResizing(false);
       onResizeEnd?.();
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
 
-    document.body.style.userSelect = "none";
-    document.body.style.cursor =
-      direction === "horizontal" ? "col-resize" : "row-resize";
-    document.addEventListener("mousemove", onMove, { passive: true });
-    document.addEventListener("mouseup", onUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = direction === 'horizontal' ? 'col-resize' : 'row-resize';
+    document.addEventListener('mousemove', onMove, { passive: true });
+    document.addEventListener('mouseup', onUp);
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
     };
   }, [isResizing, direction, onResize, onResizeEnd]);
 
-  const isH = direction === "horizontal";
+  const isH = direction === 'horizontal';
 
   return (
     <div
       onMouseDown={handleMouseDown}
       className={`flex-shrink-0 flex items-center justify-center group select-none transition-colors ${
-        isH ? "w-[6px] h-full cursor-col-resize" : "w-full h-[6px] cursor-row-resize"
-      } ${isResizing ? "bg-commito-coral/25" : "hover:bg-commito-coral/20"} ${className}`}
+        isH ? 'w-[6px] h-full cursor-col-resize' : 'w-full h-[6px] cursor-row-resize'
+      } ${isResizing ? 'bg-commito-coral/25' : 'hover:bg-commito-coral/20'} ${className}`}
     >
       <div
-        className={`rounded-full transition-colors ${
-          isH ? "w-px h-10" : "h-px w-12"
-        } ${
-          isResizing
-            ? "bg-commito-coral"
-            : "bg-border/50 group-hover:bg-commito-coral/70"
+        className={`rounded-full transition-colors ${isH ? 'w-px h-10' : 'h-px w-12'} ${
+          isResizing ? 'bg-commito-coral' : 'bg-border/50 group-hover:bg-commito-coral/70'
         }`}
       />
     </div>

@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Boxes,
-  RefreshCw,
-  FolderGit2,
-} from 'lucide-react';
+import { Boxes, RefreshCw, FolderGit2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';

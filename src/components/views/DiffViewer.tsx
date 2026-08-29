@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  FileText,
-  Binary,
-  HardDrive,
-  Clock,
-  ChevronRight,
-  FileCode,
-} from 'lucide-react';
+import { FileText, Binary, HardDrive, Clock, ChevronRight, FileCode } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { DiffResult, CommitDetails } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
@@ -194,14 +187,18 @@ export const DiffViewer: React.FC = () => {
       return (
         <div className="h-full flex flex-col items-center justify-center text-text-muted text-sm space-y-2">
           <FileText className="w-10 h-10 opacity-30 text-commito-coral" />
-          <span className="font-medium text-text-muted">Select a changed file to view its line-by-line diff.</span>
+          <span className="font-medium text-text-muted">
+            Select a changed file to view its line-by-line diff.
+          </span>
         </div>
       );
     }
 
     if (isLoading && (!diff || diff.file_path !== selectedFile)) {
       return (
-        <div className="h-full flex items-center justify-center text-text-muted text-sm">Loading file diff...</div>
+        <div className="h-full flex items-center justify-center text-text-muted text-sm">
+          Loading file diff...
+        </div>
       );
     }
 
@@ -213,8 +210,8 @@ export const DiffViewer: React.FC = () => {
           <HardDrive className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Large File Warning</h3>
           <p className="text-xs text-text-muted max-w-md">
-            File <span className="font-mono text-text-primary">{selectedFile}</span> exceeds the maximum diff preview
-            limit.
+            File <span className="font-mono text-text-primary">{selectedFile}</span> exceeds the
+            maximum diff preview limit.
           </p>
         </div>
       );
@@ -229,7 +226,9 @@ export const DiffViewer: React.FC = () => {
         <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-base-0">
           <Binary className="w-12 h-12 text-git-modified mb-3" />
           <h3 className="text-base font-semibold text-text-primary mb-1">Binary File Detected</h3>
-          <p className="text-xs text-text-muted max-w-md mb-2">Binary files cannot be rendered as text diffs.</p>
+          <p className="text-xs text-text-muted max-w-md mb-2">
+            Binary files cannot be rendered as text diffs.
+          </p>
           <span className="text-xs font-mono text-git-added px-2.5 py-1 bg-base-1 border border-border rounded-sm">
             File Size: {(diff.file_size_bytes / 1024).toFixed(1)} KB
           </span>
@@ -266,7 +265,11 @@ export const DiffViewer: React.FC = () => {
                   try {
                     const latestStatus = await GitService.getRepoStatus(activeRepoPath);
                     useGitStore.getState().setStatus(latestStatus);
-                    const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
+                    const newDiff = await GitService.getFileDiff(
+                      activeRepoPath,
+                      selectedFile,
+                      false
+                    );
                     setDiff(newDiff);
                   } catch (e) {
                     console.error('Failed to sync git status after saving:', e);
@@ -297,7 +300,9 @@ export const DiffViewer: React.FC = () => {
 
     if (isLoading) {
       return (
-        <div className="h-full flex items-center justify-center text-text-muted text-sm">Loading commit details...</div>
+        <div className="h-full flex items-center justify-center text-text-muted text-sm">
+          Loading commit details...
+        </div>
       );
     }
 
@@ -342,8 +347,9 @@ export const DiffViewer: React.FC = () => {
               return (
                 <div
                   key={file}
-                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
-                    }`}
+                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
+                    isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
+                  }`}
                 >
                   {/* File Accordion Header */}
                   <button
@@ -352,26 +358,37 @@ export const DiffViewer: React.FC = () => {
                   >
                     <div className="flex items-center gap-2 truncate min-w-0 flex-1">
                       <ChevronRight
-                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
-                          }`}
+                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+                          isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
+                        }`}
                       />
                       <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
                       <div className="truncate min-w-0 flex items-baseline gap-0.5">
-                        {dirPath && <span className="text-text-faint text-[11px] truncate">{dirPath}</span>}
-                        <span className="font-semibold text-text-primary text-xs truncate">{fileName}</span>
+                        {dirPath && (
+                          <span className="text-text-faint text-[11px] truncate">{dirPath}</span>
+                        )}
+                        <span className="font-semibold text-text-primary text-xs truncate">
+                          {fileName}
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
                       {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
                         <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-base-0 border border-border">
-                          {fileStat.additions > 0 && <span className="text-git-added">+{fileStat.additions}</span>}
-                          {fileStat.deletions > 0 && <span className="text-git-removed">-{fileStat.deletions}</span>}
+                          {fileStat.additions > 0 && (
+                            <span className="text-git-added">+{fileStat.additions}</span>
+                          )}
+                          {fileStat.deletions > 0 && (
+                            <span className="text-git-removed">-{fileStat.deletions}</span>
+                          )}
                         </div>
                       )}
                       <CopyButton text={file} className="!h-5 !px-1.5 !text-[10px]" />
                       {isFileLoading && (
-                        <span className="text-[10px] text-text-muted animate-pulse font-sans">Loading...</span>
+                        <span className="text-[10px] text-text-muted animate-pulse font-sans">
+                          Loading...
+                        </span>
                       )}
                     </div>
                   </button>
@@ -380,7 +397,9 @@ export const DiffViewer: React.FC = () => {
                   {isOpen && (
                     <div className="border-t border-border bg-base-0 animate-in fade-in duration-150">
                       {isFileLoading ? (
-                        <div className="p-4 text-xs text-text-muted font-mono text-center">Fetching file changes...</div>
+                        <div className="p-4 text-xs text-text-muted font-mono text-center">
+                          Fetching file changes...
+                        </div>
                       ) : fileDiff ? (
                         isImageFile(file) ? (
                           <ImageDiffView filePath={file} repoPath={activeRepoPath || ''} />

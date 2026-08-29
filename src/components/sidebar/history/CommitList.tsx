@@ -85,9 +85,7 @@ export const CommitList: React.FC<CommitListProps> = ({
 
   if (commits.length === 0) {
     return (
-      <div className="p-6 text-center text-xs text-text-muted italic">
-        No commits match filter
-      </div>
+      <div className="p-6 text-center text-xs text-text-muted italic">No commits match filter</div>
     );
   }
 

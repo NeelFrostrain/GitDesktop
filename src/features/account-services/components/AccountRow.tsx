@@ -1,10 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Check,
-  Pencil,
-  Trash2,
-  Loader2,
-} from 'lucide-react';
+import { Check, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { ProviderAccount } from '../types';
 import { ProviderBadge } from './ProviderBadge';
 import { EditAccountDialog } from './EditAccountDialog';
@@ -32,7 +27,11 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
   };
 
   const handleDelete = async () => {
-    if (confirm(`Remove '${account.handle}' from Git Desktop? Tokens will be deleted from your OS keyring.`)) {
+    if (
+      confirm(
+        `Remove '${account.handle}' from Git Desktop? Tokens will be deleted from your OS keyring.`
+      )
+    ) {
       setIsDeleting(true);
       try {
         await removeAccount(account.id);
@@ -42,8 +41,7 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
     }
   };
 
-  const getCleanHost = (url: string) =>
-    url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  const getCleanHost = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
     <>
@@ -91,7 +89,9 @@ export const AccountRow: React.FC<AccountRowProps> = ({ account }) => {
             <div className="text-[11px] text-text-muted font-mono flex items-center gap-1.5 truncate">
               <span>{account.handle.startsWith('@') ? account.handle : `@${account.handle}`}</span>
               <span className="text-text-muted/50">•</span>
-              <span className="text-text-muted/70 truncate">{getCleanHost(account.instance_url)}</span>
+              <span className="text-text-muted/70 truncate">
+                {getCleanHost(account.instance_url)}
+              </span>
             </div>
 
             {/* Row 3: Commit author email */}

@@ -1,10 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
-import {
-  CATEGORY_METADATA,
-  SettingCategory,
-  SETTINGS_SCHEMA,
-} from '../lib/settingsSchema';
+import { CATEGORY_METADATA, SettingCategory, SETTINGS_SCHEMA } from '../lib/settingsSchema';
 import { useSettingsStore } from '../store/useSettingsStore';
 
 export interface CategoryTreeProps {
@@ -85,7 +81,9 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
                       }`}
                     >
                       <span className="truncate">{subcat}</span>
-                      {isSubSelected && <ChevronRight className="w-2.5 h-2.5 text-commito-coral shrink-0 ml-1" />}
+                      {isSubSelected && (
+                        <ChevronRight className="w-2.5 h-2.5 text-commito-coral shrink-0 ml-1" />
+                      )}
                     </button>
                   );
                 })}

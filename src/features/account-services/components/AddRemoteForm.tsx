@@ -40,7 +40,10 @@ export const AddRemoteForm: React.FC<AddRemoteFormProps> = ({ repoPath }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 bg-base-2/30 border border-dashed border-border rounded-sm space-y-3 select-none">
+    <form
+      onSubmit={handleSubmit}
+      className="p-4 bg-base-2/30 border border-dashed border-border rounded-sm space-y-3 select-none"
+    >
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-1.5">
           <Plus className="w-3.5 h-3.5 text-commito-coral" />
@@ -94,7 +97,11 @@ export const AddRemoteForm: React.FC<AddRemoteFormProps> = ({ repoPath }) => {
             disabled={isAdding}
             className="px-3.5 py-1.5 bg-commito-coral hover:bg-commito-coralHover text-white rounded-sm text-xs font-bold transition flex items-center gap-1.5 cursor-pointer flex-shrink-0"
           >
-            {isAdding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+            {isAdding ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Plus className="w-3.5 h-3.5" />
+            )}
             <span>Add Remote</span>
           </button>
         </div>

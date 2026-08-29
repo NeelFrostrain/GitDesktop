@@ -72,8 +72,7 @@ export const Button: React.FC<ButtonProps> = ({
     // Red / Danger
     danger:
       'bg-danger hover:bg-red-600 active:bg-red-700 text-white border border-danger/90 shadow-2xs',
-    red:
-      'bg-danger hover:bg-red-600 active:bg-red-700 text-white border border-danger/90 shadow-2xs',
+    red: 'bg-danger hover:bg-red-600 active:bg-red-700 text-white border border-danger/90 shadow-2xs',
 
     // Coral / Primary (e.g. Save, Publish, Create)
     primary:
@@ -90,10 +89,8 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-success hover:bg-emerald-600 active:bg-emerald-700 text-white border border-success/90 shadow-2xs',
 
     // Blue / Info (e.g. Sync, Pull, Details, Open)
-    info:
-      'bg-info hover:bg-blue-600 active:bg-blue-700 text-white border border-info/90 shadow-2xs',
-    blue:
-      'bg-info hover:bg-blue-600 active:bg-blue-700 text-white border border-info/90 shadow-2xs',
+    info: 'bg-info hover:bg-blue-600 active:bg-blue-700 text-white border border-info/90 shadow-2xs',
+    blue: 'bg-info hover:bg-blue-600 active:bg-blue-700 text-white border border-info/90 shadow-2xs',
 
     // Warning / Amber / Orange (e.g. Stash, Force, Revert)
     warning:
@@ -110,16 +107,13 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white border border-violet-600/90 shadow-2xs',
 
     // Teal / Cyan (e.g. Terminal, Scripts, Tools)
-    teal:
-      'bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white border border-teal-600/90 shadow-2xs',
-    cyan:
-      'bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white border border-cyan-600/90 shadow-2xs',
+    teal: 'bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white border border-teal-600/90 shadow-2xs',
+    cyan: 'bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white border border-cyan-600/90 shadow-2xs',
 
     // Secondary / Dark (e.g. Cancel, Done, Back, Keep Editing) - Syncs with theme background & borders
     secondary:
       'bg-base-2 hover:bg-base-3 active:bg-base-1 text-text-primary border border-border hover:border-border-strong shadow-2xs',
-    dark:
-      'bg-base-2 hover:bg-base-3 active:bg-base-1 text-text-primary border border-border hover:border-border-strong shadow-2xs',
+    dark: 'bg-base-2 hover:bg-base-3 active:bg-base-1 text-text-primary border border-border hover:border-border-strong shadow-2xs',
 
     // Ghost / Glass
     ghost:
@@ -130,14 +124,12 @@ export const Button: React.FC<ButtonProps> = ({
       'bg-transparent hover:bg-base-2 active:bg-base-3 text-text-primary border border-border hover:border-border-strong shadow-2xs',
 
     // Soft Badges / Tones
-    'soft-danger':
-      'bg-danger/15 hover:bg-danger/25 text-danger border border-danger/30 shadow-2xs',
+    'soft-danger': 'bg-danger/15 hover:bg-danger/25 text-danger border border-danger/30 shadow-2xs',
     'soft-coral':
       'bg-commito-coral/15 hover:bg-commito-coral/25 text-commito-coral border border-commito-coral/30 shadow-2xs',
     'soft-success':
       'bg-success/15 hover:bg-success/25 text-success border border-success/30 shadow-2xs',
-    'soft-blue':
-      'bg-info/15 hover:bg-info/25 text-info border border-info/30 shadow-2xs',
+    'soft-blue': 'bg-info/15 hover:bg-info/25 text-info border border-info/30 shadow-2xs',
   };
 
   const finalClass = `${baseStyles} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`;
@@ -150,9 +142,7 @@ export const Button: React.FC<ButtonProps> = ({
         <span className="flex items-center shrink-0">{leftIcon}</span>
       ) : null}
       {children && <span className="truncate">{children}</span>}
-      {!isLoading && rightIcon && (
-        <span className="flex items-center shrink-0">{rightIcon}</span>
-      )}
+      {!isLoading && rightIcon && <span className="flex items-center shrink-0">{rightIcon}</span>}
     </button>
   );
 };

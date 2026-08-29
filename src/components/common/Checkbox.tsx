@@ -68,9 +68,13 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         }`}
       >
         {indeterminate ? (
-          <Minus className={`${iconSizeClasses[size]} stroke-[3] animate-in zoom-in-75 duration-100`} />
+          <Minus
+            className={`${iconSizeClasses[size]} stroke-[3] animate-in zoom-in-75 duration-100`}
+          />
         ) : checked ? (
-          <Check className={`${iconSizeClasses[size]} stroke-[3] animate-in zoom-in-75 duration-100`} />
+          <Check
+            className={`${iconSizeClasses[size]} stroke-[3] animate-in zoom-in-75 duration-100`}
+          />
         ) : null}
       </div>
 

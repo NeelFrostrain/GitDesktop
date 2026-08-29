@@ -1,9 +1,9 @@
-import React, { useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Users } from "lucide-react";
-import { useAccountServicesStore } from "./store/accountStore";
-import { AccountsTab } from "./tabs/AccountsTab";
-import { AddAccountTab } from "./tabs/AddAccountTab";
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Users } from 'lucide-react';
+import { useAccountServicesStore } from './store/accountStore';
+import { AccountsTab } from './tabs/AccountsTab';
+import { AddAccountTab } from './tabs/AddAccountTab';
 
 /**
  * Clean, modern modal dialog for managing multiple Git provider accounts
@@ -22,12 +22,12 @@ export const AccountServicesModal: React.FC = () => {
   // Handle ESC key to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isModalOpen) {
+      if (e.key === 'Escape' && isModalOpen) {
         setIsModalOpen(false);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isModalOpen, setIsModalOpen]);
 
   if (!isModalOpen) return null;
@@ -82,11 +82,11 @@ export const AccountServicesModal: React.FC = () => {
 
         {/* Modal Content Body */}
         <div className="p-4 overflow-y-auto flex-1 bg-base-0">
-          {activeTab === "accounts" && <AccountsTab />}
-          {activeTab === "add" && <AddAccountTab />}
+          {activeTab === 'accounts' && <AccountsTab />}
+          {activeTab === 'add' && <AddAccountTab />}
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 };

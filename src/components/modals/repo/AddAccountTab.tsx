@@ -2,7 +2,13 @@ import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { Key, Globe, AlertCircle, ExternalLink, RefreshCw, Lock } from 'lucide-react';
-import { Provider, GitLabUser, GitHubUser, gitLabUserToUnified, gitHubUserToUnified } from '../../../types/gitlab';
+import {
+  Provider,
+  GitLabUser,
+  GitHubUser,
+  gitLabUserToUnified,
+  gitHubUserToUnified,
+} from '../../../types/gitlab';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
 import { getErrorMessage, toAppError } from '../../../shared/utils/errorUtils';
@@ -44,14 +50,18 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       const pkce = await invoke<PkcePair>('generate_pkce_cmd');
       sessionStorage.setItem('oauth_verifier', pkce.verifier);
 
-      const clientId = import.meta.env.VITE_GITLAB_CLIENT_ID || 'gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df';
+      const clientId =
+        import.meta.env.VITE_GITLAB_CLIENT_ID ||
+        'gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df';
       const redirectUri = 'http://127.0.0.1:8585/oauth/callback';
       const authUrl = `${serverUrl}/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
         redirectUri
       )}&response_type=code&state=xyz&code_challenge=${pkce.challenge}&code_challenge_method=S256&scope=api+read_user+openid+profile+email+write_repository+read_repository`;
 
       await openUrl(authUrl);
-      useLogStore.getState().addLog('info', 'Auth', `Opened browser for OAuth authorization at ${serverUrl}`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Auth', `Opened browser for OAuth authorization at ${serverUrl}`);
 
       // Background listener handles redirect loopback
       invoke<GitLabUser>('start_oauth_login', {
@@ -87,7 +97,9 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       let codeToUse = manualCode.trim();
       if (codeToUse.includes('code=')) {
         try {
-          const parsed = new URL(codeToUse.startsWith('http') ? codeToUse : `http://dummy/${codeToUse}`);
+          const parsed = new URL(
+            codeToUse.startsWith('http') ? codeToUse : `http://dummy/${codeToUse}`
+          );
           codeToUse = parsed.searchParams.get('code') || codeToUse;
         } catch {
           // Keep original code if URL parse fails
@@ -222,7 +234,9 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       {provider === 'gitlab' && (
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-text-secondary mb-1">GitLab Instance URL</label>
+            <label className="block text-xs font-medium text-text-secondary mb-1">
+              GitLab Instance URL
+            </label>
             <div className="flex items-center gap-2 bg-base-1 border border-border hover:border-border-strong rounded-sm px-2.5 py-1.5 focus-within:border-border-strong">
               <Globe className="w-3.5 h-3.5 text-text-muted shrink-0" />
               <input
@@ -237,7 +251,9 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
           {/* Browser OAuth PKCE */}
           <div className="p-4 rounded-sm bg-base-1 border border-border">
-            <h4 className="text-xs font-semibold text-text-primary mb-1">OAuth Authorization (Recommended)</h4>
+            <h4 className="text-xs font-semibold text-text-primary mb-1">
+              OAuth Authorization (Recommended)
+            </h4>
             <p className="text-[11px] text-text-muted mb-3">
               Authorize securely via your browser without sharing API passwords or keys.
             </p>
@@ -247,14 +263,19 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
               disabled={isOauthLoading}
               className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-sm bg-commito-coral text-white text-xs font-semibold hover:bg-commito-coralLight transition disabled:opacity-50 cursor-pointer"
             >
-              {isOauthLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ExternalLink className="w-3.5 h-3.5" />}
+              {isOauthLoading ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <ExternalLink className="w-3.5 h-3.5" />
+              )}
               {isOauthLoading ? 'Waiting for authorization...' : 'Sign in with GitLab'}
             </button>
 
             {isOauthLoading && (
               <div className="mt-3 pt-3 border-t border-border space-y-2">
                 <p className="text-[11px] text-text-muted">
-                  If the browser redirect doesn't trigger automatically, paste the redirect URL or code below:
+                  If the browser redirect doesn't trigger automatically, paste the redirect URL or
+                  code below:
                 </p>
                 <div className="flex gap-2">
                   <input
@@ -276,10 +297,14 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
           </div>
 
           {/* Personal Access Token (PAT) Fallback */}
-          <form onSubmit={handleGitLabPatSubmit} className="p-4 rounded-sm bg-base-1 border border-border space-y-3">
+          <form
+            onSubmit={handleGitLabPatSubmit}
+            className="p-4 rounded-sm bg-base-1 border border-border space-y-3"
+          >
             <h4 className="text-xs font-semibold text-text-primary">Personal Access Token (PAT)</h4>
             <p className="text-[11px] text-text-muted">
-              Use a Personal Access Token with <code className="text-commito-coral font-mono">api</code> and{' '}
+              Use a Personal Access Token with{' '}
+              <code className="text-commito-coral font-mono">api</code> and{' '}
               <code className="text-commito-coral font-mono">read_user</code> scopes.
             </p>
 
@@ -329,7 +354,10 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
       {/* GitHub Login Options */}
       {provider === 'github' && (
-        <form onSubmit={handleGitHubPatSubmit} className="p-4 rounded-sm bg-base-1 border border-border space-y-3">
+        <form
+          onSubmit={handleGitHubPatSubmit}
+          className="p-4 rounded-sm bg-base-1 border border-border space-y-3"
+        >
           <h4 className="text-xs font-semibold text-text-primary">GitHub Personal Access Token</h4>
           <p className="text-[11px] text-text-muted">
             Create a Personal Access Token (classic or fine-grained) on GitHub with{' '}

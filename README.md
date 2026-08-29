@@ -97,17 +97,17 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 ## Feature Summary
 
-| Category                     | Features |
-| :--------------------------- | :------: |
-| **Commit-AI Engine**         |    6     |
-| **Repository & Workspaces**  |    8     |
-| **History & Rebase**         |    8     |
-| **Diff, Blame & Conflicts**  |    6     |
-| **Stash & Branching**        |    6     |
-| **Security & Authentication**|    5     |
-| **Terminal & Live Logs**     |    4     |
-| **Theming & Design Tokens**  |    5     |
-| **Total Features**           |  **48**  |
+| Category                      | Features |
+| :---------------------------- | :------: |
+| **Commit-AI Engine**          |    6     |
+| **Repository & Workspaces**   |    8     |
+| **History & Rebase**          |    8     |
+| **Diff, Blame & Conflicts**   |    6     |
+| **Stash & Branching**         |    6     |
+| **Security & Authentication** |    5     |
+| **Terminal & Live Logs**      |    4     |
+| **Theming & Design Tokens**   |    5     |
+| **Total Features**            |  **48**  |
 
 ---
 
@@ -190,29 +190,29 @@ src-tauri/src/git/
 
 ### Frontend
 
-| Library | Version | Purpose |
-| :--- | :--- | :--- |
-| **React** | 19.0 | Component rendering & reactive UI |
-| **TypeScript** | 5.8 | Full type safety |
-| **Vite** | 6.1 | Rapid bundler & HMR |
-| **Tailwind CSS** | 4.3 | High-performance CSS utility engine |
-| **Zustand** | 5.0 | Global state management stores |
-| **Monaco Editor** | 4.7 | Code diff & editor viewer |
-| **xterm.js** | 6.0 | Hardware-accelerated terminal emulator |
-| **Lucide React** | 0.475 | Clean icon set |
-| **TanStack Query** | 5.66 | Async query caching |
+| Library            | Version | Purpose                                |
+| :----------------- | :------ | :------------------------------------- |
+| **React**          | 19.0    | Component rendering & reactive UI      |
+| **TypeScript**     | 5.8     | Full type safety                       |
+| **Vite**           | 6.1     | Rapid bundler & HMR                    |
+| **Tailwind CSS**   | 4.3     | High-performance CSS utility engine    |
+| **Zustand**        | 5.0     | Global state management stores         |
+| **Monaco Editor**  | 4.7     | Code diff & editor viewer              |
+| **xterm.js**       | 6.0     | Hardware-accelerated terminal emulator |
+| **Lucide React**   | 0.475   | Clean icon set                         |
+| **TanStack Query** | 5.66    | Async query caching                    |
 
 ### Backend (Rust / Tauri)
 
-| Crate | Purpose |
-| :--- | :--- |
-| **tauri (v2)** | Lightweight native desktop shell & IPC |
-| **git2** | Native `libgit2` bindings for high-speed local git operations |
-| **keyring** | Native OS secure credential storage (Windows / macOS / Linux) |
-| **reqwest** | Async HTTP client for Groq AI API & cloud services |
-| **tokio** | Async runtime for non-blocking I/O and worker tasks |
-| **serde / serde_json** | High-speed data serialization |
-| **portable-pty** | Cross-platform pseudo-terminal manager for embedded shell |
+| Crate                  | Purpose                                                       |
+| :--------------------- | :------------------------------------------------------------ |
+| **tauri (v2)**         | Lightweight native desktop shell & IPC                        |
+| **git2**               | Native `libgit2` bindings for high-speed local git operations |
+| **keyring**            | Native OS secure credential storage (Windows / macOS / Linux) |
+| **reqwest**            | Async HTTP client for Groq AI API & cloud services            |
+| **tokio**              | Async runtime for non-blocking I/O and worker tasks           |
+| **serde / serde_json** | High-speed data serialization                                 |
+| **portable-pty**       | Cross-platform pseudo-terminal manager for embedded shell     |
 
 ---
 
@@ -234,6 +234,7 @@ src-tauri/src/git/
 ### Local Development
 
 1. **Install dependencies**:
+
    ```bash
    npm install
    # or
@@ -241,6 +242,7 @@ src-tauri/src/git/
    ```
 
 2. **Start Tauri dev environment**:
+
    ```bash
    npm run tauri dev
    # or
@@ -248,6 +250,7 @@ src-tauri/src/git/
    ```
 
 3. **Run frontend typechecking**:
+
    ```bash
    npm run typecheck
    # or
@@ -276,11 +279,11 @@ The compiled binaries and installers will be output to `src-tauri/target/release
 
 ## Distribution
 
-| Platform | Package Format | Architecture | Status |
-| :--- | :--- | :--- | :--- |
-| **Windows** | NSIS Installer (`.exe`), `.msi` | x64 | **Stable** |
-| **macOS** | Disk Image (`.dmg`), App Bundle (`.app`) | Universal (Apple Silicon & Intel) | **Stable** |
-| **Linux** | AppImage (`.AppImage`), Debian Package (`.deb`) | x64 | **Stable** |
+| Platform    | Package Format                                  | Architecture                      | Status     |
+| :---------- | :---------------------------------------------- | :-------------------------------- | :--------- |
+| **Windows** | NSIS Installer (`.exe`), `.msi`                 | x64                               | **Stable** |
+| **macOS**   | Disk Image (`.dmg`), App Bundle (`.app`)        | Universal (Apple Silicon & Intel) | **Stable** |
+| **Linux**   | AppImage (`.AppImage`), Debian Package (`.deb`) | x64                               | **Stable** |
 
 Automated multi-platform builds are packaged via GitHub Actions workflows in `.github/workflows/`.
 

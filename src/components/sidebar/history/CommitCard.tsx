@@ -34,9 +34,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   const commitTags = tags.filter(
     (t) =>
       t.sha &&
-      (t.sha === commit.sha ||
-        commit.sha.startsWith(t.sha) ||
-        t.sha.startsWith(commit.short_sha))
+      (t.sha === commit.sha || commit.sha.startsWith(t.sha) || t.sha.startsWith(commit.short_sha))
   );
 
   useEffect(() => {
@@ -87,10 +85,10 @@ export const CommitCard: React.FC<CommitCardProps> = ({
         isDragging
           ? 'opacity-30 border-dashed border-border-strong scale-[0.98]'
           : isTarget && dropZone === 'merge'
-          ? 'bg-base-2 border-commito-coral ring-1 ring-commito-coral/40'
-          : isSelected
-          ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
-          : 'bg-base-1/50 border-border/60 hover:bg-base-2/70 hover:border-border text-text-primary'
+            ? 'bg-base-2 border-commito-coral ring-1 ring-commito-coral/40'
+            : isSelected
+              ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
+              : 'bg-base-1/50 border-border/60 hover:bg-base-2/70 hover:border-border text-text-primary'
       }`}
     >
       {/* Top Border Line Indicator for Drop Before */}
@@ -118,7 +116,11 @@ export const CommitCard: React.FC<CommitCardProps> = ({
             commitTags.map((tag) => (
               <div
                 key={tag.name}
-                title={tag.message ? `Git Tag: ${tag.name} (${tag.message}) • Commit: ${commit.short_sha}` : `Git Tag: ${tag.name} • Commit: ${commit.short_sha}`}
+                title={
+                  tag.message
+                    ? `Git Tag: ${tag.name} (${tag.message}) • Commit: ${commit.short_sha}`
+                    : `Git Tag: ${tag.name} • Commit: ${commit.short_sha}`
+                }
                 className="flex items-center gap-1 px-1.5 py-0.2 bg-amber-500/15 border border-amber-500/35 rounded-xs text-[9.5px] font-mono font-bold text-amber-400 max-w-[110px]"
               >
                 <Tag className="w-2.5 h-2.5 shrink-0 text-amber-400" />

@@ -20,7 +20,9 @@ export const ImageDiffView: React.FC<ImageDiffViewProps> = ({ filePath, repoPath
       <div className="h-10 bg-base-1 border-b border-border px-4 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2 truncate">
           <ImageIcon className="w-4 h-4 text-commito-coral flex-shrink-0" />
-          <span className="font-mono text-xs text-text-primary font-medium truncate">{filePath}</span>
+          <span className="font-mono text-xs text-text-primary font-medium truncate">
+            {filePath}
+          </span>
           <CopyButton text={filePath} />
         </div>
       </div>

@@ -25,9 +25,9 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
       setSelectedCommitSha(event.kind.sha);
       setCurrentNavView('history');
     } else if (event.kind.type === 'MergeRequest' && event.kind.url) {
-      openUrl(event.kind.url).catch(() => { });
+      openUrl(event.kind.url).catch(() => {});
     } else if (event.kind.type === 'Pipeline' && event.kind.url) {
-      openUrl(event.kind.url).catch(() => { });
+      openUrl(event.kind.url).catch(() => {});
     } else if (event.kind.type === 'Push') {
       setActiveRepoPath(event.repo_path);
       setCurrentNavView('history');
@@ -105,9 +105,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
               <span>Pushed {event.kind.commit_count} commit(s) to</span>
               <span className="font-mono text-commito-coral font-bold">{event.kind.branch}</span>
             </div>
-            <div className="text-[10px] text-text-muted font-mono">
-              {event.repo_name}
-            </div>
+            <div className="text-[10px] text-text-muted font-mono">{event.repo_name}</div>
           </div>
         );
 
@@ -158,9 +156,7 @@ export const ActivityItem: React.FC<ActivityItemProps> = ({ event }) => {
               </span>
               <ExternalLink className="w-3 h-3 text-text-muted flex-shrink-0" />
             </div>
-            <div className="text-[10px] text-text-muted font-mono">
-              {event.repo_name}
-            </div>
+            <div className="text-[10px] text-text-muted font-mono">{event.repo_name}</div>
           </div>
         );
     }

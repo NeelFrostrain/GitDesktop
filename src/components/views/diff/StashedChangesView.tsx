@@ -106,11 +106,7 @@ export const StashedChangesView: React.FC = () => {
         <p className="text-xs text-text-muted mb-4 max-w-sm">
           There are no stashed modifications saved on this branch.
         </p>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => setIsViewingStashedChanges(false)}
-        >
+        <Button variant="secondary" size="sm" onClick={() => setIsViewingStashedChanges(false)}>
           Return to Changes
         </Button>
       </div>
@@ -122,9 +118,7 @@ export const StashedChangesView: React.FC = () => {
       {/* Top Header & Actions Toolbar */}
       <div className="px-6 py-4 border-b border-border bg-base-1/50 flex flex-col gap-3 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">
-            Stashed changes
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight text-text-primary">Stashed changes</h1>
           <button
             type="button"
             onClick={() => setIsViewingStashedChanges(false)}
@@ -161,7 +155,8 @@ export const StashedChangesView: React.FC = () => {
           </Button>
 
           <span className="text-xs text-text-muted select-none">
-            <strong className="text-text-primary font-semibold">Restore</strong> will move your stashed files to the Changes list.
+            <strong className="text-text-primary font-semibold">Restore</strong> will move your
+            stashed files to the Changes list.
           </span>
         </div>
 
@@ -261,7 +256,9 @@ export const StashedChangesView: React.FC = () => {
                   Discard Stashed Changes?
                 </h3>
                 <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Are you sure you want to permanently discard all stashed changes for branch <strong className="text-text-primary">{currentBranchStash.branch}</strong>? This action cannot be undone.
+                  Are you sure you want to permanently discard all stashed changes for branch{' '}
+                  <strong className="text-text-primary">{currentBranchStash.branch}</strong>? This
+                  action cannot be undone.
                 </p>
               </div>
             </div>
@@ -275,12 +272,7 @@ export const StashedChangesView: React.FC = () => {
               >
                 Cancel
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleDiscard}
-                isLoading={isDiscarding}
-              >
+              <Button variant="danger" size="sm" onClick={handleDiscard} isLoading={isDiscarding}>
                 Discard Stash
               </Button>
             </div>

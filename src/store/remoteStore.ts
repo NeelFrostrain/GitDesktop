@@ -22,7 +22,12 @@ interface RemoteState {
   renameRemote: (repoPath: string, oldName: string, newName: string) => Promise<void>;
   setRemoteUrl: (repoPath: string, name: string, url: string, isPush: boolean) => Promise<void>;
   fetchRemote: (repoPath: string, remoteName?: string) => Promise<void>;
-  pushRemote: (repoPath: string, remoteName: string, branchName: string, force?: boolean) => Promise<void>;
+  pushRemote: (
+    repoPath: string,
+    remoteName: string,
+    branchName: string,
+    force?: boolean
+  ) => Promise<void>;
   pullRemote: (repoPath: string, remoteName: string, branchName: string) => Promise<PullResult>;
 }
 
@@ -49,7 +54,9 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
         set({ activeRemote: remotes[0].name });
       }
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Git', `Failed to load remotes: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Failed to load remotes: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -109,7 +116,9 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
     try {
       await invoke('set_remote_url_cmd', { repoPath, name, url, isPush });
       await get().loadRemotes(repoPath);
-      useLogStore.getState().addLog('info', 'Git', `Updated ${isPush ? 'push ' : ''}URL for remote '${name}'`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Updated ${isPush ? 'push ' : ''}URL for remote '${name}'`);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to set remote URL: ${msg}`);
@@ -125,7 +134,9 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
     try {
       await invoke('fetch_specific_remote_cmd', { repoPath, remoteName: target || '' });
       await get().loadRemotes(repoPath);
-      useLogStore.getState().addLog('info', 'Git', `Fetched changes from remote '${target || 'all'}'`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Fetched changes from remote '${target || 'all'}'`);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to fetch remote: ${msg}`);
@@ -140,7 +151,9 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
     try {
       await invoke('push_specific_remote_cmd', { repoPath, remoteName, branchName, force });
       await get().loadRemotes(repoPath);
-      useLogStore.getState().addLog('info', 'Git', `Pushed branch '${branchName}' to remote '${remoteName}'`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Pushed branch '${branchName}' to remote '${remoteName}'`);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to push: ${msg}`);
@@ -153,9 +166,19 @@ export const useRemoteStore = create<RemoteState>((set, get) => ({
   pullRemote: async (repoPath: string, remoteName: string, branchName: string) => {
     useGitStore.getState().setIsPulling(true);
     try {
-      const result = await invoke<PullResult>('pull_specific_remote_cmd', { repoPath, remoteName, branchName });
+      const result = await invoke<PullResult>('pull_specific_remote_cmd', {
+        repoPath,
+        remoteName,
+        branchName,
+      });
       await get().loadRemotes(repoPath);
-      useLogStore.getState().addLog('info', 'Git', `Pulled ${result.commits_pulled} commit(s) from '${remoteName}/${branchName}'`);
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'Git',
+          `Pulled ${result.commits_pulled} commit(s) from '${remoteName}/${branchName}'`
+        );
       return result;
     } catch (error: unknown) {
       const msg = getErrorMessage(error);

@@ -1,11 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  Edit3,
-  X,
-  AlertCircle,
-  CornerDownLeft,
-} from 'lucide-react';
+import { Edit3, X, AlertCircle, CornerDownLeft } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -93,7 +88,10 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
       // 2. Refresh git repo status
       const latestStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(latestStatus);
-      useRepoStore.getState().refreshStatus(activeRepoPath).catch(() => {});
+      useRepoStore
+        .getState()
+        .refreshStatus(activeRepoPath)
+        .catch(() => {});
 
       // 3. Update active selected file if this file was selected
       if (selectedFile === cleanOldPath) {
@@ -149,9 +147,7 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
             <div className="flex items-center gap-1.5 min-w-0">
               <h3 className="font-bold text-xs text-text-primary leading-none">Rename File</h3>
               <span className="text-border">•</span>
-              <span className="text-[10.5px] text-text-muted truncate">
-                Working tree path
-              </span>
+              <span className="text-[10.5px] text-text-muted truncate">Working tree path</span>
             </div>
           </div>
 
@@ -166,7 +162,11 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
         </div>
 
         {/* Form Body */}
-        <form id="rename-item-form" onSubmit={handleSubmit} className="p-3.5 space-y-2.5 bg-base-0 flex-1 overflow-y-auto">
+        <form
+          id="rename-item-form"
+          onSubmit={handleSubmit}
+          className="p-3.5 space-y-2.5 bg-base-0 flex-1 overflow-y-auto"
+        >
           {/* Current Path Info */}
           <div className="space-y-1">
             <label className="text-[10.5px] font-semibold text-text-muted block uppercase tracking-wider">
@@ -226,7 +226,9 @@ export const RenameItemModal: React.FC<RenameItemModalProps> = ({
             size="sm"
             disabled={isSubmitting || !cleanNewPath || cleanNewPath === cleanOldPath}
             isLoading={isSubmitting}
-            rightIcon={!isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined}
+            rightIcon={
+              !isSubmitting ? <CornerDownLeft className="w-3 h-3 opacity-75" /> : undefined
+            }
           >
             Rename
           </Button>

@@ -1,7 +1,8 @@
 /**
  * Represents the modification category of a file in the Git working tree.
  */
-export type FileStatusKind = 'Modified' | 'Staged' | 'Untracked' | 'Deleted' | 'Renamed' | 'Conflicted';
+export type FileStatusKind =
+  'Modified' | 'Staged' | 'Untracked' | 'Deleted' | 'Renamed' | 'Conflicted';
 
 /**
  * Status information for an individual file in a repository.
@@ -406,11 +407,13 @@ export type VerifyStatus = 'Verified' | 'Unverified' | 'NoSignature' | 'Error';
  */
 export interface VerifyResult {
   status: VerifyStatus;
-  details?: {
-    signer?: string;
-    key_id?: string;
-    reason?: string;
-  } | string;
+  details?:
+    | {
+        signer?: string;
+        key_id?: string;
+        reason?: string;
+      }
+    | string;
 }
 
 /**

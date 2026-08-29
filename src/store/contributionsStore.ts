@@ -71,7 +71,9 @@ export const useContributionsStore = create<ContributionsState>((set, get) => ({
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       set({ error: msg });
-      useLogStore.getState().addLog('warning', 'System', `Failed to load contribution calendar: ${msg}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'System', `Failed to load contribution calendar: ${msg}`);
     } finally {
       set({ isLoading: false });
     }

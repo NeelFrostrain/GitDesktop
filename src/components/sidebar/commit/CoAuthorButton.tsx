@@ -39,11 +39,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
     const email = (acc.email || `${handle.toLowerCase()}@users.noreply.github.com`).trim();
     const emailLower = email.toLowerCase();
 
-    if (
-      emailLower &&
-      !seenEmails.has(emailLower) &&
-      handle.toLowerCase() !== currentAuthorName
-    ) {
+    if (emailLower && !seenEmails.has(emailLower) && handle.toLowerCase() !== currentAuthorName) {
       seenEmails.add(emailLower);
       allSuggestions.push({
         id: `acc:${acc.id || email}`,
@@ -227,7 +223,11 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
               >
                 <UserPlus className="w-3.5 h-3.5 text-commito-coral flex-shrink-0" />
                 <span className="truncate">
-                  Add <span className="font-semibold text-commito-coral">&ldquo;{query.trim()}&rdquo;</span> as co-author
+                  Add{' '}
+                  <span className="font-semibold text-commito-coral">
+                    &ldquo;{query.trim()}&rdquo;
+                  </span>{' '}
+                  as co-author
                 </span>
               </div>
             ) : (

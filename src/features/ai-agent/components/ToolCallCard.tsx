@@ -1,17 +1,7 @@
-import React, { useState } from "react";
-import {
-  Play,
-  Copy,
-  Check,
-  X,
-  CheckCircle2,
-  Code2,
-  FileCode2,
-  Trash2,
-  Save,
-} from "lucide-react";
-import { AgentToolCall } from "../types";
-import { useAiAgentStore } from "../store/useAiAgentStore";
+import React, { useState } from 'react';
+import { Play, Copy, Check, X, CheckCircle2, Code2, FileCode2, Trash2, Save } from 'lucide-react';
+import { AgentToolCall } from '../types';
+import { useAiAgentStore } from '../store/useAiAgentStore';
 
 interface ToolCallCardProps {
   toolCall: AgentToolCall;
@@ -22,16 +12,16 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
   const [copied, setCopied] = useState(false);
 
   const isFileWrite =
-    toolCall.name === "write_file" ||
-    toolCall.name === "create_file" ||
-    toolCall.name === "edit_file";
-  const isFileDelete = toolCall.name === "delete_file";
+    toolCall.name === 'write_file' ||
+    toolCall.name === 'create_file' ||
+    toolCall.name === 'edit_file';
+  const isFileDelete = toolCall.name === 'delete_file';
 
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
     const textToCopy = isFileWrite
-      ? toolCall.fileContent || toolCall.filePath || ""
-      : toolCall.command || toolCall.filePath || "";
+      ? toolCall.fileContent || toolCall.filePath || ''
+      : toolCall.command || toolCall.filePath || '';
     if (textToCopy) {
       navigator.clipboard.writeText(textToCopy);
       setCopied(true);
@@ -39,22 +29,22 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
     }
   };
 
-  const isExecuted = toolCall.status === "success";
-  const isRejected = toolCall.status === "rejected";
+  const isExecuted = toolCall.status === 'success';
+  const isRejected = toolCall.status === 'rejected';
 
   // Extract title and subtitle
-  let title = "";
-  let subtitle = "";
+  let title = '';
+  let subtitle = '';
   if (isFileWrite) {
-    title = toolCall.filePath || "File Write";
-    subtitle = "File · Save / Apply changes to disk";
+    title = toolCall.filePath || 'File Write';
+    subtitle = 'File · Save / Apply changes to disk';
   } else if (isFileDelete) {
-    title = toolCall.filePath || "Delete File";
-    subtitle = "File · Remove from repository";
+    title = toolCall.filePath || 'Delete File';
+    subtitle = 'File · Remove from repository';
   } else {
-    const commandText = toolCall.command || "Git Action";
-    title = commandText.trim().split("\n")[0] || "git command";
-    subtitle = "Git · Terminal command";
+    const commandText = toolCall.command || 'Git Action';
+    title = commandText.trim().split('\n')[0] || 'git command';
+    subtitle = 'Git · Terminal command';
   }
 
   return (
@@ -74,15 +64,10 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
 
         {/* Text Details */}
         <div className="min-w-0 flex-1">
-          <div
-            className="text-[12px] font-bold text-text-primary font-mono truncate"
-            title={title}
-          >
+          <div className="text-[12px] font-bold text-text-primary font-mono truncate" title={title}>
             {title}
           </div>
-          <div className="text-[10.5px] text-text-muted font-mono truncate mt-0.5">
-            {subtitle}
-          </div>
+          <div className="text-[10.5px] text-text-muted font-mono truncate mt-0.5">{subtitle}</div>
         </div>
       </div>
 
@@ -93,7 +78,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
           type="button"
           onClick={handleCopy}
           className="p-1.5 rounded-xs hover:bg-base-2 text-text-muted hover:text-text-primary transition cursor-pointer"
-          title={isFileWrite ? "Copy file contents" : "Copy command"}
+          title={isFileWrite ? 'Copy file contents' : 'Copy command'}
         >
           {copied ? (
             <Check className="w-3.5 h-3.5 text-emerald-400" />

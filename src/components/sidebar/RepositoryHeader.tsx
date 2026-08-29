@@ -1,20 +1,19 @@
-import React, { useState } from "react";
-import { ChevronsUpDown, FolderGit2 } from "lucide-react";
-import { useGitStore } from "../../store/useGitStore";
-import { RepoDrawer } from "../layout/RepoDrawer";
-import { Tabs } from "../common/Tabs";
+import React, { useState } from 'react';
+import { ChevronsUpDown, FolderGit2 } from 'lucide-react';
+import { useGitStore } from '../../store/useGitStore';
+import { RepoDrawer } from '../layout/RepoDrawer';
+import { Tabs } from '../common/Tabs';
 
 export const RepositoryHeader: React.FC = () => {
-  const { activeRepoPath, status, branches, activeTab, setActiveTab } =
-    useGitStore();
+  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
   const [isRepoDrawerOpen, setIsRepoDrawerOpen] = useState(false);
 
   const activeRepoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).pop() || "Repository"
-    : "No Repository";
+    ? activeRepoPath.split(/[/\\]/).pop() || 'Repository'
+    : 'No Repository';
 
   const branchCount = branches.length || 1;
-  const currentBranch = status?.current_branch || "main";
+  const currentBranch = status?.current_branch || 'main';
   const fileCount = status?.files?.length || 0;
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
@@ -61,17 +60,17 @@ export const RepositoryHeader: React.FC = () => {
 
         {/* Bottom Row: Full-width Changes / History Tabs */}
         <div className="h-7.5">
-          <Tabs<"changes" | "history">
+          <Tabs<'changes' | 'history'>
             tabs={[
               {
-                id: "changes",
-                label: "Changes",
+                id: 'changes',
+                label: 'Changes',
                 badge: fileCount,
-                badgeVariant: "coral",
+                badgeVariant: 'coral',
               },
               {
-                id: "history",
-                label: "History",
+                id: 'history',
+                label: 'History',
               },
             ]}
             activeTab={activeTab}
@@ -85,10 +84,7 @@ export const RepositoryHeader: React.FC = () => {
       </div>
 
       {/* Slide-over Drawer from the left */}
-      <RepoDrawer
-        isOpen={isRepoDrawerOpen}
-        onClose={() => setIsRepoDrawerOpen(false)}
-      />
+      <RepoDrawer isOpen={isRepoDrawerOpen} onClose={() => setIsRepoDrawerOpen(false)} />
     </>
   );
 };

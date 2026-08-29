@@ -131,9 +131,7 @@ export const Radio: React.FC<RadioProps> = ({
             </div>
           )}
           {description && (
-            <div className="text-[11px] text-text-muted leading-relaxed">
-              {description}
-            </div>
+            <div className="text-[11px] text-text-muted leading-relaxed">{description}</div>
           )}
         </div>
       )}

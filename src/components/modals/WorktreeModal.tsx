@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { openUrl } from '@tauri-apps/plugin-opener';
-import {
-  X,
-  Layers,
-  Plus,
-  Trash2,
-  FolderOpen,
-  GitBranch,
-  RefreshCw,
-} from 'lucide-react';
+import { X, Layers, Plus, Trash2, FolderOpen, GitBranch, RefreshCw } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { WorktreeInfo } from '../../types/git';
@@ -20,12 +12,7 @@ import { toAppError } from '../../shared/utils/errorUtils';
  * Modal dialogue for listing, creating, and removing linked Git worktrees for concurrent branch working copies.
  */
 export const WorktreeModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isWorktreeModalOpen,
-    setIsWorktreeModalOpen,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isWorktreeModalOpen, setIsWorktreeModalOpen, setError } = useGitStore();
 
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
   const [newWorktreePath, setNewWorktreePath] = useState('');
@@ -63,7 +50,9 @@ export const WorktreeModal: React.FC = () => {
         branch: newWorktreeBranch.trim() || null,
       });
 
-      useLogStore.getState().addLog('success', 'Worktree', `Created worktree at '${newWorktreePath.trim()}'`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Worktree', `Created worktree at '${newWorktreePath.trim()}'`);
       setNewWorktreePath('');
       setNewWorktreeBranch('');
       loadWorktrees();
@@ -120,7 +109,10 @@ export const WorktreeModal: React.FC = () => {
         {/* Modal Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 bg-base-0">
           {/* Create New Worktree Form */}
-          <form onSubmit={handleCreateWorktree} className="p-4 bg-base-1 border border-border rounded-sm space-y-3 shadow-xs">
+          <form
+            onSubmit={handleCreateWorktree}
+            className="p-4 bg-base-1 border border-border rounded-sm space-y-3 shadow-xs"
+          >
             <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
               <Plus className="w-3.5 h-3.5 text-commito-coral" />
               <span>Add New Worktree</span>

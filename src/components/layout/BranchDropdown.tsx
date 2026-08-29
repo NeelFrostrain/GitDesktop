@@ -180,7 +180,8 @@ export const BranchDropdown: React.FC = () => {
 
       const projectPath = remoteInfo.projectPath;
       const serverUrl = remoteInfo.serverUrl;
-      const provider = remoteInfo.provider !== 'unknown' ? remoteInfo.provider : user?.provider || 'github';
+      const provider =
+        remoteInfo.provider !== 'unknown' ? remoteInfo.provider : user?.provider || 'github';
 
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
       setPullRequests(res || []);
@@ -231,9 +232,10 @@ export const BranchDropdown: React.FC = () => {
   const handleSelectBranch = (branchName: string) => {
     setIsOpen(false);
     // If it's a remote branch name like 'origin/feat', target the clean branch name
-    const cleanBranch = branchName.includes('/') && !localBranchNames.has(branchName)
-      ? getCleanRemoteBranchName(branchName)
-      : branchName;
+    const cleanBranch =
+      branchName.includes('/') && !localBranchNames.has(branchName)
+        ? getCleanRemoteBranchName(branchName)
+        : branchName;
 
     if (cleanBranch === currentBranch) return;
 
@@ -270,7 +272,9 @@ export const BranchDropdown: React.FC = () => {
 
     try {
       await GitService.createBranch(activeRepoPath, newBranchName.trim());
-      useLogStore.getState().addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
       setNewBranchName('');
       setShowCreateModal(false);
 
@@ -304,11 +308,7 @@ export const BranchDropdown: React.FC = () => {
 
   // 2. Set of local branch names
   const localBranchNames = useMemo(() => {
-    return new Set(
-      branches
-        .filter((b: BranchInfo) => !b.is_remote)
-        .map((b: BranchInfo) => b.name)
-    );
+    return new Set(branches.filter((b: BranchInfo) => !b.is_remote).map((b: BranchInfo) => b.name));
   }, [branches]);
 
   // 3. Local branches merged with remote tracking indicator
@@ -499,9 +499,7 @@ export const BranchDropdown: React.FC = () => {
                   ref={searchInputRef}
                   type="text"
                   placeholder={
-                    activeTab === 'branches'
-                      ? 'Filter branches...'
-                      : 'Filter pull requests...'
+                    activeTab === 'branches' ? 'Filter branches...' : 'Filter pull requests...'
                   }
                   value={filterQuery}
                   onChange={(e) => setFilterQuery(e.target.value)}
@@ -527,7 +525,9 @@ export const BranchDropdown: React.FC = () => {
                   className="h-8 w-8 flex items-center justify-center rounded-sm bg-base-1/70 hover:bg-base-2 border border-border/60 hover:border-border-strong text-text-muted hover:text-text transition shadow-xs cursor-pointer disabled:opacity-50 shrink-0"
                   title="Refresh pull requests"
                 >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingPRs ? 'animate-spin text-emerald-400' : ''}`} />
+                  <RefreshCw
+                    className={`w-3.5 h-3.5 ${isLoadingPRs ? 'animate-spin text-emerald-400' : ''}`}
+                  />
                 </button>
               )}
             </div>
@@ -541,7 +541,11 @@ export const BranchDropdown: React.FC = () => {
                     type="button"
                     onClick={toggleLocalCollapsed}
                     className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
-                    title={isLocalCollapsed && !filterQuery ? 'Expand Local Branches' : 'Collapse Local Branches'}
+                    title={
+                      isLocalCollapsed && !filterQuery
+                        ? 'Expand Local Branches'
+                        : 'Collapse Local Branches'
+                    }
                   >
                     <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
                       <ChevronRight
@@ -557,10 +561,12 @@ export const BranchDropdown: React.FC = () => {
                     </span>
                   </button>
 
-                  {(!isLocalCollapsed || Boolean(filterQuery.trim())) && (
-                    localBranches.length === 0 ? (
+                  {(!isLocalCollapsed || Boolean(filterQuery.trim())) &&
+                    (localBranches.length === 0 ? (
                       <div className="py-4 px-3 text-center text-text-muted text-xs italic bg-base-1/40 rounded-sm border border-border/40">
-                        {filterQuery ? `No local branches match "${filterQuery}"` : 'No local branches.'}
+                        {filterQuery
+                          ? `No local branches match "${filterQuery}"`
+                          : 'No local branches.'}
                       </div>
                     ) : (
                       <div className="flex flex-col -mx-2">
@@ -604,7 +610,9 @@ export const BranchDropdown: React.FC = () => {
                                       title={`Tracks remote '${branchItem.remoteTracking}'`}
                                     >
                                       <Globe className="w-2.5 h-2.5 flex-shrink-0" />
-                                      <span className="truncate max-w-[70px]">{branchItem.remotePrefix || 'origin'}</span>
+                                      <span className="truncate max-w-[70px]">
+                                        {branchItem.remotePrefix || 'origin'}
+                                      </span>
                                     </span>
                                   )}
                                 </div>
@@ -627,8 +635,7 @@ export const BranchDropdown: React.FC = () => {
                           );
                         })}
                       </div>
-                    )
-                  )}
+                    ))}
                 </div>
 
                 {/* Remote Branches Section */}
@@ -637,7 +644,11 @@ export const BranchDropdown: React.FC = () => {
                     type="button"
                     onClick={toggleRemoteCollapsed}
                     className="px-1.5 py-1 w-full flex items-center justify-between select-none rounded-sm hover:bg-base-1/80 transition-colors cursor-pointer group"
-                    title={isRemoteCollapsed && !filterQuery ? 'Expand Remote Branches' : 'Collapse Remote Branches'}
+                    title={
+                      isRemoteCollapsed && !filterQuery
+                        ? 'Expand Remote Branches'
+                        : 'Collapse Remote Branches'
+                    }
                   >
                     <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted/80 group-hover:text-text-primary flex items-center gap-1.5 transition-colors">
                       <ChevronRight
@@ -653,8 +664,8 @@ export const BranchDropdown: React.FC = () => {
                     </span>
                   </button>
 
-                  {(!isRemoteCollapsed || Boolean(filterQuery.trim())) && (
-                    remoteOnlyBranches.length === 0 ? (
+                  {(!isRemoteCollapsed || Boolean(filterQuery.trim())) &&
+                    (remoteOnlyBranches.length === 0 ? (
                       <div className="py-2.5 px-3 text-center text-text-muted text-[11px] bg-base-1/30 rounded-sm border border-border/30 flex items-center justify-center gap-1.5 font-sans select-none">
                         {filterQuery ? (
                           <span>No remote-only branches match "{filterQuery}"</span>
@@ -669,8 +680,12 @@ export const BranchDropdown: React.FC = () => {
                       <div className="flex flex-col -mx-2">
                         {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
                           const slashIdx = remoteBranchItem.name.indexOf('/');
-                          const prefix = slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
-                          const nameWithoutPrefix = slashIdx !== -1 ? remoteBranchItem.name.slice(slashIdx + 1) : remoteBranchItem.name;
+                          const prefix =
+                            slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
+                          const nameWithoutPrefix =
+                            slashIdx !== -1
+                              ? remoteBranchItem.name.slice(slashIdx + 1)
+                              : remoteBranchItem.name;
 
                           return (
                             <div
@@ -684,7 +699,9 @@ export const BranchDropdown: React.FC = () => {
                                 </div>
                                 <div className="min-w-0 truncate font-mono text-xs">
                                   {prefix && (
-                                    <span className="text-text-muted text-[11px] font-normal">{prefix}</span>
+                                    <span className="text-text-muted text-[11px] font-normal">
+                                      {prefix}
+                                    </span>
                                   )}
                                   <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
                                     {nameWithoutPrefix}
@@ -699,8 +716,7 @@ export const BranchDropdown: React.FC = () => {
                           );
                         })}
                       </div>
-                    )
-                  )}
+                    ))}
                 </div>
               </div>
             )}
@@ -711,7 +727,9 @@ export const BranchDropdown: React.FC = () => {
                 {isLoadingPRs && pullRequests.length === 0 ? (
                   <div className="py-8 flex flex-col items-center justify-center gap-2 text-text-muted">
                     <Loader2 className="w-5 h-5 animate-spin text-commito-coral" />
-                    <span className="text-[11.5px] font-medium text-text-secondary">Loading open pull requests...</span>
+                    <span className="text-[11.5px] font-medium text-text-secondary">
+                      Loading open pull requests...
+                    </span>
                   </div>
                 ) : prError ? (
                   <div className="py-6 px-3 bg-base-1/50 rounded border border-border text-center space-y-2 select-none">
@@ -769,7 +787,8 @@ export const BranchDropdown: React.FC = () => {
                     {/* Section Header */}
                     {activeProjectPath && (
                       <div className="px-1.5 pt-0.5 pb-1 text-[10.5px] font-semibold text-text-muted select-none truncate">
-                        Pull requests in <span className="text-text-primary font-mono">{activeProjectPath}</span>
+                        Pull requests in{' '}
+                        <span className="text-text-primary font-mono">{activeProjectPath}</span>
                       </div>
                     )}
 
@@ -801,14 +820,19 @@ export const BranchDropdown: React.FC = () => {
 
                                 <div className="flex items-center gap-2 flex-wrap text-[10.5px] text-text-muted">
                                   <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs">
-                                    {numberPrefix}{prNumber}
+                                    {numberPrefix}
+                                    {prNumber}
                                   </span>
 
                                   <div className="flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
                                     <GitFork className="w-2.5 h-2.5 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">{pr.source_branch}</span>
+                                    <span className="truncate max-w-[90px]">
+                                      {pr.source_branch}
+                                    </span>
                                     <ArrowRight className="w-2 h-2 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">{pr.target_branch}</span>
+                                    <span className="truncate max-w-[90px]">
+                                      {pr.target_branch}
+                                    </span>
                                   </div>
 
                                   <span className="truncate flex items-center gap-1">
@@ -869,7 +893,9 @@ export const BranchDropdown: React.FC = () => {
                   <GitBranch className="w-3 h-3" />
                 </div>
                 <div className="flex items-center gap-1.5 min-w-0">
-                  <h3 className="text-xs font-bold text-text-primary leading-none">Create Branch</h3>
+                  <h3 className="text-xs font-bold text-text-primary leading-none">
+                    Create Branch
+                  </h3>
                   <span className="text-border">•</span>
                   <span className="text-[10.5px] text-text-muted font-mono truncate">
                     from <span className="text-commito-coral font-semibold">{currentBranch}</span>

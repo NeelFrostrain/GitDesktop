@@ -3,4 +3,4 @@
    All canonical tokens and Tailwind v4 bridges are now centralized in src/main.css.
    ========================================================================== */
 
-@import "../../main.css";
+@import '../../main.css';

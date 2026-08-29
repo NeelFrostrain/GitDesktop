@@ -98,7 +98,9 @@ export const ProviderPickerCard: React.FC = () => {
       if (event.payload) {
         await loadAccounts();
         setActiveWaitingProvider(null);
-        setSuccessMsg(`Successfully signed in as ${event.payload.handle || event.payload.display_name}!`);
+        setSuccessMsg(
+          `Successfully signed in as ${event.payload.handle || event.payload.display_name}!`
+        );
       }
     }).then((fn) => {
       unlistenSynced = fn;
@@ -256,9 +258,7 @@ export const ProviderPickerCard: React.FC = () => {
               <div className="mt-2.5 pt-2 border-t border-border/40 flex flex-col gap-1.5">
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedUrlProvider(isUrlExpanded ? null : provider.id)
-                  }
+                  onClick={() => setExpandedUrlProvider(isUrlExpanded ? null : provider.id)}
                   className="text-[10.5px] text-text-muted hover:text-text-primary flex items-center gap-1 self-start cursor-pointer transition font-mono"
                 >
                   <span>Self-hosted / Enterprise URL</span>
@@ -298,7 +298,8 @@ export const ProviderPickerCard: React.FC = () => {
       <div className="flex items-center justify-start gap-2 py-2 px-3 bg-base-1/40 border border-border rounded-sm text-[11px] text-text-muted text-center">
         {/* <ShieldCheck className="w-3.5 h-3.5 text-git-added shrink-0" /> */}
         <span>
-          Secure OAuth 2.0 PKCE authentication in your default browser — tokens stored in your operating system's keyring.
+          Secure OAuth 2.0 PKCE authentication in your default browser — tokens stored in your
+          operating system's keyring.
         </span>
       </div>
     </div>

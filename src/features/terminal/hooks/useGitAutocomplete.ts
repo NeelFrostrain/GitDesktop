@@ -47,12 +47,14 @@ export function useGitAutocomplete(repoPath: string | null) {
       // Token index 1: git <command>
       if (tokens.length === 1 && isNewToken) {
         // Show all top git commands
-        return Object.entries(GIT_COMMAND_TREE).slice(0, 15).map(([cmd, def]) => ({
-          text: cmd,
-          value: cmd,
-          description: def.description,
-          kind: 'command',
-        }));
+        return Object.entries(GIT_COMMAND_TREE)
+          .slice(0, 15)
+          .map(([cmd, def]) => ({
+            text: cmd,
+            value: cmd,
+            description: def.description,
+            kind: 'command',
+          }));
       }
 
       if (tokens.length === 2 && !isNewToken) {

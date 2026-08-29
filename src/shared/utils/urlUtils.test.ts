@@ -9,15 +9,15 @@ describe('getWebUrlFromRemoteUrl', () => {
   });
 
   it('converts GitLab SSH with subgroups to HTTPS web URL', () => {
-    expect(
-      getWebUrlFromRemoteUrl('git@gitlab.com:group/subgroup/project.git')
-    ).toBe('https://gitlab.com/group/subgroup/project');
+    expect(getWebUrlFromRemoteUrl('git@gitlab.com:group/subgroup/project.git')).toBe(
+      'https://gitlab.com/group/subgroup/project'
+    );
   });
 
   it('cleans up HTTPS URL with .git and credentials', () => {
-    expect(
-      getWebUrlFromRemoteUrl('https://oauth2:secret@gitlab.com/org/repo.git')
-    ).toBe('https://gitlab.com/org/repo');
+    expect(getWebUrlFromRemoteUrl('https://oauth2:secret@gitlab.com/org/repo.git')).toBe(
+      'https://gitlab.com/org/repo'
+    );
   });
 
   it('handles standard HTTPS URL', () => {

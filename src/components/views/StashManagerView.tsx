@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Archive,
-  Plus,
-  Trash2,
-  RefreshCw,
-} from 'lucide-react';
+import { Archive, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
@@ -16,13 +11,7 @@ import { Button } from '../common/Button';
  * Main view for inspecting, creating, applying, popping, and dropping Git stashes with live diff preview.
  */
 export const StashManagerView: React.FC = () => {
-  const {
-    activeRepoPath,
-    stashes,
-    setStashes,
-    setStatus,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, stashes, setStashes, setStatus, setError } = useGitStore();
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [stashMessage, setStashMessage] = useState('');
@@ -56,7 +45,11 @@ export const StashManagerView: React.FC = () => {
     if (!activeRepoPath) return;
 
     try {
-      await GitService.createStash(activeRepoPath, stashMessage.trim() || undefined, includeUntracked);
+      await GitService.createStash(
+        activeRepoPath,
+        stashMessage.trim() || undefined,
+        includeUntracked
+      );
 
       useLogStore.getState().addLog('success', 'Git', `Created stash: '${stashMessage || 'WIP'}'`);
       setStashMessage('');
@@ -161,7 +154,10 @@ export const StashManagerView: React.FC = () => {
 
       {/* Create Stash Form Modal Overlay */}
       {showCreateModal && (
-        <form onSubmit={handleCreateStash} className="p-4 bg-base-2 border border-border rounded-sm space-y-3 shadow-md">
+        <form
+          onSubmit={handleCreateStash}
+          className="p-4 bg-base-2 border border-border rounded-sm space-y-3 shadow-md"
+        >
           <h3 className="text-xs font-bold text-text-primary flex items-center gap-1.5">
             <Archive className="w-4 h-4 text-commito-coral" />
             <span>Save Working Copy to Stash</span>
@@ -192,11 +188,7 @@ export const StashManagerView: React.FC = () => {
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="coral"
-                size="sm"
-              >
+              <Button type="submit" variant="coral" size="sm">
                 Save Stash
               </Button>
             </div>
@@ -292,7 +284,13 @@ export const StashManagerView: React.FC = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto pt-3 font-mono text-[11px] text-text-secondary whitespace-pre-wrap">
-            {stashDiff ? stashDiff : <span className="italic text-text-muted">Select a stash entry on the left to preview diff</span>}
+            {stashDiff ? (
+              stashDiff
+            ) : (
+              <span className="italic text-text-muted">
+                Select a stash entry on the left to preview diff
+              </span>
+            )}
           </div>
         </div>
       </div>

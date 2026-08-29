@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { ChevronDown } from "lucide-react";
+import React, { useState, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export interface SidebarPanelDef {
   id: string;
@@ -23,7 +23,7 @@ interface PanelState {
 
 function loadState(panels: SidebarPanelDef[]): PanelState[] {
   try {
-    const raw = localStorage.getItem("sidebar_panel_state");
+    const raw = localStorage.getItem('sidebar_panel_state');
     if (raw) {
       const parsed: PanelState[] = JSON.parse(raw);
       // Merge: preserve existing, append new panels
@@ -43,7 +43,7 @@ function loadState(panels: SidebarPanelDef[]): PanelState[] {
 
 function loadOrder(panels: SidebarPanelDef[]): string[] {
   try {
-    const raw = localStorage.getItem("sidebar_panel_order");
+    const raw = localStorage.getItem('sidebar_panel_order');
     if (raw) {
       const parsed: string[] = JSON.parse(raw);
       const allIds = panels.filter((p) => p.visible !== false).map((p) => p.id);
@@ -57,22 +57,20 @@ function loadOrder(panels: SidebarPanelDef[]): string[] {
 
 function saveState(state: PanelState[]) {
   try {
-    localStorage.setItem("sidebar_panel_state", JSON.stringify(state));
+    localStorage.setItem('sidebar_panel_state', JSON.stringify(state));
   } catch {}
 }
 
 function saveOrder(order: string[]) {
   try {
-    localStorage.setItem("sidebar_panel_order", JSON.stringify(order));
+    localStorage.setItem('sidebar_panel_order', JSON.stringify(order));
   } catch {}
 }
 
 export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
   const visiblePanels = panels.filter((p) => p.visible !== false);
 
-  const [panelState, setPanelState] = useState<PanelState[]>(() =>
-    loadState(visiblePanels)
-  );
+  const [panelState, setPanelState] = useState<PanelState[]>(() => loadState(visiblePanels));
   const [order, setOrder] = useState<string[]>(() => loadOrder(visiblePanels));
 
   // Drag state
@@ -87,28 +85,25 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
 
   const toggleCollapse = (id: string) => {
     setPanelState((prev) => {
-      const next = prev.map((s) =>
-        s.id === id ? { ...s, collapsed: !s.collapsed } : s
-      );
+      const next = prev.map((s) => (s.id === id ? { ...s, collapsed: !s.collapsed } : s));
       saveState(next);
       return next;
     });
   };
 
-  const isCollapsed = (id: string) =>
-    panelState.find((s) => s.id === id)?.collapsed ?? false;
+  const isCollapsed = (id: string) => panelState.find((s) => s.id === id)?.collapsed ?? false;
 
   /* ── Drag handlers ── */
   const handleDragStart = (e: React.DragEvent, id: string) => {
     draggingId.current = id;
     setDraggingPanel(id);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", id);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', id);
   };
 
   const handleDragOver = (e: React.DragEvent, id: string) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
+    e.dataTransfer.dropEffect = 'move';
     if (id !== draggingId.current) {
       dragOverId.current = id;
       setDragOverPanel(id);
@@ -160,11 +155,9 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
             onDrop={(e) => handleDrop(e, panel.id)}
             onDragEnd={handleDragEnd}
             className={`flex flex-col min-h-0 transition-all duration-150 ${
-              collapsed ? "flex-shrink-0" : "flex-1"
-            } ${isDragging ? "opacity-40" : "opacity-100"} ${
-              isDragOver
-                ? "ring-1 ring-commito-coral/60 rounded-sm"
-                : ""
+              collapsed ? 'flex-shrink-0' : 'flex-1'
+            } ${isDragging ? 'opacity-40' : 'opacity-100'} ${
+              isDragOver ? 'ring-1 ring-commito-coral/60 rounded-sm' : ''
             }`}
           >
             {/* Panel Header */}
@@ -172,7 +165,7 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
               type="button"
               onClick={() => toggleCollapse(panel.id)}
               className="flex items-center gap-1.5 w-full px-2 py-1.5 border-t border-border/60 bg-base-0 hover:bg-base-1/60 transition-colors select-none cursor-pointer group flex-shrink-0"
-              title={`${collapsed ? "Expand" : "Collapse"} ${panel.title}`}
+              title={`${collapsed ? 'Expand' : 'Collapse'} ${panel.title}`}
             >
               {/* Drag grip — tiny dots */}
               <span
@@ -194,9 +187,7 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
               </span>
 
               {/* Icon */}
-              {panel.icon && (
-                <span className="text-text-muted flex-shrink-0">{panel.icon}</span>
-              )}
+              {panel.icon && <span className="text-text-muted flex-shrink-0">{panel.icon}</span>}
 
               {/* Title */}
               <span className="text-[10.5px] font-semibold uppercase tracking-[0.06em] text-text-muted group-hover:text-text-secondary transition-colors flex-1 text-left truncate">
@@ -204,7 +195,7 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
               </span>
 
               {/* Badge */}
-              {panel.badge !== undefined && panel.badge !== "" && Number(panel.badge) > 0 && (
+              {panel.badge !== undefined && panel.badge !== '' && Number(panel.badge) > 0 && (
                 <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-sm text-[10px] font-mono font-bold bg-base-2 border border-border text-text-muted flex-shrink-0">
                   {panel.badge}
                 </span>
@@ -213,16 +204,14 @@ export const SidebarPanelContainer: React.FC<Props> = ({ panels }) => {
               {/* Chevron */}
               <ChevronDown
                 className={`w-3 h-3 text-text-muted flex-shrink-0 transition-transform duration-200 ${
-                  collapsed ? "-rotate-90" : ""
+                  collapsed ? '-rotate-90' : ''
                 }`}
               />
             </button>
 
             {/* Panel Content */}
             {!collapsed && (
-              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                {panel.content}
-              </div>
+              <div className="flex flex-col flex-1 min-h-0 overflow-hidden">{panel.content}</div>
             )}
           </div>
         );

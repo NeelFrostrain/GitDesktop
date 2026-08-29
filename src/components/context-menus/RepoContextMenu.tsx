@@ -29,12 +29,7 @@ interface RepoContextMenuProps {
  * Context menu for repository entries in the recent lists and dropdowns, offering alias editing,
  * worktree management, path copying, external tools launcher (terminal, explorer, VS Code), and removal.
  */
-export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
-  repoPath,
-  x,
-  y,
-  onClose,
-}) => {
+export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({ repoPath, x, y, onClose }) => {
   const {
     repoAliases,
     setRepoAlias,
@@ -111,7 +106,9 @@ export const RepoContextMenu: React.FC<RepoContextMenuProps> = ({
     try {
       await openUrl(remoteUrl);
     } catch {
-      useLogStore.getState().addLog('warning', 'Remote', `Could not open remote URL '${remoteUrl}'`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Remote', `Could not open remote URL '${remoteUrl}'`);
     }
     onClose();
   };

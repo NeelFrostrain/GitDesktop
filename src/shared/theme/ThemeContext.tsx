@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 
-export type ThemePresetId = 'commito-dark' | 'commito-light' | 'oled-dark' | 'github-dark' | 'gitlab-dark';
+export type ThemePresetId =
+  'commito-dark' | 'commito-light' | 'oled-dark' | 'github-dark' | 'gitlab-dark';
 
 export interface ThemeDefinition {
   id: ThemePresetId;
@@ -37,7 +38,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       isDark: true,
       variables: {},
     }),
-    [],
+    []
   );
 
   const setTheme = () => {};
@@ -59,7 +60,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       resetTheme,
       availableThemes,
     }),
-    [themeDefinition, availableThemes],
+    [themeDefinition, availableThemes]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

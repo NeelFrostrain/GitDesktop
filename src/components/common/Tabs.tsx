@@ -42,7 +42,8 @@ export function Tabs<T extends string = string>({
   };
 
   const getBadgeClasses = (item: TabItem<T>, isActive: boolean) => {
-    const v = item.badgeVariant || (item.id === 'changes' || item.id === 'branches' ? 'coral' : 'emerald');
+    const v =
+      item.badgeVariant || (item.id === 'changes' || item.id === 'branches' ? 'coral' : 'emerald');
     if (v === 'coral') {
       return isActive
         ? 'bg-commito-coral text-white border border-commito-coral'

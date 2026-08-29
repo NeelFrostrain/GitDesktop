@@ -1,34 +1,27 @@
-import React, {
-  useEffect,
-  lazy,
-  Suspense,
-  useState,
-  useRef,
-  useCallback,
-} from "react";
-import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
-import { invoke } from "@tauri-apps/api/core";
-import { Sidebar } from "./components/sidebar/Sidebar";
-import { ErrorBoundary } from "./components/common";
-import { Titlebar, Header } from "./components/layout";
-import { HomeDashboard } from "./components/views";
-import { useTerminalStore } from "./features/terminal";
-import { useSettingsStore } from "./features/settings";
-import { useGitRuntime } from "./features/git-runtime";
-import { useGitStore } from "./store/useGitStore";
-import { useLogStore } from "./store/useLogStore";
-import { useAccountServicesStore } from "./features/account-services";
-import { useRepoStore } from "./store/repoStore";
-import { GitLabUser, gitLabUserToUnified } from "./types/gitlab";
-import { GitService } from "./services/git/gitService";
-import { AccountService } from "./services/accounts/accountService";
-import { toAppError } from "./shared/utils/errorUtils";
-import { DiffViewer } from "./components/views/DiffViewer";
-import { ToastContainer } from "./components/common/ToastContainer";
-import { PanelResizer } from "./components/layout/PanelResizer";
-import { useAiAgentStore } from "./features/ai-agent";
+import React, { useEffect, lazy, Suspense, useState, useRef, useCallback } from 'react';
+import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import { onOpenUrl } from '@tauri-apps/plugin-deep-link';
+import { invoke } from '@tauri-apps/api/core';
+import { Sidebar } from './components/sidebar/Sidebar';
+import { ErrorBoundary } from './components/common';
+import { Titlebar, Header } from './components/layout';
+import { HomeDashboard } from './components/views';
+import { useTerminalStore } from './features/terminal';
+import { useSettingsStore } from './features/settings';
+import { useGitRuntime } from './features/git-runtime';
+import { useGitStore } from './store/useGitStore';
+import { useLogStore } from './store/useLogStore';
+import { useAccountServicesStore } from './features/account-services';
+import { useRepoStore } from './store/repoStore';
+import { GitLabUser, gitLabUserToUnified } from './types/gitlab';
+import { GitService } from './services/git/gitService';
+import { AccountService } from './services/accounts/accountService';
+import { toAppError } from './shared/utils/errorUtils';
+import { DiffViewer } from './components/views/DiffViewer';
+import { ToastContainer } from './components/common/ToastContainer';
+import { PanelResizer } from './components/layout/PanelResizer';
+import { useAiAgentStore } from './features/ai-agent';
 
 // ── Panel width helpers ──────────────────────────────────────────────────────
 const SIDEBAR_MIN = 240;
@@ -38,12 +31,7 @@ const AI_MIN = 300;
 const AI_MAX = 900;
 const AI_DEFAULT = 420;
 
-function loadPanelWidth(
-  key: string,
-  def: number,
-  min: number,
-  max: number,
-): number {
+function loadPanelWidth(key: string, def: number, min: number, max: number): number {
   try {
     const v = localStorage.getItem(key);
     return v ? Math.max(min, Math.min(max, parseInt(v, 10))) : def;
@@ -59,159 +47,159 @@ function savePanelWidth(key: string, v: number) {
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
 const FileBrowser = lazy(() =>
-  import("./components/views/FileBrowser").then((m) => ({
+  import('./components/views/FileBrowser').then((m) => ({
     default: m.FileBrowser,
-  })),
+  }))
 );
 const ConflictView = lazy(() =>
-  import("./components/views/ConflictView").then((m) => ({
+  import('./components/views/ConflictView').then((m) => ({
     default: m.ConflictView,
-  })),
+  }))
 );
 const BranchesView = lazy(() =>
-  import("./components/views/BranchesView").then((m) => ({
+  import('./components/views/BranchesView').then((m) => ({
     default: m.BranchesView,
-  })),
+  }))
 );
 const LfsView = lazy(() =>
-  import("./components/views/LfsView").then((m) => ({ default: m.LfsView })),
+  import('./components/views/LfsView').then((m) => ({ default: m.LfsView }))
 );
 const StashManagerView = lazy(() =>
-  import("./components/views/StashManagerView").then((m) => ({
+  import('./components/views/StashManagerView').then((m) => ({
     default: m.StashManagerView,
-  })),
+  }))
 );
 const TagsView = lazy(() =>
-  import("./components/views/TagsView").then((m) => ({ default: m.TagsView })),
+  import('./components/views/TagsView').then((m) => ({ default: m.TagsView }))
 );
 const SubmodulesView = lazy(() =>
-  import("./components/views/SubmodulesView").then((m) => ({
+  import('./components/views/SubmodulesView').then((m) => ({
     default: m.SubmodulesView,
-  })),
+  }))
 );
 const BlameViewer = lazy(() =>
-  import("./components/views/BlameViewer").then((m) => ({
+  import('./components/views/BlameViewer').then((m) => ({
     default: m.BlameViewer,
-  })),
+  }))
 );
 
 // Lazy-loaded Modals & Panels (loaded only when triggered by user actions)
 const RepoModal = lazy(() =>
-  import("./components/modals/RepoModal").then((m) => ({
+  import('./components/modals/RepoModal').then((m) => ({
     default: m.RepoModal,
-  })),
+  }))
 );
 const CreateRepoModal = lazy(() =>
-  import("./components/modals/CreateRepoModal").then((m) => ({
+  import('./components/modals/CreateRepoModal').then((m) => ({
     default: m.CreateRepoModal,
-  })),
+  }))
 );
 const CloneRepoModal = lazy(() =>
-  import("./components/modals/CloneRepoModal").then((m) => ({
+  import('./components/modals/CloneRepoModal').then((m) => ({
     default: m.CloneRepoModal,
-  })),
+  }))
 );
 const MergeRequestModal = lazy(() =>
-  import("./components/modals/MergeRequestModal").then((m) => ({
+  import('./components/modals/MergeRequestModal').then((m) => ({
     default: m.MergeRequestModal,
-  })),
+  }))
 );
 const WorktreeModal = lazy(() =>
-  import("./components/modals/WorktreeModal").then((m) => ({
+  import('./components/modals/WorktreeModal').then((m) => ({
     default: m.WorktreeModal,
-  })),
+  }))
 );
 const ConflictResolverModal = lazy(() =>
-  import("./components/modals/ConflictResolverModal").then((m) => ({
+  import('./components/modals/ConflictResolverModal').then((m) => ({
     default: m.ConflictResolverModal,
-  })),
+  }))
 );
 const RebaseModal = lazy(() =>
-  import("./components/modals/RebaseModal").then((m) => ({
+  import('./components/modals/RebaseModal').then((m) => ({
     default: m.RebaseModal,
-  })),
+  }))
 );
 const CherryPickModal = lazy(() =>
-  import("./components/modals/CherryPickModal").then((m) => ({
+  import('./components/modals/CherryPickModal').then((m) => ({
     default: m.CherryPickModal,
-  })),
+  }))
 );
 const ReflogModal = lazy(() =>
-  import("./components/modals/ReflogModal").then((m) => ({
+  import('./components/modals/ReflogModal').then((m) => ({
     default: m.ReflogModal,
-  })),
+  }))
 );
 const PatchModal = lazy(() =>
-  import("./components/modals/PatchModal").then((m) => ({
+  import('./components/modals/PatchModal').then((m) => ({
     default: m.PatchModal,
-  })),
+  }))
 );
 const GitConfigModal = lazy(() =>
-  import("./components/modals/GitConfigModal").then((m) => ({
+  import('./components/modals/GitConfigModal').then((m) => ({
     default: m.GitConfigModal,
-  })),
+  }))
 );
 const RewriteHistoryModal = lazy(() =>
-  import("./components/modals/RewriteHistoryModal").then((m) => ({
+  import('./components/modals/RewriteHistoryModal').then((m) => ({
     default: m.RewriteHistoryModal,
-  })),
+  }))
 );
 const CreateTagModal = lazy(() =>
-  import("./components/modals/CreateTagModal").then((m) => ({
+  import('./components/modals/CreateTagModal').then((m) => ({
     default: m.CreateTagModal,
-  })),
+  }))
 );
 const CreateReleaseModal = lazy(() =>
-  import("./components/modals/CreateReleaseModal").then((m) => ({
+  import('./components/modals/CreateReleaseModal').then((m) => ({
     default: m.CreateReleaseModal,
-  })),
+  }))
 );
 const GitUserConfigModal = lazy(() =>
-  import("./components/config/GitUserConfigModal").then((m) => ({
+  import('./components/config/GitUserConfigModal').then((m) => ({
     default: m.GitUserConfigModal,
-  })),
+  }))
 );
 const LogModal = lazy(() =>
-  import("./components/logs/LogModal").then((m) => ({ default: m.LogModal })),
+  import('./components/logs/LogModal').then((m) => ({ default: m.LogModal }))
 );
 const GitLabSignInModal = lazy(() =>
-  import("./components/modals/GitLabSignInModal").then((m) => ({
+  import('./components/modals/GitLabSignInModal').then((m) => ({
     default: m.GitLabSignInModal,
-  })),
+  }))
 );
 const SigningSettings = lazy(() =>
-  import("./components/modals/SigningSettings").then((m) => ({
+  import('./components/modals/SigningSettings').then((m) => ({
     default: m.SigningSettings,
-  })),
+  }))
 );
 const SettingsPanel = lazy(() =>
-  import("./features/settings").then((m) => ({ default: m.SettingsPanel })),
+  import('./features/settings').then((m) => ({ default: m.SettingsPanel }))
 );
 const TerminalPanel = lazy(() =>
-  import("./features/terminal").then((m) => ({ default: m.TerminalPanel })),
+  import('./features/terminal').then((m) => ({ default: m.TerminalPanel }))
 );
 const MinGitSetupModal = lazy(() =>
-  import("./features/git-runtime").then((m) => ({
+  import('./features/git-runtime').then((m) => ({
     default: m.MinGitSetupModal,
-  })),
+  }))
 );
 const AccountServicesModal = lazy(() =>
-  import("./features/account-services").then((m) => ({
+  import('./features/account-services').then((m) => ({
     default: m.AccountServicesModal,
-  })),
+  }))
 );
 const PublishRepoModal = lazy(() =>
-  import("./components/modals/PublishRepoModal").then((m) => ({
+  import('./components/modals/PublishRepoModal').then((m) => ({
     default: m.PublishRepoModal,
-  })),
+  }))
 );
 const RemoteNotFoundModal = lazy(() =>
-  import("./components/modals/RemoteNotFoundModal").then((m) => ({
+  import('./components/modals/RemoteNotFoundModal').then((m) => ({
     default: m.RemoteNotFoundModal,
-  })),
+  }))
 );
 const AiAgentPanel = lazy(() =>
-  import("./features/ai-agent").then((m) => ({ default: m.AiAgentPanel })),
+  import('./features/ai-agent').then((m) => ({ default: m.AiAgentPanel }))
 );
 
 /**
@@ -252,7 +240,7 @@ export const App: React.FC = () => {
           id: active.id,
           name: active.name,
           username: active.username,
-          email: active.email || "",
+          email: active.email || '',
           avatar_url: active.avatar_url || null,
           provider: active.provider,
           server_url: active.server_url,
@@ -276,7 +264,7 @@ export const App: React.FC = () => {
 
     let unlistenAccountSynced: (() => void) | undefined;
 
-    listen<GitLabUser>("oauth-success", (event) => {
+    listen<GitLabUser>('oauth-success', (event) => {
       if (event.payload) {
         setUser(gitLabUserToUnified(event.payload));
         useGitStore.setState({ isRepoModalOpen: false, error: null });
@@ -285,7 +273,7 @@ export const App: React.FC = () => {
       unlistenEvent = fn;
     });
 
-    listen<any>("oauth-account-synced", async (event) => {
+    listen<any>('oauth-account-synced', async (event) => {
       if (event.payload) {
         await useAccountServicesStore.getState().loadAccounts();
         const accs = await AccountService.listSavedAccounts();
@@ -300,78 +288,68 @@ export const App: React.FC = () => {
     onOpenUrl(async (urls: string[]) => {
       for (const urlStr of urls) {
         try {
-          if (urlStr.includes("/oauth/")) {
+          if (urlStr.includes('/oauth/')) {
             const url = new URL(urlStr);
-            const code = url.searchParams.get("code");
-            const state = url.searchParams.get("state");
+            const code = url.searchParams.get('code');
+            const state = url.searchParams.get('state');
 
             // 1. Multi-provider OAuth (GitHub / GitLab account services)
             if (
-              urlStr.includes("/oauth/github/callback") ||
-              urlStr.includes("/oauth/gitlab/callback") ||
+              urlStr.includes('/oauth/github/callback') ||
+              urlStr.includes('/oauth/gitlab/callback') ||
               state
             ) {
               if (code) {
-                const provider = urlStr.includes("github")
-                  ? "github"
-                  : "gitlab";
+                const provider = urlStr.includes('github') ? 'github' : 'gitlab';
                 try {
-                  const account = await invoke<any>(
-                    "accounts_exchange_oauth_code",
-                    {
-                      provider,
-                      code,
-                      state: state || null,
-                      instanceUrl: null,
-                    },
-                  );
+                  const account = await invoke<any>('accounts_exchange_oauth_code', {
+                    provider,
+                    code,
+                    state: state || null,
+                    instanceUrl: null,
+                  });
                   await useAccountServicesStore.getState().loadAccounts();
                   useLogStore
                     .getState()
                     .addLog(
-                      "info",
-                      "Auth",
-                      `Authenticated with ${provider} (${account?.handle || ""})`,
+                      'info',
+                      'Auth',
+                      `Authenticated with ${provider} (${account?.handle || ''})`
                     );
                   useGitStore.setState({ isRepoModalOpen: false, error: null });
                   useAccountServicesStore.setState({ isModalOpen: false });
                 } catch (err: any) {
                   useLogStore
                     .getState()
-                    .addLog(
-                      "error",
-                      "Auth",
-                      `OAuth exchange error: ${err?.message || err}`,
-                    );
-                  setError(toAppError(err, "AUTH_ERROR"));
+                    .addLog('error', 'Auth', `OAuth exchange error: ${err?.message || err}`);
+                  setError(toAppError(err, 'AUTH_ERROR'));
                 }
               }
             }
             // 2. Legacy GitLab OAuth callback fallback
             else if (
-              urlStr.includes("git-desktop://oauth/callback") ||
-              urlStr.includes("gitlab-desktop://oauth/callback")
+              urlStr.includes('git-desktop://oauth/callback') ||
+              urlStr.includes('gitlab-desktop://oauth/callback')
             ) {
-              const savedVerifier = sessionStorage.getItem("oauth_verifier");
+              const savedVerifier = sessionStorage.getItem('oauth_verifier');
               if (code && savedVerifier) {
-                invoke<GitLabUser>("complete_oauth_login", {
-                  serverUrl: "https://gitlab.com",
+                invoke<GitLabUser>('complete_oauth_login', {
+                  serverUrl: 'https://gitlab.com',
                   code,
                   verifier: savedVerifier,
                   clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
-                  clientSecret:
-                    import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+                  clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
                 })
                   .then((loggedUser) => {
                     setUser(gitLabUserToUnified(loggedUser));
-                    sessionStorage.removeItem("oauth_verifier");
+                    sessionStorage.removeItem('oauth_verifier');
                     useGitStore.setState({
                       isRepoModalOpen: false,
                       error: null,
                     });
                   })
                   .catch((err: unknown) => {
-                    setError(toAppError(err, "AUTH_ERROR"));
+                    setError(toAppError(err, 'AUTH_ERROR'));
                   });
               }
             }
@@ -435,11 +413,11 @@ export const App: React.FC = () => {
     // 2. Window focus & document visibility sync
     const handleFocus = () => syncStatus();
     const handleVisibility = () => {
-      if (document.visibilityState === "visible") syncStatus();
+      if (document.visibilityState === 'visible') syncStatus();
     };
 
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     // 3. Tauri window focus event
     const appWindow = getCurrentWindow();
@@ -455,8 +433,8 @@ export const App: React.FC = () => {
     return () => {
       isDisposed = true;
       clearInterval(intervalId);
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (unlistenTauriFocus) unlistenTauriFocus();
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
@@ -464,67 +442,58 @@ export const App: React.FC = () => {
   // Global shortcuts: Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "`") {
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
         e.preventDefault();
         useTerminalStore.getState().toggleIsOpen();
-      } else if ((e.ctrlKey || e.metaKey) && e.key === ",") {
+      } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
         e.preventDefault();
         useSettingsStore.getState().toggleSettings();
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        !e.shiftKey &&
-        (e.key === "i" || e.key === "I")
-      ) {
+      } else if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'i' || e.key === 'I')) {
         // Ctrl+I (without Shift) → AI Agent panel
         e.preventDefault();
-        import("./features/ai-agent").then(({ useAiAgentStore }) => {
+        import('./features/ai-agent').then(({ useAiAgentStore }) => {
           useAiAgentStore.getState().toggleIsOpen();
         });
-      } else if (
-        (e.ctrlKey || e.metaKey) &&
-        e.shiftKey &&
-        (e.key === "i" || e.key === "I")
-      ) {
+      } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
         // Ctrl+Shift+I → block devtools from opening
         e.preventDefault();
       }
     };
-    window.addEventListener("keydown", handleKeyDown, { capture: true });
-    return () =>
-      window.removeEventListener("keydown", handleKeyDown, { capture: true });
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    return () => window.removeEventListener('keydown', handleKeyDown, { capture: true });
   }, []);
 
   const renderMainContent = () => {
     switch (currentNavView) {
-      case "files":
+      case 'files':
         return <FileBrowser />;
-      case "branches":
+      case 'branches':
         return <BranchesView />;
-      case "locks":
+      case 'locks':
         return <LfsView />;
-      case "stashes":
+      case 'stashes':
         return <StashManagerView />;
-      case "tags":
+      case 'tags':
         return <TagsView />;
-      case "submodules":
+      case 'submodules':
         return <SubmodulesView />;
-      case "history":
-      case "changes":
-      case "workspace":
+      case 'history':
+      case 'changes':
+      case 'workspace':
         return <DiffViewer />;
       default:
         return <HomeDashboard />;
     }
   };
 
-  const isHome = currentNavView === "home";
+  const isHome = currentNavView === 'home';
 
   // ── Resizable panel widths ──────────────────────────────────────────────────
   const [sidebarWidth, setSidebarWidth] = useState(() =>
-    loadPanelWidth("sidebar_width", SIDEBAR_DEFAULT, SIDEBAR_MIN, SIDEBAR_MAX),
+    loadPanelWidth('sidebar_width', SIDEBAR_DEFAULT, SIDEBAR_MIN, SIDEBAR_MAX)
   );
   const [aiPanelWidth, setAiPanelWidth] = useState(() =>
-    loadPanelWidth("ai_agent_panel_width", AI_DEFAULT, AI_MIN, AI_MAX),
+    loadPanelWidth('ai_agent_panel_width', AI_DEFAULT, AI_MIN, AI_MAX)
   );
   const sidebarWidthRef = useRef(sidebarWidth);
   const aiPanelWidthRef = useRef(aiPanelWidth);
@@ -532,32 +501,29 @@ export const App: React.FC = () => {
   aiPanelWidthRef.current = aiPanelWidth;
 
   const onSidebarResize = useCallback((delta: number) => {
-    setSidebarWidth((prev) =>
-      Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)),
-    );
+    setSidebarWidth((prev) => Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)));
   }, []);
   const onSidebarResizeEnd = useCallback(() => {
-    savePanelWidth("sidebar_width", sidebarWidthRef.current);
+    savePanelWidth('sidebar_width', sidebarWidthRef.current);
   }, []);
 
   const onAiPanelResize = useCallback((delta: number) => {
     setAiPanelWidth((prev) => Math.max(AI_MIN, Math.min(AI_MAX, prev - delta)));
   }, []);
   const onAiPanelResizeEnd = useCallback(() => {
-    savePanelWidth("ai_agent_panel_width", aiPanelWidthRef.current);
+    savePanelWidth('ai_agent_panel_width', aiPanelWidthRef.current);
   }, []);
 
   const { isOpen: isAiAgentOpen } = useAiAgentStore();
 
   // Terminal height resize — wired to terminal store
-  const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } =
-    useTerminalStore();
+  const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } = useTerminalStore();
   const onTerminalResize = useCallback(
     (delta: number) => {
       // dragging UP (negative delta) grows the terminal
       setTerminalHeight(useTerminalStore.getState().panelHeight - delta);
     },
-    [setTerminalHeight],
+    [setTerminalHeight]
   );
 
   return (
@@ -586,10 +552,7 @@ export const App: React.FC = () => {
             /* ── Repo page: sidebar | center (main+terminal) | AI panel ── */
             <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               {/* Left sidebar — fixed width from App state */}
-              <div
-                style={{ width: sidebarWidth }}
-                className="flex-shrink-0 h-full min-w-0"
-              >
+              <div style={{ width: sidebarWidth }} className="flex-shrink-0 h-full min-w-0">
                 <Sidebar />
               </div>
 
@@ -623,10 +586,7 @@ export const App: React.FC = () => {
 
                 {/* Main ↕ Terminal vertical resizer + gap */}
                 {isTerminalOpen && (
-                  <PanelResizer
-                    direction="vertical"
-                    onResize={onTerminalResize}
-                  />
+                  <PanelResizer direction="vertical" onResize={onTerminalResize} />
                 )}
 
                 {/* Terminal panel — docked bottom of center column */}

@@ -138,9 +138,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
       {/* Left: Label, Description, Badges */}
       <div className="flex-1 min-w-0 pr-2">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-xs text-text-primary">
-            {setting.label}
-          </span>
+          <span className="font-semibold text-xs text-text-primary">{setting.label}</span>
 
           {modified && (
             <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-mono font-bold rounded-xs uppercase tracking-wider">

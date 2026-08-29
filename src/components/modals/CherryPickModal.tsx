@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  GitCommit,
-  GitBranch,
-  Play,
-  Search,
-  Loader2,
-} from 'lucide-react';
+import { X, GitCommit, GitBranch, Play, Search, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { CommitInfo, BranchInfo } from '../../types/git';
@@ -89,7 +82,9 @@ export const CherryPickModal: React.FC = () => {
         noCommit,
       });
 
-      useLogStore.getState().addLog('success', 'Git', `Cherry-picked ${selectedShas.length} commit(s)`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Cherry-picked ${selectedShas.length} commit(s)`);
       setIsCherryPickModalOpen(false);
       setSelectedShas([]);
     } catch (err: unknown) {
@@ -148,7 +143,11 @@ export const CherryPickModal: React.FC = () => {
         </div>
 
         {/* Modal Body */}
-        <form id="cherry-pick-form" onSubmit={handleExecuteCherryPick} className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden">
+        <form
+          id="cherry-pick-form"
+          onSubmit={handleExecuteCherryPick}
+          className="flex-1 flex flex-col min-h-0 p-4 sm:p-5 space-y-4 overflow-hidden"
+        >
           {/* Branch Selector & Search */}
           <div className="grid grid-cols-2 gap-3 p-3.5 bg-base-2 border border-border rounded-sm">
             <div className="flex items-center gap-2">
@@ -179,7 +178,9 @@ export const CherryPickModal: React.FC = () => {
           {/* Commit List Selection Area */}
           <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
             <div className="flex items-center justify-between text-xs font-bold text-text-muted px-1 pb-1">
-              <span>Select Commits ({selectedShas.length} of {commits.length} chosen)</span>
+              <span>
+                Select Commits ({selectedShas.length} of {commits.length} chosen)
+              </span>
               {commits.length > 0 && (
                 <button
                   type="button"
@@ -193,7 +194,9 @@ export const CherryPickModal: React.FC = () => {
 
             {filteredCommits.length === 0 ? (
               <div className="p-8 text-center bg-base-2 border border-border rounded-sm text-xs text-text-muted italic">
-                {commits.length === 0 ? 'No cherry-pickable commits found on this branch' : 'No commits matched your search'}
+                {commits.length === 0
+                  ? 'No cherry-pickable commits found on this branch'
+                  : 'No commits matched your search'}
               </div>
             ) : (
               filteredCommits.map((c) => {
@@ -210,10 +213,7 @@ export const CherryPickModal: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3 min-w-0 flex-1 pr-3">
-                      <Checkbox
-                        checked={isSelected}
-                        onChange={() => toggleSelectCommit(c.sha)}
-                      />
+                      <Checkbox checked={isSelected} onChange={() => toggleSelectCommit(c.sha)} />
 
                       <div className="min-w-0 truncate">
                         <div className="flex items-center gap-2">
@@ -263,7 +263,9 @@ export const CherryPickModal: React.FC = () => {
             ) : (
               <Play className="w-3.5 h-3.5 fill-current" />
             )}
-            <span>{isSubmitting ? 'Cherry-picking...' : `Cherry-pick ${selectedShas.length} Commit(s)`}</span>
+            <span>
+              {isSubmitting ? 'Cherry-picking...' : `Cherry-pick ${selectedShas.length} Commit(s)`}
+            </span>
           </button>
         </div>
       </div>

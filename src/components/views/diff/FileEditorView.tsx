@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useImperativeHandle,
+} from 'react';
 import Editor, { Monaco, OnMount } from '@monaco-editor/react';
 import type * as monacoEditor from 'monaco-editor';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -32,9 +39,11 @@ interface FileEditorViewProps {
 
 function getMonacoLanguage(filePath: string): string {
   const lower = filePath.toLowerCase();
-  if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts')) return 'typescript';
+  if (lower.endsWith('.ts') || lower.endsWith('.mts') || lower.endsWith('.cts'))
+    return 'typescript';
   if (lower.endsWith('.tsx')) return 'typescript';
-  if (lower.endsWith('.js') || lower.endsWith('.mjs') || lower.endsWith('.cjs')) return 'javascript';
+  if (lower.endsWith('.js') || lower.endsWith('.mjs') || lower.endsWith('.cjs'))
+    return 'javascript';
   if (lower.endsWith('.jsx')) return 'javascript';
   if (lower.endsWith('.rs')) return 'rust';
   if (lower.endsWith('.py')) return 'python';
@@ -52,7 +61,8 @@ function getMonacoLanguage(filePath: string): string {
   if (lower.endsWith('.c') || lower.endsWith('.h')) return 'c';
   if (lower.endsWith('.cpp') || lower.endsWith('.hpp') || lower.endsWith('.cc')) return 'cpp';
   if (lower.endsWith('.java')) return 'java';
-  if (lower.endsWith('.gitignore') || lower.endsWith('.dockerignore') || lower.endsWith('.env')) return 'ini';
+  if (lower.endsWith('.gitignore') || lower.endsWith('.dockerignore') || lower.endsWith('.env'))
+    return 'ini';
   return 'plaintext';
 }
 
@@ -146,9 +156,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
       // 2. If the file was staged, automatically re-stage the updated content
       if (isStaged) {
         await GitService.stageFiles(repoPath, [filePath]);
-        useAppLogStore
-          .getState()
-          .addLog('Success', 'Git', `Re-staged updated file: ${filePath}`);
+        useAppLogStore.getState().addLog('Success', 'Git', `Re-staged updated file: ${filePath}`);
       }
 
       setSaveSuccess(true);
@@ -204,10 +212,14 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
   }, [originalDiskContent, cacheKey]);
 
   // Bind imperative handle to ref
-  useImperativeHandle(editorRefHandle, () => ({
-    save: handleSave,
-    revert: handleRevert,
-  }), [handleSave, handleRevert]);
+  useImperativeHandle(
+    editorRefHandle,
+    () => ({
+      save: handleSave,
+      revert: handleRevert,
+    }),
+    [handleSave, handleRevert]
+  );
 
   // Configure Monaco theme & custom autocompletion providers
   const handleBeforeMount = (monaco: Monaco) => {
@@ -270,7 +282,10 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
 
     // Register smart pattern autocomplete for .gitignore and config files
     monaco.languages.registerCompletionItemProvider('ini', {
-      provideCompletionItems: (model: monacoEditor.editor.ITextModel, position: monacoEditor.Position) => {
+      provideCompletionItems: (
+        model: monacoEditor.editor.ITextModel,
+        position: monacoEditor.Position
+      ) => {
         const textUntilPosition = model.getValueInRange({
           startLineNumber: position.lineNumber,
           startColumn: 1,
@@ -281,22 +296,86 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
         const word = match ? match[0] : '';
 
         const gitignorePatterns = [
-          { label: 'node_modules/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'Node dependencies' },
-          { label: 'dist/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'Build outputs' },
-          { label: 'build/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'Compiled artifacts' },
-          { label: 'target/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'Rust target dir' },
-          { label: '.env', kind: monaco.languages.CompletionItemKind.File, detail: 'Secrets & env vars' },
-          { label: '.env.local', kind: monaco.languages.CompletionItemKind.File, detail: 'Local env overrides' },
-          { label: '*.log', kind: monaco.languages.CompletionItemKind.Value, detail: 'Log files pattern' },
-          { label: '*.tmp', kind: monaco.languages.CompletionItemKind.Value, detail: 'Temp files pattern' },
-          { label: '.DS_Store', kind: monaco.languages.CompletionItemKind.File, detail: 'macOS metadata' },
-          { label: '.idea/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'JetBrains config' },
-          { label: '.vscode/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'VS Code workspace' },
-          { label: 'coverage/', kind: monaco.languages.CompletionItemKind.Folder, detail: 'Test coverage' },
-          { label: '*.lock', kind: monaco.languages.CompletionItemKind.Value, detail: 'Lockfiles pattern' },
-          { label: 'package-lock.json', kind: monaco.languages.CompletionItemKind.File, detail: 'NPM lockfile' },
-          { label: 'bun.lockb', kind: monaco.languages.CompletionItemKind.File, detail: 'Bun binary lockfile' },
-          { label: 'Cargo.lock', kind: monaco.languages.CompletionItemKind.File, detail: 'Rust lockfile' },
+          {
+            label: 'node_modules/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'Node dependencies',
+          },
+          {
+            label: 'dist/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'Build outputs',
+          },
+          {
+            label: 'build/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'Compiled artifacts',
+          },
+          {
+            label: 'target/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'Rust target dir',
+          },
+          {
+            label: '.env',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'Secrets & env vars',
+          },
+          {
+            label: '.env.local',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'Local env overrides',
+          },
+          {
+            label: '*.log',
+            kind: monaco.languages.CompletionItemKind.Value,
+            detail: 'Log files pattern',
+          },
+          {
+            label: '*.tmp',
+            kind: monaco.languages.CompletionItemKind.Value,
+            detail: 'Temp files pattern',
+          },
+          {
+            label: '.DS_Store',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'macOS metadata',
+          },
+          {
+            label: '.idea/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'JetBrains config',
+          },
+          {
+            label: '.vscode/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'VS Code workspace',
+          },
+          {
+            label: 'coverage/',
+            kind: monaco.languages.CompletionItemKind.Folder,
+            detail: 'Test coverage',
+          },
+          {
+            label: '*.lock',
+            kind: monaco.languages.CompletionItemKind.Value,
+            detail: 'Lockfiles pattern',
+          },
+          {
+            label: 'package-lock.json',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'NPM lockfile',
+          },
+          {
+            label: 'bun.lockb',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'Bun binary lockfile',
+          },
+          {
+            label: 'Cargo.lock',
+            kind: monaco.languages.CompletionItemKind.File,
+            detail: 'Rust lockfile',
+          },
         ];
 
         const range = {
@@ -419,7 +498,9 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
       {/* 3. Keyboard Shortcuts Footer Bar */}
       <div className="h-6 px-3 bg-base-1 border-t border-border flex items-center justify-between shrink-0 select-none text-[10.5px] font-mono text-text-muted">
         <div className="flex items-center gap-2.5">
-          <span>Ln {cursorLine}, Col {cursorCol}</span>
+          <span>
+            Ln {cursorLine}, Col {cursorCol}
+          </span>
           <span>•</span>
           <span>{totalLines} lines</span>
           <span>•</span>
@@ -429,19 +510,31 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({
         {/* Shortcuts Prompt Footer */}
         <div className="flex items-center gap-3 text-text-faint">
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">Tab</kbd> Accept
+            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">
+              Tab
+            </kbd>{' '}
+            Accept
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">Ctrl+Space</kbd> Suggest
+            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">
+              Ctrl+Space
+            </kbd>{' '}
+            Suggest
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">Ctrl+S</kbd> Save
+            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">
+              Ctrl+S
+            </kbd>{' '}
+            Save
           </span>
           <span>•</span>
           <span className="flex items-center gap-1">
-            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">Esc</kbd> Back to Diff
+            <kbd className="px-1 py-0.2 bg-base-2 border border-border rounded-xs text-text-muted">
+              Esc
+            </kbd>{' '}
+            Back to Diff
           </span>
           <span>•</span>
           <span>UTF-8</span>

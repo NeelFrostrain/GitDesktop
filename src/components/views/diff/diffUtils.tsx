@@ -333,10 +333,7 @@ export function buildCustomDiffPatch(
 
   if (patchedHunkStrings.length === 0) return null;
 
-  const patchHeader = [
-    `--- a/${normalizedPath}`,
-    `+++ b/${normalizedPath}`,
-  ].join('\n');
+  const patchHeader = [`--- a/${normalizedPath}`, `+++ b/${normalizedPath}`].join('\n');
 
   return `${patchHeader}\n${patchedHunkStrings.join('\n')}\n`;
 }

@@ -204,12 +204,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           )}
 
           {/* Merged Expand / Collapse All Button */}
-          <Button
-            type="button"
-            variant="secondary"
-            size="xs"
-            onClick={onToggleExpandAll}
-          >
+          <Button type="button" variant="secondary" size="xs" onClick={onToggleExpandAll}>
             {isAllOpen ? 'Collapse All' : 'Expand All'}
           </Button>
 

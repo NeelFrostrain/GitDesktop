@@ -21,7 +21,11 @@ export function formatCssValue(definition: SettingDefinition | undefined, value:
 /**
  * Apply a single setting or CSS custom property directly to the DOM at runtime.
  */
-export function applySettingToDom(cssVar: string, value: any, definition?: SettingDefinition): void {
+export function applySettingToDom(
+  cssVar: string,
+  value: any,
+  definition?: SettingDefinition
+): void {
   if (!cssVar || typeof document === 'undefined') return;
 
   const formatted = formatCssValue(definition, value);
@@ -46,7 +50,11 @@ export function applySettingToDom(cssVar: string, value: any, definition?: Setti
 /**
  * Revert a CSS custom property to its schema default value.
  */
-export function removeSettingFromDom(cssVar: string, defaultVal: any, definition?: SettingDefinition): void {
+export function removeSettingFromDom(
+  cssVar: string,
+  defaultVal: any,
+  definition?: SettingDefinition
+): void {
   if (!cssVar || typeof document === 'undefined') return;
 
   if (defaultVal !== undefined) {

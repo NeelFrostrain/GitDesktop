@@ -23,7 +23,7 @@ const getStoredHeight = (): number => {
     const saved = localStorage.getItem('terminal_panel_height');
     if (saved) return Math.max(140, Math.min(900, parseInt(saved, 10)));
     // Default: ~30% of available height
-    return Math.round(Math.max(140, window.innerHeight * 0.30));
+    return Math.round(Math.max(140, window.innerHeight * 0.3));
   } catch {
     return 300;
   }

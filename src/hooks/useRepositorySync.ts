@@ -10,13 +10,13 @@ import { getErrorMessage } from '../shared/utils/errorUtils';
  */
 export type GitSyncStatus =
   | 'loading'
-  | 'no-remote'    // No remote origin configured -> Publish Repository
+  | 'no-remote' // No remote origin configured -> Publish Repository
   | 'up-to-date'
-  | 'ahead'       // Local has commits remote doesn't
-  | 'behind'      // Remote has commits local doesn't
-  | 'diverged'    // Both ahead and behind
+  | 'ahead' // Local has commits remote doesn't
+  | 'behind' // Remote has commits local doesn't
+  | 'diverged' // Both ahead and behind
   | 'no-upstream' // Branch has never been pushed / no remote ref
-  | 'detached';   // HEAD is detached
+  | 'detached'; // HEAD is detached
 
 /**
  * Computed synchronization metrics for the active branch.
@@ -164,14 +164,14 @@ export function useRepositorySync() {
 
       const derived = deriveSyncStatus(res);
       const labelMap: Record<GitSyncStatus, string> = {
-        'ahead': `Branch is ${res.ahead} commit(s) ahead — Push available`,
-        'behind': `Branch is ${res.behind} commit(s) behind — Pull available`,
-        'diverged': `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
+        ahead: `Branch is ${res.ahead} commit(s) ahead — Push available`,
+        behind: `Branch is ${res.behind} commit(s) behind — Pull available`,
+        diverged: `Branch has diverged (${res.ahead}↑ ${res.behind}↓) — Sync needed`,
         'up-to-date': 'Branch is up to date with remote',
         'no-upstream': 'Branch has no upstream — Publish to push',
         'no-remote': 'No remote configured — Publish to share',
-        'detached': 'HEAD is detached',
-        'loading': '',
+        detached: 'HEAD is detached',
+        loading: '',
       };
       log().addLog('info', 'Git', labelMap[derived] || 'Repository state updated');
     } catch (error: unknown) {
@@ -200,12 +200,14 @@ export function useRepositorySync() {
     }
   }, [activeRepoPath, setStatus, setError, setIsFetching, log]);
 
-  const withTimeout = <T>(promise: Promise<T>, timeoutMs = 25000, errorMsg = 'Git operation timed out'): Promise<T> => {
+  const withTimeout = <T>(
+    promise: Promise<T>,
+    timeoutMs = 25000,
+    errorMsg = 'Git operation timed out'
+  ): Promise<T> => {
     return Promise.race([
       promise,
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(errorMsg)), timeoutMs)
-      ),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error(errorMsg)), timeoutMs)),
     ]);
   };
 
@@ -220,7 +222,11 @@ export function useRepositorySync() {
   const executePush = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     setIsPushing(true);
-    log().addLog('info', 'Git', `Pushing ${status.ahead} commit(s) to origin/${status.current_branch}`);
+    log().addLog(
+      'info',
+      'Git',
+      `Pushing ${status.ahead} commit(s) to origin/${status.current_branch}`
+    );
     try {
       await withTimeout(
         GitService.pushToRemote(activeRepoPath, status.current_branch),
@@ -242,7 +248,11 @@ export function useRepositorySync() {
   const executePull = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     setIsPulling(true);
-    log().addLog('info', 'Git', `Pulling ${status.behind} commit(s) from origin/${status.current_branch}`);
+    log().addLog(
+      'info',
+      'Git',
+      `Pulling ${status.behind} commit(s) from origin/${status.current_branch}`
+    );
     try {
       const result = await withTimeout(
         GitService.pullFromRemote(activeRepoPath, status.current_branch),
@@ -254,7 +264,11 @@ export function useRepositorySync() {
           code: 'GIT_CONFLICT',
           message: `Merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before continuing.`,
         });
-        log().addLog('error', 'Git', `Pull produced conflicts in ${result.conflicts.length} file(s)`);
+        log().addLog(
+          'error',
+          'Git',
+          `Pull produced conflicts in ${result.conflicts.length} file(s)`
+        );
       } else {
         log().addLog('success', 'Git', `Pulled from origin/${status.current_branch}`);
       }
@@ -282,7 +296,11 @@ export function useRepositorySync() {
           code: 'GIT_CONFLICT',
           message: `Sync stopped — merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before pushing.`,
         });
-        log().addLog('error', 'Git', `Sync aborted — conflicts in ${result.conflicts.length} file(s)`);
+        log().addLog(
+          'error',
+          'Git',
+          `Sync aborted — conflicts in ${result.conflicts.length} file(s)`
+        );
         return;
       }
     } catch (error: unknown) {

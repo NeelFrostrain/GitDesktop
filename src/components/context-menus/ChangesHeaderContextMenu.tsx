@@ -51,7 +51,10 @@ export const ChangesHeaderContextMenu: React.FC<ChangesHeaderContextMenuProps> =
     const confirmed = confirm(
       `Are you sure you want to discard all ${fileCount} changed file${fileCount !== 1 ? 's' : ''}? This action cannot be undone.`
     );
-    if (!confirmed) { onClose(); return; }
+    if (!confirmed) {
+      onClose();
+      return;
+    }
 
     try {
       const files = status!.files.map((f) => f.path);

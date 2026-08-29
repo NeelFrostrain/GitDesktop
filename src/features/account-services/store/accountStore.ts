@@ -80,7 +80,10 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
 
       // Sync contribution calendar with updated accounts
       import('../../../store/contributionsStore').then((m) => {
-        m.useContributionsStore.getState().loadContributions().catch(() => {});
+        m.useContributionsStore
+          .getState()
+          .loadContributions()
+          .catch(() => {});
       });
     } catch (err: any) {
       console.warn('Failed to load accounts:', err);
@@ -99,7 +102,9 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       await get().loadAccounts();
       useLogStore.getState().addLog('info', 'Auth', `Switched active account to ${id}`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to switch account: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to switch account: ${err?.message || err}`);
       throw err;
     }
   },
@@ -110,7 +115,9 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       await get().loadAccounts();
       useLogStore.getState().addLog('info', 'Auth', `Updated account details for ${id}`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to update account: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to update account: ${err?.message || err}`);
       throw err;
     }
   },
@@ -121,7 +128,9 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       await get().loadAccounts();
       useLogStore.getState().addLog('info', 'Auth', `Removed account ${id}`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to remove account: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to remove account: ${err?.message || err}`);
       throw err;
     }
   },
@@ -133,7 +142,9 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
         instanceUrl: instanceUrl?.trim() || null,
       });
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to start OAuth: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to start OAuth: ${err?.message || err}`);
       throw err;
     }
   },

@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Check,
-  History,
-  Terminal,
-  FolderOpen,
-  Code2,
-} from 'lucide-react';
+import { Check, History, Terminal, FolderOpen, Code2 } from 'lucide-react';
 import { useGitStore } from '../../../store/useGitStore';
 import { SystemService } from '../../../services/system/systemService';
 

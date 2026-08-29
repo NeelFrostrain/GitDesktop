@@ -44,7 +44,8 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
   {
     id: 'ai.active_api_key',
     label: 'Google Gemini API Key',
-    description: 'Active Google Gemini API Key (AIza...) from aistudio.google.com used for AI commit analysis.',
+    description:
+      'Active Google Gemini API Key (AIza...) from aistudio.google.com used for AI commit analysis.',
     category: 'ai',
     subcategory: 'API Keys & Providers',
     type: 'text',
@@ -65,7 +66,8 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
   {
     id: 'ai.model',
     label: 'Commit-AI Model',
-    description: 'The Google Gemini model used for analyzing diffs and generating conventional commit messages.',
+    description:
+      'The Google Gemini model used for analyzing diffs and generating conventional commit messages.',
     category: 'ai',
     subcategory: 'Model Configuration',
     type: 'select',

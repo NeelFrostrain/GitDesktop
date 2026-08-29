@@ -1,11 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  RotateCcw,
-  RefreshCw,
-  History,
-} from 'lucide-react';
+import { X, RotateCcw, RefreshCw, History } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { ReflogEntry } from '../../types/git';
@@ -16,13 +11,8 @@ import { toAppError } from '../../shared/utils/errorUtils';
  * Modal dialogue for reviewing the repository's HEAD reflog entries and executing safe recovery resets.
  */
 export const ReflogModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isReflogModalOpen,
-    setIsReflogModalOpen,
-    setStatus,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isReflogModalOpen, setIsReflogModalOpen, setStatus, setError } =
+    useGitStore();
 
   const [reflogEntries, setReflogEntries] = useState<ReflogEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -50,14 +40,20 @@ export const ReflogModal: React.FC = () => {
   const handleRestoreTarget = async (sha: string) => {
     if (!activeRepoPath) return;
 
-    if (!confirm(`CAUTION: Restore branch HEAD to ${sha.slice(0, 7)}? This will execute git reset --hard.`)) {
+    if (
+      !confirm(
+        `CAUTION: Restore branch HEAD to ${sha.slice(0, 7)}? This will execute git reset --hard.`
+      )
+    ) {
       return;
     }
 
     setIsSubmitting(true);
     try {
       await invoke('restore_reflog_target_cmd', { repoPath: activeRepoPath, sha, force: true });
-      useLogStore.getState().addLog('success', 'Git', `Restored branch HEAD to ${sha.slice(0, 7)} via Reflog`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Restored branch HEAD to ${sha.slice(0, 7)} via Reflog`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);

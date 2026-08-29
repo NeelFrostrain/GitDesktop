@@ -7,8 +7,8 @@
 /* ==========================================================================
    1. Imports
    ========================================================================== */
-@import "@xterm/xterm/css/xterm.css";
-@import "tailwindcss";
+@import '@xterm/xterm/css/xterm.css';
+@import 'tailwindcss';
 
 /* ==========================================================================
    2. Runtime Theme Variables (:root / Default: Commito Dark)
@@ -16,11 +16,11 @@
 :root {
   color-scheme: dark;
   /* --- Unified Surfaces & Backgrounds --- */
-  --surface: #181818;                 /* Main workspace canvas background */
-  --surface-subtle: #131313;          /* Deep sidebar & frame background */
-  --surface-elevated: #201e22;        /* Elevated cards, panels & modals */
-  --surface-hover: #2b292f;           /* Hover state on rows, items and cards */
-  --surface-active: #382221;          /* Pressed/selected active background */
+  --surface: #181818; /* Main workspace canvas background */
+  --surface-subtle: #131313; /* Deep sidebar & frame background */
+  --surface-elevated: #201e22; /* Elevated cards, panels & modals */
+  --surface-hover: #2b292f; /* Hover state on rows, items and cards */
+  --surface-active: #382221; /* Pressed/selected active background */
 
   /* Legacy surface aliases */
   --app-bg-primary: var(--surface);
@@ -31,15 +31,15 @@
   --app-surface-active: var(--surface-active);
 
   /* --- Unified Borders --- */
-  --border: #29272b;                  /* Default border color */
-  --border-subtle: #201e22;           /* Subtle inner border / divider */
-  --border-strong: #3d3a42;           /* Emphasized border / active focus */
+  --border: #29272b; /* Default border color */
+  --border-subtle: #201e22; /* Subtle inner border / divider */
+  --border-strong: #3d3a42; /* Emphasized border / active focus */
 
   /* --- Unified Scrollbars --- */
   --scrollbar-track: transparent;
-  --scrollbar-thumb: rgba(255,255,255,0.1);
-  --scrollbar-thumb-hover: rgba(255,255,255,0.22);
-  --scrollbar-thumb-active: rgba(255,255,255,0.32);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.32);
 
   /* Legacy border aliases */
   --app-border: var(--border);
@@ -47,12 +47,12 @@
   --app-border-strong: var(--border-strong);
 
   /* --- Unified Typography & Text Colors --- */
-  --text: #e6e4e8;                    /* Main heading and body text */
-  --text-subtle: #b3b0b8;             /* Secondary labels, breadcrumbs */
-  --text-muted: #85818c;              /* Muted, timestamp & placeholder text */
-  --text-faint: #5c5863;              /* Faint hints and icons */
-  --text-disabled: #5c5863;           /* Disabled control text */
-  --text-on-accent: #ffffff;          /* Text rendered on top of accent buttons */
+  --text: #e6e4e8; /* Main heading and body text */
+  --text-subtle: #b3b0b8; /* Secondary labels, breadcrumbs */
+  --text-muted: #85818c; /* Muted, timestamp & placeholder text */
+  --text-faint: #5c5863; /* Faint hints and icons */
+  --text-disabled: #5c5863; /* Disabled control text */
+  --text-on-accent: #ffffff; /* Text rendered on top of accent buttons */
 
   /* Legacy text aliases */
   --app-text-primary: var(--text);
@@ -63,11 +63,11 @@
   --app-text-on-accent: var(--text-on-accent);
 
   /* --- Unified Semantic Accent & Status --- */
-  --accent: #e05638;                  /* Primary brand accent */
-  --accent-hover: #f06344;            /* Primary accent hover */
-  --accent-active: #c74327;           /* Primary accent active */
+  --accent: #e05638; /* Primary brand accent */
+  --accent-hover: #f06344; /* Primary accent hover */
+  --accent-active: #c74327; /* Primary accent active */
   --accent-muted: rgba(224, 86, 56, 0.15); /* Low-opacity accent highlight */
-  --focus-ring: #e05638;              /* Focus ring indicator */
+  --focus-ring: #e05638; /* Focus ring indicator */
 
   /* Legacy accent aliases */
   --app-accent: var(--accent);
@@ -76,10 +76,10 @@
   --app-accent-muted: var(--accent-muted);
   --app-focus-ring: var(--focus-ring);
 
-  --success: #22c55e;                 /* Success status */
-  --warning: #eab308;                 /* Warning status */
-  --danger: #ef4444;                  /* Danger / error status */
-  --info: #3b82f6;                    /* Informational status */
+  --success: #22c55e; /* Success status */
+  --warning: #eab308; /* Warning status */
+  --danger: #ef4444; /* Danger / error status */
+  --info: #3b82f6; /* Informational status */
 
   /* Legacy status aliases */
   --app-success: var(--success);
@@ -181,7 +181,8 @@
   --log-error: #f87171;
 
   /* --- Typography Tokens --- */
-  --app-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --app-font-family:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --app-font-size: 13px;
   --app-font-size-sm: 11px;
   --app-font-size-lg: 15px;
@@ -189,7 +190,8 @@
   --app-font-weight-medium: 500;
   --app-font-weight-bold: 600;
   --app-line-height: 1.5;
-  --terminal-font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
+  --terminal-font-family:
+    'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
   --terminal-font-size: 13px;
 
   /* --- Spacing, Radii & Dimensions --- */
@@ -233,9 +235,9 @@
   --app-density: comfortable;
 
   /* --- Scrollbar Tokens --- */
-  --scrollbar-thumb: rgba(255,255,255,0.09);
-  --scrollbar-thumb-hover: rgba(255,255,255,0.2);
-  --scrollbar-thumb-active: rgba(255,255,255,0.3);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.09);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.3);
   --scrollbar-track: transparent;
 }
 
@@ -411,17 +413,17 @@ body,
 }
 
 *::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
   transition: background-color 0.15s ease;
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 *::-webkit-scrollbar-thumb:active {
-  background: rgba(255,255,255,0.32);
+  background: rgba(255, 255, 255, 0.32);
 }
 
 *::-webkit-scrollbar-corner {
@@ -430,7 +432,7 @@ body,
 
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.10) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
@@ -443,12 +445,12 @@ body,
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.10);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.22);
+  background: rgba(255, 255, 255, 0.22);
 }
 
 /* Utility: .scrollbar-none */

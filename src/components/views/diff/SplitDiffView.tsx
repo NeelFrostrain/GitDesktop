@@ -41,15 +41,18 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
         const isModified = !isOldEmpty && !isNewEmpty && row.oldContent !== row.newContent;
 
         return (
-          <div key={idx} className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono">
+          <div
+            key={idx}
+            className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono"
+          >
             {/* Left Side (Old/Deleted) */}
             <div
               className={`w-1/2 min-w-0 flex border-r border-border/40 ${
                 isDel || isModified
                   ? 'bg-diff-remove-bg text-diff-remove-text'
                   : isOldEmpty
-                  ? 'bg-base-1/20'
-                  : 'bg-base-0 text-text-primary'
+                    ? 'bg-base-1/20'
+                    : 'bg-base-0 text-text-primary'
               }`}
             >
               <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">
@@ -69,8 +72,8 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
                 isAdd || isModified
                   ? 'bg-diff-add-bg text-diff-add-text'
                   : isNewEmpty
-                  ? 'bg-base-1/20'
-                  : 'bg-base-0 text-text-primary'
+                    ? 'bg-base-1/20'
+                    : 'bg-base-0 text-text-primary'
               }`}
             >
               <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">

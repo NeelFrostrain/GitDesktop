@@ -41,7 +41,9 @@ export const useRemoteServicesStore = create<RemoteServicesState>((set, get) => 
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Remote', `Added remote '${name}' -> ${url}`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Remote', `Failed to add remote: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Remote', `Failed to add remote: ${err?.message || err}`);
       throw err;
     }
   },
@@ -52,7 +54,9 @@ export const useRemoteServicesStore = create<RemoteServicesState>((set, get) => 
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Remote', `Removed remote '${name}'`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Remote', `Failed to remove remote: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Remote', `Failed to remove remote: ${err?.message || err}`);
       throw err;
     }
   },
@@ -63,7 +67,9 @@ export const useRemoteServicesStore = create<RemoteServicesState>((set, get) => 
       await get().loadRemotes(repoPath);
       useLogStore.getState().addLog('info', 'Remote', `Updated URL for remote '${name}' -> ${url}`);
     } catch (err: any) {
-      useLogStore.getState().addLog('error', 'Remote', `Failed to set remote URL: ${err?.message || err}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Remote', `Failed to set remote URL: ${err?.message || err}`);
       throw err;
     }
   },

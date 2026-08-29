@@ -30,11 +30,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const addRepo = useRepoStore((s) => s.addRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
   const pinRepo = useRepoStore((s) => s.pinRepo);
-  const {
-    activeRepoPath,
-    setIsCreateRepoModalOpen,
-    setIsCloneRepoModalOpen,
-  } = useGitStore();
+  const { activeRepoPath, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen } = useGitStore();
 
   const [filterQuery, setFilterQuery] = useState('');
   const [isAddingLocal, setIsAddingLocal] = useState(false);
@@ -69,7 +65,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
       setIsResizing(false);
       try {
         localStorage.setItem('repo_drawer_width', drawerWidth.toString());
-      } catch { }
+      } catch {}
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -111,9 +107,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
     if (filterQuery.trim()) {
       const q = filterQuery.toLowerCase();
       list = list.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.path.toLowerCase().includes(q)
+        (r) => r.name.toLowerCase().includes(q) || r.path.toLowerCase().includes(q)
       );
     }
     return list.sort((a, b) => {
@@ -209,10 +203,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex justify-start select-none font-sans">
       {/* Solid Backdrop (No Blur) */}
-      <div
-        onClick={onClose}
-        className="fixed inset-0 bg-black/60 cursor-default"
-      />
+      <div onClick={onClose} className="fixed inset-0 bg-black/60 cursor-default" />
 
       {/* Slide-over Left Drawer */}
       <div
@@ -236,7 +227,9 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
               <FolderGit2 className="w-3 h-3" />
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
-              <h2 className="text-xs font-bold text-text-primary leading-none">Switch Repository</h2>
+              <h2 className="text-xs font-bold text-text-primary leading-none">
+                Switch Repository
+              </h2>
               <span className="text-border">•</span>
               <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border">
                 {repos.length}
@@ -321,10 +314,14 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             <div className="py-12 px-4 text-center text-text-muted flex flex-col items-center justify-center select-none">
               <FolderGit2 className="w-7 h-7 mx-auto mb-2 text-text-faint opacity-40" />
               <p className="text-xs font-medium text-text-muted">
-                {filterQuery ? `No repositories matching "${filterQuery}"` : 'No repositories found'}
+                {filterQuery
+                  ? `No repositories matching "${filterQuery}"`
+                  : 'No repositories found'}
               </p>
               <p className="text-[11px] text-text-faint mt-1 max-w-xs">
-                {filterQuery ? 'Try a different search keyword.' : 'Add a local repository folder or create a new one.'}
+                {filterQuery
+                  ? 'Try a different search keyword.'
+                  : 'Add a local repository folder or create a new one.'}
               </p>
             </div>
           ) : (
@@ -349,15 +346,17 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                     isActive
                       ? 'bg-base-2 border-border-strong text-text-primary shadow-xs'
                       : repo.pinned
-                      ? 'bg-base-1/80 border-border-strong shadow-xs'
-                      : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
+                        ? 'bg-base-1/80 border-border-strong shadow-xs'
+                        : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
                   }`}
                 >
                   {/* Left: Icon + Title & Path */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <FolderGit2
                       className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
-                        isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-commito-coral'
+                        isActive
+                          ? 'text-commito-coral'
+                          : 'text-text-muted group-hover:text-commito-coral'
                       }`}
                     />
 
@@ -366,7 +365,9 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                       <div className="flex items-center gap-1.5 flex-wrap">
                         <span
                           className={`text-xs font-semibold font-mono truncate leading-none transition-colors ${
-                            isActive ? 'text-commito-coral' : 'text-text-primary group-hover:text-commito-coral'
+                            isActive
+                              ? 'text-commito-coral'
+                              : 'text-text-primary group-hover:text-commito-coral'
                           }`}
                           title={repo.name}
                         >
@@ -375,12 +376,17 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                         {renderProvider(status?.remote_provider)}
                         <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
                           <GitBranch className="w-2 h-2 text-commito-coral flex-shrink-0" />
-                          <span className="truncate max-w-[140px]">{status?.current_branch || 'main'}</span>
+                          <span className="truncate max-w-[140px]">
+                            {status?.current_branch || 'main'}
+                          </span>
                         </div>
                       </div>
 
                       {/* Bottom Line: File Path */}
-                      <p className="text-[10px] text-text-muted/70 font-mono truncate mt-0.5 leading-tight" title={repo.path}>
+                      <p
+                        className="text-[10px] text-text-muted/70 font-mono truncate mt-0.5 leading-tight"
+                        title={repo.path}
+                      >
                         {repo.path}
                       </p>
                     </div>
@@ -430,7 +436,9 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={(e) => handlePinToggle(e, repo.id, repo.pinned)}
                       className={`w-5 h-5 flex items-center justify-center rounded-sm hover:bg-base-3 transition cursor-pointer ${
-                        repo.pinned ? 'text-commito-coral' : 'text-text-faint hover:text-text-primary'
+                        repo.pinned
+                          ? 'text-commito-coral'
+                          : 'text-text-faint hover:text-text-primary'
                       }`}
                       title={repo.pinned ? 'Unpin' : 'Pin to top'}
                     >

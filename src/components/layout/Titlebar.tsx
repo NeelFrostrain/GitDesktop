@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
+import React, { useState, useEffect, useRef } from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import {
   Minus,
   Square,
@@ -14,13 +14,13 @@ import {
   Settings,
   Users,
   Plus,
-} from "lucide-react";
-import { useGitStore } from "../../store/useGitStore";
-import { useSettingsStore } from "../../features/settings";
-import { useAccountServicesStore } from "../../features/account-services";
-import { UserAvatar } from "../common/UserAvatar";
-import { SystemService } from "../../services/system/systemService";
-import { AccountService } from "../../services/accounts/accountService";
+} from 'lucide-react';
+import { useGitStore } from '../../store/useGitStore';
+import { useSettingsStore } from '../../features/settings';
+import { useAccountServicesStore } from '../../features/account-services';
+import { UserAvatar } from '../common/UserAvatar';
+import { SystemService } from '../../services/system/systemService';
+import { AccountService } from '../../services/accounts/accountService';
 
 /**
  * Custom frameless application titlebar with drag region, user profile menu,
@@ -41,17 +41,16 @@ export const Titlebar: React.FC = () => {
     setCurrentNavView,
   } = useGitStore();
   const accountServicesAccounts = useAccountServicesStore((s) => s.accounts);
-  const totalAccountsCount =
-    accountServicesAccounts.length || accounts?.length || 0;
+  const totalAccountsCount = accountServicesAccounts.length || accounts?.length || 0;
   const [isMaximized, setIsMaximized] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const appWindow = getCurrentWindow();
 
   const activeRepoName = activeRepoPath
-    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || "Repository"
+    ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository'
     : null;
-  const currentBranch = status?.current_branch || "main";
+  const currentBranch = status?.current_branch || 'main';
   const uncommittedCount = status?.files?.length || 0;
   const isClean = status?.is_clean ?? uncommittedCount === 0;
 
@@ -91,8 +90,8 @@ export const Titlebar: React.FC = () => {
         setIsProfileOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleMinimize = async (e: React.MouseEvent) => {
@@ -138,17 +137,12 @@ export const Titlebar: React.FC = () => {
     const handleNativeDrag = (e: MouseEvent) => {
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
-      if (
-        target.closest(
-          'button, input, select, a, [role="button"], .titlebar-no-drag',
-        )
-      )
-        return;
+      if (target.closest('button, input, select, a, [role="button"], .titlebar-no-drag')) return;
       // startDragging must be called synchronously here — no await
       appWindow.startDragging().catch(() => {});
     };
-    el.addEventListener("mousedown", handleNativeDrag);
-    return () => el.removeEventListener("mousedown", handleNativeDrag);
+    el.addEventListener('mousedown', handleNativeDrag);
+    return () => el.removeEventListener('mousedown', handleNativeDrag);
   }, [appWindow]);
 
   const handleSignOut = async () => {
@@ -173,10 +167,7 @@ export const Titlebar: React.FC = () => {
       className="titlebar-drag h-10 rounded-sm bg-base-0 border border-border/80 shadow-2xs mx-1.5 mt-1.5 mb-1.5 flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >
       {/* Left: App Icon + Clean Title */}
-      <div
-        data-tauri-drag-region
-        className="flex items-center gap-2 min-w-0 pointer-events-none"
-      >
+      <div data-tauri-drag-region className="flex items-center gap-2 min-w-0 pointer-events-none">
         <div className="flex items-center gap-2 pointer-events-none flex-shrink-0">
           <img
             src="/app-icon.png"
@@ -184,10 +175,8 @@ export const Titlebar: React.FC = () => {
             className="w-4 h-4 rounded-sm object-contain shadow-xs"
           />
         </div>
-        <span className="text-xs font-semibold text-text-primary tracking-tight">
-          Git Desktop
-        </span>
-        {activeRepoName && currentNavView !== "home" && (
+        <span className="text-xs font-semibold text-text-primary tracking-tight">Git Desktop</span>
+        {activeRepoName && currentNavView !== 'home' && (
           <div
             data-tauri-drag-region
             className="flex items-center gap-1.5 min-w-0 text-text-muted text-xs"
@@ -205,10 +194,10 @@ export const Titlebar: React.FC = () => {
         className="titlebar-no-drag flex items-center gap-1.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {currentNavView !== "home" && (
+        {currentNavView !== 'home' && (
           <button
             type="button"
-            onClick={() => setCurrentNavView("home")}
+            onClick={() => setCurrentNavView('home')}
             className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer text-xs font-semibold select-none active:scale-95 group shadow-2xs"
             title="Go to Home"
           >
@@ -223,18 +212,18 @@ export const Titlebar: React.FC = () => {
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
             className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer select-none active:scale-95 shadow-2xs"
-            title={user ? user.name || user.username : "Account Menu"}
+            title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
               url={user?.avatar_url}
-              name={user?.name || user?.username || "Guest"}
+              name={user?.name || user?.username || 'Guest'}
               provider={user?.provider}
               className="w-4 h-4 rounded-full"
               iconClassName="w-2.5 h-2.5"
             />
             <ChevronDown
               className={`w-3 h-3 text-text-muted transition-transform duration-200 ${
-                isProfileOpen ? "rotate-180 text-commito-coral" : ""
+                isProfileOpen ? 'rotate-180 text-commito-coral' : ''
               }`}
             />
           </button>
@@ -244,7 +233,7 @@ export const Titlebar: React.FC = () => {
             <div className="absolute right-0 top-full mt-1.5 w-60 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 text-xs select-none">
               <div className="px-3 py-2.5 border-b border-border">
                 <div className="font-semibold text-text-primary truncate">
-                  {user?.name || user?.username || "Guest"}
+                  {user?.name || user?.username || 'Guest'}
                 </div>
                 {user?.username && user.name && (
                   <div className="text-[11px] text-text-muted font-mono truncate">
@@ -254,7 +243,7 @@ export const Titlebar: React.FC = () => {
                 {totalAccountsCount > 0 && (
                   <div className="text-[10px] text-text-faint mt-0.5">
                     {totalAccountsCount} account
-                    {totalAccountsCount > 1 ? "s" : ""} saved
+                    {totalAccountsCount > 1 ? 's' : ''} saved
                   </div>
                 )}
               </div>
@@ -263,9 +252,7 @@ export const Titlebar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  useAccountServicesStore
-                    .getState()
-                    .openModalWithTab("accounts");
+                  useAccountServicesStore.getState().openModalWithTab('accounts');
                   setIsProfileOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
@@ -277,7 +264,7 @@ export const Titlebar: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  useAccountServicesStore.getState().openModalWithTab("add");
+                  useAccountServicesStore.getState().openModalWithTab('add');
                   setIsProfileOpen(false);
                 }}
                 className="w-full text-left px-3 py-2 text-text-secondary hover:bg-base-2 hover:text-text-primary transition flex items-center gap-2 cursor-pointer font-medium"
@@ -342,7 +329,7 @@ export const Titlebar: React.FC = () => {
           type="button"
           onClick={handleToggleMaximize}
           className="w-8 h-6 flex items-center justify-center rounded-sm text-text-muted hover:bg-base-2 hover:text-text-primary transition cursor-pointer"
-          title={isMaximized ? "Restore" : "Maximize"}
+          title={isMaximized ? 'Restore' : 'Maximize'}
         >
           {isMaximized ? (
             <Copy className="w-3 h-3 rotate-180 pointer-events-none" />

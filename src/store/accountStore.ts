@@ -49,7 +49,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
         get().fetchTokenInfo(active.id);
       }
     } catch (error: unknown) {
-      useLogStore.getState().addLog('warning', 'Auth', `Failed to fetch accounts: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Auth', `Failed to fetch accounts: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -74,7 +76,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       }
       useLogStore.getState().addLog('info', 'Auth', `Switched active account to '${accountId}'`);
     } catch (error: unknown) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to switch account: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to switch account: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -91,7 +95,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       }
       useLogStore.getState().addLog('info', 'Auth', `Signed out account '${accountId}'`);
     } catch (error: unknown) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to sign out: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to sign out: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }
@@ -104,7 +110,9 @@ export const useAccountStore = create<AccountState>((set, get) => ({
       await get().fetchAccounts();
       useLogStore.getState().addLog('info', 'Auth', `Refreshed token for '${accountId}'`);
     } catch (error: unknown) {
-      useLogStore.getState().addLog('error', 'Auth', `Failed to refresh token: ${getErrorMessage(error)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'Auth', `Failed to refresh token: ${getErrorMessage(error)}`);
     } finally {
       set({ isLoading: false });
     }

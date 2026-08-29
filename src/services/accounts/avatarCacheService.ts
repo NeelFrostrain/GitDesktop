@@ -260,7 +260,9 @@ class AvatarCacheService {
   /**
    * Tries candidates in order until a valid cached or fetched avatar is found.
    */
-  public async getOrFetchAvatar(candidateUrls: (string | null | undefined)[]): Promise<string | null> {
+  public async getOrFetchAvatar(
+    candidateUrls: (string | null | undefined)[]
+  ): Promise<string | null> {
     const validUrls = candidateUrls.filter(
       (u): u is string => typeof u === 'string' && u.trim().length > 0 && u !== 'null'
     );

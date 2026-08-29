@@ -336,7 +336,10 @@ export const useGitStore = create<GitState>((set, get) => ({
     if (!path) return;
     const { recentRepos } = get();
     const normalized = path.replace(/\\/g, '/');
-    const updated = [normalized, ...recentRepos.filter((r) => r.replace(/\\/g, '/') !== normalized)].slice(0, 20);
+    const updated = [
+      normalized,
+      ...recentRepos.filter((r) => r.replace(/\\/g, '/') !== normalized),
+    ].slice(0, 20);
     try {
       localStorage.setItem('recent_repos', JSON.stringify(updated));
     } catch {
@@ -354,7 +357,9 @@ export const useGitStore = create<GitState>((set, get) => ({
     } catch {
       // Ignore localStorage errors
     }
-    useLogStore.getState().addLog('info', 'Repo', `Removed repository '${normalized}' from recent list`);
+    useLogStore
+      .getState()
+      .addLog('info', 'Repo', `Removed repository '${normalized}' from recent list`);
 
     const isActive = activeRepoPath && activeRepoPath.replace(/\\/g, '/') === normalized;
     if (isActive) {
@@ -386,7 +391,13 @@ export const useGitStore = create<GitState>((set, get) => ({
       if (user.avatar_url) {
         avatarCache.prefetchAvatars([user.avatar_url]).catch(() => {});
       }
-      useLogStore.getState().addLog('info', 'Auth', `Active session user set to @${user.username} (${user.name}) [${user.provider}]`);
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'Auth',
+          `Active session user set to @${user.username} (${user.name}) [${user.provider}]`
+        );
     } else {
       try {
         localStorage.removeItem('cached_user');
@@ -433,10 +444,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       const gitStagedPaths = status ? status.files.filter((f) => f.staged).map((f) => f.path) : [];
       const stillExist = new Set(allFilePaths);
       nextStaged = [
-        ...new Set([
-          ...currentStaged.filter((p) => stillExist.has(p)),
-          ...gitStagedPaths,
-        ]),
+        ...new Set([...currentStaged.filter((p) => stillExist.has(p)), ...gitStagedPaths]),
       ];
     }
 
@@ -458,7 +466,9 @@ export const useGitStore = create<GitState>((set, get) => ({
       statusVersion: state.statusVersion + 1,
     }));
 
-    get().loadBranchStashes().catch(() => {});
+    get()
+      .loadBranchStashes()
+      .catch(() => {});
   },
 
   setBranches: (branches) => set({ branches }),
@@ -472,7 +482,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsViewingStashedChanges: (isViewingStashedChanges) => {
     set({ isViewingStashedChanges });
     if (isViewingStashedChanges) {
-      get().loadStashFiles().catch(() => {});
+      get()
+        .loadStashFiles()
+        .catch(() => {});
     }
   },
   setSelectedStashFile: (selectedStashFile) => set({ selectedStashFile }),
@@ -506,13 +518,14 @@ export const useGitStore = create<GitState>((set, get) => ({
       const allStashes = await GitService.listStashes(activeRepoPath);
       set({ stashes: allStashes || [] });
       const currentBranch = status.current_branch.trim();
-      const branchStash = (allStashes || []).find((s) => {
-        if (s.branch === currentBranch) return true;
-        if (s.message.includes(`Saved changes on ${currentBranch}`)) return true;
-        if (s.message.includes(`on ${currentBranch}:`)) return true;
-        if (s.message.includes(`WIP on ${currentBranch}`)) return true;
-        return false;
-      }) || null;
+      const branchStash =
+        (allStashes || []).find((s) => {
+          if (s.branch === currentBranch) return true;
+          if (s.message.includes(`Saved changes on ${currentBranch}`)) return true;
+          if (s.message.includes(`on ${currentBranch}:`)) return true;
+          if (s.message.includes(`WIP on ${currentBranch}`)) return true;
+          return false;
+        }) || null;
 
       set((state) => ({
         currentBranchStash: branchStash,
@@ -520,7 +533,9 @@ export const useGitStore = create<GitState>((set, get) => ({
       }));
 
       if (branchStash) {
-        get().loadStashFiles().catch(() => {});
+        get()
+          .loadStashFiles()
+          .catch(() => {});
       }
     } catch {
       set({ currentBranchStash: null, stashFiles: [], isViewingStashedChanges: false });
@@ -533,11 +548,15 @@ export const useGitStore = create<GitState>((set, get) => ({
 
     try {
       await GitService.popStash(activeRepoPath, currentBranchStash.index);
-      useLogStore.getState().addLog('success', 'Git', `Restored stashed changes to working directory`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Restored stashed changes to working directory`);
       set({ isViewingStashedChanges: false, currentBranchStash: null, selectedStashFile: null });
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
-      get().loadBranchStashes().catch(() => {});
+      get()
+        .loadBranchStashes()
+        .catch(() => {});
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to restore stash: ${msg}`);
@@ -553,7 +572,9 @@ export const useGitStore = create<GitState>((set, get) => ({
       await GitService.dropStash(activeRepoPath, currentBranchStash.index);
       useLogStore.getState().addLog('info', 'Git', `Discarded stashed changes`);
       set({ isViewingStashedChanges: false, currentBranchStash: null, selectedStashFile: null });
-      get().loadBranchStashes().catch(() => {});
+      get()
+        .loadBranchStashes()
+        .catch(() => {});
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
       useLogStore.getState().addLog('error', 'Git', `Failed to discard stash: ${msg}`);
@@ -585,7 +606,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to unstage file '${file}': ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to unstage file '${file}': ${getErrorMessage(error)}`);
         }
       }
     } else {
@@ -597,7 +620,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to stage file '${file}': ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to stage file '${file}': ${getErrorMessage(error)}`);
         }
       }
     }
@@ -619,7 +644,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to stage files: ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to stage files: ${getErrorMessage(error)}`);
         }
       }
     } else {
@@ -633,7 +660,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to unstage files: ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to unstage files: ${getErrorMessage(error)}`);
         }
       }
     }
@@ -644,7 +673,9 @@ export const useGitStore = create<GitState>((set, get) => ({
     if (!status) return;
 
     if (staged) {
-      useLogStore.getState().addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Staged all ${status.files.length} modified file(s)`);
       set({ stagedFiles: status.files.map((f) => f.path), hasInitializedStaging: true });
       if (activeRepoPath) {
         try {
@@ -652,7 +683,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to stage all files: ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to stage all files: ${getErrorMessage(error)}`);
         }
       }
     } else {
@@ -665,7 +698,9 @@ export const useGitStore = create<GitState>((set, get) => ({
           const newStatus = await GitService.getRepoStatus(activeRepoPath);
           setStatus(newStatus);
         } catch (error: unknown) {
-          useLogStore.getState().addLog('error', 'Git', `Failed to unstage all files: ${getErrorMessage(error)}`);
+          useLogStore
+            .getState()
+            .addLog('error', 'Git', `Failed to unstage all files: ${getErrorMessage(error)}`);
         }
       }
     }
@@ -673,7 +708,9 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   setSelectedCommitSha: (sha) => {
     if (sha) {
-      useLogStore.getState().addLog('info', 'Git', `Inspecting details for commit ${sha.slice(0, 8)}`);
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', `Inspecting details for commit ${sha.slice(0, 8)}`);
     }
     set({ selectedCommitSha: sha });
   },
@@ -691,7 +728,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   },
 
   setDiffViewMode: (diffViewMode) => {
-    useLogStore.getState().addLog('info', 'System', `Changed diff layout view to '${diffViewMode}' mode`);
+    useLogStore
+      .getState()
+      .addLog('info', 'System', `Changed diff layout view to '${diffViewMode}' mode`);
     set({ diffViewMode });
   },
 
@@ -723,7 +762,8 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),
   setIsBlameModalOpen: (isBlameModalOpen) => set({ isBlameModalOpen }),
   setIsReflogModalOpen: (isReflogModalOpen) => set({ isReflogModalOpen }),
-  setIsConflictResolverModalOpen: (isConflictResolverModalOpen) => set({ isConflictResolverModalOpen }),
+  setIsConflictResolverModalOpen: (isConflictResolverModalOpen) =>
+    set({ isConflictResolverModalOpen }),
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
@@ -741,7 +781,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   setLastFetchedTimestamp: (lastFetchedTimestamp) => set({ lastFetchedTimestamp }),
   setError: (error) => {
     if (error) {
-      useLogStore.getState().addLog('error', 'System', `Error [${error.code}]: ${error.message}`, error.message);
+      useLogStore
+        .getState()
+        .addLog('error', 'System', `Error [${error.code}]: ${error.message}`, error.message);
     }
     set({ error });
   },

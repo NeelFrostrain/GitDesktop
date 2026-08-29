@@ -7,7 +7,10 @@ import { AppError } from '../../types/git';
  * @param fallbackMessage - Optional fallback string if no message can be extracted.
  * @returns A clean string message.
  */
-export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected error occurred'): string {
+export function getErrorMessage(
+  error: unknown,
+  fallbackMessage = 'An unexpected error occurred'
+): string {
   if (!error) {
     return fallbackMessage;
   }
@@ -40,7 +43,10 @@ export function getErrorMessage(error: unknown, fallbackMessage = 'An unexpected
 /**
  * Extracts a human-friendly error message from API error payloads, including embedded JSON.
  */
-export function parseApiError(error: unknown, fallbackMessage = 'An unexpected error occurred'): string {
+export function parseApiError(
+  error: unknown,
+  fallbackMessage = 'An unexpected error occurred'
+): string {
   const raw = getErrorMessage(error, fallbackMessage);
 
   // Try to find JSON inside the raw message

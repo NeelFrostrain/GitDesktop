@@ -28,7 +28,8 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       return String(activeKey).trim();
     }
 
-    const rawKeys = getEffectiveValue('ai.groq_api_keys') || getEffectiveValue('ai.gemini_api_keys');
+    const rawKeys =
+      getEffectiveValue('ai.groq_api_keys') || getEffectiveValue('ai.gemini_api_keys');
     if (Array.isArray(rawKeys) && rawKeys.length > 0) {
       const first = String(rawKeys[0]).trim();
       if (first) return first;
@@ -56,7 +57,9 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
         title: 'No Files Staged',
         message: 'Please check/stage the files you want Commit-AI to analyze.',
       });
-      useLogStore.getState().addLog('info', 'Git', '[Commit-AI] Please stage/select the files you want to analyze.');
+      useLogStore
+        .getState()
+        .addLog('info', 'Git', '[Commit-AI] Please stage/select the files you want to analyze.');
       return;
     }
 
@@ -67,7 +70,13 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
     }
 
     setIsGenerating(true);
-    useLogStore.getState().addLog('info', 'Git', `[Commit-AI] Analyzing ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with AI...`);
+    useLogStore
+      .getState()
+      .addLog(
+        'info',
+        'Git',
+        `[Commit-AI] Analyzing ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with AI...`
+      );
 
     try {
       // Ensure selected files are staged in git index
@@ -83,9 +92,7 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       );
 
       const options =
-        res.title_options && res.title_options.length > 0
-          ? res.title_options
-          : [res.summary];
+        res.title_options && res.title_options.length > 0 ? res.title_options : [res.summary];
 
       onAiGenerated(options, res.report, res.model_used);
 
@@ -145,7 +152,11 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
       type="button"
       onClick={handleButtonClick}
       disabled={isGenerating || !hasStagedFiles}
-      title={hasStagedFiles ? `Analyze ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with Commit-AI` : "Select/stage files to analyze with Commit-AI"}
+      title={
+        hasStagedFiles
+          ? `Analyze ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with Commit-AI`
+          : 'Select/stage files to analyze with Commit-AI'
+      }
       className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isGenerating ? (

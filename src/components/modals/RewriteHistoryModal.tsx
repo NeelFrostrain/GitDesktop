@@ -1,14 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  AlertTriangle,
-  ArrowUpDown,
-  GitMerge,
-  Info,
-  Play,
-  Loader2,
-} from 'lucide-react';
+import { X, AlertTriangle, ArrowUpDown, GitMerge, Info, Play, Loader2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
@@ -85,13 +77,15 @@ export const RewriteHistoryModal: React.FC = () => {
         operation: payload,
       });
 
-      useLogStore.getState().addLog(
-        'success',
-        'Git',
-        pendingHistoryOp.type === 'reorder'
-          ? `Reordered commit ${pendingHistoryOp.sourceCommit.short_sha} ${pendingHistoryOp.position} ${pendingHistoryOp.targetCommit.short_sha}`
-          : `Merged commits ${pendingHistoryOp.sourceCommit.short_sha} into ${pendingHistoryOp.targetCommit.short_sha}`
-      );
+      useLogStore
+        .getState()
+        .addLog(
+          'success',
+          'Git',
+          pendingHistoryOp.type === 'reorder'
+            ? `Reordered commit ${pendingHistoryOp.sourceCommit.short_sha} ${pendingHistoryOp.position} ${pendingHistoryOp.targetCommit.short_sha}`
+            : `Merged commits ${pendingHistoryOp.sourceCommit.short_sha} into ${pendingHistoryOp.targetCommit.short_sha}`
+        );
 
       const updatedStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(updatedStatus);
@@ -132,9 +126,7 @@ export const RewriteHistoryModal: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 min-w-0">
               <h3 className="text-xs font-bold text-text-primary leading-none truncate">
-                {pendingHistoryOp.type === 'reorder'
-                  ? 'Reorder Commit History'
-                  : 'Merge Commits'}
+                {pendingHistoryOp.type === 'reorder' ? 'Reorder Commit History' : 'Merge Commits'}
               </h3>
               {status?.current_branch && (
                 <>
@@ -158,14 +150,21 @@ export const RewriteHistoryModal: React.FC = () => {
         </div>
 
         {/* Body */}
-        <form id="rewrite-history-form" onSubmit={handleConfirm} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <form
+          id="rewrite-history-form"
+          onSubmit={handleConfirm}
+          className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0"
+        >
           {/* Uncommitted changes blocking alert */}
           {hasUncommittedChanges && (
             <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm flex items-start gap-2.5 text-xs text-git-removed">
               <AlertTriangle className="w-4 h-4 text-git-removed flex-shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold text-git-removed block mb-0.5">Uncommitted changes detected</strong>
-                Your working directory contains uncommitted changes. Please commit or stash your changes before rewriting Git history to avoid loss of uncommitted work.
+                <strong className="font-bold text-git-removed block mb-0.5">
+                  Uncommitted changes detected
+                </strong>
+                Your working directory contains uncommitted changes. Please commit or stash your
+                changes before rewriting Git history to avoid loss of uncommitted work.
               </div>
             </div>
           )}
@@ -175,8 +174,11 @@ export const RewriteHistoryModal: React.FC = () => {
             <div className="p-3 bg-git-modified-bg border border-git-modified/40 rounded-sm flex items-start gap-2.5 text-xs text-git-modified">
               <Info className="w-4 h-4 text-git-modified flex-shrink-0 mt-0.5" />
               <div>
-                <strong className="font-bold text-git-modified block mb-0.5">Remote Branch Sync Notice</strong>
-                Rewriting history changes commit hashes. Updating a remote branch will require a manual force push (the application will not force push automatically).
+                <strong className="font-bold text-git-modified block mb-0.5">
+                  Remote Branch Sync Notice
+                </strong>
+                Rewriting history changes commit hashes. Updating a remote branch will require a
+                manual force push (the application will not force push automatically).
               </div>
             </div>
           )}
@@ -184,12 +186,12 @@ export const RewriteHistoryModal: React.FC = () => {
           {/* Reorder Details */}
           {pendingHistoryOp.type === 'reorder' && (
             <div className="space-y-3">
-              <p className="text-xs text-text-secondary">
-                You are moving the commit:
-              </p>
+              <p className="text-xs text-text-secondary">You are moving the commit:</p>
 
               <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.sourceCommit.message}</h4>
+                <h4 className="text-xs font-bold text-text-primary">
+                  {pendingHistoryOp.sourceCommit.message}
+                </h4>
                 <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
                   <span>{pendingHistoryOp.sourceCommit.short_sha}</span>
                   <span>•</span>
@@ -204,7 +206,9 @@ export const RewriteHistoryModal: React.FC = () => {
               </p>
 
               <div className="p-3 bg-base-2 border border-border rounded-sm space-y-1">
-                <h4 className="text-xs font-bold text-text-primary">{pendingHistoryOp.targetCommit.message}</h4>
+                <h4 className="text-xs font-bold text-text-primary">
+                  {pendingHistoryOp.targetCommit.message}
+                </h4>
                 <div className="flex items-center gap-2 text-[10px] text-text-muted font-mono">
                   <span>{pendingHistoryOp.targetCommit.short_sha}</span>
                   <span>•</span>
@@ -260,7 +264,11 @@ export const RewriteHistoryModal: React.FC = () => {
           <button
             type="submit"
             form="rewrite-history-form"
-            disabled={isSubmitting || hasUncommittedChanges || (pendingHistoryOp.type === 'merge' && !newMessage.trim())}
+            disabled={
+              isSubmitting ||
+              hasUncommittedChanges ||
+              (pendingHistoryOp.type === 'merge' && !newMessage.trim())
+            }
             className={`h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs ${
               hasUncommittedChanges
                 ? 'bg-base-2 text-text-muted border border-border cursor-not-allowed opacity-60'
@@ -276,8 +284,8 @@ export const RewriteHistoryModal: React.FC = () => {
               {isSubmitting
                 ? 'Rewriting History...'
                 : pendingHistoryOp.type === 'reorder'
-                ? 'Execute Reorder'
-                : 'Merge Commits'}
+                  ? 'Execute Reorder'
+                  : 'Merge Commits'}
             </span>
           </button>
         </div>

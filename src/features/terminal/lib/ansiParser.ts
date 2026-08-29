@@ -47,7 +47,11 @@ export function parseSessionLog(rawContent: string): ParsedCommandLog[] {
       }
       continue;
     }
-    if (line.startsWith('====================================') || line.startsWith('Repo:') || line.startsWith('Session ID:')) {
+    if (
+      line.startsWith('====================================') ||
+      line.startsWith('Repo:') ||
+      line.startsWith('Session ID:')
+    ) {
       continue;
     }
 

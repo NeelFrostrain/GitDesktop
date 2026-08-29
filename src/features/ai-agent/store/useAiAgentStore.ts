@@ -89,8 +89,7 @@ if (!initialActiveId || !initialSessions.some((s) => s.id === initialActiveId)) 
 export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   isOpen: false,
   status: 'idle',
-  securityMode:
-    (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
+  securityMode: (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
   error: null,
   sessions: initialSessions,
   activeSessionId: initialActiveId,
@@ -151,9 +150,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     set((state) => {
       const updated = state.sessions.filter((s) => s.id !== sessionId);
       const nextActiveId =
-        state.activeSessionId === sessionId
-          ? updated[0]?.id || null
-          : state.activeSessionId;
+        state.activeSessionId === sessionId ? updated[0]?.id || null : state.activeSessionId;
       saveStoredSessions(updated, nextActiveId);
       return {
         sessions: updated,
@@ -337,11 +334,18 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        if (Array.isArray(parsed))
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
         else keyPool = [rawKeys.trim()];
       } catch {
         keyPool = [rawKeys.trim()];
@@ -403,11 +407,13 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         };
       });
 
-      useLogStore.getState().addLog(
-        'info',
-        'System',
-        `[AI-Agent] Agent responded using ${response.modelUsed} (${response.toolCalls.length} tool suggestions)`
-      );
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'System',
+          `[AI-Agent] Agent responded using ${response.modelUsed} (${response.toolCalls.length} tool suggestions)`
+        );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       const errorAssistantMessage: AgentMessage = {
@@ -484,7 +490,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     if (rawKeys) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        if (Array.isArray(parsed))
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
         else keyPool = [rawKeys.trim()];
       } catch {
         keyPool = [rawKeys.trim()];
@@ -664,7 +674,11 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       try {
-        await SystemService.saveFileContent(activeRepo, targetTool.filePath, targetTool.fileContent);
+        await SystemService.saveFileContent(
+          activeRepo,
+          targetTool.filePath,
+          targetTool.fileContent
+        );
         // Refresh git status to reflect changed / created files
         const st = await GitService.getRepoStatus(activeRepo).catch(() => null);
         if (st) useGitStore.getState().setStatus(st);
@@ -817,9 +831,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // Extract commands list
-    const commandsList = pendingCommands
-      .map((t) => t.command!.trim())
-      .filter(Boolean);
+    const commandsList = pendingCommands.map((t) => t.command!.trim()).filter(Boolean);
 
     const executedIds = new Set(pendingCommands.map((t) => t.id));
 
@@ -834,9 +846,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
                 return {
                   ...m,
                   toolCalls: m.toolCalls.map((t): AgentToolCall =>
-                    executedIds.has(t.id)
-                      ? { ...t, status: 'success', executedAt: Date.now() }
-                      : t
+                    executedIds.has(t.id) ? { ...t, status: 'success', executedAt: Date.now() } : t
                   ),
                 };
               }

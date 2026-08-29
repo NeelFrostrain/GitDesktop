@@ -45,7 +45,9 @@ export class GitContextService {
             hash: c.short_sha || (c.sha ? c.sha.slice(0, 7) : '—'),
             author: c.author_name || 'Unknown',
             message: c.message ? c.message.split('\n')[0] : '—',
-            time: c.relative_date || (c.timestamp ? new Date(c.timestamp * 1000).toLocaleDateString() : ''),
+            time:
+              c.relative_date ||
+              (c.timestamp ? new Date(c.timestamp * 1000).toLocaleDateString() : ''),
           });
         }
       }
@@ -90,14 +92,18 @@ export class GitContextService {
           const fileDiff = await GitService.getFileDiff(repoPath, file.path, file.staged);
           if (fileDiff && fileDiff.lines && fileDiff.lines.length > 0) {
             const patchText = fileDiff.lines
-              .map((l) => `${l.line_type === 'addition' ? '+' : l.line_type === 'deletion' ? '-' : ' '} ${l.content}`)
+              .map(
+                (l) =>
+                  `${l.line_type === 'addition' ? '+' : l.line_type === 'deletion' ? '-' : ' '} ${l.content}`
+              )
               .join('\n');
             diffSnippets.push(`--- a/${file.path}\n+++ b/${file.path}\n${patchText}`);
           }
         } catch {}
       }
 
-      const combinedDiff = diffSnippets.join('\n\n') || 'No textual changes detected in selected files.';
+      const combinedDiff =
+        diffSnippets.join('\n\n') || 'No textual changes detected in selected files.';
       const truncated =
         combinedDiff.length > 20000
           ? `${combinedDiff.slice(0, 20000)}\n\n...[Diff truncated for context limits]...`

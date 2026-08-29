@@ -1,29 +1,18 @@
-import React, { useEffect, useMemo } from "react";
-import { useGitStore } from "../../store/useGitStore";
-import { useRepoStore } from "../../store/repoStore";
-import { useAccounts } from "../../features/account-services";
-import { SystemService } from "../../services/system/systemService";
-import { UserAvatar } from "../common/UserAvatar";
-import { RepoList } from "../home/RepoList";
-import { AccountsWidget } from "../home/AccountsWidget";
-import { ContributionHeatmap } from "../home/ContributionHeatmap";
-import { ContributionActivityRadar } from "../home/ContributionActivityRadar";
-import {
-  FolderGit2,
-  Pin,
-  Plus,
-  DownloadCloud,
-  FolderOpen,
-  Users,
-} from "lucide-react";
+import React, { useEffect, useMemo } from 'react';
+import { useGitStore } from '../../store/useGitStore';
+import { useRepoStore } from '../../store/repoStore';
+import { useAccounts } from '../../features/account-services';
+import { SystemService } from '../../services/system/systemService';
+import { UserAvatar } from '../common/UserAvatar';
+import { RepoList } from '../home/RepoList';
+import { AccountsWidget } from '../home/AccountsWidget';
+import { ContributionHeatmap } from '../home/ContributionHeatmap';
+import { ContributionActivityRadar } from '../home/ContributionActivityRadar';
+import { FolderGit2, Pin, Plus, DownloadCloud, FolderOpen, Users } from 'lucide-react';
 
 export const HomeDashboard: React.FC = () => {
-  const {
-    user,
-    setIsCreateRepoModalOpen,
-    setIsCloneRepoModalOpen,
-    setIsUserConfigModalOpen,
-  } = useGitStore();
+  const { user, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsUserConfigModalOpen } =
+    useGitStore();
   const repos = useRepoStore((s) => s.repos);
   const statuses = useRepoStore((s) => s.statuses);
   const loadRepos = useRepoStore((s) => s.loadRepos);
@@ -36,9 +25,9 @@ export const HomeDashboard: React.FC = () => {
 
   const getGreeting = () => {
     const h = new Date().getHours();
-    if (h < 12) return "Good morning";
-    if (h < 18) return "Good afternoon";
-    return "Good evening";
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
   };
 
   const metrics = useMemo(() => {
@@ -81,12 +70,10 @@ export const HomeDashboard: React.FC = () => {
           </div>
 
           <div className="min-w-0 flex flex-col items-baseline gap-0.5 truncate">
-            <span className="text-xs text-text-muted font-normal shrink-0">
-              {getGreeting()},
-            </span>
+            <span className="text-xs text-text-muted font-normal shrink-0">{getGreeting()},</span>
             <div className="flex items-center gap-1.5">
               <span className="text-sm font-semibold text-text-primary tracking-tight truncate">
-                {user ? user.name || user.username : "Workspace"}
+                {user ? user.name || user.username : 'Workspace'}
               </span>
               {user?.provider && (
                 <span className="text-[9px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs bg-base-1 border border-border text-text-muted">
@@ -103,10 +90,7 @@ export const HomeDashboard: React.FC = () => {
           <div className="hidden md:flex h-full items-center gap-2 text-xs text-text-muted select-none bg-base-1 border border-border rounded-sm px-2.5 py-1">
             <span className="flex items-center gap-1.5">
               <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
-              <span className="font-semibold text-text-primary">
-                {metrics.total}
-              </span>{" "}
-              Repos
+              <span className="font-semibold text-text-primary">{metrics.total}</span> Repos
             </span>
 
             {metrics.dirtyCount > 0 && (
@@ -124,10 +108,7 @@ export const HomeDashboard: React.FC = () => {
                 <span className="text-border text-[10px]">·</span>
                 <span className="flex items-center gap-1 text-commito-coral">
                   <Pin className="w-3 h-3 fill-commito-coral/20" />
-                  <span className="font-semibold text-text-primary">
-                    {metrics.pinned}
-                  </span>{" "}
-                  Pinned
+                  <span className="font-semibold text-text-primary">{metrics.pinned}</span> Pinned
                 </span>
               </>
             )}
@@ -141,9 +122,7 @@ export const HomeDashboard: React.FC = () => {
                   className="flex items-center gap-1 text-text-muted hover:text-text-primary transition cursor-pointer"
                 >
                   <Users className="w-3.5 h-3.5" />
-                  <span className="font-semibold text-text-primary">
-                    {accounts.length}
-                  </span>{" "}
+                  <span className="font-semibold text-text-primary">{accounts.length}</span>{' '}
                   Accounts
                 </button>
               </>

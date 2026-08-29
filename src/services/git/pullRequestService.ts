@@ -271,7 +271,10 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
         let host = stripped.substring(0, slashIdx);
         if (host.includes('@')) host = host.split('@')[1];
         if (host.includes(':')) host = host.split(':')[0];
-        const projectPath = stripped.substring(slashIdx + 1).replace(/^\/+/, '').replace(/\/+$/, '');
+        const projectPath = stripped
+          .substring(slashIdx + 1)
+          .replace(/^\/+/, '')
+          .replace(/\/+$/, '');
         const isGitHub = host.toLowerCase().includes('github');
         const isGitLab = host.toLowerCase().includes('gitlab');
         const provider = isGitHub ? 'github' : isGitLab ? 'gitlab' : 'unknown';

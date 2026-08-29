@@ -112,8 +112,8 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
         )}
 
         {/* Dirty indicator (when in edit mode) */}
-        {diffViewMode === 'edit' && (
-          isDirty ? (
+        {diffViewMode === 'edit' &&
+          (isDirty ? (
             <span className="flex items-center gap-1 text-[10px] font-medium text-git-modified bg-git-modified-bg border border-git-modified/30 px-1.5 py-0.2 rounded-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-git-modified animate-pulse" />
               Unsaved
@@ -123,8 +123,7 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
               <Check className="w-2.5 h-2.5" />
               Clean
             </span>
-          )
-        )}
+          ))}
       </div>
 
       {/* Right: Actions & Compact Icon Switcher */}
@@ -154,8 +153,8 @@ export const DiffHeader: React.FC<DiffHeaderProps> = ({
                     saveSuccess
                       ? 'bg-git-added text-white'
                       : isDirty
-                      ? 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-95'
-                      : 'bg-base-2 text-text-faint border border-border cursor-not-allowed opacity-60'
+                        ? 'bg-commito-coral hover:bg-commito-coralLight text-white active:scale-95'
+                        : 'bg-base-2 text-text-faint border border-border cursor-not-allowed opacity-60'
                   }`}
                   title="Save file changes (Ctrl+S)"
                 >

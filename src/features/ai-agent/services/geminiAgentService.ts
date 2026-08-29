@@ -67,7 +67,9 @@ export class GeminiAgentService {
       `- Always provide the full updated file contents when creating or writing files so they can be saved directly.`,
       `- Keep your explanations clean, well-formatted with markdown, and concise.`,
       `- Note: Context, git states, and terminal outputs are encoded in TOON (Token-Oriented Object Notation, https://github.com/toon-format/toon) for ultra-low token consumption. Tables are written as name[N]{cols}: with row values.`,
-      repoContextPrompt ? `\n--- ACTIVE REPOSITORY STATE (TOON FORMAT) ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---` : '',
+      repoContextPrompt
+        ? `\n--- ACTIVE REPOSITORY STATE (TOON FORMAT) ---\n${repoContextPrompt}\n--- END REPOSITORY STATE ---`
+        : '',
       systemInstruction,
     ]
       .filter(Boolean)
@@ -222,7 +224,10 @@ export class GeminiAgentService {
     while ((match = codeBlockRegex.exec(text)) !== null) {
       const lang = (match[1] || '').toLowerCase().trim();
       const codeSnippet = match[2].trim();
-      const lines = codeSnippet.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+      const lines = codeSnippet
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .filter(Boolean);
       const isShellLang = ['bash', 'sh', 'shell', 'git', 'cmd', 'powershell', 'zsh'].includes(lang);
       const isGitOrShellCommand = lines.some(
         (l) =>

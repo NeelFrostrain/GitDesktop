@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  FileCode,
-  Download,
-  Upload,
-} from 'lucide-react';
+import { X, FileCode, Download, Upload } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
@@ -15,13 +10,8 @@ import { toAppError } from '../../shared/utils/errorUtils';
  * Modal dialog supporting exporting commit ranges as .patch files or applying external patch files.
  */
 export const PatchModal: React.FC = () => {
-  const {
-    activeRepoPath,
-    isPatchModalOpen,
-    setIsPatchModalOpen,
-    setStatus,
-    setError,
-  } = useGitStore();
+  const { activeRepoPath, isPatchModalOpen, setIsPatchModalOpen, setStatus, setError } =
+    useGitStore();
 
   const [activeTab, setActiveTab] = useState<'export' | 'apply'>('export');
   const [exportPath, setExportPath] = useState('');
@@ -61,7 +51,9 @@ export const PatchModal: React.FC = () => {
         patchFilePath: patchFilePath.trim(),
       });
 
-      useLogStore.getState().addLog('success', 'Git', `Applied patch file '${patchFilePath.trim()}'`);
+      useLogStore
+        .getState()
+        .addLog('success', 'Git', `Applied patch file '${patchFilePath.trim()}'`);
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       setIsPatchModalOpen(false);
@@ -134,7 +126,11 @@ export const PatchModal: React.FC = () => {
         {/* Body Form */}
         {activeTab === 'export' ? (
           <>
-            <form id="export-patch-form" onSubmit={handleExportPatch} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+            <form
+              id="export-patch-form"
+              onSubmit={handleExportPatch}
+              className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0"
+            >
               <div>
                 <label className="text-[11px] font-bold text-text-secondary mb-1 block">
                   Export Destination File Path (Required)
@@ -186,7 +182,11 @@ export const PatchModal: React.FC = () => {
           </>
         ) : (
           <>
-            <form id="apply-patch-form" onSubmit={handleApplyPatch} className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+            <form
+              id="apply-patch-form"
+              onSubmit={handleApplyPatch}
+              className="p-4 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0"
+            >
               <div>
                 <label className="text-[11px] font-bold text-text-secondary mb-1 block">
                   Select External Patch File Path (.patch / .diff)

@@ -20,9 +20,7 @@ export const HomeSidebar: React.FC = () => {
     if (filterQuery.trim()) {
       const q = filterQuery.toLowerCase();
       list = list.filter(
-        (r) =>
-          r.name.toLowerCase().includes(q) ||
-          r.path.toLowerCase().includes(q)
+        (r) => r.name.toLowerCase().includes(q) || r.path.toLowerCase().includes(q)
       );
     }
     return list.sort((a, b) => {

@@ -1,26 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useGitStore } from "../../store/useGitStore";
-import { useTerminalStore } from "./store/terminalStore";
-import { useRepoTerminal } from "./hooks/useRepoTerminal";
-import { TerminalTabBar } from "./TerminalTabBar";
-import { AutocompletePopup } from "./components/AutocompletePopup";
-import { LogViewer } from "./components/LogViewer";
-import { useAppLogs } from "./hooks/useAppLogs";
-import {
-  LOG_LEVEL_TERMINAL_COLOR,
-  LOG_LEVEL_TERMINAL_TAG,
-} from "../../core/logging";
-import { Copy, Check, ChevronDown, ChevronRight } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { useGitStore } from '../../store/useGitStore';
+import { useTerminalStore } from './store/terminalStore';
+import { useRepoTerminal } from './hooks/useRepoTerminal';
+import { TerminalTabBar } from './TerminalTabBar';
+import { AutocompletePopup } from './components/AutocompletePopup';
+import { LogViewer } from './components/LogViewer';
+import { useAppLogs } from './hooks/useAppLogs';
+import { LOG_LEVEL_TERMINAL_COLOR, LOG_LEVEL_TERMINAL_TAG } from '../../core/logging';
+import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 
 export const TerminalPanel: React.FC = () => {
   const { activeRepoPath, status } = useGitStore();
-  const { isOpen, panelHeight, setPanelHeight, searchQuery } =
-    useTerminalStore();
-  const [activeTab, setActiveTab] = useState<"shell" | "app_log">("shell");
+  const { isOpen, panelHeight, setPanelHeight, searchQuery } = useTerminalStore();
+  const [activeTab, setActiveTab] = useState<'shell' | 'app_log'>('shell');
   const [isResizing, setIsResizing] = useState(false);
-  const [expandedLogIds, setExpandedLogIds] = useState<Record<string, boolean>>(
-    {},
-  );
+  const [expandedLogIds, setExpandedLogIds] = useState<Record<string, boolean>>({});
   const [autoScroll, setAutoScroll] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -33,8 +27,7 @@ export const TerminalPanel: React.FC = () => {
     }
   }, [activeRepoPath]);
 
-  const isShellActive =
-    isOpen && activeTab === "shell" && Boolean(activeRepoPath);
+  const isShellActive = isOpen && activeTab === 'shell' && Boolean(activeRepoPath);
 
   const {
     terminalContainerRef,
@@ -49,12 +42,12 @@ export const TerminalPanel: React.FC = () => {
   } = useRepoTerminal(
     isShellActive ? activeRepoPath : null,
     isShellActive ? activeRepoPath : null,
-    isShellActive,
+    isShellActive
   );
 
   // Re-fit xterm whenever tab switches or panel opens
   useEffect(() => {
-    if (activeTab === "shell" && isOpen) {
+    if (activeTab === 'shell' && isOpen) {
       const raf = requestAnimationFrame(() => {
         fitTerminal();
       });
@@ -84,13 +77,13 @@ export const TerminalPanel: React.FC = () => {
         l.message.toLowerCase().includes(q) ||
         l.category.toLowerCase().includes(q) ||
         l.level.toLowerCase().includes(q) ||
-        (l.metadata && JSON.stringify(l.metadata).toLowerCase().includes(q)),
+        (l.metadata && JSON.stringify(l.metadata).toLowerCase().includes(q))
     );
   }, [appLogs, searchQuery]);
 
   // Auto-scroll to bottom when new logs arrive in App Log view
   useEffect(() => {
-    if (activeTab === "app_log" && autoScroll && logContainerRef.current) {
+    if (activeTab === 'app_log' && autoScroll && logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
     }
   }, [displayedLogs, activeTab, autoScroll]);
@@ -114,16 +107,16 @@ export const TerminalPanel: React.FC = () => {
       fitTerminal();
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-    document.body.style.userSelect = "none";
-    document.body.style.cursor = "row-resize";
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.body.style.userSelect = 'none';
+    document.body.style.cursor = 'row-resize';
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.userSelect = '';
+      document.body.style.cursor = '';
     };
   }, [isResizing, setPanelHeight, fitTerminal]);
 
@@ -143,15 +136,14 @@ export const TerminalPanel: React.FC = () => {
   }
 
   const repoName =
-    activeRepoPath.replace(/\\/g, "/").split("/").filter(Boolean).pop() ||
-    "Repository";
+    activeRepoPath.replace(/\\/g, '/').split('/').filter(Boolean).pop() || 'Repository';
 
   return (
     <>
       <div
         style={{
           height: `${panelHeight}px`,
-          display: isOpen ? "flex" : "none",
+          display: isOpen ? 'flex' : 'none',
         }}
         className="relative w-full bg-base-0 border border-border/80 rounded-sm flex-col flex-shrink-0 select-none group/terminal z-20 shadow-2xs overflow-hidden"
       >
@@ -161,16 +153,16 @@ export const TerminalPanel: React.FC = () => {
           branchName={status?.current_branch}
           isAlive={isSessionAlive}
           activeTab={activeTab}
-          onTabChange={(tab: "shell" | "app_log") => {
+          onTabChange={(tab: 'shell' | 'app_log') => {
             setActiveTab(tab);
-            if (tab === "shell") {
+            if (tab === 'shell') {
               setTimeout(fitTerminal, 20);
             }
           }}
-          onClear={activeTab === "shell" ? clearTerminal : clearAllLogs}
+          onClear={activeTab === 'shell' ? clearTerminal : clearAllLogs}
           onRestart={restartTerminal}
           onSearch={(q: string) => {
-            if (activeTab === "shell") {
+            if (activeTab === 'shell') {
               searchInTerminal(q, true);
             }
           }}
@@ -184,7 +176,7 @@ export const TerminalPanel: React.FC = () => {
           {/* 1. Shell View (xterm.js PTY) */}
           <div
             className={`relative w-full h-full p-2 bg-base-0 overflow-hidden ${
-              activeTab === "shell" ? "flex flex-col" : "hidden"
+              activeTab === 'shell' ? 'flex flex-col' : 'hidden'
             }`}
           >
             <div
@@ -195,10 +187,8 @@ export const TerminalPanel: React.FC = () => {
             {/* Ghost Text Overlay if available */}
             {autocomplete.ghostText && autocomplete.isVisible && (
               <div className="absolute right-4 bottom-2 pointer-events-none text-xs font-mono text-text-muted bg-base-2/90 px-2.5 py-1 rounded-sm border border-border shadow-md">
-                Suggestion remainder:{" "}
-                <span className="text-text-primary font-semibold">
-                  {autocomplete.ghostText}
-                </span>
+                Suggestion remainder:{' '}
+                <span className="text-text-primary font-semibold">{autocomplete.ghostText}</span>
               </div>
             )}
 
@@ -208,10 +198,7 @@ export const TerminalPanel: React.FC = () => {
                 suggestions={autocomplete.suggestions}
                 selectedIndex={autocomplete.selectedIndex}
                 onSelect={(item) =>
-                  applySuggestion(
-                    item.value,
-                    autocomplete.suggestions.length === 1,
-                  )
+                  applySuggestion(item.value, autocomplete.suggestions.length === 1)
                 }
                 position={cursorPixelPos}
                 containerRef={terminalContainerRef}
@@ -222,7 +209,7 @@ export const TerminalPanel: React.FC = () => {
           {/* 2. App Log View (Colorized live streaming logger) */}
           <div
             className={`relative w-full h-full flex-col bg-base-0 text-xs font-mono select-text ${
-              activeTab === "app_log" ? "flex" : "hidden"
+              activeTab === 'app_log' ? 'flex' : 'hidden'
             }`}
           >
             {/* Log Stream Output */}
@@ -263,9 +250,7 @@ export const TerminalPanel: React.FC = () => {
                           [{entry.category}]
                         </span>
 
-                        <span className="text-text-primary flex-1">
-                          {entry.message}
-                        </span>
+                        <span className="text-text-primary flex-1">{entry.message}</span>
 
                         {hasMeta && (
                           <button
@@ -288,7 +273,7 @@ export const TerminalPanel: React.FC = () => {
                             handleCopyLog(
                               e,
                               entry.id,
-                              `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`,
+                              `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`
                             )
                           }
                           className="opacity-0 group-hover/entry:opacity-100 text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 transition cursor-pointer select-none"

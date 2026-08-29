@@ -1,9 +1,9 @@
-import ReactDOM from "react-dom/client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import App from "./App";
-import { ThemeProvider } from "./shared/theme";
-import "./main.css";
+import ReactDOM from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { getCurrentWindow } from '@tauri-apps/api/window';
+import App from './App';
+import { ThemeProvider } from './shared/theme';
+import './main.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -17,12 +17,12 @@ const queryClient = new QueryClient({
 // Disable the native WebView/browser context menu globally.
 // Structured to allow a custom application context menu to be added in the future:
 //   event → preventDefault() → showCustomContextMenu(event)
-document.addEventListener("contextmenu", (event: MouseEvent) => {
+document.addEventListener('contextmenu', (event: MouseEvent) => {
   event.preventDefault();
   // Future: showCustomContextMenu(event.clientX, event.clientY, event.target);
 });
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <App />

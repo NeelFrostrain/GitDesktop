@@ -82,9 +82,10 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     provider !== undefined;
 
   const currentProvider = provider || (isExplicit ? undefined : user?.provider);
-  const targetName = name !== undefined ? name : (isExplicit ? '' : (user?.name || user?.username || ''));
-  const targetHandle = handle !== undefined ? handle : (isExplicit ? '' : user?.username);
-  const targetEmail = email !== undefined ? email : (isExplicit ? '' : user?.email);
+  const targetName =
+    name !== undefined ? name : isExplicit ? '' : user?.name || user?.username || '';
+  const targetHandle = handle !== undefined ? handle : isExplicit ? '' : user?.username;
+  const targetEmail = email !== undefined ? email : isExplicit ? '' : user?.email;
 
   const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
   const [candidateIndex, setCandidateIndex] = useState<number>(0);
@@ -92,7 +93,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   // Compute Gravatar SHA-256 URL asynchronously if email is present
   useEffect(() => {
     let isCancelled = false;
-    if (targetEmail && targetEmail.trim() && !targetEmail.includes('noreply') && !targetEmail.includes('example.com')) {
+    if (
+      targetEmail &&
+      targetEmail.trim() &&
+      !targetEmail.includes('noreply') &&
+      !targetEmail.includes('example.com')
+    ) {
       sha256Hex(targetEmail).then((hash) => {
         if (!isCancelled && hash) {
           setGravatarUrl(`https://www.gravatar.com/avatar/${hash}?d=404&s=128`);
@@ -111,7 +117,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     const list: string[] = [];
 
     // 1. Explicit avatar URL for this entity
-    let primaryUrl = url !== undefined ? url : (isExplicit ? null : user?.avatar_url);
+    let primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url;
     if (primaryUrl && primaryUrl !== 'null' && primaryUrl.trim() !== '') {
       let trimmed = primaryUrl.trim();
       if (trimmed.startsWith('/')) {
@@ -130,9 +136,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       const matchedAccount = accounts.find((a) => {
         if (normEmail && a.commit_email && a.commit_email.toLowerCase() === normEmail) return true;
         if (normEmail && a.handle && a.handle.toLowerCase() === normEmail) return true;
-        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle) return true;
+        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle)
+          return true;
         if (normName && a.display_name && a.display_name.toLowerCase() === normName) return true;
-        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName) return true;
+        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName)
+          return true;
         return false;
       });
 
@@ -166,7 +174,18 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
     // De-duplicate URLs while preserving priority
     return Array.from(new Set(list));
-  }, [url, targetHandle, provider, isExplicit, user?.avatar_url, currentProvider, gravatarUrl, targetEmail, targetName, accounts]);
+  }, [
+    url,
+    targetHandle,
+    provider,
+    isExplicit,
+    user?.avatar_url,
+    currentProvider,
+    gravatarUrl,
+    targetEmail,
+    targetName,
+    accounts,
+  ]);
 
   // Reset candidate index when candidate list changes
   useEffect(() => {
@@ -202,9 +221,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       title={targetName || targetHandle || 'User'}
     >
       {initials ? (
-        <span className="text-[10px] leading-none tracking-tight uppercase">
-          {initials}
-        </span>
+        <span className="text-[10px] leading-none tracking-tight uppercase">{initials}</span>
       ) : (
         <User className={`${iconClassName} opacity-80`} />
       )}

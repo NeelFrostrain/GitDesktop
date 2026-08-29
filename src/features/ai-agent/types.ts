@@ -6,7 +6,14 @@ export type AgentSecurityMode = 'strict' | 'sandboxed' | 'full_access';
 
 export interface AgentToolCall {
   id: string;
-  name: 'run_command' | 'write_file' | 'create_file' | 'edit_file' | 'delete_file' | 'read_file' | string;
+  name:
+    | 'run_command'
+    | 'write_file'
+    | 'create_file'
+    | 'edit_file'
+    | 'delete_file'
+    | 'read_file'
+    | string;
   command?: string;
   filePath?: string;
   fileContent?: string;

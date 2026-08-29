@@ -17,7 +17,9 @@ export function getCleanBranchName(name: string): string {
  * - Remote-only branches are listed with a Globe icon and 'remote' badge.
  */
 export function formatBranchDropdownOptions(branches: BranchInfo[]): DropdownOption[] {
-  const validRemote = branches.filter((b) => b.is_remote && !b.name.endsWith('/HEAD') && !b.name.endsWith('\\HEAD'));
+  const validRemote = branches.filter(
+    (b) => b.is_remote && !b.name.endsWith('/HEAD') && !b.name.endsWith('\\HEAD')
+  );
   const localBranches = branches.filter((b) => !b.is_remote);
 
   // Deduplicate local branches by name

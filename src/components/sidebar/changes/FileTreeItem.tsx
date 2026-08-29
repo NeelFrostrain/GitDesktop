@@ -271,10 +271,7 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
           </button>
 
           {/* Folder Staging Checkbox */}
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center shrink-0"
-          >
+          <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
             <Checkbox
               checked={isAllStaged}
               indeterminate={isIndeterminate}
@@ -296,7 +293,11 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
             {parts.map((p, idx) => (
               <React.Fragment key={idx}>
                 {idx > 0 && <span className="text-text-faint/50 font-mono text-[10px]">/</span>}
-                <span className={idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'}>
+                <span
+                  className={
+                    idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'
+                  }
+                >
                   {p}
                 </span>
               </React.Fragment>
@@ -352,14 +353,8 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
     >
       <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
         {/* File Checkbox */}
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="flex items-center shrink-0"
-        >
-          <Checkbox
-            checked={isStaged}
-            onChange={() => toggleStageFile(file.path)}
-          />
+        <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
+          <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
         </div>
 
         {/* Dynamic File Type Icon */}

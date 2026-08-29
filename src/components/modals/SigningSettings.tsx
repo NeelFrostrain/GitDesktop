@@ -1,13 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Shield,
-  Key,
-  Check,
-  AlertCircle,
-  ShieldCheck,
-  Loader2,
-} from 'lucide-react';
+import { X, Shield, Key, Check, AlertCircle, ShieldCheck, Loader2 } from 'lucide-react';
 import { useSigningStore } from '../../store/signingStore';
 import { useGitStore } from '../../store/useGitStore';
 import { SigningConfig } from '../../types/git';
@@ -223,7 +215,9 @@ export const SigningSettings: React.FC = () => {
                         <span>No GPG secret keys found</span>
                       </div>
                       <p className="text-[11px] text-text-muted">
-                        Generate one using <code className="text-commito-coral">gpg --generate-key</code> in your terminal.
+                        Generate one using{' '}
+                        <code className="text-commito-coral">gpg --generate-key</code> in your
+                        terminal.
                       </p>
                     </div>
                   )
@@ -247,7 +241,9 @@ export const SigningSettings: React.FC = () => {
                       <span>No SSH keys found</span>
                     </div>
                     <p className="text-[11px] text-text-muted">
-                      Generate one using <code className="text-commito-coral">ssh-keygen -t ed25519</code> in your terminal.
+                      Generate one using{' '}
+                      <code className="text-commito-coral">ssh-keygen -t ed25519</code> in your
+                      terminal.
                     </p>
                   </div>
                 )}
@@ -301,7 +297,11 @@ export const SigningSettings: React.FC = () => {
             disabled={isLoading}
             className="h-7.5 px-4 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs bg-commito-coral hover:bg-commito-coralLight text-white active:scale-98 disabled:opacity-60"
           >
-            {isLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            {isLoading ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Check className="w-3.5 h-3.5" />
+            )}
             <span>{isLoading ? 'Saving...' : 'Save Configuration'}</span>
           </button>
         </div>

@@ -1,16 +1,9 @@
-import React, { useState, useRef } from "react";
-import {
-  X,
-  User,
-  Mail,
-  Camera,
-  Trash2,
-  Image as ImageIcon,
-} from "lucide-react";
-import { ProviderAccount } from "../types";
-import { useAccountServicesStore } from "../store/accountStore";
-import { UserAvatar } from "../../../components/common/UserAvatar";
-import { Button } from "../../../components/common/Button";
+import React, { useState, useRef } from 'react';
+import { X, User, Mail, Camera, Trash2, Image as ImageIcon } from 'lucide-react';
+import { ProviderAccount } from '../types';
+import { useAccountServicesStore } from '../store/accountStore';
+import { UserAvatar } from '../../../components/common/UserAvatar';
+import { Button } from '../../../components/common/Button';
 
 interface EditAccountDialogProps {
   account: ProviderAccount;
@@ -26,7 +19,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
   const { updateAccount } = useAccountServicesStore();
   const [displayName, setDisplayName] = useState(account.display_name);
   const [commitEmail, setCommitEmail] = useState(account.commit_email);
-  const [avatarUrl, setAvatarUrl] = useState<string>(account.avatar_url || "");
+  const [avatarUrl, setAvatarUrl] = useState<string>(account.avatar_url || '');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,14 +31,14 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      setError("Please select a valid image file (PNG, JPG, WebP, SVG).");
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image file (PNG, JPG, WebP, SVG).');
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      if (typeof reader.result === "string") {
+      if (typeof reader.result === 'string') {
         setAvatarUrl(reader.result);
       }
     };
@@ -53,9 +46,9 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
   };
 
   const handleRemoveAvatar = () => {
-    setAvatarUrl("");
+    setAvatarUrl('');
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -71,7 +64,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
       });
       onClose();
     } catch (err: any) {
-      setError(err?.message || "Failed to update account details");
+      setError(err?.message || 'Failed to update account details');
     } finally {
       setIsSaving(false);
     }
@@ -131,16 +124,12 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               />
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                 <Camera className="w-3 h-3" />
-                <span className="text-[7.5px] font-bold uppercase tracking-wider mt-0.5">
-                  Edit
-                </span>
+                <span className="text-[7.5px] font-bold uppercase tracking-wider mt-0.5">Edit</span>
               </div>
             </div>
 
             <div className="min-w-0 flex-1 space-y-1">
-              <div className="text-xs font-semibold text-text-primary">
-                Profile Avatar
-              </div>
+              <div className="text-xs font-semibold text-text-primary">Profile Avatar</div>
               <div className="flex items-center gap-2">
                 <Button
                   type="button"
@@ -199,8 +188,7 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
               className="w-full bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm px-2.5 py-1.5 text-xs font-mono text-text-primary placeholder:text-text-muted/50 focus:outline-none transition"
             />
             <p className="text-[10.5px] text-text-muted">
-              Used for Git commit authorship (`user.email`) when this account is
-              active.
+              Used for Git commit authorship (`user.email`) when this account is active.
             </p>
           </div>
 
@@ -224,20 +212,10 @@ export const EditAccountDialog: React.FC<EditAccountDialogProps> = ({
 
           {/* Footer buttons */}
           <div className="pt-3 border-t border-border flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={onClose}
-            >
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              variant="coral"
-              size="sm"
-              isLoading={isSaving}
-            >
+            <Button type="submit" variant="coral" size="sm" isLoading={isSaving}>
               Save Changes
             </Button>
           </div>

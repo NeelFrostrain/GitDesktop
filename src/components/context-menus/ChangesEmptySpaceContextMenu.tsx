@@ -1,11 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  FilePlus,
-  FolderPlus,
-  FolderOpen,
-  Terminal,
-} from 'lucide-react';
+import { FilePlus, FolderPlus, FolderOpen, Terminal } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useTerminalStore } from '../../features/terminal/store/terminalStore';
 import { SystemService } from '../../services/system/systemService';

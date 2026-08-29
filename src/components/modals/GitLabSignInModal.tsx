@@ -180,7 +180,9 @@ export const GitLabSignInModal: React.FC = () => {
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-text-primary flex items-center justify-between">
                   <span>GitLab Instance URL</span>
-                  <span className="text-[10px] text-text-muted font-normal">e.g. https://gitlab.com</span>
+                  <span className="text-[10px] text-text-muted font-normal">
+                    e.g. https://gitlab.com
+                  </span>
                 </label>
                 <div className="relative">
                   <Globe className="w-4 h-4 text-text-muted absolute left-3 top-2.5 pointer-events-none" />
@@ -199,7 +201,9 @@ export const GitLabSignInModal: React.FC = () => {
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-text-primary flex items-center justify-between">
                     <span>Custom Client ID (Optional)</span>
-                    <span className="text-[10px] text-text-muted font-normal">for self-hosted app</span>
+                    <span className="text-[10px] text-text-muted font-normal">
+                      for self-hosted app
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -217,7 +221,8 @@ export const GitLabSignInModal: React.FC = () => {
                   <span>Secure Browser Sign-In</span>
                 </div>
                 <p className="text-[11px] leading-relaxed text-text-muted">
-                  Clicking below will open your default browser to authorize Git Desktop. After approving, you will be redirected back automatically.
+                  Clicking below will open your default browser to authorize Git Desktop. After
+                  approving, you will be redirected back automatically.
                 </p>
               </div>
 
@@ -257,7 +262,9 @@ export const GitLabSignInModal: React.FC = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-text-primary">Personal Access Token (PAT)</label>
+                <label className="text-xs font-bold text-text-primary">
+                  Personal Access Token (PAT)
+                </label>
                 <div className="relative">
                   <Key className="w-4 h-4 text-text-muted absolute left-3 top-2.5 pointer-events-none" />
                   <input
@@ -270,7 +277,9 @@ export const GitLabSignInModal: React.FC = () => {
                   />
                 </div>
                 <p className="text-[10px] text-text-muted">
-                  Requires scopes: <code className="text-commito-coral">api</code> or <code className="text-commito-coral">read_user</code>, <code className="text-commito-coral">write_repository</code>.
+                  Requires scopes: <code className="text-commito-coral">api</code> or{' '}
+                  <code className="text-commito-coral">read_user</code>,{' '}
+                  <code className="text-commito-coral">write_repository</code>.
                 </p>
               </div>
 

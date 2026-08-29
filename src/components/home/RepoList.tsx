@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Search,
   DownloadCloud,
@@ -11,15 +11,15 @@ import {
   Pin,
   FileEdit,
   PlusSquare,
-} from "lucide-react";
-import { useRepoStore } from "../../store/repoStore";
-import { useGitStore } from "../../store/useGitStore";
-import { SystemService } from "../../services/system/systemService";
-import { getErrorMessage } from "../../shared/utils/errorUtils";
-import { RepoCard } from "./RepoCard";
-import { Button } from "../common/Button";
+} from 'lucide-react';
+import { useRepoStore } from '../../store/repoStore';
+import { useGitStore } from '../../store/useGitStore';
+import { SystemService } from '../../services/system/systemService';
+import { getErrorMessage } from '../../shared/utils/errorUtils';
+import { RepoCard } from './RepoCard';
+import { Button } from '../common/Button';
 
-type FilterTab = "all" | "pinned" | "dirty" | "gitlab" | "github";
+type FilterTab = 'all' | 'pinned' | 'dirty' | 'gitlab' | 'github';
 
 /**
  * Dashboard repository list & grid with search, filter tabs, view modes, spotlight, and quick actions.
@@ -32,15 +32,13 @@ export const RepoList: React.FC = () => {
   const addRepo = useRepoStore((s) => s.addRepo);
 
   const { setIsCloneRepoModalOpen, setIsCreateRepoModalOpen } = useGitStore();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterTab, setFilterTab] = useState<FilterTab>("all");
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterTab, setFilterTab] = useState<FilterTab>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     try {
-      return (
-        (localStorage.getItem("repo_view_mode") as "grid" | "list") || "grid"
-      );
+      return (localStorage.getItem('repo_view_mode') as 'grid' | 'list') || 'grid';
     } catch {
-      return "grid";
+      return 'grid';
     }
   });
 
@@ -54,21 +52,21 @@ export const RepoList: React.FC = () => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        (e.key === "/" || ((e.ctrlKey || e.metaKey) && e.key === "k")) &&
+        (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) &&
         document.activeElement !== searchInputRef.current
       ) {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const setView = (mode: "grid" | "list") => {
+  const setView = (mode: 'grid' | 'list') => {
     setViewMode(mode);
     try {
-      localStorage.setItem("repo_view_mode", mode);
+      localStorage.setItem('repo_view_mode', mode);
     } catch {
       // ignore
     }
@@ -102,10 +100,10 @@ export const RepoList: React.FC = () => {
 
       // 2. Tab filter
       const st = statuses[r.path];
-      if (filterTab === "pinned") return Boolean(r.pinned);
-      if (filterTab === "dirty") return Boolean(st && st.dirty_files > 0);
-      if (filterTab === "gitlab") return st?.remote_provider === "gitlab";
-      if (filterTab === "github") return st?.remote_provider === "github";
+      if (filterTab === 'pinned') return Boolean(r.pinned);
+      if (filterTab === 'dirty') return Boolean(st && st.dirty_files > 0);
+      if (filterTab === 'gitlab') return st?.remote_provider === 'gitlab';
+      if (filterTab === 'github') return st?.remote_provider === 'github';
 
       return true;
     });
@@ -114,7 +112,7 @@ export const RepoList: React.FC = () => {
   const pinnedRepos = useMemo(() => repos.filter((r) => r.pinned), [repos]);
   const unpinnedFilteredRepos = useMemo(
     () => filteredRepos.filter((r) => !r.pinned),
-    [filteredRepos],
+    [filteredRepos]
   );
 
   const dirtyCount = useMemo(() => {
@@ -134,62 +132,56 @@ export const RepoList: React.FC = () => {
           <div className="h-7.5 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs">
             <button
               type="button"
-              onClick={() => setFilterTab("all")}
+              onClick={() => setFilterTab('all')}
               className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer flex items-center gap-1.5 leading-none ${
-                filterTab === "all"
-                  ? "bg-base-2 text-text-primary font-semibold shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                filterTab === 'all'
+                  ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <span>All</span>
-              <span className="text-[10px] font-mono text-text-muted">
-                {repos.length}
-              </span>
+              <span className="text-[10px] font-mono text-text-muted">{repos.length}</span>
             </button>
 
             {pinnedRepos.length > 0 && (
               <button
                 type="button"
-                onClick={() => setFilterTab("pinned")}
+                onClick={() => setFilterTab('pinned')}
                 className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer flex items-center gap-1.5 leading-none ${
-                  filterTab === "pinned"
-                    ? "bg-base-2 text-commito-coral font-semibold shadow-xs"
-                    : "text-text-muted hover:text-text-primary"
+                  filterTab === 'pinned'
+                    ? 'bg-base-2 text-commito-coral font-semibold shadow-xs'
+                    : 'text-text-muted hover:text-text-primary'
                 }`}
               >
                 <Pin className="w-3 h-3 fill-commito-coral/30" />
                 <span>Pinned</span>
-                <span className="text-[10px] font-mono text-text-muted">
-                  {pinnedRepos.length}
-                </span>
+                <span className="text-[10px] font-mono text-text-muted">{pinnedRepos.length}</span>
               </button>
             )}
 
             {dirtyCount > 0 && (
               <button
                 type="button"
-                onClick={() => setFilterTab("dirty")}
+                onClick={() => setFilterTab('dirty')}
                 className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer flex items-center gap-1.5 leading-none ${
-                  filterTab === "dirty"
-                    ? "bg-amber-500/15 text-amber-400 font-semibold shadow-xs border border-amber-500/30"
-                    : "text-text-muted hover:text-text-primary"
+                  filterTab === 'dirty'
+                    ? 'bg-amber-500/15 text-amber-400 font-semibold shadow-xs border border-amber-500/30'
+                    : 'text-text-muted hover:text-text-primary'
                 }`}
               >
                 <FileEdit className="w-3 h-3" />
                 <span>Changes</span>
-                <span className="text-[10px] font-mono text-amber-400">
-                  {dirtyCount}
-                </span>
+                <span className="text-[10px] font-mono text-amber-400">{dirtyCount}</span>
               </button>
             )}
 
             <button
               type="button"
-              onClick={() => setFilterTab("gitlab")}
+              onClick={() => setFilterTab('gitlab')}
               className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer leading-none flex items-center ${
-                filterTab === "gitlab"
-                  ? "bg-base-2 text-commito-coral font-semibold shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                filterTab === 'gitlab'
+                  ? 'bg-base-2 text-commito-coral font-semibold shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
               GitLab
@@ -197,11 +189,11 @@ export const RepoList: React.FC = () => {
 
             <button
               type="button"
-              onClick={() => setFilterTab("github")}
+              onClick={() => setFilterTab('github')}
               className={`h-full px-2.5 rounded-xs text-[11.5px] font-medium transition cursor-pointer leading-none flex items-center ${
-                filterTab === "github"
-                  ? "bg-base-2 text-purple-400 font-semibold shadow-xs"
-                  : "text-text-muted hover:text-text-primary"
+                filterTab === 'github'
+                  ? 'bg-base-2 text-purple-400 font-semibold shadow-xs'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
               GitHub
@@ -225,7 +217,7 @@ export const RepoList: React.FC = () => {
             {searchQuery ? (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
+                onClick={() => setSearchQuery('')}
                 className="absolute right-2 p-0.5 text-text-muted hover:text-text-primary cursor-pointer flex items-center justify-center"
                 title="Clear search"
               >
@@ -242,24 +234,24 @@ export const RepoList: React.FC = () => {
           <div className="h-7.5 flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 flex-shrink-0 shadow-2xs">
             <button
               type="button"
-              onClick={() => setView("grid")}
+              onClick={() => setView('grid')}
               title="Grid view"
               className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
-                viewMode === "grid"
-                  ? "bg-base-2 text-text-primary shadow-xs font-semibold"
-                  : "text-text-muted hover:text-text-primary"
+                viewMode === 'grid'
+                  ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
-              onClick={() => setView("list")}
+              onClick={() => setView('list')}
               title="List view"
               className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
-                viewMode === "list"
-                  ? "bg-base-2 text-text-primary shadow-xs font-semibold"
-                  : "text-text-muted hover:text-text-primary"
+                viewMode === 'list'
+                  ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
+                  : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <List className="w-3.5 h-3.5" />
@@ -269,7 +261,7 @@ export const RepoList: React.FC = () => {
       </div>
 
       {/* Spotlight: Pinned Favorites (Deduplicated Section) */}
-      {filterTab === "all" && !searchQuery && pinnedRepos.length > 0 && (
+      {filterTab === 'all' && !searchQuery && pinnedRepos.length > 0 && (
         <div className="space-y-2 pt-1">
           <div className="flex items-center justify-between text-xs font-semibold text-text-secondary">
             <span className="flex items-center gap-1.5 text-commito-coral">
@@ -280,12 +272,12 @@ export const RepoList: React.FC = () => {
               {pinnedRepos.length} pinned
             </span>
           </div>
-          {viewMode === "grid" ? (
+          {viewMode === 'grid' ? (
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "12px",
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '12px',
               }}
             >
               {pinnedRepos.map((repo) => (
@@ -315,9 +307,9 @@ export const RepoList: React.FC = () => {
 
       {/* Repositories Display (Deduplicated with Pinned when in All mode) */}
       {filteredRepos.length > 0 ? (
-        viewMode === "grid" ? (
+        viewMode === 'grid' ? (
           <div className="space-y-2">
-            {filterTab === "all" && !searchQuery && pinnedRepos.length > 0 && (
+            {filterTab === 'all' && !searchQuery && pinnedRepos.length > 0 && (
               <div className="text-xs font-semibold text-text-secondary">
                 All Repositories ({repos.length})
               </div>
@@ -325,22 +317,17 @@ export const RepoList: React.FC = () => {
             <div
               className="animate-in fade-in duration-200"
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "12px",
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '12px',
               }}
             >
               {/* If in All mode with pinned repos, render unpinned repos here so there's no duplication */}
-              {(filterTab === "all" && !searchQuery && pinnedRepos.length > 0
+              {(filterTab === 'all' && !searchQuery && pinnedRepos.length > 0
                 ? unpinnedFilteredRepos
                 : filteredRepos
               ).map((repo) => (
-                <RepoCard
-                  key={repo.id}
-                  repo={repo}
-                  status={statuses[repo.path]}
-                  viewMode="grid"
-                />
+                <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="grid" />
               ))}
 
               {/* Quick Add Card */}
@@ -363,16 +350,11 @@ export const RepoList: React.FC = () => {
         ) : (
           /* List View */
           <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
-            {(filterTab === "all" && !searchQuery && pinnedRepos.length > 0
+            {(filterTab === 'all' && !searchQuery && pinnedRepos.length > 0
               ? unpinnedFilteredRepos
               : filteredRepos
             ).map((repo) => (
-              <RepoCard
-                key={repo.id}
-                repo={repo}
-                status={statuses[repo.path]}
-                viewMode="list"
-              />
+              <RepoCard key={repo.id} repo={repo} status={statuses[repo.path]} viewMode="list" />
             ))}
 
             {/* Add Row */}
@@ -409,12 +391,10 @@ export const RepoList: React.FC = () => {
             <FolderGit2 className="w-6 h-6 text-commito-coral" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-sm font-bold text-text-primary">
-              No Repositories Yet
-            </h3>
+            <h3 className="text-sm font-bold text-text-primary">No Repositories Yet</h3>
             <p className="text-xs text-text-secondary max-w-sm leading-relaxed">
-              Create a new Git repository, open an existing folder from your
-              computer, or clone one from GitLab / GitHub.
+              Create a new Git repository, open an existing folder from your computer, or clone one
+              from GitLab / GitHub.
             </p>
           </div>
           <div className="flex items-center gap-2.5 pt-1 flex-wrap justify-center">
@@ -450,15 +430,12 @@ export const RepoList: React.FC = () => {
       ) : (
         /* No Search / Filter Matches */
         <div className="py-10 text-center text-xs text-text-muted bg-base-1/50 border border-border rounded-sm space-y-2">
-          <p>
-            No repositories matching &ldquo;{searchQuery}&rdquo; in this filter
-            view.
-          </p>
+          <p>No repositories matching &ldquo;{searchQuery}&rdquo; in this filter view.</p>
           <button
             type="button"
             onClick={() => {
-              setSearchQuery("");
-              setFilterTab("all");
+              setSearchQuery('');
+              setFilterTab('all');
             }}
             className="text-commito-coral hover:underline text-xs cursor-pointer font-medium"
           >
