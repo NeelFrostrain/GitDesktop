@@ -30,9 +30,9 @@ export const SettingsPanel: React.FC = () => {
   const [sidebarWidth, setSidebarWidth] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('settings_sidebar_width');
-      return saved ? Math.max(160, Math.min(360, parseInt(saved, 10))) : 210;
+      return saved ? Math.max(160, Math.min(360, parseInt(saved, 10))) : 200;
     } catch {
-      return 210;
+      return 200;
     }
   });
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
@@ -99,7 +99,7 @@ export const SettingsPanel: React.FC = () => {
 
   // Filter settings for active category / subcategory
   const activeSettings = useMemo(() => {
-    if (searchResults) return [];
+    if (searchResults || selectedCategory === 'ai') return [];
 
     return SETTINGS_SCHEMA.filter((s) => {
       if (s.category !== selectedCategory) {
@@ -128,23 +128,23 @@ export const SettingsPanel: React.FC = () => {
   const currentCategoryMeta = CATEGORY_METADATA[selectedCategory];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 select-none">
       <div
         ref={modalContainerRef}
-        className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans"
+        className="relative w-full max-w-4xl h-[85vh] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans ring-1 ring-black/40"
       >
-        {/* Compact Single-Row Header */}
-        <header className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
+        {/* Header */}
+        <header className="px-4 py-2.5 bg-base-1/90 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
           <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
-            <div className="w-5 h-5 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0">
+            <div className="w-5 h-5 rounded-sm bg-commito-coral/10 border border-commito-coral/25 text-commito-coral flex items-center justify-center shrink-0 shadow-2xs">
               <Sliders className="w-3 h-3" />
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
               <h2 className="text-xs font-bold text-text-primary leading-none">
                 Settings
               </h2>
-              <span className="text-border">•</span>
-              <span className="text-[10.5px] text-text-muted truncate hidden sm:inline">
+              <span className="text-border text-[10px]">•</span>
+              <span className="text-[10.5px] text-text-muted truncate hidden sm:inline font-mono">
                 Preferences &amp; Configuration
               </span>
             </div>
@@ -154,28 +154,28 @@ export const SettingsPanel: React.FC = () => {
           <SettingsSearchBar matchCount={searchResults ? searchResults.length : undefined} />
 
           {/* Actions */}
-          <div className="flex items-center gap-1.5 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {/* Reset all button */}
             <button
               type="button"
               onClick={() => {
-                if (window.confirm('Reset all custom settings and CSS tokens back to defaults?')) {
+                if (window.confirm('Reset all custom settings back to defaults?')) {
                   resetAllSettings();
                 }
               }}
-              className="p-1 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1.5 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
               title="Reset all settings to default values"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
 
-            <div className="h-3.5 w-px bg-border" />
+            <div className="h-3.5 w-px bg-border my-auto mx-0.5" />
 
             {/* Close button */}
             <button
               type="button"
               onClick={closeSettings}
-              className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs border border-transparent hover:border-border transition cursor-pointer"
+              className="p-1.5 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-sm border border-transparent hover:border-border transition cursor-pointer"
               title="Close Settings (Esc)"
             >
               <X className="w-3.5 h-3.5" />
@@ -191,34 +191,34 @@ export const SettingsPanel: React.FC = () => {
           {/* Resizable Divider Splitter Handle */}
           <div
             onMouseDown={startResizingSidebar}
-            onDoubleClick={() => setSidebarWidth(210)}
+            onDoubleClick={() => setSidebarWidth(200)}
             title="Drag to resize • Double-click to reset"
-            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
-              isResizingSidebar ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
+            className={`w-1 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              isResizingSidebar ? 'bg-commito-coral' : 'bg-transparent'
             }`}
           >
             <div className="absolute inset-y-0 -left-1 -right-1" />
           </div>
 
           {/* Right Content Area */}
-          <main className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
+          <main className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
             {/* 1. Search Results Mode */}
             {searchResults ? (
               <div className="space-y-4">
                 <div className="border-b border-border/70 pb-3 flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-bold text-text-primary">
+                    <h3 className="text-xs font-bold text-text-primary">
                       Search Results
                     </h3>
-                    <p className="text-xs text-text-muted mt-0.5">
+                    <p className="text-[11px] text-text-muted mt-0.5">
                       Found {searchResults.length} {searchResults.length === 1 ? 'setting' : 'settings'} matching &quot;{searchQuery}&quot;
                     </p>
                   </div>
                 </div>
 
                 {searchResults.length === 0 ? (
-                  <div className="p-12 text-center text-text-muted italic">
-                    No settings found matching &quot;{searchQuery}&quot;. Try searching for &quot;font&quot;, &quot;accent&quot;, &quot;gemini&quot;, or &quot;diff&quot;.
+                  <div className="p-12 text-center text-text-muted italic text-xs">
+                    No settings found matching &quot;{searchQuery}&quot;. Try searching for &quot;gemini&quot;, &quot;model&quot;, or &quot;api&quot;.
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -240,13 +240,13 @@ export const SettingsPanel: React.FC = () => {
               </div>
             ) : (
               /* 2. Category View Mode */
-              <div className="space-y-6">
+              <div className="space-y-5">
                 {/* Category Header */}
                 <div className="border-b border-border/70 pb-3">
-                  <h3 className="text-sm font-bold text-text-primary">
+                  <h3 className="text-xs font-bold text-text-primary tracking-tight">
                     {currentCategoryMeta?.label || 'AI & Commit-AI'}
                   </h3>
-                  <p className="text-[11.5px] text-text-muted mt-0.5 leading-relaxed">
+                  <p className="text-[11px] text-text-muted mt-0.5 leading-relaxed">
                     Configure Google Gemini API keys, active model rotation, and AI commit generation parameters.
                   </p>
                 </div>
@@ -254,12 +254,12 @@ export const SettingsPanel: React.FC = () => {
                 {/* Render dedicated AiSettingsTab with multi-key pool */}
                 {selectedCategory === 'ai' && <AiSettingsTab />}
 
-                {/* Subcategory sections */}
+                {/* Subcategory sections (for other non-AI categories) */}
                 {groupedSettings.map(([subcategory, settings]) => {
                   return (
                     <section key={subcategory} className="space-y-2.5">
                       <div className="flex items-center gap-2">
-                        <h4 className="text-[10.5px] font-bold text-text-muted/80 uppercase tracking-wider">
+                        <h4 className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider">
                           {subcategory}
                         </h4>
                         <div className="flex-1 h-px bg-border/50" />

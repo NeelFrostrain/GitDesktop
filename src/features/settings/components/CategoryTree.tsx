@@ -1,5 +1,10 @@
 import React from 'react';
 import {
+  Sparkles,
+  Sliders,
+  ChevronRight,
+} from 'lucide-react';
+import {
   CATEGORY_METADATA,
   SettingCategory,
   SETTINGS_SCHEMA,
@@ -33,12 +38,21 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
     return counts;
   }, [isModified]);
 
+  const getCategoryIcon = (cat: SettingCategory) => {
+    switch (cat) {
+      case 'ai':
+        return <Sparkles className="w-3.5 h-3.5 text-commito-coral shrink-0" />;
+      default:
+        return <Sliders className="w-3.5 h-3.5 text-text-muted shrink-0" />;
+    }
+  };
+
   return (
     <nav
       style={style}
-      className={`bg-base-1/40 p-2 space-y-0.5 select-none overflow-y-auto scrollbar-thin shrink-0 ${className}`}
+      className={`bg-base-1/50 p-2.5 space-y-1 select-none overflow-y-auto scrollbar-thin shrink-0 border-r border-border ${className}`}
     >
-      <div className="px-2 py-1.5 text-[10px] font-bold text-text-muted/70 uppercase tracking-widest">
+      <div className="px-2 py-1 text-[10px] font-mono font-semibold text-text-muted uppercase tracking-wider">
         Categories
       </div>
 
@@ -52,16 +66,19 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
             <button
               type="button"
               onClick={() => setSelectedCategory(cat)}
-              className={`w-full px-2.5 py-1.5 rounded-sm text-left flex items-center justify-between text-xs transition-all cursor-pointer group ${
+              className={`w-full px-2.5 py-1.5 rounded-sm text-left flex items-center justify-between text-xs transition cursor-pointer group ${
                 isSelected
-                  ? 'bg-commito-coral/15 text-commito-coral font-semibold border-l-2 border-commito-coral shadow-2xs'
-                  : 'text-text-secondary hover:bg-base-2/80 hover:text-text-primary border-l-2 border-transparent'
+                  ? 'bg-base-2 border border-border text-text-primary font-semibold shadow-2xs'
+                  : 'text-text-secondary hover:bg-base-2/60 hover:text-text-primary border border-transparent'
               }`}
             >
-              <span className="truncate">{meta.label}</span>
+              <div className="flex items-center gap-2 min-w-0">
+                {getCategoryIcon(cat)}
+                <span className="truncate">{meta.label}</span>
+              </div>
 
               {count > 0 && (
-                <span className="px-1.5 py-0.2 bg-commito-coral/20 text-commito-coral text-[9.5px] font-mono font-bold rounded-xs">
+                <span className="px-1.5 py-0.2 bg-commito-coral/15 border border-commito-coral/30 text-commito-coral text-[9.5px] font-mono font-bold rounded-xs">
                   {count}
                 </span>
               )}
@@ -69,7 +86,7 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
 
             {/* Subcategories hierarchy for active selected category */}
             {isSelected && meta.subcategories.length > 1 && (
-              <div className="ml-3 pl-2.5 border-l border-border/60 space-y-0.5 py-1 my-0.5">
+              <div className="ml-3.5 pl-2.5 border-l border-border/80 space-y-0.5 py-1 my-0.5">
                 {meta.subcategories.map((subcat) => {
                   const isSubSelected = selectedSubcategory === subcat;
                   return (
@@ -77,13 +94,14 @@ export const CategoryTree: React.FC<CategoryTreeProps> = ({ className = '', styl
                       key={subcat}
                       type="button"
                       onClick={() => setSelectedSubcategory(isSubSelected ? null : subcat)}
-                      className={`w-full px-2 py-1 rounded-xs text-left text-[11px] transition-colors cursor-pointer truncate ${
+                      className={`w-full px-2 py-1 rounded-xs text-left text-[11px] transition-colors cursor-pointer flex items-center justify-between truncate ${
                         isSubSelected
                           ? 'text-commito-coral font-medium bg-commito-coral/10'
-                          : 'text-text-muted hover:text-text-primary hover:bg-base-2/60'
+                          : 'text-text-muted hover:text-text-primary hover:bg-base-2/50'
                       }`}
                     >
-                      {subcat}
+                      <span className="truncate">{subcat}</span>
+                      {isSubSelected && <ChevronRight className="w-2.5 h-2.5 text-commito-coral shrink-0 ml-1" />}
                     </button>
                   );
                 })}
