@@ -179,7 +179,7 @@ export const CreateRepoModal: React.FC = () => {
       className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
       <div
-        className="w-full max-w-lg bg-base-0 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
+        className="w-full max-w-lg bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-100"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
@@ -261,7 +261,8 @@ export const CreateRepoModal: React.FC = () => {
             {/* 2. Destination Path */}
             <div className="space-y-1">
               <label className="text-[11.5px] font-medium text-text-secondary block">
-                Local Destination Path <span className="text-commito-coral">*</span>
+                Local Destination Path{" "}
+                <span className="text-commito-coral">*</span>
               </label>
               <div className="flex gap-1.5">
                 <input

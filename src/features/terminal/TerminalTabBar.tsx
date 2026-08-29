@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Terminal,
   History,
@@ -13,19 +13,19 @@ import {
   Play,
   Pause,
   FolderGit2,
-} from 'lucide-react';
-import { useTerminalStore } from './store/terminalStore';
-import { useGitStore } from '../../store/useGitStore';
-import { listen } from '@tauri-apps/api/event';
-import type { MinGitProgress } from '../git-runtime/useGitRuntime';
-import { Tabs } from '../../components/common/Tabs';
+} from "lucide-react";
+import { useTerminalStore } from "./store/terminalStore";
+import { useGitStore } from "../../store/useGitStore";
+import { listen } from "@tauri-apps/api/event";
+import type { MinGitProgress } from "../git-runtime/useGitRuntime";
+import { Tabs } from "../../components/common/Tabs";
 
 export interface TerminalTabBarProps {
   repoName: string;
   branchName?: string;
   isAlive: boolean;
-  activeTab: 'shell' | 'app_log';
-  onTabChange: (tab: 'shell' | 'app_log') => void;
+  activeTab: "shell" | "app_log";
+  onTabChange: (tab: "shell" | "app_log") => void;
   onClear: () => void;
   onRestart: () => void;
   onSearch: (query: string) => void;
@@ -60,9 +60,12 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
 
   useEffect(() => {
     let unlisten: (() => void) | undefined;
-    listen<MinGitProgress>('mingit:download:progress', (event) => {
+    listen<MinGitProgress>("mingit:download:progress", (event) => {
       setGitProgress(event.payload);
-      if (event.payload.status === 'completed' || event.payload.status === 'error') {
+      if (
+        event.payload.status === "completed" ||
+        event.payload.status === "error"
+      ) {
         setTimeout(() => setGitProgress(null), 4000);
       }
     }).then((fn) => {
@@ -80,33 +83,38 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       onSearch(searchQuery);
-    } else if (e.key === 'Escape') {
+    } else if (e.key === "Escape") {
       setIsSearchOpen(false);
-      setSearchQuery('');
-      onSearch('');
+      setSearchQuery("");
+      onSearch("");
     }
   };
 
   return (
-    <div className="h-8 bg-base-1 border-b border-border px-2.5 flex items-center justify-between flex-shrink-0 select-none text-xs">
+    <div className="h-8 bg-base-1 border-b border-border px-1 flex items-center justify-between flex-shrink-0 select-none text-xs">
       {/* Left: Tabs + Repo & Branch info */}
       <div className="flex items-center gap-1.5 min-w-0">
         {/* Sleek Segmented Switcher */}
-        <Tabs<'shell' | 'app_log'>
+        <Tabs<"shell" | "app_log">
           tabs={[
             {
-              id: 'shell',
-              label: 'Shell',
-              icon: <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />,
+              id: "shell",
+              label: "Shell",
+              icon: (
+                <Terminal className="w-3 h-3 text-commito-coral flex-shrink-0" />
+              ),
             },
             {
-              id: 'app_log',
-              label: 'App Log',
-              icon: <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />,
-              badge: logCount !== undefined && logCount > 0 ? logCount : undefined,
-              badgeVariant: 'neutral',
+              id: "app_log",
+              label: "App Log",
+              icon: (
+                <History className="w-3 h-3 text-gitlab-teal flex-shrink-0" />
+              ),
+              badge:
+                logCount !== undefined && logCount > 0 ? logCount : undefined,
+              badgeVariant: "neutral",
             },
           ]}
           activeTab={activeTab}
@@ -132,12 +140,14 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         )}
 
         {/* Process status indicator for Shell */}
-        {activeTab === 'shell' && (
+        {activeTab === "shell" && (
           <span
             className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mx-0.5 ${
-              isAlive ? 'bg-git-added shadow-[0_0_6px_var(--git-added)]' : 'bg-text-disabled'
+              isAlive
+                ? "bg-git-added shadow-[0_0_6px_var(--git-added)]"
+                : "bg-text-disabled"
             }`}
-            title={isAlive ? 'Process running' : 'Process stopped'}
+            title={isAlive ? "Process running" : "Process stopped"}
           />
         )}
 
@@ -145,26 +155,26 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         {gitProgress && (
           <div
             className={`h-6.5 flex items-center gap-1.5 px-2 rounded-sm text-[10px] font-medium border shadow-2xs transition-all duration-300 ${
-              gitProgress.status === 'completed'
-                ? 'bg-git-added-bg border-git-added/30 text-git-added'
-                : gitProgress.status === 'error'
-                ? 'bg-git-removed-bg border-git-removed/30 text-git-removed'
-                : 'bg-commito-coral/10 border-commito-coral/30 text-commito-coral'
+              gitProgress.status === "completed"
+                ? "bg-git-added-bg border-git-added/30 text-git-added"
+                : gitProgress.status === "error"
+                  ? "bg-git-removed-bg border-git-removed/30 text-git-removed"
+                  : "bg-commito-coral/10 border-commito-coral/30 text-commito-coral"
             }`}
           >
-            {gitProgress.status === 'completed' ? (
+            {gitProgress.status === "completed" ? (
               <CheckCircle className="w-3 h-3 flex-shrink-0" />
             ) : (
               <Download className="w-3 h-3 flex-shrink-0 animate-bounce" />
             )}
             <span>
-              {gitProgress.status === 'completed'
-                ? 'Git ready'
-                : gitProgress.status === 'error'
-                ? 'Git install failed'
-                : gitProgress.status === 'extracting'
-                ? 'Installing git...'
-                : `Git ${gitProgress.percentage.toFixed(0)}%`}
+              {gitProgress.status === "completed"
+                ? "Git ready"
+                : gitProgress.status === "error"
+                  ? "Git install failed"
+                  : gitProgress.status === "extracting"
+                    ? "Installing git..."
+                    : `Git ${gitProgress.percentage.toFixed(0)}%`}
             </span>
           </div>
         )}
@@ -173,23 +183,23 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
       {/* Right: Actions */}
       <div className="flex items-center gap-1.5">
         {/* App Log Mode: Auto-scroll toggle pill */}
-        {activeTab === 'app_log' && onToggleAutoScroll && (
+        {activeTab === "app_log" && onToggleAutoScroll && (
           <button
             type="button"
             onClick={onToggleAutoScroll}
             className={`h-6 px-2 rounded-sm border text-[10.5px] font-medium transition cursor-pointer flex items-center gap-1.5 shadow-2xs ${
               autoScroll
-                ? 'bg-base-0 text-gitlab-teal border-border font-semibold'
-                : 'bg-base-0/80 text-text-muted hover:text-text-primary hover:bg-base-2 border border-border'
+                ? "bg-base-0 text-gitlab-teal border-border font-semibold"
+                : "bg-base-0/80 text-text-muted hover:text-text-primary hover:bg-base-2 border border-border"
             }`}
-            title={autoScroll ? 'Pause auto-scroll' : 'Resume auto-scroll'}
+            title={autoScroll ? "Pause auto-scroll" : "Resume auto-scroll"}
           >
             {autoScroll ? (
               <Pause className="w-3 h-3 text-gitlab-teal" />
             ) : (
               <Play className="w-3 h-3 text-text-muted" />
             )}
-            <span>{autoScroll ? 'Auto-scroll' : 'Paused'}</span>
+            <span>{autoScroll ? "Auto-scroll" : "Paused"}</span>
           </button>
         )}
 
@@ -200,7 +210,9 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             <input
               type="text"
               autoFocus
-              placeholder={activeTab === 'shell' ? 'Find in terminal...' : 'Filter logs...'}
+              placeholder={
+                activeTab === "shell" ? "Find in terminal..." : "Filter logs..."
+              }
               value={searchQuery}
               onChange={handleSearchChange}
               onKeyDown={handleKeyDown}
@@ -209,8 +221,8 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
             <button
               onClick={() => {
                 setIsSearchOpen(false);
-                setSearchQuery('');
-                onSearch('');
+                setSearchQuery("");
+                onSearch("");
               }}
               className="text-text-muted hover:text-text-primary cursor-pointer"
             >
@@ -230,7 +242,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         )}
 
         {/* Restart / Kill (Shell only) */}
-        {activeTab === 'shell' && (
+        {activeTab === "shell" && (
           <button
             type="button"
             onClick={onRestart}
@@ -245,7 +257,7 @@ export const TerminalTabBar: React.FC<TerminalTabBarProps> = ({
         <button
           type="button"
           onClick={() => {
-            const repoPath = useGitStore.getState().activeRepoPath || 'global';
+            const repoPath = useGitStore.getState().activeRepoPath || "global";
             openLogViewer(repoPath);
           }}
           className="h-6 px-2 text-text-muted hover:text-text-primary bg-base-0/80 hover:bg-base-2 rounded-sm border border-border transition cursor-pointer flex items-center gap-1.5 shadow-2xs text-[10.5px]"

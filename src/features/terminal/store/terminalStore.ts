@@ -21,9 +21,11 @@ interface TerminalState {
 const getStoredHeight = (): number => {
   try {
     const saved = localStorage.getItem('terminal_panel_height');
-    return saved ? Math.max(140, Math.min(700, parseInt(saved, 10))) : 260;
+    if (saved) return Math.max(140, Math.min(900, parseInt(saved, 10)));
+    // Default: ~30% of available height
+    return Math.round(Math.max(140, window.innerHeight * 0.30));
   } catch {
-    return 260;
+    return 300;
   }
 };
 
@@ -63,7 +65,7 @@ export const useTerminalStore = create<TerminalState>((set) => ({
   },
 
   setPanelHeight: (panelHeight) => {
-    const clamped = Math.max(140, Math.min(700, panelHeight));
+    const clamped = Math.max(140, Math.min(900, panelHeight));
     try {
       localStorage.setItem('terminal_panel_height', clamped.toString());
     } catch {}

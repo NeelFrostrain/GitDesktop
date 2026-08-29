@@ -358,7 +358,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({
         <div className="pt-2 space-y-2 animate-in fade-in duration-200">
           {/* Batch Action Bar for multiple commands */}
           {pendingCommands.length > 1 && (
-            <div className="p-2.5 bg-base-1/50 hover:bg-base-1/70 border border-border/80 rounded-md flex items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in select-none">
+            <div className="p-2.5 bg-base-1/50 hover:bg-base-1/70 border border-border/80 rounded-sm flex items-center justify-between gap-3 text-xs shadow-sm animate-in fade-in select-none">
               <div className="flex items-center gap-2 min-w-0">
                 <span className="w-2 h-2 rounded-full bg-commito-coral animate-pulse shrink-0" />
                 <span className="text-[11.5px] font-semibold text-text-primary truncate">

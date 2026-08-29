@@ -47,7 +47,7 @@ export const AccountServicesModal: React.FC = () => {
       {/* Modal Container */}
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150"
       >
         {/* Clean Modal Header */}
         <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">

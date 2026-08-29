@@ -117,7 +117,7 @@ export const Header: React.FC = () => {
       {/* Left: Quick Create Tools Segmented Pill */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {!isHome && (
-          <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-md p-0.5 shadow-2xs">
+          <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-sm p-0.5 shadow-2xs">
             {/* When full space is available: show individual quick-action buttons */}
             {isWide && (
               <>
@@ -157,11 +157,15 @@ export const Header: React.FC = () => {
                 {/* Git LFS & Locks Manager */}
                 <button
                   type="button"
-                  onClick={() => setCurrentNavView(currentNavView === 'locks' ? 'changes' : 'locks')}
+                  onClick={() =>
+                    setCurrentNavView(
+                      currentNavView === "locks" ? "changes" : "locks",
+                    )
+                  }
                   className={`h-6.5 w-6.5 flex items-center justify-center rounded-xs transition cursor-pointer ${
-                    currentNavView === 'locks'
-                      ? 'bg-base-2 text-commito-coral font-semibold'
-                      : 'text-text-muted hover:text-commito-coral hover:bg-base-2'
+                    currentNavView === "locks"
+                      ? "bg-base-2 text-commito-coral font-semibold"
+                      : "text-text-muted hover:text-commito-coral hover:bg-base-2"
                   }`}
                   title="Git LFS & File Locks"
                 >
@@ -222,7 +226,7 @@ export const Header: React.FC = () => {
               </button>
 
               {isMoreMenuOpen && (
-                <div className="absolute top-full left-0 mt-1.5 w-56 bg-[#19191d] border border-border-strong rounded-md shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute top-full left-0 mt-1.5 w-56 bg-[#19191d] border border-border-strong rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
                   {/* Compact-only overflow tools (shown when toolbar is narrow) */}
                   {!isWide && (
                     <>
@@ -280,13 +284,15 @@ export const Header: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            setCurrentNavView(currentNavView === 'locks' ? 'changes' : 'locks');
+                            setCurrentNavView(
+                              currentNavView === "locks" ? "changes" : "locks",
+                            );
                             setIsMoreMenuOpen(false);
                           }}
                           className={`w-full px-2.5 py-1.5 flex items-center gap-2 text-left cursor-pointer transition ${
-                            currentNavView === 'locks'
-                              ? 'bg-base-2 text-commito-coral font-semibold'
-                              : 'text-text-secondary hover:text-commito-coral hover:bg-base-2'
+                            currentNavView === "locks"
+                              ? "bg-base-2 text-commito-coral font-semibold"
+                              : "text-text-secondary hover:text-commito-coral hover:bg-base-2"
                           }`}
                         >
                           <Database className="w-3.5 h-3.5 text-commito-coral shrink-0" />
@@ -462,7 +468,7 @@ export const Header: React.FC = () => {
 
                 {/* Remote Options Menu (when multiple remotes exist or opened) */}
                 {isRemoteMenuOpen && (
-                  <div className="absolute top-full right-0 mt-1.5 w-64 bg-[#19191d] border border-border-strong rounded-md shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute top-full right-0 mt-1.5 w-64 bg-[#19191d] border border-border-strong rounded-sm shadow-2xl py-1 z-[100] text-xs animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
                       <span>Open Remote in Browser</span>
                       <span className="text-[9px] font-mono text-commito-coral">

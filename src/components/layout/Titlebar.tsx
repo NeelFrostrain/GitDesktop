@@ -128,26 +128,28 @@ export const Titlebar: React.FC = () => {
     }
   };
 
-  const handleDragMouseDown = async (e: React.MouseEvent) => {
-    if (e.button !== 0) return;
-    const target = e.target as HTMLElement;
-    if (
-      target.closest(
-        'button, input, select, a, [role="button"], .titlebar-no-drag',
+  const titlebarRef = React.useRef<HTMLElement>(null);
+
+  // Native mousedown → startDragging must fire inside the real pointer-down
+  // event. React's synthetic event layer is enough to break Tauri's context.
+  useEffect(() => {
+    const el = titlebarRef.current;
+    if (!el) return;
+    const handleNativeDrag = (e: MouseEvent) => {
+      if (e.button !== 0) return;
+      const target = e.target as HTMLElement;
+      if (
+        target.closest(
+          'button, input, select, a, [role="button"], .titlebar-no-drag',
+        )
       )
-    ) {
-      return;
-    }
-    if (e.detail === 2) {
-      handleToggleMaximize(e);
-      return;
-    }
-    try {
-      await appWindow.startDragging();
-    } catch {
-      // Ignore dragging error
-    }
-  };
+        return;
+      // startDragging must be called synchronously here — no await
+      appWindow.startDragging().catch(() => {});
+    };
+    el.addEventListener("mousedown", handleNativeDrag);
+    return () => el.removeEventListener("mousedown", handleNativeDrag);
+  }, [appWindow]);
 
   const handleSignOut = async () => {
     try {
@@ -165,8 +167,8 @@ export const Titlebar: React.FC = () => {
 
   return (
     <header
+      ref={titlebarRef}
       data-tauri-drag-region
-      onMouseDown={handleDragMouseDown}
       onDoubleClick={handleToggleMaximize}
       className="titlebar-drag h-10 rounded-sm bg-base-0 border-b mb-2 border-border flex items-center justify-between px-3 select-none z-50 text-xs flex-shrink-0 cursor-default relative"
     >

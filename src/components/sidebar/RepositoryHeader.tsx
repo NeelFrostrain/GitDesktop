@@ -30,7 +30,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-full h-8.5 px-2.5 rounded-md border border-border bg-base-1/70 hover:bg-base-2 hover:border-border-strong active:bg-base-3 flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs group outline-none text-left"
+            className="w-full h-8.5 px-2.5 rounded-sm border border-border bg-base-1/70 hover:bg-base-2 hover:border-border-strong active:bg-base-3 flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs group outline-none text-left"
             title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}\nClick to switch repository`}
           >
             <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -47,7 +47,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
-            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-border-strong hover:bg-base-2/60 rounded-md flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
+            className="w-full h-8.5 px-2.5 bg-base-1/50 border border-dashed border-border hover:border-border-strong hover:bg-base-2/60 rounded-sm flex items-center justify-between gap-2 cursor-pointer transition group outline-none text-left"
           >
             <div className="flex items-center gap-2 text-xs text-text-muted min-w-0">
               <FolderGit2 className="w-3.5 h-3.5 text-text-faint group-hover:text-commito-coral transition-colors shrink-0" />

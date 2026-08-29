@@ -235,13 +235,17 @@ export const AiAgentPanel: React.FC = () => {
         isDragging ? "" : "transition-[width] duration-75"
       }`}
     >
-      {/* Left Resizing Drag Handle */}
+      {/* Left Resizing Drag Handle — fills the full 6px gap to the left */}
       <div
         onMouseDown={handleMouseDownResize}
-        className="absolute left-0 inset-y-0 w-1 -translate-x-1/2 cursor-col-resize hover:bg-commito-coral/40 active:bg-commito-coral transition-colors z-50 flex items-center justify-center group select-none"
+        className={`absolute top-0 left-0 -translate-x-full w-[6px] h-full cursor-col-resize z-50 flex items-center justify-center group/handle select-none ${
+          isDragging ? "bg-commito-coral/30" : "hover:bg-commito-coral/20"
+        }`}
         title="Drag to resize AI Agent sidebar"
       >
-        <div className="w-0.5 h-8 rounded-full bg-border group-hover:bg-commito-coral transition-colors" />
+        <div className={`w-px h-10 rounded-full transition-colors ${
+          isDragging ? "bg-commito-coral" : "bg-border/60 group-hover/handle:bg-commito-coral/80"
+        }`} />
       </div>
 
       {/* Top Header */}
@@ -507,7 +511,7 @@ export const AiAgentPanel: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAttachMenuOpen((v) => !v)}
-                className="w-6 h-6 flex items-center justify-center rounded-md text-text-muted hover:text-commito-coral hover:bg-base-2/60 transition cursor-pointer"
+                className="w-6 h-6 flex items-center justify-center rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2/60 transition cursor-pointer"
                 title="Attach Context (Git Diff / Terminal Output in TOON)"
               >
                 <Plus className="w-4 h-4 stroke-[2]" />

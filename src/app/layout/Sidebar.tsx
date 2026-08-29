@@ -73,16 +73,18 @@ export const Sidebar: React.FC = () => {
       style={{ width: `${sidebarWidth}px` }}
       className="relative h-full bg-base-0 border border-border/80 rounded-sm flex flex-col flex-shrink-0 select-none group/sidebar z-20 overflow-hidden shadow-2xs"
     >
-      {/* Resizable handle bar on the right border */}
+      {/* Resizable handle — fills the full 6px gap to the right */}
       <div
         onMouseDown={startResizing}
         onDoubleClick={() => setSidebarWidth(320)}
         title="Drag to resize sidebar • Double-click to reset"
-        className={`absolute top-0 -right-1 w-1 h-full cursor-col-resize z-30 transition-colors flex items-center justify-center ${
-          isResizing ? "bg-commito-coral" : "hover:bg-commito-coral/60"
+        className={`absolute top-0 right-0 translate-x-full w-[6px] h-full cursor-col-resize z-30 flex items-center justify-center group/handle ${
+          isResizing ? "bg-commito-coral/30" : "hover:bg-commito-coral/20"
         }`}
       >
-        {/* <div className="w-0.5 h-8 rounded-full transition-colors bg-border group-hover/sidebar:bg-commito-coral/80" /> */}
+        <div className={`w-px h-10 rounded-full transition-colors ${
+          isResizing ? "bg-commito-coral" : "bg-border/60 group-hover/handle:bg-commito-coral/80"
+        }`} />
       </div>
 
       {/* Dynamic Route-Aware Sidebar */}
