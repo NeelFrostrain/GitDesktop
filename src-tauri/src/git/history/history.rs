@@ -23,6 +23,8 @@ pub struct CommitInfo {
     pub additions: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub deletions: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_shas: Option<Vec<String>>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -64,6 +66,7 @@ pub fn get_commit_history(
         let timestamp = commit.time().seconds();
 
         let relative_date = format_relative_date(timestamp);
+        let parent_shas: Vec<String> = commit.parent_ids().map(|id| id.to_string()).collect();
 
         commits.push(CommitInfo {
             sha,
@@ -75,6 +78,7 @@ pub fn get_commit_history(
             relative_date,
             additions: None,
             deletions: None,
+            parent_shas: Some(parent_shas),
         });
     }
 
@@ -153,6 +157,7 @@ pub fn get_commit_details(repo_path: &str, sha: &str) -> Result<CommitDetails, A
         relative_date: format_relative_date(commit.time().seconds()),
         additions: Some(total_additions),
         deletions: Some(total_deletions),
+        parent_shas: Some(commit.parent_ids().map(|id| id.to_string()).collect()),
     };
 
     Ok(CommitDetails {
@@ -240,6 +245,7 @@ pub fn get_branch_comparison(
                     relative_date: format_relative_date(c.time().seconds()),
                     additions: None,
                     deletions: None,
+                    parent_shas: Some(c.parent_ids().map(|id| id.to_string()).collect()),
                 });
             }
         }

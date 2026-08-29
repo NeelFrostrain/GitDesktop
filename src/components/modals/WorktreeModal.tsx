@@ -12,7 +12,14 @@ import { toAppError } from '../../shared/utils/errorUtils';
  * Modal dialogue for listing, creating, and removing linked Git worktrees for concurrent branch working copies.
  */
 export const WorktreeModal: React.FC = () => {
-  const { activeRepoPath, isWorktreeModalOpen, setIsWorktreeModalOpen, setError } = useGitStore();
+  const {
+    activeRepoPath,
+    setActiveRepoPath,
+    isWorktreeModalOpen,
+    setIsWorktreeModalOpen,
+    branches,
+    setError,
+  } = useGitStore();
 
   const [worktrees, setWorktrees] = useState<WorktreeInfo[]>([]);
   const [newWorktreePath, setNewWorktreePath] = useState('');
@@ -139,11 +146,17 @@ export const WorktreeModal: React.FC = () => {
                 </label>
                 <input
                   type="text"
+                  list="worktree-branches"
                   placeholder="e.g. hotfix/patch-v1.1"
                   value={newWorktreeBranch}
                   onChange={(e) => setNewWorktreeBranch(e.target.value)}
                   className="w-full px-3 py-1.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                 />
+                <datalist id="worktree-branches">
+                  {branches.map((b) => (
+                    <option key={b.name} value={b.name} />
+                  ))}
+                </datalist>
               </div>
             </div>
 
@@ -175,44 +188,66 @@ export const WorktreeModal: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              {worktrees.map((wt) => (
-                <div
-                  key={wt.path}
-                  className="p-3 bg-base-1 border border-border hover:border-border-strong rounded-sm flex items-center justify-between transition shadow-xs"
-                >
-                  <div className="min-w-0 truncate pr-3">
-                    <div className="flex items-center gap-2 font-mono text-xs font-bold text-text-primary truncate">
-                      <FolderOpen className="w-3.5 h-3.5 text-gitlab-teal flex-shrink-0" />
-                      <span className="truncate">{wt.path}</span>
+              {worktrees.map((wt) => {
+                const isActive = activeRepoPath === wt.path;
+                return (
+                  <div
+                    key={wt.path}
+                    className={`p-3 bg-base-1 border rounded-sm flex items-center justify-between transition shadow-xs ${
+                      isActive ? 'border-commito-coral/60 bg-base-2/60' : 'border-border hover:border-border-strong'
+                    }`}
+                  >
+                    <div className="min-w-0 truncate pr-3">
+                      <div className="flex items-center gap-2 font-mono text-xs font-bold text-text-primary truncate">
+                        <FolderOpen className="w-3.5 h-3.5 text-gitlab-teal flex-shrink-0" />
+                        <span className="truncate">{wt.path}</span>
+                        {isActive && (
+                          <span className="text-[9px] px-1 py-0.2 rounded-xs bg-commito-coral/20 text-commito-coral border border-commito-coral/40 font-sans font-semibold">
+                            current
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-text-muted font-mono mt-1">
+                        <GitBranch className="w-3 h-3 text-commito-coral" />
+                        <span>{wt.branch || 'detached'}</span>
+                        {wt.head_sha && <span>({wt.head_sha.slice(0, 7)})</span>}
+                        {wt.is_bare && <span className="text-git-modified font-bold">[bare]</span>}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] text-text-muted font-mono mt-1">
-                      <GitBranch className="w-3 h-3 text-commito-coral" />
-                      <span>{wt.branch || 'detached'}</span>
-                      {wt.head_sha && <span>({wt.head_sha.slice(0, 7)})</span>}
-                      {wt.is_bare && <span className="text-git-modified font-bold">[bare]</span>}
-                    </div>
-                  </div>
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => openUrl(wt.path)}
-                      className="px-2.5 py-1 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
-                    >
-                      Open
-                    </button>
-                    {!wt.path.endsWith('.git') && (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {!isActive && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveRepoPath(wt.path);
+                            setIsWorktreeModalOpen(false);
+                          }}
+                          className="px-2.5 py-1 bg-commito-coral/15 hover:bg-commito-coral hover:text-white border border-commito-coral/40 text-commito-coral rounded-sm text-xs font-semibold transition cursor-pointer"
+                        >
+                          Switch
+                        </button>
+                      )}
                       <button
-                        type="button"
-                        onClick={() => handleRemoveWorktree(wt.path)}
-                        className="p-1.5 text-text-muted hover:text-git-removed transition cursor-pointer"
-                        title="Remove worktree"
+                        onClick={() => openUrl(wt.path)}
+                        className="px-2.5 py-1 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary transition cursor-pointer"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        Open
                       </button>
-                    )}
+                      {!wt.path.endsWith('.git') && !isActive && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveWorktree(wt.path)}
+                          className="p-1.5 text-text-muted hover:text-git-removed transition cursor-pointer"
+                          title="Remove worktree"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

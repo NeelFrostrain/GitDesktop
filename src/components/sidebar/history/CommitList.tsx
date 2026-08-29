@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
 import { useHistoryDragAndDrop } from '../../../hooks/useHistoryDragAndDrop';
 import { CommitCard } from './CommitCard';
 import { CommitContextMenu } from '../../context-menus/CommitContextMenu';
+import { computeGitGraphLayout } from './gitGraphLayout';
 
 interface CommitListProps {
   commits: CommitInfo[];
@@ -25,6 +26,8 @@ export const CommitList: React.FC<CommitListProps> = ({
   const { selectedCommitSha, setSelectedCommitSha, setCurrentNavView } = useGitStore();
   const { commitListRef, draggedSha, dragTarget, handleMouseDownOnCommit } =
     useHistoryDragAndDrop(commits);
+
+  const graphNodes = useMemo(() => computeGitGraphLayout(commits), [commits]);
 
   const [contextMenu, setContextMenu] = useState<{
     commit: CommitInfo;
@@ -106,6 +109,7 @@ export const CommitList: React.FC<CommitListProps> = ({
             <CommitCard
               key={c.sha}
               commit={c}
+              graphNode={graphNodes.get(c.sha)}
               isSelected={isSelected}
               isDragging={isDragging}
               isTarget={isTarget}

@@ -4,9 +4,12 @@ import { CommitInfo } from '../../../types/git';
 import { UserAvatar } from '../../common/UserAvatar';
 import { useSigningStore } from '../../../store/signingStore';
 import { useGitStore } from '../../../store/useGitStore';
+import { GitGraphLane } from './GitGraphLane';
+import { CommitGraphNode } from './gitGraphLayout';
 
 interface CommitCardProps {
   commit: CommitInfo;
+  graphNode?: CommitGraphNode;
   isSelected: boolean;
   isDragging: boolean;
   isTarget: boolean;
@@ -18,6 +21,7 @@ interface CommitCardProps {
 
 export const CommitCard: React.FC<CommitCardProps> = ({
   commit,
+  graphNode,
   isSelected,
   isDragging,
   isTarget,
@@ -81,7 +85,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       onMouseDown={(e) => onMouseDown(e, commit)}
       onClick={onClick}
       onContextMenu={(e) => onContextMenu(e, commit)}
-      className={`p-2.5 rounded-sm cursor-pointer transition-all duration-150 border relative select-none group flex flex-col gap-1.5 ${
+      className={`p-2 rounded-sm cursor-pointer transition-all duration-150 border relative select-none group flex items-stretch gap-1.5 ${
         isDragging
           ? 'opacity-30 border-dashed border-border-strong scale-[0.98]'
           : isTarget && dropZone === 'merge'
@@ -91,6 +95,10 @@ export const CommitCard: React.FC<CommitCardProps> = ({
               : 'bg-base-1/50 border-border/60 hover:bg-base-2/70 hover:border-border text-text-primary'
       }`}
     >
+      {/* Visual Git Railway Graph Lane */}
+      <GitGraphLane node={graphNode} isSelected={isSelected} />
+
+      <div className="flex-1 flex flex-col gap-1 min-w-0">
       {/* Top Border Line Indicator for Drop Before */}
       {isTarget && dropZone === 'before' && (
         <div className="absolute inset-x-0 -top-1 h-0.5 bg-commito-coral z-20 pointer-events-none flex items-center">
@@ -173,6 +181,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           <span>Drop to Squash / Merge</span>
         </div>
       )}
+      </div>
     </div>
   );
 };

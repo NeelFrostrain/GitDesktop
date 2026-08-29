@@ -139,6 +139,11 @@ const GitConfigModal = lazy(() =>
     default: m.GitConfigModal,
   }))
 );
+const CommandPaletteModal = lazy(() =>
+  import('./components/modals/CommandPaletteModal').then((m) => ({
+    default: m.CommandPaletteModal,
+  }))
+);
 const RewriteHistoryModal = lazy(() =>
   import('./components/modals/RewriteHistoryModal').then((m) => ({
     default: m.RewriteHistoryModal,
@@ -224,6 +229,7 @@ export const App: React.FC = () => {
     setIsCreateTagModalOpen,
   } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
     // Consolidated startup: load accounts and repos concurrently in one shot
@@ -422,10 +428,13 @@ export const App: React.FC = () => {
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
 
-  // Global shortcuts: Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
+  // Global shortcuts: Ctrl+K / Ctrl+P (Command Palette), Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'p' || e.key === 'P')) {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      } else if ((e.ctrlKey || e.metaKey) && e.key === '`') {
         e.preventDefault();
         useTerminalStore.getState().toggleIsOpen();
       } else if ((e.ctrlKey || e.metaKey) && e.key === ',') {
@@ -635,6 +644,10 @@ export const App: React.FC = () => {
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />
+          <CommandPaletteModal
+            isOpen={isCommandPaletteOpen}
+            onClose={() => setIsCommandPaletteOpen(false)}
+          />
         </Suspense>
 
         {/* Global Toast Notifications */}

@@ -135,6 +135,7 @@ export interface CommitInfo {
   relative_date: string;
   additions?: number;
   deletions?: number;
+  parent_shas?: string[];
 }
 
 /**

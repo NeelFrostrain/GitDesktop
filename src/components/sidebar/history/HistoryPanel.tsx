@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
+import { useSigningStore } from '../../../store/signingStore';
 import { GitService } from '../../../services/git/gitService';
-import { CommitFilters } from './CommitFilters';
+import { CommitFilters, CommitQuickFilter } from './CommitFilters';
 import { CommitList } from './CommitList';
 
 const PAGE_SIZE = 50;
@@ -130,16 +131,52 @@ export const HistoryPanel: React.FC = () => {
     }
   }, [activeRepoPath, hasMore, isLoadingMore, isLoadingInitial, commits.length]);
 
-  const filteredCommits = commits.filter(
-    (c) =>
-      c.message.toLowerCase().includes(commitFilter.toLowerCase()) ||
-      c.author_name.toLowerCase().includes(commitFilter.toLowerCase()) ||
-      c.short_sha.toLowerCase().includes(commitFilter.toLowerCase())
-  );
+  const [activeQuickFilter, setActiveQuickFilter] = useState<CommitQuickFilter>('all');
+  const { user, tags } = useGitStore();
+  const { verifiedCommits } = useSigningStore();
+
+  const filteredCommits = commits.filter((c) => {
+    // 1. Text filter
+    if (commitFilter.trim()) {
+      const q = commitFilter.toLowerCase();
+      const match =
+        c.message.toLowerCase().includes(q) ||
+        c.author_name.toLowerCase().includes(q) ||
+        c.author_email.toLowerCase().includes(q) ||
+        c.short_sha.toLowerCase().includes(q);
+      if (!match) return false;
+    }
+
+    // 2. Quick filter
+    if (activeQuickFilter === 'mine') {
+      const userEmail = user?.email?.toLowerCase();
+      const userName = user?.name?.toLowerCase();
+      const isMine =
+        (userEmail && c.author_email.toLowerCase().includes(userEmail)) ||
+        (userName && c.author_name.toLowerCase().includes(userName));
+      if (!isMine) return false;
+    } else if (activeQuickFilter === 'signed') {
+      const v = verifiedCommits[c.sha];
+      if (!v || v.status !== 'Verified') return false;
+    } else if (activeQuickFilter === 'tagged') {
+      const hasTag = tags.some(
+        (t) => t.sha && (t.sha === c.sha || c.sha.startsWith(t.sha) || t.sha.startsWith(c.short_sha))
+      );
+      if (!hasTag) return false;
+    }
+
+    return true;
+  });
 
   return (
     <div className="flex-1 flex flex-col min-h-0 select-none">
-      <CommitFilters filter={commitFilter} onFilterChange={setCommitFilter} />
+      <CommitFilters
+        filter={commitFilter}
+        onFilterChange={setCommitFilter}
+        activeQuickFilter={activeQuickFilter}
+        onQuickFilterChange={setActiveQuickFilter}
+        currentUserEmail={user?.email || undefined}
+      />
       <CommitList
         commits={filteredCommits}
         totalLoadedCount={commits.length}
