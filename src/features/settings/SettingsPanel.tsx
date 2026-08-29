@@ -36,6 +36,8 @@ export const SettingsPanel: React.FC = () => {
     }
   });
   const [isResizingSidebar, setIsResizingSidebar] = useState(false);
+  const latestSidebarWidthRef = useRef(sidebarWidth);
+  latestSidebarWidthRef.current = sidebarWidth;
 
   const startResizingSidebar = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,32 +47,46 @@ export const SettingsPanel: React.FC = () => {
   useEffect(() => {
     if (!isResizingSidebar) return;
 
+    let rafId: number | null = null;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (!modalContainerRef.current) return;
-      const modalRect = modalContainerRef.current.getBoundingClientRect();
-      const newWidth = Math.max(160, Math.min(360, e.clientX - modalRect.left));
-      setSidebarWidth(newWidth);
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!modalContainerRef.current) return;
+        const modalRect = modalContainerRef.current.getBoundingClientRect();
+        const newWidth = Math.max(160, Math.min(360, e.clientX - modalRect.left));
+        latestSidebarWidthRef.current = newWidth;
+        setSidebarWidth(newWidth);
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       setIsResizingSidebar(false);
       try {
-        localStorage.setItem("settings_sidebar_width", sidebarWidth.toString());
+        localStorage.setItem("settings_sidebar_width", latestSidebarWidthRef.current.toString());
       } catch {}
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mousemove", handleMouseMove, { passive: true });
     document.addEventListener("mouseup", handleMouseUp);
     document.body.style.userSelect = "none";
     document.body.style.cursor = "col-resize";
 
     return () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [isResizingSidebar, sidebarWidth]);
+  }, [isResizingSidebar]);
 
   // Load settings on mount / repo change
   useEffect(() => {
@@ -170,7 +186,7 @@ export const SettingsPanel: React.FC = () => {
           </div>
 
           {/* Right Content Area */}
-          <main className="flex-1 overflow-y-auto p-5 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
+          <main className="flex-1 overflow-y-auto p-2 px-1.5 space-y-4 scrollbar-thin scrollbar-thumb-base-3 bg-base-0">
             {/* 1. Search Results Mode */}
             {searchResults ? (
               <div className="space-y-4">

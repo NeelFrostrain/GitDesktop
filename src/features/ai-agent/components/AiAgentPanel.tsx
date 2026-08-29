@@ -163,25 +163,40 @@ export const AiAgentPanel: React.FC = () => {
 
     const startX = e.clientX;
     const startWidth = panelWidth;
+    let latestWidth = startWidth;
+    let rafId: number | null = null;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const deltaX = startX - moveEvent.clientX; // Moving left increases width of right sidebar
-      const maxW = Math.min(1100, window.innerWidth - 80);
-      const newWidth = Math.max(340, Math.min(maxW, startWidth + deltaX));
-      setPanelWidth(newWidth);
-      try {
-        localStorage.setItem("ai_agent_panel_width", newWidth.toString());
-      } catch {}
+      if (rafId !== null) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        const deltaX = startX - moveEvent.clientX; // Moving left increases width of right sidebar
+        const maxW = Math.min(1100, window.innerWidth - 80);
+        const newWidth = Math.max(340, Math.min(maxW, startWidth + deltaX));
+        latestWidth = newWidth;
+        setPanelWidth(newWidth);
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       setIsDragging(false);
+      try {
+        localStorage.setItem("ai_agent_panel_width", latestWidth.toString());
+      } catch {}
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
     };
 
-    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mousemove", handleMouseMove, { passive: true });
     document.addEventListener("mouseup", handleMouseUp);
+    document.body.style.userSelect = "none";
+    document.body.style.cursor = "col-resize";
   };
 
   const handleSend = async () => {
@@ -216,14 +231,14 @@ export const AiAgentPanel: React.FC = () => {
   return (
     <aside
       style={{ width: `${panelWidth}px` }}
-      className={`relative h-full bg-base-0 border-l border-border flex flex-col justify-between select-none shrink-0 z-30 overflow-hidden ${
+      className={`relative h-full bg-base-0 border-l border-border flex flex-col justify-between select-none shrink-0 z-30 ${
         isDragging ? "" : "transition-[width] duration-75"
       }`}
     >
       {/* Left Resizing Drag Handle */}
       <div
         onMouseDown={handleMouseDownResize}
-        className="absolute left-0 inset-y-0 w-2 -translate-x-1/2 cursor-col-resize hover:bg-commito-coral/40 active:bg-commito-coral transition-colors z-50 flex items-center justify-center group select-none"
+        className="absolute left-0 inset-y-0 w-1 -translate-x-1/2 cursor-col-resize hover:bg-commito-coral/40 active:bg-commito-coral transition-colors z-50 flex items-center justify-center group select-none"
         title="Drag to resize AI Agent sidebar"
       >
         <div className="w-0.5 h-8 rounded-full bg-border group-hover:bg-commito-coral transition-colors" />
@@ -332,7 +347,7 @@ export const AiAgentPanel: React.FC = () => {
 
             {/* Model Dropdown Menu */}
             {isModelMenuOpen && (
-              <div className="absolute top-full left-0 mt-1 w-68 bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+              <div className="absolute top-full left-0 mt-1 w-64 max-w-[calc(100vw-32px)] bg-base-1 border border-border rounded-sm shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
                 <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider border-b border-border/50 flex items-center justify-between">
                   <span>Gemini Model</span>
                   <span className="text-[9px] font-mono text-commito-coral">
@@ -365,12 +380,12 @@ export const AiAgentPanel: React.FC = () => {
                             {opt.desc}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
-                          <span className="text-[9px] font-mono px-1 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted">
+                        <div className="flex items-center gap-1 shrink-0 ml-1">
+                          <span className="text-[9px] font-mono px-1 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted whitespace-nowrap">
                             {opt.badge}
                           </span>
                           {isSelected && (
-                            <Check className="w-3 h-3 text-commito-coral" />
+                            <Check className="w-3 h-3 text-commito-coral shrink-0" />
                           )}
                         </div>
                       </button>
@@ -481,7 +496,7 @@ export const AiAgentPanel: React.FC = () => {
             value={inputVal}
             onChange={handleTextareaInput}
             onKeyDown={handleKeyDown}
-            placeholder="Ask AI Agent about your code, diffs, branches, or Git actions..."
+            placeholder="Ask AI Agent about your code, diffs, branches"
             className="w-full bg-transparent resize-none border-none outline-none text-xs text-text-primary placeholder:text-text-muted/60 min-h-[32px] max-h-36 py-0.5 leading-relaxed font-sans scrollbar-thin"
           />
 
@@ -519,8 +534,12 @@ export const AiAgentPanel: React.FC = () => {
                     >
                       <FileCode className="w-3.5 h-3.5 text-commito-coral shrink-0 group-hover:scale-110 transition-transform" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[11.5px] font-medium">Attach Git Diff</div>
-                        <div className="text-[10px] text-text-muted">Working tree changes (TOON)</div>
+                        <div className="text-[11.5px] font-medium">
+                          Attach Git Diff
+                        </div>
+                        <div className="text-[10px] text-text-muted">
+                          Working tree changes (TOON)
+                        </div>
                       </div>
                     </button>
 
@@ -534,8 +553,12 @@ export const AiAgentPanel: React.FC = () => {
                     >
                       <Terminal className="w-3.5 h-3.5 text-gitlab-blue shrink-0 group-hover:scale-110 transition-transform" />
                       <div className="min-w-0 flex-1">
-                        <div className="text-[11.5px] font-medium">Attach Terminal History</div>
-                        <div className="text-[10px] text-text-muted">Recent commands & outputs (TOON)</div>
+                        <div className="text-[11.5px] font-medium">
+                          Attach Terminal History
+                        </div>
+                        <div className="text-[10px] text-text-muted">
+                          Recent commands & outputs (TOON)
+                        </div>
                       </div>
                     </button>
                   </div>

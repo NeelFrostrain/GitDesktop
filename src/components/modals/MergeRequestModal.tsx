@@ -1733,7 +1733,7 @@ export const MergeRequestModal: React.FC = () => {
             {/* Resizable Left Column */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
-              className="shrink-0 p-4 md:p-5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
+              className="shrink-0 px-1.5 py-2 md:py-3 md:px-2.5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
             >
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -1979,7 +1979,7 @@ export const MergeRequestModal: React.FC = () => {
             </div>
 
             {/* Right Column */}
-            <div className="flex-1 min-w-0 p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            <div className="flex-1 min-w-0 p-2 md:p-3 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
@@ -2258,7 +2258,7 @@ export const MergeRequestModal: React.FC = () => {
             {/* Left Resizable Column: Search & Request Cards List */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
-              className="shrink-0 p-3 flex flex-col min-h-0 overflow-hidden space-y-2.5 bg-base-0"
+              className="shrink-0 px-1 py-2 flex flex-col min-h-0 overflow-hidden space-y-2.5 bg-base-0"
             >
               <div className="flex items-center gap-1.5">
                 <div className="relative flex-1">

@@ -14,6 +14,7 @@
    2. Runtime Theme Variables (:root / Default: Commito Dark)
    ========================================================================== */
 :root {
+  color-scheme: dark;
   /* --- Unified Surfaces & Backgrounds --- */
   --surface: #181818;                 /* Main workspace canvas background */
   --surface-subtle: #131313;          /* Deep sidebar & frame background */
@@ -391,23 +392,65 @@ body,
 *::before,
 *::after {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #36353d) transparent;
 }
 
-/* Scrollbars */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* ==========================================================================
+   5. Scrollbar Styles & Utilities
+   ========================================================================== */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-::-webkit-scrollbar-track {
-  background: var(--scrollbar-track);
+*::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-::-webkit-scrollbar-thumb {
-  background: var(--scrollbar-thumb);
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #36353d);
   border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--scrollbar-thumb-hover);
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #46454e);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility: .scrollbar-thin */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, #36353d) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, #36353d);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, #46454e);
+}
+
+/* Utility: .scrollbar-none */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

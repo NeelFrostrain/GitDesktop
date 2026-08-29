@@ -11,6 +11,7 @@ import {
   buildFileTree,
   FileTreeNode,
   getStatusBadge,
+  getFileIcon,
   TreeItem,
 } from './FileTreeItem';
 
@@ -251,7 +252,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                   }`}
                   title={file.path}
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+                  <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
                     {/* Staging Checkbox */}
                     <div
                       onClick={(e) => e.stopPropagation()}
@@ -260,20 +261,16 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                       <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
                     </div>
 
-                    {/* File Icon */}
-                    {/* <FileText
-                      className={`w-3.5 h-3.5 shrink-0 ${
-                        isSelected ? 'text-commito-coral' : 'text-text-muted'
-                      }`}
-                    /> */}
+                    {/* Dynamic File Type Icon */}
+                    {getFileIcon(fileName)}
 
                     {/* File Name & Folder Subtitle */}
                     <div className="min-w-0 truncate">
-                      <span className="truncate block font-mono text-[11.5px] leading-tight">
+                      <span className="truncate block font-mono text-[11px] leading-tight text-text-primary">
                         {fileName}
                       </span>
                       {dirPath && (
-                        <span className="truncate block text-[10px] text-text-muted/70 font-mono leading-tight">
+                        <span className="truncate block text-[9.5px] text-text-muted/70 font-mono leading-tight">
                           {dirPath}
                         </span>
                       )}

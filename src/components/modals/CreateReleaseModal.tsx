@@ -1067,7 +1067,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           {/* Left Resizable Column: Metadata, Tag, Assets, Toggles */}
           <div
             style={{ width: `${leftPanelWidth}px` }}
-            className="shrink-0 flex flex-col min-h-0 overflow-y-auto p-4 space-y-3.5 bg-base-0"
+            className="shrink-0 flex flex-col min-h-0 overflow-y-auto px-3 py-3 space-y-3.5 bg-base-0"
           >
             {/* Section 1: Tag Source Selector (New Tag vs Existing Tag) */}
             {!initialRelease ? (
@@ -1572,7 +1572,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           </div>
 
           {/* Right Column: Full-Height Markdown Editor & Preview */}
-          <div className="flex-1 min-w-0 p-4 md:p-5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+          <div className="flex-1 min-w-0 p-2 md:p-3 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
             <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
               <div className="flex items-center gap-2">
                 <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
