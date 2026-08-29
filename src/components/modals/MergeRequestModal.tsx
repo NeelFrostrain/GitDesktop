@@ -1733,7 +1733,7 @@ export const MergeRequestModal: React.FC = () => {
             {/* Resizable Left Column */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
-              className="shrink-0 px-1.5 py-2 md:py-3 md:px-2.5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
+              className="shrink-0 px-1 py-2 md:py-3 md:px-1.5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
             >
               <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
