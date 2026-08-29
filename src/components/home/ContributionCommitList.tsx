@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { GitCommit, FolderGit2, Calendar, Clock, X, ExternalLink } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 import { openRepo } from '../../features/repos';
 import { useRepoStore } from '../../store/repoStore';
 
 export const ContributionCommitList: React.FC = () => {
-  const { selectedDate, setSelectedDate, getRecentCommits, getSelectedDayData } =
-    useContributionsStore();
+  const calendar = useContributionsStore((s) => s.calendar);
+  const selectedDate = useContributionsStore((s) => s.selectedDate);
+  const setSelectedDate = useContributionsStore((s) => s.setSelectedDate);
+  const getRecentCommits = useContributionsStore((s) => s.getRecentCommits);
+  const getSelectedDayData = useContributionsStore((s) => s.getSelectedDayData);
   const repos = useRepoStore((s) => s.repos);
 
-  const commits = getRecentCommits(30);
-  const selectedDay = getSelectedDayData();
+  const commits = useMemo(() => getRecentCommits(30), [getRecentCommits, selectedDate, calendar]);
+  const selectedDay = useMemo(() => getSelectedDayData(), [getSelectedDayData, selectedDate, calendar]);
 
   const formatDateTitle = (dateStr: string) => {
     try {

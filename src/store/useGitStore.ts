@@ -428,10 +428,17 @@ export const useGitStore = create<GitState>((set, get) => ({
         prevStatus.has_conflicts === status.has_conflicts;
 
       if (branchSame && metaSame && prevStatus.files.length === status.files.length) {
-        // Build a compact fingerprint string and compare in one shot
-        const prevFp = prevStatus.files.map((f) => `${f.path}|${f.status}|${f.staged}`).join(',');
-        const nextFp = status.files.map((f) => `${f.path}|${f.status}|${f.staged}`).join(',');
-        if (prevFp === nextFp) return;
+        // Zero-allocation early-exit comparison loop
+        let filesIdentical = true;
+        for (let i = 0; i < status.files.length; i++) {
+          const pf = prevStatus.files[i];
+          const nf = status.files[i];
+          if (pf.path !== nf.path || pf.status !== nf.status || pf.staged !== nf.staged) {
+            filesIdentical = false;
+            break;
+          }
+        }
+        if (filesIdentical) return;
       }
     }
 

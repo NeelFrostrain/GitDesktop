@@ -137,7 +137,6 @@ export const SettingsPanel: React.FC = () => {
 
   if (!isOpen) return null;
 
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/80 backdrop-blur-xs animate-in fade-in duration-150 select-none">
       <div
@@ -145,8 +144,8 @@ export const SettingsPanel: React.FC = () => {
         className="relative w-full max-w-5xl h-[85vh] bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col font-sans ring-1 ring-black/40"
       >
         {/* Header */}
-        <header className="h-9 px-3.5 bg-base-1/50 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
-          <h2 className="text-xs font-semibold text-text-primary">Settings</h2>
+        <header className="h-9 px-1.5 bg-base-1/50 border-b border-border flex items-center justify-between gap-3 flex-shrink-0">
+          <h2 className="text-xs font-semibold text-text-primary pl-1.5">Settings</h2>
 
           <div className="flex items-center gap-2">
             <SettingsSearchBar matchCount={searchResults ? searchResults.length : undefined} />

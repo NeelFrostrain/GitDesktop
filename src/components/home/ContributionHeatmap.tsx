@@ -24,16 +24,14 @@ const LEVEL_CLASSES = [
 ];
 
 export const ContributionHeatmap: React.FC = () => {
-  const {
-    calendar,
-    selectedAccountId,
-    selectedDate,
-    isLoading,
-    setSelectedAccountId,
-    setSelectedDate,
-    loadContributions,
-    refresh,
-  } = useContributionsStore();
+  const calendar = useContributionsStore((s) => s.calendar);
+  const selectedAccountId = useContributionsStore((s) => s.selectedAccountId);
+  const selectedDate = useContributionsStore((s) => s.selectedDate);
+  const isLoading = useContributionsStore((s) => s.isLoading);
+  const setSelectedAccountId = useContributionsStore((s) => s.setSelectedAccountId);
+  const setSelectedDate = useContributionsStore((s) => s.setSelectedDate);
+  const loadContributions = useContributionsStore((s) => s.loadContributions);
+  const refresh = useContributionsStore((s) => s.refresh);
 
   const accounts = useAccountServicesStore((s) => s.accounts);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);

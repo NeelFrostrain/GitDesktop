@@ -226,29 +226,7 @@ export const App: React.FC = () => {
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
 
   useEffect(() => {
-    // Single consolidated startup call to list accounts and restore active session
-    AccountService.listSavedAccounts()
-      .then((accounts) => {
-        if (!accounts) return;
-        setAccounts(accounts);
-        if (accounts.length === 0) return;
-
-        const active = accounts.find((a) => a.is_active) || accounts[0];
-        if (!active) return;
-
-        setUser({
-          id: active.id,
-          name: active.name,
-          username: active.username,
-          email: active.email || '',
-          avatar_url: active.avatar_url || null,
-          provider: active.provider,
-          server_url: active.server_url,
-          web_url: active.server_url,
-        });
-      })
-      .catch(() => {});
-
+    // Consolidated startup: load accounts and repos concurrently in one shot
     useAccountServicesStore
       .getState()
       .loadAccounts()
@@ -408,8 +386,12 @@ export const App: React.FC = () => {
       .catch(() => {});
 
     // 1. Periodic background polling (every 5 seconds) for external file modifications
-    // Focus/visibilitychange events handle the reactive same-session updates.
-    const intervalId = setInterval(syncStatus, 5000);
+    // Pauses when document is hidden/minimized to save CPU and battery.
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        syncStatus();
+      }
+    }, 5000);
 
     // 2. Window focus & document visibility sync
     const handleFocus = () => syncStatus();

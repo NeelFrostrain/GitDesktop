@@ -24,6 +24,11 @@ interface ContributionsState {
   getRecentCommits: (limit?: number) => CommitItem[];
 }
 
+let inFlightLoadPromise: Promise<void> | null = null;
+let inFlightTargetKey = '';
+let lastCompletedTime = 0;
+let lastCompletedKey = '';
+
 export const useContributionsStore = create<ContributionsState>((set, get) => ({
   calendar: null,
   selectedAccountId: 'all',
@@ -42,41 +47,63 @@ export const useContributionsStore = create<ContributionsState>((set, get) => ({
 
   loadContributions: async (accountIdParam?: string) => {
     const targetAccountId = accountIdParam !== undefined ? accountIdParam : get().selectedAccountId;
+    const cacheKey = targetAccountId || 'all';
+
+    // 1. In-flight request deduplication: reuse running request if targeting the same account
+    if (inFlightLoadPromise && inFlightTargetKey === cacheKey) {
+      return inFlightLoadPromise;
+    }
+
+    // 2. Short-interval debounce (throttle identical queries within 400ms)
+    const now = Date.now();
+    if (lastCompletedKey === cacheKey && now - lastCompletedTime < 400 && get().calendar !== null) {
+      return;
+    }
+
+    inFlightTargetKey = cacheKey;
     set({ isLoading: true, error: null });
 
-    try {
-      const repos = useRepoStore.getState().repos;
-      let repoPaths = repos.map((r) => r.path);
+    inFlightLoadPromise = (async () => {
+      try {
+        const repos = useRepoStore.getState().repos;
+        let repoPaths = repos.map((r) => r.path);
 
-      if (repoPaths.length === 0) {
-        try {
-          if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
-            const known = await invoke<Array<{ path: string }>>('list_known_repos_cmd');
-            if (known && known.length > 0) {
-              repoPaths = known.map((k: { path: string }) => k.path);
+        if (repoPaths.length === 0) {
+          try {
+            if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+              const known = await invoke<Array<{ path: string }>>('list_known_repos_cmd');
+              if (known && known.length > 0) {
+                repoPaths = known.map((k: { path: string }) => k.path);
+              }
             }
+          } catch {
+            // ignore
           }
-        } catch {
-          // ignore
         }
+
+        // If 'all' or 'local', or specific account id
+        const cal = await ContributionsService.getContributionsCalendar(
+          targetAccountId === 'all' ? 'all' : targetAccountId === 'local' ? 'local' : targetAccountId,
+          repoPaths
+        );
+
+        set({ calendar: cal });
+        lastCompletedTime = Date.now();
+        lastCompletedKey = cacheKey;
+      } catch (err: unknown) {
+        const msg = getErrorMessage(err);
+        set({ error: msg });
+        useLogStore
+          .getState()
+          .addLog('warning', 'System', `Failed to load contribution calendar: ${msg}`);
+      } finally {
+        inFlightLoadPromise = null;
+        inFlightTargetKey = '';
+        set({ isLoading: false });
       }
+    })();
 
-      // If 'all' or 'local', or specific account id
-      const cal = await ContributionsService.getContributionsCalendar(
-        targetAccountId === 'all' ? 'all' : targetAccountId === 'local' ? 'local' : targetAccountId,
-        repoPaths
-      );
-
-      set({ calendar: cal });
-    } catch (err: unknown) {
-      const msg = getErrorMessage(err);
-      set({ error: msg });
-      useLogStore
-        .getState()
-        .addLog('warning', 'System', `Failed to load contribution calendar: ${msg}`);
-    } finally {
-      set({ isLoading: false });
-    }
+    return inFlightLoadPromise;
   },
 
   refresh: async () => {

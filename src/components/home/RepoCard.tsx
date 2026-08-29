@@ -27,7 +27,8 @@ export interface RepoCardProps {
   viewMode?: 'grid' | 'list';
 }
 
-export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'grid' }) => {
+export const RepoCard: React.FC<RepoCardProps> = React.memo(
+  ({ repo, status, viewMode = 'grid' }) => {
   const pinRepo = useRepoStore((s) => s.pinRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
   const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
@@ -330,28 +331,28 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
       <div
         onClick={handleCardClick}
         onContextMenu={handleContextMenu}
-        className={`group p-3.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-2.5 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[138px] overflow-hidden ${
+        className={`group p-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm transition-all duration-150 ease-out hover:-translate-y-0.5 active:scale-[0.99] cursor-pointer flex flex-col justify-between gap-2 select-none shadow-2xs hover:shadow-lg animate-in fade-in duration-150 min-h-[110px] overflow-hidden ${
           repo.pinned ? 'border-border-strong bg-base-1/80' : ''
         }`}
       >
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           {/* Header Row */}
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0 flex-1">
-              <div className="w-7 h-7 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
-                <FolderGit2 className="w-3.5 h-3.5" />
+          <div className="flex items-start justify-between gap-1.5">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <div className="w-6 h-6 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
+                <FolderGit2 className="w-3 h-3" />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h3
-                    className="text-xs font-semibold text-text-primary/95 truncate group-hover:text-commito-coral transition-colors"
+                    className="text-[11.5px] font-semibold text-text-primary/95 truncate group-hover:text-commito-coral transition-colors"
                     title={repo.name}
                   >
                     {repo.name}
                   </h3>
                   {renderProvider()}
                   {repo.pinned && (
-                    <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
+                    <Pin className="w-2.5 h-2.5 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
                   )}
                 </div>
               </div>
@@ -364,24 +365,24 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
               className="p-0.5 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex-shrink-0"
               title="More options"
             >
-              <MoreVertical className="w-4 h-4" />
+              <MoreVertical className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Path */}
-          <p className="text-[10px] text-text-muted font-mono truncate" title={repo.path}>
+          <p className="text-[9.5px] text-text-muted font-mono truncate pl-0.5" title={repo.path}>
             {repo.path}
           </p>
 
           {/* Status Badges */}
-          <div className="flex items-center flex-wrap gap-1.5 pt-0.5">
-            <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[10px] font-mono text-text-muted">
+          <div className="flex items-center flex-wrap gap-1 pt-0.5">
+            <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
               <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
               <span className="truncate max-w-[110px]">{status?.current_branch || 'main'}</span>
             </div>
 
             {status && (status.ahead > 0 || status.behind > 0) && (
-              <div className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
                 {status.ahead > 0 && (
                   <span className="flex items-center gap-0.5 text-git-added font-semibold">
                     <ArrowUpRight className="w-2.5 h-2.5" />
@@ -398,12 +399,12 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
             )}
 
             {isDirty ? (
-              <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[10px] font-mono text-git-modified font-semibold">
+              <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[9.5px] font-mono text-git-modified font-semibold">
                 <FileEdit className="w-2.5 h-2.5" />
                 {status!.dirty_files} modified
               </div>
             ) : (
-              <div className="inline-flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
+              <div className="inline-flex items-center gap-1 text-[9.5px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
                 Clean
               </div>
@@ -412,17 +413,17 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
         </div>
 
         {/* Footer commit summary */}
-        <div className="pt-1.5 border-t border-border/60 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 min-w-0 flex-1">
-            <GitCommit className="w-3 h-3 text-text-muted shrink-0" />
+        <div className="pt-1 border-t border-border/60 flex items-center justify-between gap-1.5">
+          <div className="flex items-center gap-1 min-w-0 flex-1">
+            <GitCommit className="w-2.5 h-2.5 text-text-muted shrink-0" />
             <span
-              className="text-[10.5px] text-text-secondary truncate"
+              className="text-[10px] text-text-secondary truncate"
               title={status?.last_commit_summary}
             >
               {status?.last_commit_summary || '—'}
             </span>
           </div>
-          <span className="flex items-center gap-1 text-[10px] text-text-muted flex-shrink-0 font-mono">
+          <span className="flex items-center gap-0.5 text-[9.5px] text-text-muted flex-shrink-0 font-mono">
             <Clock className="w-2.5 h-2.5" />
             {formatRelativeTime(status?.last_commit_at || 0)}
           </span>
@@ -431,4 +432,4 @@ export const RepoCard: React.FC<RepoCardProps> = ({ repo, status, viewMode = 'gr
       {renderContextMenu()}
     </>
   );
-};
+});

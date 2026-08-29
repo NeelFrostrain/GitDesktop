@@ -223,15 +223,18 @@ interface FileTreeNodeProps {
   onOpenFileContext: (filePath: string, x: number, y: number) => void;
 }
 
-export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
+export const FileTreeNode: React.FC<FileTreeNodeProps> = React.memo(({
   node,
   expandedFolders,
   onToggleFolder,
   onOpenFolderContext,
   onOpenFileContext,
 }) => {
-  const { selectedFile, setSelectedFile, stagedFiles, toggleStageFile, toggleStageFiles } =
-    useGitStore();
+  const selectedFile = useGitStore((s) => s.selectedFile);
+  const setSelectedFile = useGitStore((s) => s.setSelectedFile);
+  const stagedFiles = useGitStore((s) => s.stagedFiles);
+  const toggleStageFile = useGitStore((s) => s.toggleStageFile);
+  const toggleStageFiles = useGitStore((s) => s.toggleStageFiles);
 
   if (node.isFolder) {
     const isExpanded = expandedFolders[node.path] ?? true;
@@ -370,4 +373,4 @@ export const FileTreeNode: React.FC<FileTreeNodeProps> = ({
       {getStatusBadge(file.status)}
     </div>
   );
-};
+});

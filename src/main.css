@@ -478,6 +478,47 @@ body,
 }
 
 /* ==========================================================================
+   Global UI Focus & Outline Overrides
+   Eliminate browser default white focus rings / outlines across all elements.
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+}
+
+button,
+input,
+select,
+textarea,
+a,
+[tabindex] {
+  outline: none !important;
+}
+
+button:focus,
+button:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+a:focus,
+a:focus-visible,
+[tabindex]:focus,
+[tabindex]:focus-visible {
+  outline: none !important;
+}
+
+/* ==========================================================================
    6. AI Assistant Rich Markdown & Presentation Styling
    ========================================================================== */
 .agent-markdown {
@@ -656,20 +697,7 @@ body,
 }
 
 /* AI Thinking pulse glow */
-@keyframes aiThinkingGlow {
-  0%, 100% {
-    border-color: rgba(224, 86, 56, 0.25);
-    box-shadow: 0 0 12px rgba(224, 86, 56, 0.08);
-  }
-  50% {
-    border-color: rgba(224, 86, 56, 0.6);
-    box-shadow: 0 0 20px rgba(224, 86, 56, 0.25);
-  }
-}
 
-.ai-thinking-card {
-  animation: aiThinkingGlow 2s ease-in-out infinite;
-}
 
 /* Progress Bar indeterminate sliding wave */
 @keyframes progressIndeterminate {

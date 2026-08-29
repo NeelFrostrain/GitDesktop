@@ -206,15 +206,6 @@ fn scan_local_repos_commits(
         let _ = revwalk.push_glob("refs/heads/*");
         let _ = revwalk.push_glob("refs/remotes/*");
         
-        // Also walk all local branches to find user commits across branches
-        if let Ok(branches) = repo.branches(Some(git2::BranchType::Local)) {
-            for (branch, _) in branches.flatten() {
-                if let Some(target) = branch.get().target() {
-                    let _ = revwalk.push(target);
-                }
-            }
-        }
-        
         let mut seen_shas = std::collections::HashSet::new();
         
         for oid_res in revwalk {
