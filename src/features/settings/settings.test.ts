@@ -73,6 +73,24 @@ describe('useSettingsStore State Management', () => {
     expect(useSettingsStore.getState().getEffectiveValue('ai.model')).toBe('gemini-2.5-flash-lite');
   });
 
+  it('handles UI scale setting value updates and DOM zoom scaling', async () => {
+    const store = useSettingsStore.getState();
+    expect(store.isModified('app.ui_scale')).toBe(false);
+    expect(store.getEffectiveValue('app.ui_scale')).toBe(100);
+
+    await store.setSettingValue('app.ui_scale', 90);
+    expect(useSettingsStore.getState().isModified('app.ui_scale')).toBe(true);
+    expect(useSettingsStore.getState().getEffectiveValue('app.ui_scale')).toBe(90);
+    expect(document.documentElement.getAttribute('data-ui-scale')).toBe('90');
+    expect(document.documentElement.style.getPropertyValue('--app-ui-scale-value')).toBe('0.9');
+
+    await store.resetSettingValue('app.ui_scale');
+    expect(useSettingsStore.getState().isModified('app.ui_scale')).toBe(false);
+    expect(useSettingsStore.getState().getEffectiveValue('app.ui_scale')).toBe(100);
+    expect(document.documentElement.getAttribute('data-ui-scale')).toBe('100');
+    expect(document.documentElement.style.getPropertyValue('--app-ui-scale-value')).toBe('1');
+  });
+
   it('opens and closes modal with category selection', () => {
     const store = useSettingsStore.getState();
     store.openSettings('ai');

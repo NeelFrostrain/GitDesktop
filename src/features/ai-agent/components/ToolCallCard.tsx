@@ -1,15 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Play,
-  Copy,
-  Check,
-  X,
-  CheckCircle2,
-  Terminal,
-  FileCode2,
-  Trash2,
-  Save,
-} from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { AgentToolCall } from '../types';
 import { useAiAgentStore } from '../store/useAiAgentStore';
 
@@ -42,144 +32,95 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
   const isExecuted = toolCall.status === 'success';
   const isRejected = toolCall.status === 'rejected';
 
-  let title = '';
-  let subtitle = '';
-  if (isFileWrite) {
-    title = toolCall.filePath || 'File Write';
-    subtitle = 'File Modification · Apply to disk';
-  } else if (isFileDelete) {
-    title = toolCall.filePath || 'Delete File';
-    subtitle = 'File Deletion · Remove from disk';
-  } else {
-    const commandText = toolCall.command || 'Git Action';
-    title = commandText.trim().split('\n')[0] || 'git command';
-    subtitle = 'Terminal Command · Shell execution';
-  }
+  const displayText = isFileWrite
+    ? `Save ${toolCall.filePath || 'file'}`
+    : isFileDelete
+      ? `Delete ${toolCall.filePath || 'file'}`
+      : toolCall.command || 'git action';
 
   return (
-    <div className="rounded-sm border border-border/90 hover:border-commito-coral/40 bg-gradient-to-br from-base-1/90 via-base-1/70 to-base-2/50 p-3 shadow-md transition group/card select-none space-y-2.5 overflow-hidden">
-      {/* Top Header Row */}
-      <div className="flex items-center justify-between gap-3">
-        {/* Left: Badge & Title */}
-        <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          {/* Glowing Action Icon */}
-          <div
-            className={`w-8 h-8 rounded-sm border flex items-center justify-center shrink-0 shadow-inner ${
-              isFileWrite
-                ? 'bg-sky-500/10 border-sky-500/30 text-sky-400'
-                : isFileDelete
-                  ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                  : 'bg-commito-coral/15 border-commito-coral/30 text-commito-coral shadow-[0_0_8px_rgba(224,86,56,0.2)]'
-            }`}
-          >
-            {isFileWrite ? (
-              <FileCode2 className="w-4 h-4" />
-            ) : isFileDelete ? (
-              <Trash2 className="w-4 h-4" />
-            ) : (
-              <Terminal className="w-4 h-4 animate-pulse" />
-            )}
-          </div>
-
-          {/* Details */}
-          <div className="min-w-0 flex-1">
-            <div
-              className="text-[11.5px] font-bold text-text-primary font-mono truncate"
-              title={title}
-            >
-              {title}
-            </div>
-            <div className="text-[10px] text-text-muted/80 font-mono truncate flex items-center gap-1.5 mt-0.5">
-              <span>{subtitle}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Copy & Status Badges */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="p-1 rounded-sm hover:bg-base-2 text-text-muted hover:text-text-primary transition cursor-pointer"
-            title={isFileWrite ? 'Copy file contents' : 'Copy command'}
-          >
-            {copied ? (
-              <Check className="w-3.5 h-3.5 text-emerald-400" />
-            ) : (
-              <Copy className="w-3.5 h-3.5" />
-            )}
-          </button>
-
-          {isExecuted && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-sm text-[10.5px] font-mono font-bold shadow-[0_0_8px_rgba(34,197,94,0.2)]">
-              <CheckCircle2 className="w-3 h-3" />
-              <span>Applied</span>
-            </span>
+    <div className="flex items-center justify-between gap-2 px-2.5 py-2.5 rounded-sm border border-border bg-base-1/90 hover:border-border-strong transition select-none text-xs">
+      {/* Left: Command / File info with $ prompt and copy button */}
+      <div className="flex items-center gap-1.5 min-w-0 flex-1 font-mono text-[11px]">
+        {!isFileWrite && !isFileDelete && (
+          <span className="text-text-muted font-bold select-none shrink-0">$</span>
+        )}
+        <span
+          className="truncate text-text-primary font-medium"
+          title={toolCall.command || toolCall.filePath || displayText}
+        >
+          {displayText}
+        </span>
+        <button
+          type="button"
+          onClick={handleCopy}
+          className="p-0.5 text-text-muted hover:text-text-primary rounded-xs transition cursor-pointer shrink-0"
+          title="Copy"
+        >
+          {copied ? (
+            <Check className="w-3 h-3 text-emerald-400" />
+          ) : (
+            <Copy className="w-3 h-3" />
           )}
-
-          {isRejected && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-base-2 border border-border text-text-faint rounded-sm text-[10.5px] font-mono">
-              Dismissed
-            </span>
-          )}
-        </div>
+        </button>
       </div>
 
-      {/* Command Code Preview Box (for shell commands) */}
-      {!isFileWrite && !isFileDelete && toolCall.command && (
-        <div className="relative rounded-sm bg-black/70 border border-border/80 px-3 py-2 font-mono text-[11px] text-emerald-400/90 overflow-x-auto selection:bg-commito-coral/30 flex items-center gap-2">
-          <span className="text-commito-coral font-bold select-none">$</span>
-          <span className="truncate text-text-primary">{toolCall.command}</span>
-        </div>
-      )}
+      {/* Right: Actions or status */}
+      <div className="flex items-center gap-1.5 shrink-0">
+        {isExecuted && (
+          <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xs text-[10px] font-mono font-medium">
+            Applied
+          </span>
+        )}
 
-      {/* Action Buttons Toolbar */}
-      {!isExecuted && !isRejected && (
-        <div className="flex items-center justify-end gap-2 pt-1 border-t border-border/40">
-          <button
-            type="button"
-            onClick={() => rejectToolCall(toolCall.id)}
-            className="px-2.5 py-1 rounded-sm border border-border/80 bg-base-1 hover:bg-base-2 text-text-muted hover:text-text-primary text-[11px] font-medium transition cursor-pointer flex items-center gap-1"
-            title="Dismiss action"
-          >
-            <X className="w-3 h-3" />
-            <span>Dismiss</span>
-          </button>
+        {isRejected && (
+          <span className="px-2 py-0.5 bg-base-2 border border-border text-text-muted rounded-xs text-[10px] font-mono">
+            Dismissed
+          </span>
+        )}
 
-          {isFileWrite && (
+        {!isExecuted && !isRejected && (
+          <>
             <button
               type="button"
-              onClick={() => executeToolCall(toolCall.id)}
-              className="px-3.5 py-1.5 rounded-sm bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 active:from-sky-700 text-white text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 shadow-[0_0_10px_rgba(2,132,199,0.3)] whitespace-nowrap active:scale-95"
+              onClick={() => rejectToolCall(toolCall.id)}
+              className="px-2 py-0.5 rounded-xs hover:bg-base-2 text-text-muted hover:text-text-primary text-[11px] font-medium transition cursor-pointer"
             >
-              <Save className="w-3 h-3 fill-current" />
-              <span>Save File</span>
+              Dismiss
             </button>
-          )}
 
-          {isFileDelete && (
-            <button
-              type="button"
-              onClick={() => executeToolCall(toolCall.id)}
-              className="px-3.5 py-1.5 rounded-sm bg-gradient-to-r from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 active:from-rose-700 text-white text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 shadow-[0_0_10px_rgba(225,29,72,0.3)] whitespace-nowrap active:scale-95"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Delete File</span>
-            </button>
-          )}
+            {isFileWrite && (
+              <button
+                type="button"
+                onClick={() => executeToolCall(toolCall.id)}
+                className="px-2.5 py-0.5 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-[11px] font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+              >
+                Save
+              </button>
+            )}
 
-          {!isFileWrite && !isFileDelete && (
-            <button
-              type="button"
-              onClick={() => executeToolCall(toolCall.id, true)}
-              className="px-3.5 py-1.5 rounded-sm bg-gradient-to-r from-commito-coral to-orange-500 hover:from-commito-coralLight hover:to-orange-400 active:from-commito-coral text-white text-[11px] font-bold transition cursor-pointer flex items-center gap-1.5 shadow-[0_0_12px_rgba(224,86,56,0.35)] whitespace-nowrap active:scale-95"
-            >
-              <Play className="w-3 h-3 fill-current" />
-              <span>Run in Terminal</span>
-            </button>
-          )}
-        </div>
-      )}
+            {isFileDelete && (
+              <button
+                type="button"
+                onClick={() => executeToolCall(toolCall.id)}
+                className="px-2.5 py-0.5 rounded-xs bg-rose-600 hover:bg-rose-500 active:bg-rose-700 text-white text-[11px] font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+              >
+                Delete
+              </button>
+            )}
+
+            {!isFileWrite && !isFileDelete && (
+              <button
+                type="button"
+                onClick={() => executeToolCall(toolCall.id, true)}
+                className="px-2.5 py-0.5 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-[11px] font-semibold transition cursor-pointer shadow-2xs whitespace-nowrap"
+              >
+                Run in Terminal
+              </button>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

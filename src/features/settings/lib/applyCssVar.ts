@@ -33,10 +33,11 @@ export function applySettingToDom(
 
   // Handle UI Scale - apply native zoom scaling without viewport shrinking or black borders
   if (cssVar === '--app-ui-scale') {
-    const scale = (value as number) / 100;
+    const rawVal = typeof value === 'number' ? value : parseFloat(String(value)) || 100;
+    const scale = rawVal / 100;
     document.documentElement.style.setProperty('--app-ui-scale-value', String(scale));
     (document.documentElement.style as any).zoom = String(scale);
-    document.documentElement.setAttribute('data-ui-scale', String(value));
+    document.documentElement.setAttribute('data-ui-scale', String(rawVal));
   }
 
   // Handle font family - apply to body with proper fallbacks
@@ -95,6 +96,11 @@ export function removeSettingFromDom(
     applySettingToDom(cssVar, defaultVal, definition);
   } else {
     document.documentElement.style.removeProperty(cssVar);
+    if (cssVar === '--app-ui-scale') {
+      document.documentElement.style.setProperty('--app-ui-scale-value', '1');
+      (document.documentElement.style as any).zoom = '1';
+      document.documentElement.setAttribute('data-ui-scale', '100');
+    }
   }
 }
 

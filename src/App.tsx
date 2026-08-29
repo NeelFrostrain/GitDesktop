@@ -237,7 +237,11 @@ export const App: React.FC = () => {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
   useEffect(() => {
-    // Consolidated startup: load accounts and repos concurrently in one shot
+    // Consolidated startup: load settings, accounts and repos concurrently in one shot
+    useSettingsStore
+      .getState()
+      .loadSettings()
+      .catch(() => {});
     useAccountServicesStore
       .getState()
       .loadAccounts()

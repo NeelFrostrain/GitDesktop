@@ -45,32 +45,58 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
       case 'number': {
         const num = typeof value === 'number' ? value : Number(setting.default);
+        const isUiScale = setting.id === 'app.ui_scale';
+        const presets = isUiScale ? [80, 90, 100, 110, 120] : null;
+
         return (
-          <div className="flex items-center gap-3 w-48">
-            <input
-              type="range"
-              min={setting.min ?? 0}
-              max={setting.max ?? 100}
-              step={setting.step ?? 1}
-              value={num}
-              onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
-              className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-2 rounded-xs"
-            />
-            <div className="flex items-center gap-1 min-w-[48px] justify-end">
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2.5">
+            {presets && (
+              <div className="flex items-center gap-0.5 bg-base-2/80 p-0.5 rounded-sm border border-border/70">
+                {presets.map((preset) => {
+                  const isSelected = Math.round(num) === preset;
+                  return (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setSettingValue(setting.id, preset)}
+                      className={`px-2 py-0.5 rounded-xs text-[10.5px] font-mono font-medium transition cursor-pointer ${
+                        isSelected
+                          ? 'bg-commito-coral text-white font-bold shadow-xs'
+                          : 'text-text-muted hover:text-text-primary hover:bg-base-3'
+                      }`}
+                    >
+                      {preset}%
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="flex items-center gap-2.5 w-44">
               <input
-                type="number"
-                min={setting.min}
-                max={setting.max}
-                step={setting.step}
+                type="range"
+                min={setting.min ?? 0}
+                max={setting.max ?? 100}
+                step={setting.step ?? 1}
                 value={num}
-                onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
-                className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-border-strong"
+                onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
+                className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-2 rounded-xs"
               />
-              {setting.unit && (
-                <span className="text-[10.5px] font-mono text-text-muted select-none">
-                  {setting.unit}
-                </span>
-              )}
+              <div className="flex items-center gap-1 min-w-[48px] justify-end">
+                <input
+                  type="number"
+                  min={setting.min}
+                  max={setting.max}
+                  step={setting.step}
+                  value={num}
+                  onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
+                  className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-border-strong"
+                />
+                {setting.unit && (
+                  <span className="text-[10.5px] font-mono text-text-muted select-none">
+                    {setting.unit}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         );

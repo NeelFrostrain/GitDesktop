@@ -76,15 +76,28 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   loadSettings: async (repoPath = null) => {
     set({ isLoading: true, activeRepoPath: repoPath });
     try {
-      // 1. Load app-scoped overrides from Tauri backend
-      let appOverrides: Record<string, any> = {};
+      // 1. Check local storage cache for immediate synchronous restore
+      let initialAppOverrides: Record<string, any> = {};
       try {
-        appOverrides = await invoke<Record<string, any>>('settings_get_all');
+        const cached = localStorage.getItem('git_desktop_settings_app');
+        if (cached) {
+          initialAppOverrides = JSON.parse(cached);
+          applyAllOverrides(initialAppOverrides);
+        }
+      } catch {}
+
+      // 2. Load app-scoped overrides from Tauri backend
+      let appOverrides: Record<string, any> = initialAppOverrides;
+      try {
+        const backendSettings = await invoke<Record<string, any>>('settings_get_all');
+        if (backendSettings && Object.keys(backendSettings).length > 0) {
+          appOverrides = { ...initialAppOverrides, ...backendSettings };
+        }
       } catch (err) {
         console.warn('[Settings] Failed to fetch app settings from backend, using local:', err);
       }
 
-      // 2. Load repo-scoped overrides if repoPath is set
+      // 3. Load repo-scoped overrides if repoPath is set
       let repoOverrides: Record<string, any> = {};
       if (repoPath) {
         try {
@@ -96,7 +109,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
 
       set({ appOverrides, repoOverrides, isLoading: false });
 
-      // 3. Immediately apply all CSS custom property overrides to document
+      // 4. Immediately apply all CSS custom property overrides to document
       applyAllOverrides(appOverrides);
     } catch {
       set({ isLoading: false });
@@ -117,6 +130,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     if (isApp) {
       const next = { ...appOverrides, [id]: value };
       set({ appOverrides: next });
+      try {
+        localStorage.setItem('git_desktop_settings_app', JSON.stringify(next));
+      } catch {}
       try {
         await invoke('settings_save_value', { key: id, value });
       } catch (e) {
@@ -156,6 +172,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       delete next[id];
       set({ appOverrides: next });
       try {
+        localStorage.setItem('git_desktop_settings_app', JSON.stringify(next));
+      } catch {}
+      try {
         await invoke('settings_reset_value', { key: id });
       } catch {}
     } else {
@@ -183,6 +202,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         removeSettingFromDom(def.cssVar, def.default, def);
       }
     });
+
+    try {
+      localStorage.removeItem('git_desktop_settings_app');
+    } catch {}
 
     set({ appOverrides: {}, repoOverrides: {} });
     try {
