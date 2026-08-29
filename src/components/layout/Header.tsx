@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Database,
   Settings2,
+  GitBranch,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
@@ -151,6 +152,22 @@ export const Header: React.FC = () => {
                   <Database className="w-3.5 h-3.5" />
                 </button>
 
+                {/* Visual Git Graph View */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentNavView(currentNavView === 'graph' ? 'history' : 'graph')
+                  }
+                  className={`h-6.5 w-6.5 flex items-center justify-center rounded-xs transition cursor-pointer ${
+                    currentNavView === 'graph'
+                      ? 'bg-base-2 text-commito-coral font-semibold'
+                      : 'text-text-muted hover:text-commito-coral hover:bg-base-2'
+                  }`}
+                  title="Visual Git Graph (Railway Tree)"
+                >
+                  <GitBranch className="w-3.5 h-3.5" />
+                </button>
+
                 <div className="w-px h-3.5 bg-border/60 mx-0.5" />
               </>
             )}
@@ -270,6 +287,23 @@ export const Header: React.FC = () => {
                         >
                           <Database className="w-3.5 h-3.5 text-commito-coral shrink-0" />
                           <span className="text-[11.5px] font-medium">Git LFS & File Locks</span>
+                        </button>
+
+                        {/* Git Graph Visualizer */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentNavView(currentNavView === 'graph' ? 'history' : 'graph');
+                            setIsMoreMenuOpen(false);
+                          }}
+                          className={`w-full px-2.5 py-1.5 flex items-center gap-2 text-left cursor-pointer transition ${
+                            currentNavView === 'graph'
+                              ? 'bg-base-2 text-commito-coral font-semibold'
+                              : 'text-text-secondary hover:text-commito-coral hover:bg-base-2'
+                          }`}
+                        >
+                          <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                          <span className="text-[11.5px] font-medium">Visual Git Graph</span>
                         </button>
                       </div>
                     </>

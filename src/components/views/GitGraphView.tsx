@@ -24,6 +24,7 @@ import { Checkbox } from '../common/Checkbox';
 import { CommitHoverCard } from '../common/CommitHoverCard';
 import { CommitDetailsInspector } from './git-graph/CommitDetailsInspector';
 import { UserAvatar } from '../common/UserAvatar';
+import { formatBranchDropdownOptions } from '../../shared/utils/branchUtils';
 
 const ROW_HEIGHT = 28;
 const LANE_WIDTH = 14;
@@ -37,7 +38,20 @@ type DateFilterOption = 'all' | 'today' | '7d' | '30d' | '90d' | '1y';
 function formatGraphDate(timestamp: number): string {
   if (!timestamp) return '—';
   const d = new Date(timestamp * 1000);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const day = d.getDate();
   const month = months[d.getMonth()];
   const year = d.getFullYear();
@@ -170,7 +184,11 @@ export const GitGraphView: React.FC = () => {
     });
 
     const opts: DropdownOption<string>[] = [
-      { value: 'all', label: `All Authors (${commits.length})`, icon: <User className="w-3.5 h-3.5 text-text-muted" /> },
+      {
+        value: 'all',
+        label: `All Authors (${commits.length})`,
+        icon: <User className="w-3.5 h-3.5 text-text-muted" />,
+      },
     ];
 
     Array.from(counts.entries())
@@ -188,12 +206,36 @@ export const GitGraphView: React.FC = () => {
 
   // Date range filter options
   const dateRangeOptions: DropdownOption<DateFilterOption>[] = [
-    { value: 'all', label: 'All Time', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
-    { value: 'today', label: 'Today', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
-    { value: '7d', label: 'Last 7 Days', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
-    { value: '30d', label: 'Last 30 Days', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
-    { value: '90d', label: 'Last 3 Months', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
-    { value: '1y', label: 'Past Year', icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" /> },
+    {
+      value: 'all',
+      label: 'All Time',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
+    {
+      value: 'today',
+      label: 'Today',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
+    {
+      value: '7d',
+      label: 'Last 7 Days',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
+    {
+      value: '30d',
+      label: 'Last 30 Days',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
+    {
+      value: '90d',
+      label: 'Last 3 Months',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
+    {
+      value: '1y',
+      label: 'Past Year',
+      icon: <CalendarIcon className="w-3.5 h-3.5 text-text-muted" />,
+    },
   ];
 
   // Filter commits based on search query, author, and date range
@@ -273,14 +315,14 @@ export const GitGraphView: React.FC = () => {
         max,
         node.lane,
         ...(node.activeLanes || [0]),
-        ...((node.inSegments || []).map((s) => s.fromLane)),
-        ...((node.outSegments || []).map((s) => s.toLane))
+        ...(node.inSegments || []).map((s) => s.fromLane),
+        ...(node.outSegments || []).map((s) => s.toLane)
       );
     });
     return Math.max(2, max + 1);
   }, [graphNodes]);
 
-  const graphColWidth = Math.max(72, PADDING_LEFT + maxLaneCount * LANE_WIDTH + 14);
+  const graphColWidth = Math.max(84, PADDING_LEFT + maxLaneCount * LANE_WIDTH + 16);
 
   // Uncommitted changes info
   const uncommittedCount = status?.files?.length || 0;
@@ -328,30 +370,26 @@ export const GitGraphView: React.FC = () => {
     }
   };
 
-  // Branch dropdown options
+  // Branch dropdown options with deduplication of remote tracking branches
   const branchOptions = useMemo<DropdownOption<string>[]>(() => {
     const opts: DropdownOption<string>[] = [
-      { value: 'all', label: 'All Branches (Graph)', icon: <Layers className="w-3.5 h-3.5 text-blue-400" /> },
+      {
+        value: 'all',
+        label: 'All Branches (Graph)',
+        icon: <Layers className="w-3.5 h-3.5 text-blue-400" />,
+      },
     ];
-    if (status?.current_branch) {
+
+    const formatted = formatBranchDropdownOptions(branches);
+    formatted.forEach((opt) => {
       opts.push({
-        value: status.current_branch,
-        label: `HEAD (${status.current_branch})`,
-        icon: <GitBranch className="w-3.5 h-3.5 text-commito-coral" />,
+        ...opt,
+        label: opt.value === status?.current_branch ? `HEAD (${opt.value})` : opt.label,
       });
-    }
-    branches.forEach((b) => {
-      if (b.name !== status?.current_branch) {
-        if (!showRemoteBranches && b.is_remote) return;
-        opts.push({
-          value: b.name,
-          label: b.name,
-          icon: <GitBranch className={`w-3.5 h-3.5 ${b.is_remote ? 'text-purple-400' : 'text-text-muted'}`} />,
-        });
-      }
     });
+
     return opts;
-  }, [branches, status?.current_branch, showRemoteBranches]);
+  }, [branches, status?.current_branch]);
 
   const hasActiveFilters =
     searchQuery.trim() !== '' || selectedAuthor !== 'all' || selectedDateRange !== 'all';
@@ -381,25 +419,15 @@ export const GitGraphView: React.FC = () => {
     <div className="flex-1 flex flex-col h-full min-h-0 bg-base-0 select-none overflow-hidden font-sans">
       {/* Top Header Control Toolbar */}
       <div className="h-10 px-3 bg-base-0 border-b border-border flex items-center justify-between gap-3 shrink-0 text-xs select-none z-10">
-        {/* Left: Section Badge & Filter Controls */}
+        {/* Left: Filter Controls */}
         <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          {/* Section Indicator */}
-          <div className="flex items-center gap-1.5 shrink-0 pr-2.5 border-r border-border">
-            <div className="w-6 h-6 rounded-xs bg-commito-coral/15 text-commito-coral flex items-center justify-center border border-commito-coral/30">
-              <GitBranch className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-text-primary text-xs tracking-tight">
-              Git Graph
-            </span>
-          </div>
-
           {/* Branch Dropdown */}
           <Dropdown<string>
             options={branchOptions}
             value={selectedBranch}
             onChange={setSelectedBranch}
             size="sm"
-            className="w-38 shrink-0"
+            className="w-44 shrink-0"
           />
 
           {/* Author Dropdown */}
@@ -425,7 +453,11 @@ export const GitGraphView: React.FC = () => {
             <Checkbox
               checked={showRemoteBranches}
               onChange={setShowRemoteBranches}
-              label={<span className="text-[11px] text-text-secondary font-medium whitespace-nowrap">Remote</span>}
+              label={
+                <span className="text-[11px] text-text-secondary font-medium whitespace-nowrap">
+                  Remote
+                </span>
+              }
               size="sm"
             />
           </div>
@@ -467,7 +499,7 @@ export const GitGraphView: React.FC = () => {
             )}
           </div>
 
-          <span className="px-2 py-0.5 rounded-xs bg-base-1 border border-border text-text-muted font-mono text-[10.5px] shrink-0">
+          <span className="px-2 py-1.5 rounded-xs bg-base-1 border border-border text-text-muted font-mono text-[10.5px] shrink-0">
             {filteredCommits.length} {hasMore ? '+' : ''} commits
           </span>
 
@@ -491,7 +523,6 @@ export const GitGraphView: React.FC = () => {
             title="Close Graph View (Esc)"
           >
             <X className="w-3.5 h-3.5 text-text-muted" />
-            <span>Close</span>
           </button>
         </div>
       </div>
@@ -500,7 +531,10 @@ export const GitGraphView: React.FC = () => {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {/* Table Column Headers */}
         <div className="flex items-center bg-base-1/90 border-b border-border text-[11px] font-bold text-text-muted uppercase tracking-wider shrink-0 select-none">
-          <div style={{ width: `${graphColWidth}px` }} className="px-2 py-1.5 shrink-0 border-r border-border/40">
+          <div
+            style={{ width: `${graphColWidth}px` }}
+            className="px-3 py-1.5 shrink-0 border-r border-border/40 whitespace-nowrap overflow-visible font-bold text-[10.5px]"
+          >
             Graph
           </div>
           <div className="flex-1 px-3 py-1.5 min-w-0 border-r border-border/40">Description</div>
@@ -560,8 +594,15 @@ export const GitGraphView: React.FC = () => {
                       className="flex items-center hover:bg-base-2/60 border-b border-border/40 cursor-pointer text-xs group transition-colors"
                     >
                       {/* Graph SVG Column */}
-                      <div style={{ width: `${graphColWidth}px` }} className="h-full shrink-0 relative pointer-events-none">
-                        <svg width={graphColWidth} height={ROW_HEIGHT} className="block overflow-visible">
+                      <div
+                        style={{ width: `${graphColWidth}px` }}
+                        className="h-full shrink-0 relative pointer-events-none"
+                      >
+                        <svg
+                          width={graphColWidth}
+                          height={ROW_HEIGHT}
+                          className="block overflow-visible"
+                        >
                           <line
                             x1={PADDING_LEFT}
                             y1={ROW_HEIGHT / 2}
@@ -593,7 +634,9 @@ export const GitGraphView: React.FC = () => {
                       </div>
 
                       {/* Date */}
-                      <div className="w-36 px-2.5 text-[11px] text-text-muted font-mono truncate">Current</div>
+                      <div className="w-36 px-2.5 text-[11px] text-text-muted font-mono truncate">
+                        Current
+                      </div>
 
                       {/* Author */}
                       <div className="w-40 px-2.5 text-[11px] text-text-muted truncate flex items-center gap-1.5">
@@ -610,7 +653,9 @@ export const GitGraphView: React.FC = () => {
                       </div>
 
                       {/* Commit */}
-                      <div className="w-20 px-2 text-right pr-3 text-[11px] text-text-muted font-mono">—</div>
+                      <div className="w-20 px-2 text-right pr-3 text-[11px] text-text-muted font-mono">
+                        —
+                      </div>
                     </div>
                   );
                 }
@@ -656,7 +701,9 @@ export const GitGraphView: React.FC = () => {
                         setContextMenu({ commit: c, x: e.clientX, y: e.clientY });
                       }}
                       className={`flex items-center h-7 border-b border-border/30 cursor-pointer text-xs transition-colors group ${
-                        isSelected ? 'bg-base-2 text-text-primary' : 'hover:bg-base-2/50 text-text-secondary hover:text-text-primary'
+                        isSelected
+                          ? 'bg-base-2 text-text-primary'
+                          : 'hover:bg-base-2/50 text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       {/* 1. Graph Column */}
@@ -665,7 +712,11 @@ export const GitGraphView: React.FC = () => {
                         className="h-full shrink-0 relative"
                       >
                         {node && (
-                          <svg width={graphColWidth} height={ROW_HEIGHT} className="block overflow-visible">
+                          <svg
+                            width={graphColWidth}
+                            height={ROW_HEIGHT}
+                            className="block overflow-visible"
+                          >
                             {/* Passing vertical lanes */}
                             {node.activeLanes.map((lIdx) => {
                               const x = PADDING_LEFT + lIdx * LANE_WIDTH;
@@ -688,7 +739,8 @@ export const GitGraphView: React.FC = () => {
                             {(node.inSegments || []).map((inSeg, inIdx) => {
                               const fromX = PADDING_LEFT + inSeg.fromLane * LANE_WIDTH;
                               const toX = nodeX;
-                              const segColor = LANE_COLORS[inSeg.colorIndex % LANE_COLORS.length] || nodeColor;
+                              const segColor =
+                                LANE_COLORS[inSeg.colorIndex % LANE_COLORS.length] || nodeColor;
 
                               if (fromX === toX) {
                                 return (
@@ -723,7 +775,8 @@ export const GitGraphView: React.FC = () => {
                             {node.outSegments.map((seg, sIdx) => {
                               const fromX = nodeX;
                               const toX = PADDING_LEFT + seg.toLane * LANE_WIDTH;
-                              const segColor = LANE_COLORS[seg.colorIndex % LANE_COLORS.length] || nodeColor;
+                              const segColor =
+                                LANE_COLORS[seg.colorIndex % LANE_COLORS.length] || nodeColor;
 
                               if (fromX === toX) {
                                 return (
@@ -780,12 +833,7 @@ export const GitGraphView: React.FC = () => {
                               }}
                             >
                               {/* Invisible hit target circle (radius 8px) */}
-                              <circle
-                                cx={nodeX}
-                                cy={centerY}
-                                r={8}
-                                fill="transparent"
-                              />
+                              <circle cx={nodeX} cy={centerY} r={8} fill="transparent" />
 
                               {node.isMerge ? (
                                 <>
@@ -916,7 +964,8 @@ export const GitGraphView: React.FC = () => {
                               <>
                                 {node.outSegments.map((seg, sIdx) => {
                                   const toX = PADDING_LEFT + seg.toLane * LANE_WIDTH;
-                                  const segColor = LANE_COLORS[seg.colorIndex % LANE_COLORS.length] || nodeColor;
+                                  const segColor =
+                                    LANE_COLORS[seg.colorIndex % LANE_COLORS.length] || nodeColor;
                                   return (
                                     <line
                                       key={`inline-out-${sIdx}`}

@@ -54,7 +54,8 @@ export const CommitFilters: React.FC<CommitFiltersProps> = ({
         <button
           type="button"
           onClick={() => useGitStore.getState().setCurrentNavView('graph')}
-          className="h-6 px-2 bg-base-1/70 hover:bg-base-2 text-text-muted hover:text-text-primary border border-border/80 hover:border-border-strong rounded-sm text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs shrink-0"
+          className="h-6 px-2 bg-base-1/70 hover:bg-base-2 text-text-muted hover:text-text-primary border border-border/80 
+          hover:border-border-strong rounded-sm text-[11px] font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs shrink-0"
           title="Open Visual Git Graph Table View"
         >
           <GitBranch className="w-3 h-3 text-commito-coral" />
