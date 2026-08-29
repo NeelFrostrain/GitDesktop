@@ -50,6 +50,7 @@ interface AiAgentState {
   // Messaging & Execution
   sendMessage: (content: string) => Promise<void>;
   regenerateMessage: (assistantMsgId: string) => Promise<void>;
+  cancelRequest: () => void;
   executeToolCall: (toolCallId: string, runInTerminal?: boolean) => Promise<void>;
   executeAllToolCallsChained: (messageId: string) => Promise<void>;
   rejectToolCall: (toolCallId: string) => void;
@@ -102,6 +103,10 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       localStorage.setItem('ai_agent_security_mode', mode);
     } catch {}
     set({ securityMode: mode });
+  },
+
+  cancelRequest: () => {
+    set({ status: 'idle', error: null });
   },
 
   createSession: (repoPath) => {

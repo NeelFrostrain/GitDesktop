@@ -304,89 +304,7 @@ export const Header: React.FC = () => {
                     </>
                   )}
 
-                  {/* Advanced Repository Operations */}
-                  <div className="px-2.5 py-1 text-[10px] font-bold text-text-muted uppercase tracking-wider">
-                    Advanced Git Tools
-                  </div>
-
-                  <div className="py-0.5 space-y-0.5">
-                    {/* Rebase Branch */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsRebaseModalOpen(true);
-                        setIsMoreMenuOpen(false);
-                      }}
-                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-amber-400 hover:bg-base-2 cursor-pointer transition"
-                    >
-                      <GitMerge className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                      <span className="text-[11.5px] font-medium">
-                        Rebase Branch...
-                      </span>
-                    </button>
-
-                    {/* Cherry-Pick Commit */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsCherryPickModalOpen(true);
-                        setIsMoreMenuOpen(false);
-                      }}
-                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-sky-400 hover:bg-base-2 cursor-pointer transition"
-                    >
-                      <GitCommit className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                      <span className="text-[11.5px] font-medium">
-                        Cherry-Pick Commit...
-                      </span>
-                    </button>
-
-                    {/* Git Reflog */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsReflogModalOpen(true);
-                        setIsMoreMenuOpen(false);
-                      }}
-                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-purple-400 hover:bg-base-2 cursor-pointer transition"
-                    >
-                      <History className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                      <span className="text-[11.5px] font-medium">
-                        View Git Reflog...
-                      </span>
-                    </button>
-
-                    {/* Create / Apply Patch */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsPatchModalOpen(true);
-                        setIsMoreMenuOpen(false);
-                      }}
-                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-emerald-400 hover:bg-base-2 cursor-pointer transition"
-                    >
-                      <FileDiff className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span className="text-[11.5px] font-medium">
-                        Create / Apply Patch...
-                      </span>
-                    </button>
-
-                    {/* Rewrite History */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsRewriteModalOpen(true);
-                        setIsMoreMenuOpen(false);
-                      }}
-                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-rose-400 hover:bg-base-2 cursor-pointer transition"
-                    >
-                      <FileCode2 className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                      <span className="text-[11.5px] font-medium">
-                        Rewrite History...
-                      </span>
-                    </button>
-
-                    <div className="h-px bg-border/60 my-1 mx-2" />
-
+                  <div className="py-0.5">
                     {/* Repository Git Config */}
                     <button
                       type="button"
@@ -403,6 +321,7 @@ export const Header: React.FC = () => {
                     </button>
                   </div>
                 </div>
+
               )}
             </div>
           </div>

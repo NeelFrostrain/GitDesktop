@@ -113,6 +113,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
 
   const activeSession =
     sessions.find((s) => s.id === activeSessionId) || sessions[0];
+  const { cancelRequest } = useAiAgentStore();
   const isThinking = status === "thinking";
 
   // Auto-scroll to bottom on message updates
@@ -441,11 +442,20 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
 
         {/* Thinking Indicator */}
         {isThinking && (
-          <div className="flex items-center gap-2 p-3 bg-base-1/50 border border-border/70 rounded-sm animate-pulse">
-            <Loader2 className="w-4 h-4 text-commito-coral animate-spin shrink-0" />
-            <span className="text-xs text-text-muted font-medium">
-              AI Agent is analyzing repository context and thinking...
+          <div className="flex items-center gap-2 p-2.5 bg-base-1/50 border border-border/70 rounded-sm">
+            <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+            <span className="text-xs text-text-muted font-medium flex-1">
+              Thinking...
             </span>
+            <button
+              type="button"
+              onClick={() => cancelRequest()}
+              title="Cancel request"
+              className="flex items-center gap-1 px-2 py-0.5 rounded-xs bg-base-2 border border-border/60 hover:border-commito-coral/50 hover:bg-commito-coral/10 text-text-muted hover:text-commito-coral transition text-[10px] font-medium cursor-pointer select-none"
+            >
+              <X className="w-3 h-3" />
+              Stop
+            </button>
           </div>
         )}
 

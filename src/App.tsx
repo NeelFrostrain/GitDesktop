@@ -1,4 +1,11 @@
-import React, { useEffect, lazy, Suspense, useState, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  lazy,
+  Suspense,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
@@ -30,14 +37,23 @@ const AI_MIN = 300;
 const AI_MAX = 900;
 const AI_DEFAULT = 420;
 
-function loadPanelWidth(key: string, def: number, min: number, max: number): number {
+function loadPanelWidth(
+  key: string,
+  def: number,
+  min: number,
+  max: number,
+): number {
   try {
     const v = localStorage.getItem(key);
     return v ? Math.max(min, Math.min(max, parseInt(v, 10))) : def;
-  } catch { return def; }
+  } catch {
+    return def;
+  }
 }
 function savePanelWidth(key: string, v: number) {
-  try { localStorage.setItem(key, String(v)); } catch {}
+  try {
+    localStorage.setItem(key, String(v));
+  } catch {}
 }
 
 // Lazy-loaded Views (chunked on-demand to maximize initial startup performance)
@@ -504,10 +520,10 @@ export const App: React.FC = () => {
 
   // ── Resizable panel widths ──────────────────────────────────────────────────
   const [sidebarWidth, setSidebarWidth] = useState(() =>
-    loadPanelWidth("sidebar_width", SIDEBAR_DEFAULT, SIDEBAR_MIN, SIDEBAR_MAX)
+    loadPanelWidth("sidebar_width", SIDEBAR_DEFAULT, SIDEBAR_MIN, SIDEBAR_MAX),
   );
   const [aiPanelWidth, setAiPanelWidth] = useState(() =>
-    loadPanelWidth("ai_agent_panel_width", AI_DEFAULT, AI_MIN, AI_MAX)
+    loadPanelWidth("ai_agent_panel_width", AI_DEFAULT, AI_MIN, AI_MAX),
   );
   const sidebarWidthRef = useRef(sidebarWidth);
   const aiPanelWidthRef = useRef(aiPanelWidth);
@@ -515,26 +531,31 @@ export const App: React.FC = () => {
   aiPanelWidthRef.current = aiPanelWidth;
 
   const onSidebarResize = useCallback((delta: number) => {
-    setSidebarWidth(prev => Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)));
+    setSidebarWidth((prev) =>
+      Math.max(SIDEBAR_MIN, Math.min(SIDEBAR_MAX, prev + delta)),
+    );
   }, []);
   const onSidebarResizeEnd = useCallback(() => {
     savePanelWidth("sidebar_width", sidebarWidthRef.current);
   }, []);
 
   const onAiPanelResize = useCallback((delta: number) => {
-    setAiPanelWidth(prev => Math.max(AI_MIN, Math.min(AI_MAX, prev - delta)));
+    setAiPanelWidth((prev) => Math.max(AI_MIN, Math.min(AI_MAX, prev - delta)));
   }, []);
   const onAiPanelResizeEnd = useCallback(() => {
     savePanelWidth("ai_agent_panel_width", aiPanelWidthRef.current);
   }, []);
 
   // Terminal height resize — wired to terminal store
-  const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } = useTerminalStore();
-  const onTerminalResize = useCallback((delta: number) => {
-    // dragging UP (negative delta) grows the terminal
-    setTerminalHeight(useTerminalStore.getState().panelHeight - delta);
-  }, [setTerminalHeight]);
-
+  const { setPanelHeight: setTerminalHeight, isOpen: isTerminalOpen } =
+    useTerminalStore();
+  const onTerminalResize = useCallback(
+    (delta: number) => {
+      // dragging UP (negative delta) grows the terminal
+      setTerminalHeight(useTerminalStore.getState().panelHeight - delta);
+    },
+    [setTerminalHeight],
+  );
 
   return (
     <ErrorBoundary>
@@ -549,7 +570,11 @@ export const App: React.FC = () => {
               <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden rounded-sm border border-border/80 bg-base-0 shadow-2xs">
                 <HomeDashboard />
               </div>
-              <PanelResizer direction="horizontal" onResize={onAiPanelResize} onResizeEnd={onAiPanelResizeEnd} />
+              {/* <PanelResizer
+                direction="horizontal"
+                onResize={onAiPanelResize}
+                onResizeEnd={onAiPanelResizeEnd}
+              /> */}
               <Suspense fallback={null}>
                 <AiAgentPanel width={aiPanelWidth} />
               </Suspense>
@@ -558,12 +583,19 @@ export const App: React.FC = () => {
             /* ── Repo page: sidebar | center (main+terminal) | AI panel ── */
             <div className="flex flex-1 min-w-0 w-full overflow-hidden">
               {/* Left sidebar — fixed width from App state */}
-              <div style={{ width: sidebarWidth }} className="flex-shrink-0 h-full min-w-0">
+              <div
+                style={{ width: sidebarWidth }}
+                className="flex-shrink-0 h-full min-w-0"
+              >
                 <Sidebar />
               </div>
 
               {/* Sidebar ↔ center divider */}
-              <PanelResizer direction="horizontal" onResize={onSidebarResize} onResizeEnd={onSidebarResizeEnd} />
+              <PanelResizer
+                direction="horizontal"
+                onResize={onSidebarResize}
+                onResizeEnd={onSidebarResizeEnd}
+              />
 
               {/* Center column */}
               <div className="flex flex-col flex-1 min-w-0 min-h-0 overflow-hidden">
@@ -588,7 +620,10 @@ export const App: React.FC = () => {
 
                 {/* Main ↕ Terminal vertical resizer + gap */}
                 {isTerminalOpen && (
-                  <PanelResizer direction="vertical" onResize={onTerminalResize} />
+                  <PanelResizer
+                    direction="vertical"
+                    onResize={onTerminalResize}
+                  />
                 )}
 
                 {/* Terminal panel — docked bottom of center column */}
@@ -598,7 +633,11 @@ export const App: React.FC = () => {
               </div>
 
               {/* Center ↔ AI panel divider */}
-              <PanelResizer direction="horizontal" onResize={onAiPanelResize} onResizeEnd={onAiPanelResizeEnd} />
+              <PanelResizer
+                direction="horizontal"
+                onResize={onAiPanelResize}
+                onResizeEnd={onAiPanelResizeEnd}
+              />
 
               {/* Right AI panel — fixed width from App state */}
               <Suspense fallback={null}>
@@ -607,7 +646,6 @@ export const App: React.FC = () => {
             </div>
           )}
         </div>
-
 
         {/* Global Dialog Modals (Lazy Loaded) */}
         <Suspense fallback={null}>
