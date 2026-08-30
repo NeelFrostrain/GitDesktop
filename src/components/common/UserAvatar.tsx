@@ -70,7 +70,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   className = 'w-8 h-8',
   iconClassName = 'w-4 h-4',
   provider,
-  showInitials = false,
+  showInitials = true,
 }) => {
   const { user } = useGitStore();
   const accounts = useAccountServicesStore((s) => s.accounts);

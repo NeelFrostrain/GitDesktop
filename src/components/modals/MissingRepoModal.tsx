@@ -164,7 +164,7 @@ export const MissingRepoModal: React.FC = () => {
           <button
             type="button"
             onClick={handleRemove}
-            className="h-7 px-2.5 rounded-xs bg-git-removed-bg hover:bg-red-500/25 border border-git-removed/30 text-git-removed text-xs font-medium flex items-center gap-1.5 transition cursor-pointer active:scale-[0.98]"
+            className="h-7 px-2.5 rounded-xs bg-git-removed-bg hover:bg-red-500/25 border border-git-removed/30 text-git-removed text-xs font-medium inline-flex items-center justify-center gap-1.5 leading-none transition cursor-pointer active:scale-[0.98]"
             title="Remove from workspace"
           >
             <Trash2 className="w-3 h-3" />
@@ -176,7 +176,7 @@ export const MissingRepoModal: React.FC = () => {
               type="button"
               onClick={handleLocate}
               disabled={isLocating}
-              className="h-7 px-2.5 rounded-xs bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-medium flex items-center gap-1.5 transition cursor-pointer active:scale-[0.98] disabled:opacity-50"
+              className="h-7 px-2.5 rounded-xs bg-base-2 hover:bg-base-3 border border-border text-text-primary text-xs font-medium inline-flex items-center justify-center gap-1.5 leading-none transition cursor-pointer active:scale-[0.98] disabled:opacity-50"
             >
               <FolderSearch className="w-3 h-3 text-text-muted" />
               <span>{isLocating ? 'Locating...' : 'Locate Folder...'}</span>
@@ -185,7 +185,7 @@ export const MissingRepoModal: React.FC = () => {
             <button
               type="button"
               onClick={handleClose}
-              className="h-7 px-3.5 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-medium flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-[0.98]"
+              className="h-7 px-3.5 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-medium inline-flex items-center justify-center gap-1.5 leading-none transition cursor-pointer shadow-xs active:scale-[0.98]"
             >
               <span>Close</span>
             </button>

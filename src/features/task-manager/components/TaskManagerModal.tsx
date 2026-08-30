@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
-  Activity,
   Loader2,
   CheckCircle2,
   AlertCircle,
@@ -18,6 +17,10 @@ import { openRepo } from '../../repos';
 import { SystemService } from '../../../services/system/systemService';
 import { useGitStore } from '../../../store/useGitStore';
 
+/**
+ * Modern Task Manager modal dialog for monitoring background Git operations,
+ * repository cloning tasks, and runtime jobs with real-time streaming progress.
+ */
 export const TaskManagerModal: React.FC = () => {
   const isModalOpen = useTaskStore((s) => s.isModalOpen);
   const setModalOpen = useTaskStore((s) => s.setModalOpen);
@@ -77,43 +80,38 @@ export const TaskManagerModal: React.FC = () => {
     <div
       role="dialog"
       aria-modal="true"
+      aria-labelledby="task-manager-title"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           setModalOpen(false);
         }
       }}
-      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs select-none animate-in fade-in duration-100"
+      className="fixed inset-0 z-10000 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs select-none animate-in fade-in duration-100"
     >
-      <div className="w-full max-w-2xl bg-base-0 border border-border-strong rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="px-5 py-3.5 bg-base-1 border-b border-border flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-sm bg-base-2 border border-border flex items-center justify-center text-commito-coral shrink-0">
-              <Activity className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-text-primary leading-tight">
-                  Task Manager
-                </h3>
-                {activeTasks.length > 0 && (
-                  <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[10px] font-mono font-bold rounded-xs animate-pulse">
-                    {activeTasks.length} Running
-                  </span>
-                )}
-              </div>
-              <p className="text-[11px] text-text-muted leading-tight mt-0.5">
-                Background Git operations, cloning tasks, and runtime jobs
-              </p>
-            </div>
+      <div
+        className="w-full max-w-xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Compact Header */}
+        <div className="px-4 py-2.5 bg-base-1 border-b border-border flex items-center justify-between shrink-0 select-none">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2 id="task-manager-title" className="text-xs font-bold text-text-primary leading-none truncate">
+              Task Manager
+            </h2>
+            <span className="text-border">•</span>
+            <span className="text-[11px] text-text-muted font-mono leading-none truncate">
+              {activeTasks.length > 0
+                ? `${activeTasks.length} running • ${tasks.length} total`
+                : `${tasks.length} total task${tasks.length === 1 ? '' : 's'}`}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             {tasks.some((t) => t.status !== 'running') && (
               <button
                 type="button"
                 onClick={clearFinishedTasks}
-                className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-[11px] font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer"
+                className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
                 title="Clear finished tasks"
               >
                 <Trash2 className="w-3 h-3 text-text-muted" />
@@ -124,39 +122,42 @@ export const TaskManagerModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setModalOpen(false)}
-              className="w-7 h-7 flex items-center justify-center rounded-sm hover:bg-base-2 text-text-muted hover:text-text-primary transition cursor-pointer"
+              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+              title="Close (Esc)"
+              aria-label="Close dialog"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Tab Filters */}
-        <div className="px-5 py-2 bg-base-1/50 border-b border-border/70 flex items-center justify-between shrink-0 text-xs">
-          <div className="flex items-center gap-1">
+        {/* Tab Filters Bar */}
+        <div className="px-4 py-2 bg-base-1/50 border-b border-border flex items-center justify-between shrink-0 text-xs">
+          <div className="flex items-center gap-1 bg-base-0 p-0.5 rounded-xs border border-border">
             <button
               type="button"
               onClick={() => setActiveTab('all')}
-              className={`px-3 py-1 rounded-sm text-xs font-semibold transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-xs text-[11.5px] font-medium transition cursor-pointer leading-none flex items-center gap-1.5 ${
                 activeTab === 'all'
-                  ? 'bg-base-2 text-commito-coral shadow-2xs'
+                  ? 'bg-base-2 text-text-primary font-semibold shadow-2xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              All Tasks ({tasks.length})
+              <span>All</span>
+              <span className="text-[10px] font-mono text-text-muted">{tasks.length}</span>
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('active')}
-              className={`px-3 py-1 rounded-sm text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-2.5 py-1 rounded-xs text-[11.5px] font-medium transition cursor-pointer leading-none flex items-center gap-1.5 ${
                 activeTab === 'active'
-                  ? 'bg-base-2 text-commito-coral shadow-2xs'
+                  ? 'bg-base-2 text-text-primary font-semibold shadow-2xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
               <span>Active</span>
               {activeTasks.length > 0 && (
-                <span className="w-4 h-4 rounded-full bg-commito-coral text-white text-[9.5px] flex items-center justify-center font-bold">
+                <span className="px-1 py-0.2 rounded-xs bg-commito-coral text-white text-[9.5px] font-mono font-bold leading-none">
                   {activeTasks.length}
                 </span>
               )}
@@ -164,27 +165,29 @@ export const TaskManagerModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('completed')}
-              className={`px-3 py-1 rounded-sm text-xs font-semibold transition cursor-pointer ${
+              className={`px-2.5 py-1 rounded-xs text-[11.5px] font-medium transition cursor-pointer leading-none flex items-center gap-1.5 ${
                 activeTab === 'completed'
-                  ? 'bg-base-2 text-commito-coral shadow-2xs'
+                  ? 'bg-base-2 text-text-primary font-semibold shadow-2xs'
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              Completed ({completedTasks.length})
+              <span>Completed</span>
+              <span className="text-[10px] font-mono text-text-muted">{completedTasks.length}</span>
             </button>
           </div>
 
-          <span className="text-[11px] text-text-muted font-mono hidden sm:inline">
-            Real-time streaming active
+          <span className="text-[10.5px] text-text-muted font-mono hidden sm:inline-flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Streaming</span>
           </span>
         </div>
 
         {/* Task List */}
-        <div className="p-5 flex-1 overflow-y-auto space-y-3 min-h-[260px] max-h-[500px]">
+        <div className="p-4 flex-1 overflow-y-auto space-y-2.5 min-h-[220px] max-h-[460px]">
           {filteredTasks.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center space-y-2.5 text-text-muted">
-              <div className="w-10 h-10 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted">
-                <Clock className="w-5 h-5 opacity-60" />
+            <div className="p-10 text-center flex flex-col items-center justify-center space-y-2 text-text-muted">
+              <div className="w-8 h-8 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted">
+                <Clock className="w-4 h-4 opacity-60" />
               </div>
               <div>
                 <p className="text-xs font-semibold text-text-primary">No Tasks Found</p>
@@ -205,43 +208,43 @@ export const TaskManagerModal: React.FC = () => {
               return (
                 <div
                   key={task.id}
-                  className={`p-3.5 rounded-sm border transition bg-base-1/70 space-y-2.5 ${
+                  className={`p-3 rounded-sm border transition bg-base-1/50 space-y-2 ${
                     isRunning
-                      ? 'border-commito-coral/50 bg-base-1/90 shadow-2xs'
+                      ? 'border-border-strong bg-base-1/80 shadow-2xs'
                       : isCompleted
-                      ? 'border-border/80 hover:border-border-strong'
-                      : 'border-red-500/30 bg-red-950/10'
+                      ? 'border-border hover:border-border-strong'
+                      : 'border-git-removed/30 bg-git-removed-bg/10'
                   }`}
                 >
                   {/* Task Header Row */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-start gap-2 min-w-0 flex-1">
                       {/* Status Icon */}
                       <div className="mt-0.5 shrink-0">
                         {isRunning ? (
-                          <Loader2 className="w-4 h-4 text-commito-coral animate-spin" />
+                          <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin" />
                         ) : isCompleted ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         ) : isCancelled ? (
-                          <XCircle className="w-4 h-4 text-text-muted" />
+                          <XCircle className="w-3.5 h-3.5 text-text-muted" />
                         ) : (
-                          <AlertCircle className="w-4 h-4 text-red-400" />
+                          <AlertCircle className="w-3.5 h-3.5 text-git-removed" />
                         )}
                       </div>
 
                       {/* Title & Path */}
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-bold text-xs text-text-primary truncate">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-semibold text-xs text-text-primary truncate">
                             {task.title}
                           </span>
-                          <span className="px-1.5 py-0.2 bg-base-2 text-text-muted text-[9.5px] font-mono uppercase tracking-wider rounded-xs border border-border/70 shrink-0">
+                          <span className="px-1.5 py-0.2 bg-base-0 text-text-muted text-[9.5px] font-mono uppercase tracking-wider rounded-xs border border-border shrink-0">
                             {task.type}
                           </span>
                         </div>
 
                         {task.localPath && (
-                          <div className="text-[11px] text-text-muted font-mono truncate mt-0.5">
+                          <div className="text-[10px] text-text-muted font-mono truncate mt-0.5">
                             {task.localPath}
                           </div>
                         )}
@@ -255,7 +258,7 @@ export const TaskManagerModal: React.FC = () => {
                           {task.progress.percent}%
                         </span>
                       ) : (
-                        <span className="text-[11px] text-text-muted font-mono">
+                        <span className="text-[10.5px] text-text-muted font-mono">
                           {formatDuration(task.startedAt, task.finishedAt)}
                         </span>
                       )}
@@ -265,7 +268,7 @@ export const TaskManagerModal: React.FC = () => {
                   {/* Active Progress Track (if running) */}
                   {isRunning && (
                     <div className="space-y-1.5 pt-0.5">
-                      <div className="w-full h-1.5 bg-base-2 rounded-full overflow-hidden border border-border/60 relative">
+                      <div className="w-full h-1 bg-base-0 rounded-full overflow-hidden border border-border/80 relative">
                         <div
                           className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
                           style={{ width: `${Math.max(4, task.progress.percent)}%` }}
@@ -275,12 +278,12 @@ export const TaskManagerModal: React.FC = () => {
                       </div>
 
                       {/* Detail text & Estimated Time Remaining (ETA) */}
-                      <div className="flex items-center justify-between text-[11px] text-text-muted font-mono">
+                      <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
                         <span className="truncate max-w-[70%]">
                           {task.progress.detail || task.progress.stage || 'Downloading repository objects...'}
                         </span>
-                        <div className="flex items-center gap-1.5 shrink-0 text-commito-coral">
-                          <Clock className="w-3 h-3 shrink-0 opacity-80" />
+                        <div className="flex items-center gap-1 shrink-0 text-commito-coral">
+                          <Clock className="w-2.5 h-2.5 shrink-0 opacity-80" />
                           <span className="font-semibold">
                             {formatEta(task.startedAt, task.progress.percent) || 'Estimating...'}
                           </span>
@@ -291,24 +294,24 @@ export const TaskManagerModal: React.FC = () => {
 
                   {/* Error display if failed */}
                   {isFailed && task.error && (
-                    <div className="p-2 bg-red-950/30 border border-red-500/30 rounded-xs text-[11px] text-red-300 font-mono break-all leading-tight">
+                    <div className="p-2 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[10.5px] text-git-removed font-mono break-all leading-tight">
                       {task.error}
                     </div>
                   )}
 
                   {/* Completed Action Shortcuts */}
                   {isCompleted && task.localPath && (
-                    <div className="pt-1 flex items-center justify-between gap-2 border-t border-border/40">
-                      <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3 h-3" />
+                    <div className="pt-1.5 flex items-center justify-between gap-2 border-t border-border/60">
+                      <span className="text-[10.5px] text-emerald-400 font-mono flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 shrink-0" />
                         <span>Ready in {formatDuration(task.startedAt, task.finishedAt)}</span>
                       </span>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => handleShowInExplorer(task)}
-                          className="h-6.5 px-2 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] text-text-secondary hover:text-text-primary transition flex items-center gap-1 cursor-pointer"
+                          className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
                           title="Open folder in Windows Explorer"
                         >
                           <FolderOpen className="w-3 h-3 text-text-muted" />
@@ -317,7 +320,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenRepo(task)}
-                          className="h-6.5 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-xs text-[11px] font-bold transition flex items-center gap-1 cursor-pointer shadow-2xs active:scale-98"
+                          className="h-7 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-xs text-[11px] font-medium transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer shadow-xs active:scale-98"
                           title="Open in GitDesktop"
                         >
                           <span>Open in GitDesktop</span>
@@ -329,21 +332,21 @@ export const TaskManagerModal: React.FC = () => {
 
                   {/* Actions for running, failed, or cancelled tasks */}
                   {isRunning ? (
-                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/40">
+                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/60">
                       <button
                         type="button"
                         onClick={() => cancelTask(task.id)}
-                        className="h-6 px-2 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-red-400 transition cursor-pointer"
+                        className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-git-removed transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
                       >
                         Cancel Task
                       </button>
                     </div>
                   ) : (isFailed || isCancelled) ? (
-                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/40">
+                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/60">
                       <button
                         type="button"
                         onClick={() => removeTask(task.id)}
-                        className="h-6 px-2 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-text-primary transition cursor-pointer"
+                        className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
                       >
                         Dismiss
                       </button>
@@ -355,16 +358,16 @@ export const TaskManagerModal: React.FC = () => {
           )}
         </div>
 
-        {/* Footer info bar */}
-        <div className="px-5 py-2.5 bg-base-1 border-t border-border flex items-center justify-between text-xs text-text-muted shrink-0">
-          <div className="flex items-center gap-2 min-w-0 truncate font-mono text-[11px]">
-            <span>{tasks.length} total tasks</span>
+        {/* Compact Footer Bar */}
+        <div className="px-4 py-2.5 bg-base-1 border-t border-border flex items-center justify-between text-xs text-text-muted shrink-0">
+          <div className="flex items-center gap-1.5 min-w-0 truncate font-mono text-[11px]">
+            <span>{tasks.length} total</span>
             <span>•</span>
             <span className="text-emerald-400">{completedTasks.length} completed</span>
             {failedTasks.length > 0 && (
               <>
                 <span>•</span>
-                <span className="text-red-400">{failedTasks.length} failed</span>
+                <span className="text-git-removed">{failedTasks.length} failed</span>
               </>
             )}
           </div>
@@ -372,7 +375,7 @@ export const TaskManagerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setModalOpen(false)}
-            className="h-7 px-3.5 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-primary transition cursor-pointer"
+            className="h-7 px-3.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-xs font-medium text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-[0.98]"
           >
             Close
           </button>

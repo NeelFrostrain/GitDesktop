@@ -24,12 +24,12 @@ export const FloatingTaskWidget: React.FC = () => {
   return (
     <div
       onClick={() => setModalOpen(true)}
-      className="fixed bottom-4 right-4 z-9999 max-w-sm w-80 bg-base-1/95 border border-commito-coral/40 backdrop-blur-md rounded-sm shadow-2xl p-3 space-y-2 cursor-pointer hover:border-commito-coral transition-all duration-150 animate-in slide-in-from-bottom-3 fade-in group select-none"
+      className="fixed bottom-4 right-4 z-9999 max-w-sm w-80 bg-base-1/95 border border-border hover:border-border-strong backdrop-blur-md rounded-sm shadow-2xl p-2.5 space-y-1.5 cursor-pointer transition-all duration-150 animate-in slide-in-from-bottom-3 fade-in group select-none"
     >
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
-          <span className="font-bold text-xs text-text-primary truncate">
+          <span className="font-semibold text-xs text-text-primary truncate">
             {primaryTask.title}
           </span>
         </div>
@@ -43,7 +43,7 @@ export const FloatingTaskWidget: React.FC = () => {
       </div>
 
       {/* Progress Track */}
-      <div className="w-full h-1.5 bg-base-2 rounded-full overflow-hidden border border-border/60 relative">
+      <div className="w-full h-1 bg-base-2 rounded-full overflow-hidden border border-border/60 relative">
         <div
           className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
           style={{ width: `${Math.max(4, percent)}%` }}
@@ -53,7 +53,7 @@ export const FloatingTaskWidget: React.FC = () => {
       </div>
 
       {/* Details & ETA */}
-      <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
+      <div className="flex items-center justify-between text-[10px] text-text-muted font-mono">
         <span className="truncate max-w-[60%]">
           {primaryTask.progress.detail || primaryTask.progress.stage || 'Downloading objects...'}
         </span>

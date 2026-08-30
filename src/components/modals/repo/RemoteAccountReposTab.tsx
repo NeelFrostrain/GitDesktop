@@ -401,11 +401,11 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
 
       {/* Real-time Clone Progress Indicator */}
       {cloningRepoId !== null && (
-        <div className="p-3 bg-base-2 border border-commito-coral/40 rounded-sm space-y-2 animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className="p-2.5 bg-base-1 border border-border rounded-sm space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150 shadow-2xs">
           <div className="flex items-center justify-between text-xs">
             <div className="flex items-center gap-2 min-w-0">
               <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
-              <span className="font-semibold text-text-primary truncate">
+              <span className="font-semibold text-text-primary text-xs truncate">
                 {cloneProgress?.stage || 'Cloning selected repository...'}
               </span>
             </div>
@@ -414,7 +414,7 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
             </span>
           </div>
 
-          <div className="w-full h-1.5 bg-base-0 rounded-full overflow-hidden border border-border/80 relative">
+          <div className="w-full h-1 bg-base-0 rounded-full overflow-hidden border border-border/80 relative">
             <div
               className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
               style={{ width: `${Math.max(4, cloneProgress?.percent || 4)}%` }}
@@ -423,7 +423,7 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center justify-between text-[11px] text-text-muted font-mono">
+          <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
             <span className="truncate max-w-[85%]">
               {cloneProgress?.detail || 'Downloading repository objects...'}
             </span>
