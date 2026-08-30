@@ -1,4 +1,14 @@
-export type TaskType = 'clone' | 'fetch' | 'pull' | 'push' | 'checkout' | 'index' | 'submodule';
+export type TaskType =
+  | 'clone'
+  | 'fetch'
+  | 'pull'
+  | 'push'
+  | 'checkout'
+  | 'commit'
+  | 'stash'
+  | 'publish'
+  | 'index'
+  | 'submodule';
 
 export type TaskStatus = 'running' | 'completed' | 'failed' | 'cancelled';
 

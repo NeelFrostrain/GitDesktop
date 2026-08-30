@@ -18,6 +18,7 @@ import { toAppError } from '../../shared/utils/errorUtils';
 import { Checkbox } from '../common/Checkbox';
 import { Button } from '../common/Button';
 import { ConfirmDialog } from '../common/ConfirmDialog';
+import { useTaskStore } from '../../features/task-manager';
 
 /**
  * Modern Dark Obsidian View for inspecting, searching, creating, applying, popping,
@@ -89,6 +90,21 @@ export const StashManagerView: React.FC = () => {
     e.preventDefault();
     if (!activeRepoPath) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Stash changes: '${stashMessage.trim() || 'WIP'}'`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Stashing',
+      percent: 40,
+      detail: 'Saving working directory state...',
+    });
+
     try {
       await GitService.createStash(
         activeRepoPath,
@@ -103,7 +119,11 @@ export const StashManagerView: React.FC = () => {
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadStashes();
+
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = toAppError(error, 'STASH_ERROR').message;
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'STASH_ERROR'));
     }
   };
@@ -111,19 +131,40 @@ export const StashManagerView: React.FC = () => {
   const handleApplyStash = async (index: number) => {
     if (!activeRepoPath) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Apply stash@{${index}}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
       await GitService.applyStash(activeRepoPath, index);
       useLogStore.getState().addLog('success', 'Git', `Applied stash@{${index}}`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = toAppError(error, 'STASH_ERROR').message;
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'STASH_ERROR'));
     }
   };
 
   const handlePopStash = async (index: number) => {
     if (!activeRepoPath) return;
+
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Pop stash@{${index}}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
 
     try {
       await GitService.popStash(activeRepoPath, index);
@@ -132,7 +173,10 @@ export const StashManagerView: React.FC = () => {
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadStashes();
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = toAppError(error, 'STASH_ERROR').message;
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'STASH_ERROR'));
     }
   };

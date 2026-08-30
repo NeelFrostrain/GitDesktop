@@ -10,12 +10,78 @@ import {
   Trash2,
   Clock,
   ArrowRight,
+  Upload,
+  Download,
+  RefreshCw,
+  GitBranch,
+  GitCommit,
+  Archive,
+  Globe,
 } from 'lucide-react';
 import { useTaskStore } from '../store/taskStore';
-import { AppTask, formatEta } from '../types';
+import { AppTask, TaskType, formatEta } from '../types';
 import { openRepo } from '../../repos';
 import { SystemService } from '../../../services/system/systemService';
 import { useGitStore } from '../../../store/useGitStore';
+
+const getTaskTypeBadge = (type: TaskType) => {
+  switch (type) {
+    case 'push':
+      return {
+        label: 'Push',
+        Icon: Upload,
+        className: 'bg-orange-500/15 text-orange-300 border-orange-500/30',
+      };
+    case 'pull':
+      return {
+        label: 'Pull',
+        Icon: Download,
+        className: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
+      };
+    case 'fetch':
+      return {
+        label: 'Fetch',
+        Icon: RefreshCw,
+        className: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+      };
+    case 'clone':
+      return {
+        label: 'Clone',
+        Icon: Download,
+        className: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+      };
+    case 'checkout':
+      return {
+        label: 'Checkout',
+        Icon: GitBranch,
+        className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      };
+    case 'commit':
+      return {
+        label: 'Commit',
+        Icon: GitCommit,
+        className: 'bg-teal-500/15 text-teal-300 border-teal-500/30',
+      };
+    case 'stash':
+      return {
+        label: 'Stash',
+        Icon: Archive,
+        className: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      };
+    case 'publish':
+      return {
+        label: 'Publish',
+        Icon: Globe,
+        className: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+      };
+    default:
+      return {
+        label: type,
+        Icon: RefreshCw,
+        className: 'bg-base-0 text-text-muted border-border',
+      };
+  }
+};
 
 /**
  * Modern Task Manager modal dialog for monitoring background Git operations,
@@ -238,9 +304,18 @@ export const TaskManagerModal: React.FC = () => {
                           <span className="font-semibold text-xs text-text-primary truncate">
                             {task.title}
                           </span>
-                          <span className="px-1.5 py-0.2 bg-base-0 text-text-muted text-[9.5px] font-mono uppercase tracking-wider rounded-xs border border-border shrink-0">
-                            {task.type}
-                          </span>
+                          {(() => {
+                            const badge = getTaskTypeBadge(task.type);
+                            const BadgeIcon = badge.Icon;
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 px-1.5 py-0.2 text-[9.5px] font-mono font-medium uppercase tracking-wider rounded-xs border shrink-0 ${badge.className}`}
+                              >
+                                <BadgeIcon className="w-2.5 h-2.5" />
+                                <span>{badge.label}</span>
+                              </span>
+                            );
+                          })()}
                         </div>
 
                         {task.localPath && (

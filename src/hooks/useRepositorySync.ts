@@ -4,6 +4,7 @@ import { useLogStore } from '../store/useLogStore';
 import { RepoStatus } from '../types/git';
 import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
+import { useTaskStore } from '../features/task-manager';
 
 /**
  * Git repository branch synchronization state relative to upstream remote.
@@ -159,7 +160,23 @@ export function useRepositorySync() {
     refreshingRef.current = true;
     setIsFetching(true);
     log().addLog('info', 'Git', 'Refreshing repository state');
+
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'fetch',
+      title: `Fetch origin (${repoName})`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Fetching',
+        percent: 30,
+        detail: 'Contacting remote origin...',
+      });
+
       // 1. Probe remote validity first
       const validation = await GitService.validateRemoteOrigin(activeRepoPath).catch(() => null);
       if (validation && validation.has_remote && validation.is_deleted_or_missing) {
@@ -169,11 +186,18 @@ export function useRepositorySync() {
           'Remote',
           'Remote repository was not found on the server (it may have been deleted or renamed).'
         );
+        useTaskStore.getState().failTask(taskId, 'Remote repository not found on server');
         return;
       }
 
       await GitService.fetchRemote(activeRepoPath);
       log().addLog('info', 'Git', 'Fetched origin');
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Reading status',
+        percent: 85,
+        detail: 'Reading repository status & branches...',
+      });
 
       const res = await GitService.getRepoStatus(activeRepoPath);
       setStatus(res);
@@ -190,6 +214,7 @@ export function useRepositorySync() {
         loading: '',
       };
       log().addLog('info', 'Git', labelMap[derived] || 'Repository state updated');
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
       const isRemoteNotFound =
@@ -210,6 +235,7 @@ export function useRepositorySync() {
       } else {
         log().addLog('warning', 'Git', `Unable to refresh remote state: ${message}`);
       }
+      useTaskStore.getState().failTask(taskId, message);
     } finally {
       setIsFetching(false);
       refreshingRef.current = false;
@@ -238,6 +264,26 @@ export function useRepositorySync() {
   const executePush = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     setIsPushing(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const pushTitle =
+      status.ahead > 0
+        ? `Push ${status.ahead} commit${status.ahead === 1 ? '' : 's'} to origin/${status.current_branch}`
+        : `Push to origin/${status.current_branch}`;
+
+    const taskId = useTaskStore.getState().addTask({
+      type: 'push',
+      title: pushTitle,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Pushing commits',
+      percent: 35,
+      detail: `Pushing to origin/${status.current_branch}...`,
+    });
+
     log().addLog(
       'info',
       'Git',
@@ -249,9 +295,16 @@ export function useRepositorySync() {
         30000,
         'Push timed out. Check network connection or remote credentials.'
       );
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Completed',
+        percent: 100,
+        detail: `Successfully pushed to origin/${status.current_branch}`,
+      });
+      useTaskStore.getState().completeTask(taskId);
       log().addLog('success', 'Git', `Pushed to origin/${status.current_branch}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, message);
       setError({ code: 'GIT_PUSH_ERROR', message });
       log().addLog('error', 'Git', `Push failed: ${message}`);
     } finally {
@@ -264,6 +317,26 @@ export function useRepositorySync() {
   const executePull = useCallback(async () => {
     if (!activeRepoPath || !status) return;
     setIsPulling(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const pullTitle =
+      status.behind > 0
+        ? `Pull ${status.behind} commit${status.behind === 1 ? '' : 's'} from origin/${status.current_branch}`
+        : `Pull from origin/${status.current_branch}`;
+
+    const taskId = useTaskStore.getState().addTask({
+      type: 'pull',
+      title: pullTitle,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Pulling changes',
+      percent: 35,
+      detail: `Pulling from origin/${status.current_branch}...`,
+    });
+
     log().addLog(
       'info',
       'Git',
@@ -276,9 +349,11 @@ export function useRepositorySync() {
         'Pull timed out. Check network connection or remote credentials.'
       );
       if (!result.success && result.conflicts.length > 0) {
+        const conflictMsg = `Merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before continuing.`;
+        useTaskStore.getState().failTask(taskId, conflictMsg);
         setError({
           code: 'GIT_CONFLICT',
-          message: `Merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before continuing.`,
+          message: conflictMsg,
         });
         log().addLog(
           'error',
@@ -286,10 +361,17 @@ export function useRepositorySync() {
           `Pull produced conflicts in ${result.conflicts.length} file(s)`
         );
       } else {
+        useTaskStore.getState().updateTaskProgress(taskId, {
+          stage: 'Completed',
+          percent: 100,
+          detail: `Successfully pulled from origin/${status.current_branch}`,
+        });
+        useTaskStore.getState().completeTask(taskId);
         log().addLog('success', 'Git', `Pulled from origin/${status.current_branch}`);
       }
     } catch (error: unknown) {
       const message = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, message);
       setError({ code: 'GIT_PULL_ERROR', message });
       log().addLog('error', 'Git', `Pull failed: ${message}`);
     } finally {
@@ -301,6 +383,21 @@ export function useRepositorySync() {
   // ── Sync (diverged) — merge pull then push ────────────────────────────────
   const executeSync = useCallback(async () => {
     if (!activeRepoPath || !status) return;
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'push',
+      title: `Sync origin/${status.current_branch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Pulling upstream',
+      percent: 30,
+      detail: 'Pulling upstream changes before push...',
+    });
+
     log().addLog('info', 'Git', 'Syncing diverged branch (merge pull + push)');
 
     // Step 1: Pull (merge)
@@ -308,9 +405,11 @@ export function useRepositorySync() {
     try {
       const result = await GitService.pullFromRemote(activeRepoPath, status.current_branch);
       if (!result.success && result.conflicts.length > 0) {
+        const conflictMsg = `Sync stopped — merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before pushing.`;
+        useTaskStore.getState().failTask(taskId, conflictMsg);
         setError({
           code: 'GIT_CONFLICT',
-          message: `Sync stopped — merge conflicts in: ${result.conflicts.join(', ')}. Resolve conflicts before pushing.`,
+          message: conflictMsg,
         });
         log().addLog(
           'error',
@@ -321,6 +420,7 @@ export function useRepositorySync() {
       }
     } catch (error: unknown) {
       const message = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, message);
       setError({ code: 'GIT_SYNC_PULL_ERROR', message });
       log().addLog('error', 'Git', `Sync pull step failed: ${message}`);
       return;
@@ -330,11 +430,24 @@ export function useRepositorySync() {
 
     // Step 2: Push
     setIsPushing(true);
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Pushing local',
+      percent: 75,
+      detail: `Pushing local commits to origin/${status.current_branch}...`,
+    });
+
     try {
       await GitService.pushToRemote(activeRepoPath, status.current_branch);
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Completed',
+        percent: 100,
+        detail: `Sync complete — pushed to origin/${status.current_branch}`,
+      });
+      useTaskStore.getState().completeTask(taskId);
       log().addLog('success', 'Git', `Sync complete — pushed to origin/${status.current_branch}`);
     } catch (error: unknown) {
       const message = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, message);
       setError({ code: 'GIT_SYNC_PUSH_ERROR', message });
       log().addLog('error', 'Git', `Sync push step failed: ${message}`);
     } finally {

@@ -19,6 +19,7 @@ import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
 import { avatarCache } from '../services/accounts/avatarCacheService';
+import { useTaskStore } from '../features/task-manager';
 
 /**
  * Top-level application navigation views.
@@ -582,6 +583,15 @@ export const useGitStore = create<GitState>((set, get) => ({
     const { activeRepoPath, currentBranchStash, setStatus } = get();
     if (!activeRepoPath || !currentBranchStash) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Restore stash on ${currentBranchStash.branch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
       await GitService.popStash(activeRepoPath, currentBranchStash.index);
       useLogStore
@@ -593,8 +603,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       get()
         .loadBranchStashes()
         .catch(() => {});
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, msg);
       useLogStore.getState().addLog('error', 'Git', `Failed to restore stash: ${msg}`);
       throw error;
     }
@@ -604,6 +616,15 @@ export const useGitStore = create<GitState>((set, get) => ({
     const { activeRepoPath, currentBranchStash } = get();
     if (!activeRepoPath || !currentBranchStash) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Discard stash on ${currentBranchStash.branch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
       await GitService.dropStash(activeRepoPath, currentBranchStash.index);
       useLogStore.getState().addLog('info', 'Git', `Discarded stashed changes`);
@@ -611,8 +632,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       get()
         .loadBranchStashes()
         .catch(() => {});
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, msg);
       useLogStore.getState().addLog('error', 'Git', `Failed to discard stash: ${msg}`);
       throw error;
     }
