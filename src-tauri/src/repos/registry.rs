@@ -159,3 +159,150 @@ pub fn pin_repo(id: &str, pinned: bool) -> Result<(), AppError> {
 pub fn touch_repo_opened(path: &str) {
     let _ = add_repo(path);
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct RepoValidationResult {
+    pub path: String,
+    pub is_valid: bool,
+    pub folder_exists: bool,
+    pub git_exists: bool,
+    pub error_type: Option<String>,
+    pub error_message: Option<String>,
+}
+
+pub fn validate_repo_path(path: &str) -> RepoValidationResult {
+    let clean = path.trim();
+    let p = Path::new(clean);
+
+    if !p.exists() {
+        return RepoValidationResult {
+            path: clean.to_string(),
+            is_valid: false,
+            folder_exists: false,
+            git_exists: false,
+            error_type: Some("folder_missing".to_string()),
+            error_message: Some(format!("Directory '{}' does not exist on disk", clean)),
+        };
+    }
+
+    let git_dir = p.join(".git");
+    let git_exists = git_dir.exists();
+
+    match Repository::open(p) {
+        Ok(_) => RepoValidationResult {
+            path: clean.to_string(),
+            is_valid: true,
+            folder_exists: true,
+            git_exists: true,
+            error_type: None,
+            error_message: None,
+        },
+        Err(e) => {
+            let (err_type, msg) = if !git_exists {
+                (
+                    "not_a_git_repo",
+                    format!("Directory '{}' is not a Git repository (.git directory is missing)", clean),
+                )
+            } else {
+                (
+                    "corrupt_git_repo",
+                    format!("Invalid or corrupted Git repository at '{}': {}", clean, e),
+                )
+            };
+
+            RepoValidationResult {
+                path: clean.to_string(),
+                is_valid: false,
+                folder_exists: true,
+                git_exists,
+                error_type: Some(err_type.to_string()),
+                error_message: Some(msg),
+            }
+        }
+    }
+}
+
+pub fn relocate_repo(old_path: &str, new_path: &str) -> Result<RepoEntry, AppError> {
+    let clean_new = new_path.trim();
+    let new_repo_path = Path::new(clean_new);
+
+    if !new_repo_path.exists() {
+        return Err(AppError::Validation(format!(
+            "New directory '{}' does not exist",
+            clean_new
+        )));
+    }
+
+    let _repo = Repository::open(new_repo_path).map_err(|e| {
+        AppError::Validation(format!(
+            "'{}' is not a valid Git repository: {}",
+            clean_new, e
+        ))
+    })?;
+
+    let name = new_repo_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("repo")
+        .to_string();
+
+    let mut reg = read_registry();
+    let old_normalized = old_path.replace('\\', "/").to_lowercase();
+    let new_normalized = clean_new.replace('\\', "/");
+    let now = chrono::Utc::now().timestamp();
+
+    let mut pinned = false;
+
+    // Remove old path entry if it exists
+    if let Some(idx) = reg
+        .repos
+        .iter()
+        .position(|r| r.path.replace('\\', "/").to_lowercase() == old_normalized || r.id.replace('\\', "/").to_lowercase() == old_normalized)
+    {
+        pinned = reg.repos[idx].pinned;
+        reg.repos.remove(idx);
+    }
+
+    // Insert or update new path entry
+    let entry = if let Some(existing) = reg
+        .repos
+        .iter_mut()
+        .find(|r| r.path.replace('\\', "/") == new_normalized)
+    {
+        existing.last_opened_at = now;
+        existing.pinned = existing.pinned || pinned;
+        existing.clone()
+    } else {
+        let new_entry = RepoEntry {
+            id: clean_new.to_string(),
+            path: clean_new.to_string(),
+            name,
+            last_opened_at: now,
+            pinned,
+        };
+        reg.repos.push(new_entry.clone());
+        new_entry
+    };
+
+    write_registry(&reg);
+    Ok(entry)
+}
+
+pub fn remove_invalid_repos() -> Result<Vec<String>, AppError> {
+    let mut reg = read_registry();
+    let mut removed = Vec::new();
+
+    reg.repos.retain(|r| {
+        let p = Path::new(&r.path);
+        let is_valid = p.exists() && Repository::open(p).is_ok();
+        if !is_valid {
+            removed.push(r.path.clone());
+            false
+        } else {
+            true
+        }
+    });
+
+    write_registry(&reg);
+    Ok(removed)
+}

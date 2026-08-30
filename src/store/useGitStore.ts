@@ -198,6 +198,10 @@ export interface GitState {
   setDiffViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   setCurrentNavView: (view: NavView) => void;
 
+  isMissingRepoModalOpen: boolean;
+  missingRepoPath: string | null;
+  missingRepoReason: string | null;
+  setIsMissingRepoModalOpen: (open: boolean, path?: string | null, reason?: string | null) => void;
   setIsRepoModalOpen: (open: boolean) => void;
   setIsCreateRepoModalOpen: (open: boolean) => void;
   isPublishRepoModalOpen: boolean;
@@ -274,6 +278,15 @@ export const useGitStore = create<GitState>((set, get) => ({
   diffViewMode: 'unified',
   currentNavView: 'home',
 
+  isMissingRepoModalOpen: false,
+  missingRepoPath: null,
+  missingRepoReason: null,
+  setIsMissingRepoModalOpen: (open, path = null, reason = null) =>
+    set({
+      isMissingRepoModalOpen: open,
+      missingRepoPath: open ? (path ?? get().activeRepoPath) : null,
+      missingRepoReason: open ? reason : null,
+    }),
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
   isPublishRepoModalOpen: false,

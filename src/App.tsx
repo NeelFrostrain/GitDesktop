@@ -208,6 +208,11 @@ const RemoteNotFoundModal = lazy(() =>
     default: m.RemoteNotFoundModal,
   }))
 );
+const MissingRepoModal = lazy(() =>
+  import('./components/modals/MissingRepoModal').then((m) => ({
+    default: m.MissingRepoModal,
+  }))
+);
 const AiAgentPanel = lazy(() =>
   import('./features/ai-agent').then((m) => ({ default: m.AiAgentPanel }))
 );
@@ -397,6 +402,17 @@ export const App: React.FC = () => {
       if (isDisposed || isSyncing) return;
       isSyncing = true;
       try {
+        // Fast path validation check on active repository
+        const validation = await GitService.validateRepoPath(activeRepoPath);
+        if (validation && validation.is_valid === false && !isDisposed) {
+          useGitStore.getState().setIsMissingRepoModalOpen(
+            true,
+            activeRepoPath,
+            validation.error_message || 'Active repository folder or .git structure is missing'
+          );
+          return;
+        }
+
         const res = await GitService.getRepoStatus(activeRepoPath);
         if (!isDisposed) {
           setStatus(res);
@@ -460,6 +476,33 @@ export const App: React.FC = () => {
       if (unlistenTauriFocus) unlistenTauriFocus();
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
+
+  // Window focus listener for Home dashboard: re-validates known repositories
+  useEffect(() => {
+    const handleHomeFocus = () => {
+      if (currentNavView === 'home') {
+        useRepoStore.getState().loadRepos().catch(() => {});
+      }
+    };
+
+    window.addEventListener('focus', handleHomeFocus);
+    const appWindow = getCurrentWindow();
+    let unlistenHomeFocus: (() => void) | undefined;
+    appWindow
+      .onFocusChanged(({ payload: focused }) => {
+        if (focused && currentNavView === 'home') {
+          useRepoStore.getState().loadRepos().catch(() => {});
+        }
+      })
+      .then((fn) => {
+        unlistenHomeFocus = fn;
+      });
+
+    return () => {
+      window.removeEventListener('focus', handleHomeFocus);
+      if (unlistenHomeFocus) unlistenHomeFocus();
+    };
+  }, [currentNavView]);
 
   // Global shortcuts: Ctrl+K / Ctrl+P (Command Palette), Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
@@ -686,6 +729,7 @@ export const App: React.FC = () => {
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />
+          <MissingRepoModal />
           <CommandPaletteModal
             isOpen={isCommandPaletteOpen}
             onClose={() => setIsCommandPaletteOpen(false)}

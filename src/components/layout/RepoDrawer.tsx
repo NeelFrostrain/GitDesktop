@@ -12,6 +12,7 @@ import {
   Pin,
   Trash2,
   FolderOpen,
+  AlertCircle,
 } from 'lucide-react';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { useRepoStore, openRepo } from '../../features/repos';
@@ -30,7 +31,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const addRepo = useRepoStore((s) => s.addRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
   const pinRepo = useRepoStore((s) => s.pinRepo);
-  const { activeRepoPath, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen } = useGitStore();
+  const { activeRepoPath, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsMissingRepoModalOpen } = useGitStore();
 
   const [filterQuery, setFilterQuery] = useState('');
   const [isAddingLocal, setIsAddingLocal] = useState(false);
@@ -124,6 +125,12 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
   // Actions
   const handleSelectRepo = async (path: string) => {
+    const status = statuses[path];
+    if (status?.is_valid === false) {
+      onClose();
+      setIsMissingRepoModalOpen(true, path, status.error_message || 'Repository folder or .git structure is missing');
+      return;
+    }
     onClose();
     await openRepo(path);
   };
@@ -328,6 +335,7 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
             filteredRepos.map((repo) => {
               const isActive = repo.path === activeRepoPath;
               const status = statuses[repo.path];
+              const isInvalid = status?.is_valid === false;
               const isDirty = Boolean(status && status.dirty_files > 0);
 
               return (
@@ -352,14 +360,6 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                 >
                   {/* Left: Icon + Title & Path */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    {/* <FolderGit2
-                      className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
-                        isActive
-                          ? 'text-commito-coral'
-                          : 'text-text-muted group-hover:text-commito-coral'
-                      }`}
-                    /> */}
-
                     <div className="min-w-0 flex-1">
                       {/* Top Line: Name + Provider Tag + Branch Chip */}
                       <div className="flex items-center gap-1.5 flex-wrap">
@@ -374,12 +374,19 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                           {repo.name}
                         </span>
                         {renderProvider(status?.remote_provider)}
-                        <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
-                          <GitBranch className="w-2 h-2 text-commito-coral flex-shrink-0" />
-                          <span className="truncate max-w-[140px]">
-                            {status?.current_branch || 'main'}
+                        {isInvalid ? (
+                          <span className="h-4 px-1 inline-flex items-center gap-0.5 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[9.5px] font-mono text-git-removed font-medium">
+                            <AlertCircle className="w-2 h-2 text-git-removed flex-shrink-0" />
+                            <span>Missing</span>
                           </span>
-                        </div>
+                        ) : (
+                          <div className="h-4 px-1 inline-flex items-center gap-0.5 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted">
+                            <GitBranch className="w-2 h-2 text-commito-coral flex-shrink-0" />
+                            <span className="truncate max-w-[140px]">
+                              {status?.current_branch || 'main'}
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Bottom Line: File Path */}
@@ -394,7 +401,11 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
 
                   {/* Right: Status chip */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {isDirty ? (
+                    {isInvalid ? (
+                      <div className="h-4.5 px-1.5 inline-flex items-center gap-1 text-[9.5px] font-mono text-git-removed bg-git-removed-bg border border-git-removed/30 rounded-sm font-medium">
+                        <span>Missing</span>
+                      </div>
+                    ) : isDirty ? (
                       <div className="h-4.5 px-1.5 inline-flex items-center gap-1 bg-git-modified-bg border border-git-modified/30 rounded-sm text-[9.5px] font-mono text-git-modified font-semibold">
                         <FileEdit className="w-2.5 h-2.5" />
                         <span>{status!.dirty_files}</span>

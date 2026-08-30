@@ -14,9 +14,11 @@ import {
   FolderOpen,
   MoreVertical,
   Copy,
+  AlertCircle,
 } from 'lucide-react';
 import { RepoEntry, RepoDashboardStatus } from '../../types/home';
 import { useRepoStore, openRepo } from '../../features/repos';
+import { useGitStore } from '../../store/useGitStore';
 import { SystemService } from '../../services/system/systemService';
 import { useLogStore } from '../../store/useLogStore';
 
@@ -30,8 +32,11 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
   ({ repo, status, viewMode = 'grid' }) => {
     const pinRepo = useRepoStore((s) => s.pinRepo);
     const removeRepo = useRepoStore((s) => s.removeRepo);
+    const setIsMissingRepoModalOpen = useGitStore((s) => s.setIsMissingRepoModalOpen);
     const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
     const menuRef = useRef<HTMLDivElement>(null);
+
+    const isInvalid = status?.is_valid === false;
 
     useEffect(() => {
       if (!menuPos) return;
@@ -44,7 +49,13 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
       return () => window.removeEventListener('mousedown', handleOutside);
     }, [menuPos]);
 
-    const handleCardClick = () => openRepo(repo.path);
+    const handleCardClick = () => {
+      if (isInvalid) {
+        setIsMissingRepoModalOpen(true, repo.path, status?.error_message || 'Directory not found or .git metadata missing');
+        return;
+      }
+      openRepo(repo.path);
+    };
 
     const handleContextMenu = (e: React.MouseEvent) => {
       e.preventDefault();
@@ -231,9 +242,6 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
           >
             {/* Left: Icon + Name + Provider + Branch + Path */}
             <div className="flex items-center gap-2.5 min-w-0 max-w-[340px] shrink-0">
-              {/* <div className="w-7.5 h-7.5 rounded-sm bg-base-0 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors flex-shrink-0">
-              <FolderGit2 className="w-4 h-4" />
-            </div> */}
               <div className="min-w-0 flex flex-col gap-0.5">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <h3
@@ -243,12 +251,19 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
                     {repo.name}
                   </h3>
                   {renderProvider()}
-                  <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[10px] font-mono text-text-muted">
-                    <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
-                    <span className="truncate max-w-[110px]">
-                      {status?.current_branch || 'main'}
+                  {!isInvalid ? (
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[10px] font-mono text-text-muted">
+                      <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
+                      <span className="truncate max-w-[110px]">
+                        {status?.current_branch || 'main'}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[9.5px] font-mono text-git-removed font-medium">
+                      <AlertCircle className="w-2.5 h-2.5 text-git-removed" />
+                      <span>{status?.error_type === 'folder_missing' ? 'Missing Folder' : 'Invalid .git'}</span>
                     </span>
-                  </div>
+                  )}
                   {repo.pinned && (
                     <Pin className="w-3 h-3 text-commito-coral fill-commito-coral/30 flex-shrink-0" />
                   )}
@@ -259,56 +274,78 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
               </div>
             </div>
 
-            {/* Middle: Last commit summary */}
+            {/* Middle: Last commit summary or Error explanation */}
             <div className="hidden md:flex items-center gap-1.5 flex-1 min-w-0 text-left px-2">
-              <GitCommit className="w-3.5 h-3.5 text-text-muted shrink-0" />
-              <span
-                className="text-[11px] text-text-secondary truncate block w-full"
-                title={status?.last_commit_summary}
-              >
-                {status?.last_commit_summary || '—'}
-              </span>
+              {isInvalid ? (
+                <span className="text-[11px] text-text-muted truncate block w-full font-mono">
+                  {status?.error_message || 'Directory not found on disk'}
+                </span>
+              ) : (
+                <>
+                  <GitCommit className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <span
+                    className="text-[11px] text-text-secondary truncate block w-full"
+                    title={status?.last_commit_summary}
+                  >
+                    {status?.last_commit_summary || '—'}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Right Section: Time -> Modified badge -> 3-Dots Menu */}
             <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Timestamp */}
-              <span className="hidden sm:flex items-center gap-1 text-[10px] text-text-muted font-mono">
-                <Clock className="w-2.5 h-2.5" />
-                {formatRelativeTime(status?.last_commit_at || 0)}
-              </span>
+              {isInvalid ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveClick}
+                  className="h-6 px-2 rounded-xs bg-git-removed-bg hover:bg-red-500/25 border border-git-removed/30 text-git-removed hover:text-red-300 text-[11px] font-medium flex items-center gap-1 transition cursor-pointer active:scale-[0.98]"
+                  title="Remove from workspace"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Remove</span>
+                </button>
+              ) : (
+                <>
+                  {/* Timestamp */}
+                  <span className="hidden sm:flex items-center gap-1 text-[10px] text-text-muted font-mono">
+                    <Clock className="w-2.5 h-2.5" />
+                    {formatRelativeTime(status?.last_commit_at || 0)}
+                  </span>
 
-              {/* Status chips */}
-              <div className="flex items-center gap-1.5">
-                {status && (status.ahead > 0 || status.behind > 0) && (
-                  <div className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
-                    {status.ahead > 0 && (
-                      <span className="flex items-center gap-0.5 text-git-added font-semibold">
-                        <ArrowUpRight className="w-2.5 h-2.5" />
-                        {status.ahead}
-                      </span>
+                  {/* Status chips */}
+                  <div className="flex items-center gap-1.5">
+                    {status && (status.ahead > 0 || status.behind > 0) && (
+                      <div className="inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
+                        {status.ahead > 0 && (
+                          <span className="flex items-center gap-0.5 text-git-added font-semibold">
+                            <ArrowUpRight className="w-2.5 h-2.5" />
+                            {status.ahead}
+                          </span>
+                        )}
+                        {status.behind > 0 && (
+                          <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
+                            <ArrowDownLeft className="w-2.5 h-2.5" />
+                            {status.behind}
+                          </span>
+                        )}
+                      </div>
                     )}
-                    {status.behind > 0 && (
-                      <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
-                        <ArrowDownLeft className="w-2.5 h-2.5" />
-                        {status.behind}
-                      </span>
-                    )}
-                  </div>
-                )}
 
-                {isDirty ? (
-                  <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[10px] font-mono text-git-modified font-semibold">
-                    <FileEdit className="w-2.5 h-2.5" />
-                    {status!.dirty_files} modified
+                    {isDirty ? (
+                      <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[10px] font-mono text-git-modified font-semibold">
+                        <FileEdit className="w-2.5 h-2.5" />
+                        {status!.dirty_files} modified
+                      </div>
+                    ) : (
+                      <div className="inline-flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
+                        <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
+                        Clean
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1 text-[10px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
-                    Clean
-                  </div>
-                )}
-              </div>
+                </>
+              )}
 
               {/* 3-Dots Menu Button */}
               <button
@@ -374,57 +411,85 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
 
             {/* Status Badges */}
             <div className="flex items-center flex-wrap gap-1 pt-0.5">
-              <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
-                <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
-                <span className="truncate max-w-[110px]">{status?.current_branch || 'main'}</span>
-              </div>
-
-              {status && (status.ahead > 0 || status.behind > 0) && (
-                <div className="inline-flex items-center gap-1 text-[9.5px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
-                  {status.ahead > 0 && (
-                    <span className="flex items-center gap-0.5 text-git-added font-semibold">
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                      {status.ahead}
-                    </span>
-                  )}
-                  {status.behind > 0 && (
-                    <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
-                      <ArrowDownLeft className="w-2.5 h-2.5" />
-                      {status.behind}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {isDirty ? (
-                <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[9.5px] font-mono text-git-modified font-semibold">
-                  <FileEdit className="w-2.5 h-2.5" />
-                  {status!.dirty_files} modified
+              {isInvalid ? (
+                <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[9.5px] font-mono text-git-removed font-medium">
+                  <AlertCircle className="w-2.5 h-2.5 text-git-removed" />
+                  <span>{status?.error_type === 'folder_missing' ? 'Missing Folder' : 'Invalid .git'}</span>
                 </div>
               ) : (
-                <div className="inline-flex items-center gap-1 text-[9.5px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
-                  <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
-                  Clean
-                </div>
+                <>
+                  <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
+                    <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
+                    <span className="truncate max-w-[110px]">{status?.current_branch || 'main'}</span>
+                  </div>
+
+                  {status && (status.ahead > 0 || status.behind > 0) && (
+                    <div className="inline-flex items-center gap-1 text-[9.5px] font-mono px-1.5 py-0.2 bg-base-0 border border-border rounded-xs">
+                      {status.ahead > 0 && (
+                        <span className="flex items-center gap-0.5 text-git-added font-semibold">
+                          <ArrowUpRight className="w-2.5 h-2.5" />
+                          {status.ahead}
+                        </span>
+                      )}
+                      {status.behind > 0 && (
+                        <span className="flex items-center gap-0.5 text-git-renamed font-semibold">
+                          <ArrowDownLeft className="w-2.5 h-2.5" />
+                          {status.behind}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {isDirty ? (
+                    <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-modified-bg border border-git-modified/30 rounded-xs text-[9.5px] font-mono text-git-modified font-semibold">
+                      <FileEdit className="w-2.5 h-2.5" />
+                      {status!.dirty_files} modified
+                    </div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1 text-[9.5px] font-mono text-git-clean px-1.5 py-0.2 bg-git-added-bg border border-git-added/20 rounded-xs">
+                      <span className="w-1.5 h-1.5 rounded-full bg-git-added" />
+                      Clean
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          {/* Footer commit summary */}
+          {/* Footer commit summary or invalid note */}
           <div className="pt-1 border-t border-border/60 flex items-center justify-between gap-1.5">
-            <div className="flex items-center gap-1 min-w-0 flex-1">
-              <GitCommit className="w-2.5 h-2.5 text-text-muted shrink-0" />
-              <span
-                className="text-[10px] text-text-secondary truncate"
-                title={status?.last_commit_summary}
-              >
-                {status?.last_commit_summary || '—'}
-              </span>
-            </div>
-            <span className="flex items-center gap-0.5 text-[9.5px] text-text-muted flex-shrink-0 font-mono">
-              <Clock className="w-2.5 h-2.5" />
-              {formatRelativeTime(status?.last_commit_at || 0)}
-            </span>
+            {isInvalid ? (
+              <div className="flex items-center justify-between w-full">
+                <span className="text-[9.5px] text-text-muted truncate font-mono">
+                  Not found on disk
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRemoveClick}
+                  className="text-[10px] text-git-removed hover:text-red-300 flex items-center gap-1 font-medium hover:underline cursor-pointer transition"
+                  title="Remove from workspace"
+                >
+                  <Trash2 className="w-2.5 h-2.5" />
+                  <span>Remove</span>
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-1 min-w-0 flex-1">
+                  <GitCommit className="w-2.5 h-2.5 text-text-muted shrink-0" />
+                  <span
+                    className="text-[10px] text-text-secondary truncate"
+                    title={status?.last_commit_summary}
+                  >
+                    {status?.last_commit_summary || '—'}
+                  </span>
+                </div>
+                <span className="flex items-center gap-0.5 text-[9.5px] text-text-muted flex-shrink-0 font-mono">
+                  <Clock className="w-2.5 h-2.5" />
+                  {formatRelativeTime(status?.last_commit_at || 0)}
+                </span>
+              </>
+            )}
           </div>
         </div>
         {renderContextMenu()}
