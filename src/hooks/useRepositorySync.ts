@@ -1,4 +1,5 @@
 import { useCallback, useRef, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { RepoStatus } from '../types/git';
@@ -67,7 +68,20 @@ export function useRepositorySync() {
     setIsFetching,
     setIsPushing,
     setIsPulling,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      status: s.status,
+      setStatus: s.setStatus,
+      setError: s.setError,
+      isFetching: s.isFetching,
+      isPushing: s.isPushing,
+      isPulling: s.isPulling,
+      setIsFetching: s.setIsFetching,
+      setIsPushing: s.setIsPushing,
+      setIsPulling: s.setIsPulling,
+    }))
+  );
 
   const log = useLogStore.getState;
 

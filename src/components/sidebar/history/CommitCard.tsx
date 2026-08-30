@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { GitMerge, GitCommit, ShieldCheck, ShieldAlert, Tag } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { CommitInfo } from '../../../types/git';
 import { UserAvatar } from '../../common/UserAvatar';
 import { useSigningStore } from '../../../store/signingStore';
@@ -43,7 +44,7 @@ function renderCommitMessage(message: string) {
   );
 }
 
-export const CommitCard: React.FC<CommitCardProps> = ({
+export const CommitCard: React.FC<CommitCardProps> = React.memo(({
   commit,
   isSelected,
   isDragging,
@@ -53,7 +54,12 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   onClick,
   onContextMenu,
 }) => {
-  const { activeRepoPath, tags } = useGitStore();
+  const { activeRepoPath, tags } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      tags: s.tags,
+    }))
+  );
   const { verifiedCommits, verifyCommit } = useSigningStore();
   const verification = verifiedCommits[commit.sha];
 
@@ -193,4 +199,4 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       )}
     </div>
   );
-};
+});

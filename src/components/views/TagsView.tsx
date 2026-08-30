@@ -18,12 +18,14 @@ import {
   Paperclip,
   Package,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useToastStore } from '../../store/useToastStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { ReleaseService } from '../../services/git/releaseService';
+import { RepoCacheService } from '../../services/git/repoCacheService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Button } from '../common/Button';
 import { Dropdown } from '../common/Dropdown';
@@ -45,8 +47,27 @@ export const TagsView: React.FC = () => {
     setIsCreateReleaseModalOpen,
     setEditingRelease,
     setIsCreateTagModalOpen,
-  } = useGitStore();
-  const { remotes, activeRemote, loadRemotes } = useRemoteStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      tags: s.tags,
+      setTags: s.setTags,
+      releases: s.releases,
+      setReleases: s.setReleases,
+      setBranches: s.setBranches,
+      setError: s.setError,
+      setIsCreateReleaseModalOpen: s.setIsCreateReleaseModalOpen,
+      setEditingRelease: s.setEditingRelease,
+      setIsCreateTagModalOpen: s.setIsCreateTagModalOpen,
+    }))
+  );
+  const { remotes, activeRemote, loadRemotes } = useRemoteStore(
+    useShallow((s) => ({
+      remotes: s.remotes,
+      activeRemote: s.activeRemote,
+      loadRemotes: s.loadRemotes,
+    }))
+  );
 
   const [activeTab, setActiveTab] = useState<'releases' | 'tags'>('releases');
   const [filter, setFilter] = useState('');
@@ -58,7 +79,17 @@ export const TagsView: React.FC = () => {
 
   const loadData = async (fetchRemote = false) => {
     if (!activeRepoPath) return;
-    setIsLoading(true);
+
+    // Check cached releases & tags first for 0ms instant display
+    const cachedReleases = RepoCacheService.getReleases(activeRepoPath);
+    const cachedTags = RepoCacheService.getTags(activeRepoPath);
+    if (cachedReleases && cachedReleases.length > 0) setReleases(cachedReleases);
+    if (cachedTags && cachedTags.length > 0) setTags(cachedTags);
+
+    if (!cachedReleases && !cachedTags) {
+      setIsLoading(true);
+    }
+
     try {
       if (fetchRemote) {
         await GitService.fetchTags(activeRepoPath, selectedRemote || null).catch(() => {});
@@ -68,9 +99,18 @@ export const TagsView: React.FC = () => {
         ReleaseService.listReleases(activeRepoPath).catch(() => []),
         GitService.listBranches(activeRepoPath).catch(() => []),
       ]);
-      setTags(tagsRes || []);
-      setReleases(releasesRes || []);
-      setBranches(branchesRes || []);
+      if (tagsRes) {
+        setTags(tagsRes);
+        RepoCacheService.setTags(activeRepoPath, tagsRes);
+      }
+      if (releasesRes) {
+        setReleases(releasesRes);
+        RepoCacheService.setReleases(activeRepoPath, releasesRes);
+      }
+      if (branchesRes) {
+        setBranches(branchesRes);
+        RepoCacheService.setBranches(activeRepoPath, branchesRes);
+      }
     } catch {
       setTags([]);
       setReleases([]);

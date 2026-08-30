@@ -13,9 +13,11 @@ import {
   Globe,
   Layers,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
+import { RepoCacheService } from '../../services/git/repoCacheService';
 import { toAppError } from '../../shared/utils/errorUtils';
 import { BranchInfo } from '../../types/git';
 import { Button } from '../common/Button';
@@ -32,7 +34,16 @@ export const BranchesView: React.FC = () => {
     setError,
     setIsMergeRequestModalOpen,
     openWorktreeModal,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      branches: s.branches,
+      setBranches: s.setBranches,
+      setError: s.setError,
+      setIsMergeRequestModalOpen: s.setIsMergeRequestModalOpen,
+      openWorktreeModal: s.openWorktreeModal,
+    }))
+  );
 
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -44,11 +55,21 @@ export const BranchesView: React.FC = () => {
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
-    setIsLoading(true);
+    
+    // Check cached branches first for 0ms instant display
+    const cached = RepoCacheService.getBranches(activeRepoPath);
+    if (cached && cached.length > 0) {
+      setBranches(cached);
+    } else {
+      setIsLoading(true);
+    }
 
     try {
       const res = await GitService.listBranches(activeRepoPath);
-      setBranches(res || []);
+      if (res) {
+        setBranches(res);
+        RepoCacheService.setBranches(activeRepoPath, res);
+      }
     } catch (error: unknown) {
       setError(toAppError(error, 'BRANCH_ERROR'));
     } finally {

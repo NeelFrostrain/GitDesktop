@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DiffLine } from '../../../types/git';
 import { buildDiffHunks, highlightCodeLine } from './diffUtils';
 
@@ -9,8 +9,8 @@ interface UnifiedDiffViewProps {
 /**
  * Line-by-line unified diff table with syntax highlighting and line numbers.
  */
-export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = ({ lines }) => {
-  const hunks = buildDiffHunks(lines);
+export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lines }) => {
+  const hunks = useMemo(() => buildDiffHunks(lines), [lines]);
 
   if (hunks.length === 0 || lines.length === 0) {
     return (
@@ -85,4 +85,4 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = ({ lines }) => {
       ))}
     </div>
   );
-};
+});

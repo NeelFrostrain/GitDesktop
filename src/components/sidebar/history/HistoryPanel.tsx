@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
 import { useSigningStore } from '../../../store/signingStore';
@@ -44,7 +45,17 @@ export const HistoryPanel: React.FC = () => {
     setTags,
     status,
     repoSyncCounter,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeTab: s.activeTab,
+      activeRepoPath: s.activeRepoPath,
+      selectedCommitSha: s.selectedCommitSha,
+      setSelectedCommitSha: s.setSelectedCommitSha,
+      setTags: s.setTags,
+      status: s.status,
+      repoSyncCounter: s.repoSyncCounter,
+    }))
+  );
 
   const [commits, setCommits] = useState<CommitInfo[]>(() => {
     if (activeRepoPath) {

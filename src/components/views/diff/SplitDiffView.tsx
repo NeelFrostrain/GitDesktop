@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DiffLine } from '../../../types/git';
 import { buildSplitRows, highlightCodeLine } from './diffUtils';
 
@@ -9,8 +9,8 @@ interface SplitDiffViewProps {
 /**
  * Side-by-side split diff layout table with aligned chunks and syntax highlighting.
  */
-export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
-  const splitRows = buildSplitRows(lines);
+export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }) => {
+  const splitRows = useMemo(() => buildSplitRows(lines), [lines]);
 
   if (splitRows.length === 0) {
     return (
@@ -91,4 +91,4 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = ({ lines }) => {
       })}
     </div>
   );
-};
+});

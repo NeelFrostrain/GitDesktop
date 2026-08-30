@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { FileText, Binary, HardDrive, Clock, ChevronRight, FileCode } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { DiffResult, CommitDetails } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
@@ -18,6 +19,9 @@ import { StashedChangesView } from './diff/StashedChangesView';
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
  * and historical commit inspection in Unified, Split, and Edit layout modes.
  */
+const DIFF_CACHE_CAPACITY = 40;
+const diffMemoryCache = new Map<string, DiffResult>();
+
 export const DiffViewer: React.FC = () => {
   const {
     activeRepoPath,
@@ -30,9 +34,27 @@ export const DiffViewer: React.FC = () => {
     setError,
     currentBranchStash,
     isViewingStashedChanges,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      selectedFile: s.selectedFile,
+      selectedCommitSha: s.selectedCommitSha,
+      activeTab: s.activeTab,
+      diffViewMode: s.diffViewMode,
+      setDiffViewMode: s.setDiffViewMode,
+      status: s.status,
+      setError: s.setError,
+      currentBranchStash: s.currentBranchStash,
+      isViewingStashedChanges: s.isViewingStashedChanges,
+    }))
+  );
 
-  const [diff, setDiff] = useState<DiffResult | null>(null);
+  const [diff, setDiff] = useState<DiffResult | null>(() => {
+    if (activeRepoPath && selectedFile && activeTab === 'changes') {
+      return diffMemoryCache.get(`${activeRepoPath}:${selectedFile}`) || null;
+    }
+    return null;
+  });
   const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -53,6 +75,13 @@ export const DiffViewer: React.FC = () => {
   const [loadingHistoryFiles, setLoadingHistoryFiles] = useState<Record<string, boolean>>({});
   const [openFiles, setOpenFiles] = useState<Record<string, boolean>>({});
 
+  // Reset history file diffs on commit / repo switch to keep memory lean
+  useEffect(() => {
+    setExpandedHistoryFiles({});
+    setLoadingHistoryFiles({});
+    setOpenFiles({});
+  }, [activeRepoPath, selectedCommitSha]);
+
   // Derive isStaged as a reactive memo dependency
   const isStaged = useMemo(() => {
     if (!selectedFile || !status) return false;
@@ -67,21 +96,34 @@ export const DiffViewer: React.FC = () => {
       return;
     }
 
+    const cacheKey = `${activeRepoPath}:${selectedFile}:${isStaged}`;
+    const cachedDiff = diffMemoryCache.get(cacheKey);
+    if (cachedDiff) {
+      setDiff(cachedDiff);
+      setIsLoading(false);
+    }
+
     let isDisposed = false;
     let isFetching = false;
 
     const fetchLiveDiff = async (isInitial = false) => {
       if (isDisposed || isFetching || !activeRepoPath || !selectedFile) return;
       isFetching = true;
-      if (isInitial) {
+      if (isInitial && !cachedDiff) {
         setIsLoading(true);
       }
 
       try {
         const newDiff = await GitService.getFileDiff(activeRepoPath, selectedFile, false);
         if (!isDisposed) {
+          // Update cache with LRU eviction
+          if (diffMemoryCache.size >= DIFF_CACHE_CAPACITY) {
+            const oldestKey = diffMemoryCache.keys().next().value;
+            if (oldestKey) diffMemoryCache.delete(oldestKey);
+          }
+          diffMemoryCache.set(cacheKey, newDiff);
+
           setDiff((prev) => {
-            // If the diff content and lines are identical, keep previous reference to avoid re-renders
             if (
               prev &&
               prev.file_path === newDiff.file_path &&
@@ -98,7 +140,7 @@ export const DiffViewer: React.FC = () => {
           });
         }
       } catch (err: unknown) {
-        if (!isDisposed && isInitial) {
+        if (!isDisposed && isInitial && !cachedDiff) {
           setError(toAppError(err, 'GIT_ERROR'));
         }
       } finally {
