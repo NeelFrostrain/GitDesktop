@@ -108,6 +108,7 @@ pub fn run() {
             get_repo_status,
             get_file_diff,
             get_commit_file_diff,
+            get_image_diff_data,
             stage_files,
             unstage_files,
             commit_changes,

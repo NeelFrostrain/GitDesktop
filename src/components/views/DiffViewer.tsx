@@ -308,7 +308,13 @@ export const DiffViewer: React.FC = () => {
     }
 
     if (isImageFile(selectedFile)) {
-      return <ImageDiffView filePath={selectedFile} repoPath={activeRepoPath || ''} />;
+      return (
+        <ImageDiffView
+          filePath={selectedFile}
+          repoPath={activeRepoPath || ''}
+          staged={isStaged}
+        />
+      );
     }
 
     if (diff.is_binary) {
@@ -492,7 +498,11 @@ export const DiffViewer: React.FC = () => {
                         </div>
                       ) : fileDiff ? (
                         isImageFile(file) ? (
-                          <ImageDiffView filePath={file} repoPath={activeRepoPath || ''} />
+                          <ImageDiffView
+                            filePath={file}
+                            repoPath={activeRepoPath || ''}
+                            commitSha={selectedCommitSha || undefined}
+                          />
                         ) : diffViewMode === 'split' ? (
                           <SplitDiffView lines={fileDiff.lines} />
                         ) : (

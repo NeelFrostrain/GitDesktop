@@ -113,6 +113,21 @@ export interface DiffResult {
 }
 
 /**
+ * Image diff payload with base64 data URLs for side-by-side / onion-skin preview.
+ */
+export interface ImageDiffData {
+  file_path: string;
+  current_data_url?: string | null;
+  previous_data_url?: string | null;
+  current_size_bytes: number;
+  previous_size_bytes: number;
+  mime_type: string;
+  is_new: boolean;
+  is_deleted: boolean;
+  is_modified: boolean;
+}
+
+/**
  * Per-file addition and deletion counters within a commit.
  */
 export interface CommitFileStat {
