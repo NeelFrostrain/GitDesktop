@@ -54,9 +54,8 @@ export const Button: React.FC<ButtonProps> = ({
 }) => {
   const baseStyles =
     'relative inline-flex items-center justify-center font-semibold select-none cursor-pointer ' +
-    'transition-all duration-100 ease-out focus:outline-none focus-visible:ring-1 focus-visible:ring-commito-coral/40 ' +
-    'active:scale-[0.98] active:translate-y-[0.5px] disabled:opacity-50 disabled:cursor-not-allowed ' +
-    'disabled:active:scale-100 disabled:active:translate-y-0 disabled:pointer-events-none';
+    'transition-colors duration-100 ease-out focus:outline-none focus-visible:ring-1 focus-visible:ring-commito-coral/40 ' +
+    'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none';
 
   const sizeStyles: Record<ButtonSize, string> = {
     xs: 'h-6 px-2.5 text-[11px] rounded-[5px] gap-1 shadow-2xs',

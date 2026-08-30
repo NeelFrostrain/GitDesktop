@@ -220,28 +220,116 @@ pub fn list_branches(repo_path: &str) -> Result<Vec<crate::git::status::BranchIn
     Ok(result)
 }
 
+fn post_checkout_hooks(repo_path: &str) {
+    let repo_dir = Path::new(repo_path);
+    if repo_dir.join(".gitmodules").exists() {
+        let _ = crate::git::remote::submodules::update_submodules(repo_path);
+    }
+    if repo_dir.join(".gitattributes").exists() {
+        let _ = crate::git::remote::lfs::lfs_pull(repo_path);
+    }
+}
+
 pub fn checkout_branch(repo_path: &str, branch_name: &str) -> Result<(), AppError> {
     let repo = Repository::open(repo_path)?;
-    let (object, reference) = repo.revparse_ext(branch_name)?;
+    let raw_name = branch_name.trim();
 
-    let mut opts = git2::build::CheckoutBuilder::new();
-    opts.safe();
-    if repo.checkout_tree(&object, Some(&mut opts)).is_err() {
-        let mut force_opts = git2::build::CheckoutBuilder::new();
-        force_opts.force();
-        repo.checkout_tree(&object, Some(&mut force_opts))?;
+    let local_name = if let Some(stripped) = raw_name.strip_prefix("refs/heads/") {
+        stripped
+    } else if let Some(stripped) = raw_name.strip_prefix("refs/remotes/origin/") {
+        stripped
+    } else if let Some(stripped) = raw_name.strip_prefix("origin/") {
+        stripped
+    } else {
+        raw_name
+    };
+
+    // 1. Try to find an existing local branch
+    if let Ok(mut local_branch) = repo.find_branch(local_name, git2::BranchType::Local) {
+        let reference = local_branch.get_mut();
+        let commit = reference.peel_to_commit()?;
+        let mut opts = git2::build::CheckoutBuilder::new();
+        opts.safe();
+        if repo.checkout_tree(commit.as_object(), Some(&mut opts)).is_err() {
+            let mut force_opts = git2::build::CheckoutBuilder::new();
+            force_opts.force();
+            repo.checkout_tree(commit.as_object(), Some(&mut force_opts))?;
+        }
+        let ref_name = reference.name().unwrap_or("HEAD");
+        repo.set_head(ref_name)?;
+        post_checkout_hooks(repo_path);
+        return Ok(());
     }
 
-    match reference {
-        Some(gref) => {
-            repo.set_head(gref.name().unwrap_or("HEAD"))?;
+    // 2. Try to find a remote tracking branch (e.g. origin/<local_name> or raw_name)
+    let remote_branch_opt = repo
+        .find_branch(&format!("origin/{}", local_name), git2::BranchType::Remote)
+        .or_else(|_| repo.find_branch(raw_name, git2::BranchType::Remote))
+        .or_else(|_| repo.find_branch(local_name, git2::BranchType::Remote));
+
+    if let Ok(remote_branch) = remote_branch_opt {
+        let commit = remote_branch.get().peel_to_commit()?;
+        let mut new_local = repo.branch(local_name, &commit, false)?;
+        if let Some(remote_ref_name) = remote_branch.get().name() {
+            let _ = new_local.set_upstream(Some(remote_ref_name));
         }
-        None => {
-            repo.set_head_detached(object.id())?;
+
+        let mut opts = git2::build::CheckoutBuilder::new();
+        opts.safe();
+        if repo.checkout_tree(commit.as_object(), Some(&mut opts)).is_err() {
+            let mut force_opts = git2::build::CheckoutBuilder::new();
+            force_opts.force();
+            repo.checkout_tree(commit.as_object(), Some(&mut force_opts))?;
         }
+        repo.set_head(&format!("refs/heads/{}", local_name))?;
+        post_checkout_hooks(repo_path);
+        return Ok(());
     }
 
-    Ok(())
+    // 3. Try standard revparse_ext (e.g. commit SHA, tag, or other revspec)
+    if let Ok((object, reference)) = repo.revparse_ext(raw_name) {
+        let mut opts = git2::build::CheckoutBuilder::new();
+        opts.safe();
+        if repo.checkout_tree(&object, Some(&mut opts)).is_err() {
+            let mut force_opts = git2::build::CheckoutBuilder::new();
+            force_opts.force();
+            repo.checkout_tree(&object, Some(&mut force_opts))?;
+        }
+        match reference {
+            Some(gref) => {
+                repo.set_head(gref.name().unwrap_or("HEAD"))?;
+            }
+            None => {
+                repo.set_head_detached(object.id())?;
+            }
+        }
+        post_checkout_hooks(repo_path);
+        return Ok(());
+    }
+
+    // 4. Fallback to CLI git checkout
+    let mut cmd1 = silent_git_command();
+    cmd1.current_dir(repo_path).args(["checkout", local_name]);
+    let output = match cmd1.output() {
+        Ok(out) if out.status.success() => Ok(out),
+        _ => {
+            let mut cmd2 = silent_git_command();
+            cmd2.current_dir(repo_path).args(["checkout", raw_name]);
+            cmd2.output()
+        }
+    }?;
+
+    if output.status.success() {
+        post_checkout_hooks(repo_path);
+        return Ok(());
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(AppError::Git(format!(
+        "Failed to checkout '{}': {}",
+        raw_name,
+        stderr.trim()
+    )))
 }
 
 pub fn create_branch(repo_path: &str, branch_name: &str) -> Result<(), AppError> {

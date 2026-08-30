@@ -111,7 +111,7 @@ export const TaskManagerModal: React.FC = () => {
               <button
                 type="button"
                 onClick={clearFinishedTasks}
-                className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
+                className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer"
                 title="Clear finished tasks"
               >
                 <Trash2 className="w-3 h-3 text-text-muted" />
@@ -265,7 +265,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => removeTask(task.id)}
-                          className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
+                          className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer"
                         >
                           Dismiss
                         </button>
@@ -300,7 +300,7 @@ export const TaskManagerModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => cancelTask(task.id)}
-                            className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-git-removed transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
+                            className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-git-removed transition inline-flex items-center justify-center leading-none cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -328,7 +328,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleShowInExplorer(task)}
-                          className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
+                          className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer"
                           title="Open folder in Windows Explorer"
                         >
                           <FolderOpen className="w-3 h-3 text-text-muted" />
@@ -337,7 +337,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenRepo(task)}
-                          className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-xs text-[11px] font-medium transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer shadow-xs active:scale-98"
+                          className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-xs text-[11px] font-medium transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer shadow-xs"
                           title="Open in GitDesktop"
                         >
                           <span>Open in GitDesktop</span>
@@ -369,7 +369,7 @@ export const TaskManagerModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setModalOpen(false)}
-            className="h-7 px-3.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-xs font-medium text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-[0.98]"
+            className="h-7 px-3.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-xs font-medium text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer"
           >
             Close
           </button>

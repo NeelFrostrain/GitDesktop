@@ -5,6 +5,7 @@ import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
+import { useTaskStore } from '../../features/task-manager';
 
 interface BranchCheckoutModalProps {
   isOpen: boolean;
@@ -42,14 +43,41 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   const handleBringChanges = async () => {
     if (!activeRepoPath) return;
     setIsProcessing(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Switch to ${targetBranch} (bring changes)`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Stashing',
+        percent: 25,
+        detail: 'Stashing uncommitted working tree changes...',
+      });
+
       await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Auto-stash before checkout to ${targetBranch}`,
         includeUntracked: true,
       });
 
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Checking out',
+        percent: 60,
+        detail: `Switching to branch ${targetBranch}...`,
+      });
+
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Restoring',
+        percent: 85,
+        detail: 'Restoring stashed changes to new branch...',
+      });
 
       try {
         await invoke('pop_stash_cmd', {
@@ -71,8 +99,11 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
       }
 
       await refreshRepoStatus();
+      useTaskStore.getState().completeTask(taskId);
       onSuccess();
     } catch (error: unknown) {
+      const errMsg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
@@ -84,11 +115,32 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   const handleLeaveChanges = async () => {
     if (!activeRepoPath) return;
     setIsProcessing(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Switch to ${targetBranch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Stashing',
+        percent: 30,
+        detail: `Saving changes on ${currentBranch}...`,
+      });
+
       await invoke('create_stash_cmd', {
         repoPath: activeRepoPath,
         message: `Saved changes on ${currentBranch} before checkout`,
         includeUntracked: true,
+      });
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Checking out',
+        percent: 75,
+        detail: `Checking out branch ${targetBranch}...`,
       });
 
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
@@ -101,8 +153,11 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
           `Stashed changes on '${currentBranch}' and switched to '${targetBranch}'`
         );
       await refreshRepoStatus();
+      useTaskStore.getState().completeTask(taskId);
       onSuccess();
     } catch (error: unknown) {
+      const errMsg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);
@@ -114,13 +169,31 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   const handleForceCheckout = async () => {
     if (!activeRepoPath) return;
     setIsProcessing(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Force switch to ${targetBranch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Checking out',
+        percent: 60,
+        detail: `Force checking out ${targetBranch}...`,
+      });
+
       await GitService.checkoutBranch(activeRepoPath, targetBranch);
 
       useLogStore.getState().addLog('warning', 'Git', `Force checked out '${targetBranch}'`);
       await refreshRepoStatus();
+      useTaskStore.getState().completeTask(taskId);
       onSuccess();
     } catch (error: unknown) {
+      const errMsg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     } finally {
       setIsProcessing(false);

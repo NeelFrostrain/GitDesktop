@@ -22,7 +22,6 @@ import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { SystemService } from '../../services/system/systemService';
 import { getWebUrlFromRemoteUrl } from '../../shared/utils/urlUtils';
-import { TaskManagerBadge } from '../../features/task-manager';
 
 /**
  * Top application header bar displaying quick creation tools (Terminal, AI Agent, 3-dot actions),
@@ -99,7 +98,6 @@ export const Header: React.FC = () => {
     >
       {/* Left: Quick Create Tools & Task Manager */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
-        <TaskManagerBadge />
         {!isHome && (
           <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-sm p-0.5 shadow-2xs">
             {/* When full space is available: show individual quick-action buttons */}
@@ -383,7 +381,7 @@ export const Header: React.FC = () => {
                       e.preventDefault();
                       setIsRemoteMenuOpen(true);
                     }}
-                    className="h-6.5 w-6.5 flex items-center justify-center rounded-xs text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer active:scale-95"
+                    className="h-6.5 w-6.5 flex items-center justify-center rounded-xs text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer"
                     title={
                       remotes.length === 1
                         ? `Open ${remotes[0].name} in browser (${remotes[0].url})`

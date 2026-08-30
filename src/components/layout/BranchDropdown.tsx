@@ -29,6 +29,7 @@ import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
 import { Tabs } from '../common/Tabs';
 import { Button } from '../common/Button';
+import { useTaskStore } from '../../features/task-manager';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -82,6 +83,8 @@ export const BranchDropdown: React.FC = () => {
 
   // Pending target branch for safe checkout with uncommitted changes
   const [pendingTargetBranch, setPendingTargetBranch] = useState<string | null>(null);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [switchingBranchName, setSwitchingBranchName] = useState<string | null>(null);
 
   // Collapsible sections state (with persistence)
   const [isLocalCollapsed, setIsLocalCollapsed] = useState<boolean>(() => {
@@ -253,15 +256,47 @@ export const BranchDropdown: React.FC = () => {
 
   const executeDirectCheckout = async (branchName: string) => {
     if (!activeRepoPath) return;
+    setIsSwitching(true);
+    setSwitchingBranchName(branchName);
+
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Switch to ${branchName}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Checking out',
+        percent: 35,
+        detail: `Resolving ref & checking out ${branchName}...`,
+      });
+
       await GitService.checkoutBranch(activeRepoPath, branchName);
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Finalizing',
+        percent: 90,
+        detail: 'Syncing submodules & LFS objects...',
+      });
+
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
       loadBranches();
+
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'CHECKOUT_ERROR'));
+    } finally {
+      setIsSwitching(false);
+      setSwitchingBranchName(null);
     }
   };
 
@@ -365,35 +400,48 @@ export const BranchDropdown: React.FC = () => {
   return (
     <>
       {/* Trigger Button */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={handleToggle}
-        className={`h-6.5 px-2 rounded-xs transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none active:scale-95 group ${
-          isOpen
-            ? 'bg-base-2 text-text-primary font-semibold'
-            : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
-        }`}
-        title={`Current branch: ${currentBranch}`}
-      >
-        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0 group-hover:scale-105 transition-transform" />
-        <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
-          {currentBranch}
-        </span>
-
-        {currentPR && (
-          <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
-            <span>#{currentPR.iid || currentPR.id}</span>
-            <Check className="w-2.5 h-2.5 text-emerald-400" />
+      {isSwitching ? (
+        <div
+          className="h-6.5 px-2 rounded-xs bg-base-2 border border-border text-text-primary inline-flex items-center gap-1.5 select-none leading-none max-w-[220px]"
+          title={`Switching to branch ${switchingBranchName || ''}`}
+        >
+          <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+          <span className="text-[11px] text-text-muted shrink-0 font-medium font-sans">Switching:</span>
+          <span className="truncate font-mono text-xs font-semibold text-text-primary">
+            {switchingBranchName || '...'}
           </span>
-        )}
-
-        <ChevronDown
-          className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
-            isOpen ? 'rotate-180 text-commito-coral' : ''
+        </div>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleToggle}
+          className={`h-6.5 px-2 rounded-xs transition-colors duration-150 flex items-center gap-1.5 cursor-pointer select-none group ${
+            isOpen
+              ? 'bg-base-2 text-text-primary font-semibold'
+              : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
           }`}
-        />
-      </button>
+          title={`Current branch: ${currentBranch}`}
+        >
+          <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+          <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
+            {currentBranch}
+          </span>
+
+          {currentPR && (
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
+              <span>#{currentPR.iid || currentPR.id}</span>
+              <Check className="w-2.5 h-2.5 text-emerald-400" />
+            </span>
+          )}
+
+          <ChevronDown
+            className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
+              isOpen ? 'rotate-180 text-commito-coral' : ''
+            }`}
+          />
+        </button>
+      )}
 
       {/* Dropdown Menu Portal */}
       {isOpen &&
@@ -775,7 +823,7 @@ export const BranchDropdown: React.FC = () => {
                           setIsOpen(false);
                           setIsMergeRequestModalOpen(true);
                         }}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-xs transition-all cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Create Pull Request</span>
