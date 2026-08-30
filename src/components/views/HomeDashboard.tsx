@@ -89,7 +89,7 @@ export const HomeDashboard: React.FC = () => {
         {/* Right Side: Quick Stats & Primary Action Buttons */}
         <div className="flex items-center gap-3 shrink-0">
           {/* Quick Metrics Badges */}
-          <div className="hidden md:flex h-full items-center gap-2 text-xs text-text-muted select-none bg-base-1 border border-border rounded-sm px-2.5 py-1">
+          <div className="hidden md:flex h-full items-center gap-2 text-xs text-text-muted select-none bg-base-1 border border-border rounded-sm px-2.5 py-1.5">
             <span className="flex items-center gap-1.5">
               <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
               <span className="font-semibold text-text-primary">{metrics.total}</span> Repos
