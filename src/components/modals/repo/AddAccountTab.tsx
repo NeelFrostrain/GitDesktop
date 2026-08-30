@@ -268,7 +268,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
               ) : (
                 <ExternalLink className="w-3.5 h-3.5" />
               )}
-              {isOauthLoading ? 'Waiting for authorization...' : 'Sign in with GitLab'}
+              {isOauthLoading ? 'Waiting for authorization...' : 'GitLab'}
             </button>
 
             {isOauthLoading && (

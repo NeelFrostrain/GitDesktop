@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ExternalLink,
   Loader2,
   Globe,
   Check,
@@ -25,11 +24,6 @@ const PROVIDERS: ProviderConfig[] = [
     colorClass: 'text-orange-400',
     borderClass: 'border-orange-800/40',
     bgClass: 'bg-orange-950/40',
-    icon: (
-      <svg className="w-4.5 h-4.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-        <path d="m23.6 9.6-2.1-6.5c-.2-.6-.9-.9-1.5-.6l-4.5 3.3H8.5L4 2.5C3.4 2.2 2.7 2.5 2.5 3.1L.4 9.6c-.2.5 0 1.1.4 1.4L12 19.8l11.2-8.8c.4-.3.6-.9.4-1.4z" />
-      </svg>
-    ),
   },
   {
     id: 'github',
@@ -40,11 +34,6 @@ const PROVIDERS: ProviderConfig[] = [
     colorClass: 'text-purple-400',
     borderClass: 'border-purple-800/40',
     bgClass: 'bg-purple-950/40',
-    icon: (
-      <svg className="w-4.5 h-4.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-      </svg>
-    ),
   },
   {
     id: 'bitbucket',
@@ -55,11 +44,6 @@ const PROVIDERS: ProviderConfig[] = [
     colorClass: 'text-blue-400',
     borderClass: 'border-blue-800/40',
     bgClass: 'bg-blue-950/40',
-    icon: (
-      <svg className="w-4.5 h-4.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M.778 1.213a.768.768 0 0 0-.768.892l3.263 19.81c.084.5.517.865 1.022.865h15.244a.774.774 0 0 0 .769-.646l3.475-20.03a.77.77 0 0 0-.769-.891H.778zM14.52 14.36H9.414L8.14 7.026h7.79l-1.41 7.334z" />
-      </svg>
-    ),
   },
 ];
 
@@ -186,29 +170,21 @@ export const ProviderPickerCard: React.FC = () => {
               }`}
             >
               <div className="flex items-center justify-between gap-3.5">
-                {/* Left: Icon & Info */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <div
-                    className={`w-9 h-9 rounded-sm ${provider.bgClass} ${provider.borderClass} border flex items-center justify-center ${provider.colorClass} shrink-0`}
-                  >
-                    {provider.icon}
+                {/* Left: Info */}
+                <div className="min-w-0 flex-1 space-y-0.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-semibold text-xs text-text-primary">
+                      {provider.name}
+                    </span>
+                    <span
+                      className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-xs border ${provider.bgClass} ${provider.borderClass} ${provider.colorClass}`}
+                    >
+                      {provider.badge}
+                    </span>
                   </div>
-
-                  <div className="min-w-0 flex-1 space-y-0.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-xs text-text-primary">
-                        {provider.name}
-                      </span>
-                      <span
-                        className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-xs border ${provider.bgClass} ${provider.borderClass} ${provider.colorClass}`}
-                      >
-                        {provider.badge}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-text-muted leading-tight truncate">
-                      {provider.description}
-                    </p>
-                  </div>
+                  <p className="text-[11px] text-text-muted leading-tight truncate">
+                    {provider.description}
+                  </p>
                 </div>
 
                 {/* Right: 1-Click Sign In Button / Waiting CTA */}
@@ -246,9 +222,9 @@ export const ProviderPickerCard: React.FC = () => {
                         size="sm"
                         onClick={() => handleSignIn(provider)}
                         leftIcon={<Globe className="w-3.5 h-3.5" />}
-                        rightIcon={<ExternalLink className="w-3 h-3 opacity-70" />}
+                        title={`Sign in to ${provider.name} using your web browser`}
                       >
-                        Sign In with {provider.name}
+                        Browser
                       </Button>
                     </div>
                   )}

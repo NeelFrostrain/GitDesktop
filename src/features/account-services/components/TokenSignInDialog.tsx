@@ -31,7 +31,7 @@ export interface ProviderConfig {
   colorClass: string;
   borderClass: string;
   bgClass: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 interface ScopeItem {
@@ -172,22 +172,15 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
       <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className={`w-7 h-7 rounded-sm ${provider.bgClass} ${provider.borderClass} border flex items-center justify-center ${provider.colorClass} shrink-0`}
-            >
-              {provider.icon}
-            </div>
-            <div className="min-w-0">
-              <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
-                <span>Sign In to {provider.name}</span>
-                <span
-                  className={`text-[9.5px] font-mono px-1.5 py-0.2 rounded-xs border ${provider.bgClass} ${provider.borderClass} ${provider.colorClass}`}
-                >
-                  Personal Token
-                </span>
-              </h3>
-            </div>
+          <div className="min-w-0">
+            <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider flex items-center gap-2">
+              <span>Sign In to {provider.name}</span>
+              <span
+                className={`text-[9.5px] font-mono px-1.5 py-0.2 rounded-xs border ${provider.bgClass} ${provider.borderClass} ${provider.colorClass}`}
+              >
+                Personal Token
+              </span>
+            </h3>
           </div>
           <button
             type="button"
@@ -246,10 +239,16 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
               </div>
               <div className="flex items-start gap-2">
                 <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                <span>Select the required permission scopes shown below.</span>
+                <span>
+                  Set <strong>Expiration</strong> to <strong>"No expiration"</strong> (or clear the expiry date on GitLab) so your access does not expire.
+                </span>
               </div>
               <div className="flex items-start gap-2">
                 <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
+                <span>Select the required permission scopes shown below.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">5.</span>
                 <span>Click <strong>Generate / Create</strong>, copy the generated token, and paste it below.</span>
               </div>
             </div>

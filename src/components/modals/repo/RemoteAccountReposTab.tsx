@@ -448,7 +448,7 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
         ) : (
           Object.entries(groupedRepos).map(([groupName, groupList]) => (
             <div key={groupName} className="divide-y divide-border/40">
-              <div className="px-4 py-1.5 bg-base-2/80 text-[11px] font-bold text-text-muted uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs flex items-center justify-between">
+              <div className="px-4 py-1.5 bg-base-2/80 text-[11px] font-bold text-text-muted uppercase tracking-wider rounded-t-sm sticky top-0 z-10 backdrop-blur-xs flex items-center justify-between">
                 <span>{groupName}</span>
                 <span className="text-[10px] font-mono opacity-80">{groupList.length}</span>
               </div>

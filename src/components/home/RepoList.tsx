@@ -131,7 +131,7 @@ export const RepoList: React.FC = () => {
   }, [statuses]);
 
   return (
-    <div className="space-y-4 select-none font-sans w-full md:min-h-[60vh] lg:min-h-[43vh]">
+    <div className="space-y-4 select-none font-sans w-full">
       {/* Missing / Invalid Repositories Top Alert Banner */}
       {invalidRepos.length > 0 && (
         <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-sm bg-base-1 border border-border text-xs text-text-primary shadow-2xs animate-in fade-in duration-150">
@@ -279,7 +279,7 @@ export const RepoList: React.FC = () => {
               type="button"
               onClick={() => setView('grid')}
               title="Grid view"
-              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
+              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center outline-none focus:outline-none ${
                 viewMode === 'grid'
                   ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
                   : 'text-text-muted hover:text-text-primary'
@@ -291,7 +291,7 @@ export const RepoList: React.FC = () => {
               type="button"
               onClick={() => setView('list')}
               title="List view"
-              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center ${
+              className={`h-full w-6 rounded-xs transition cursor-pointer flex items-center justify-center outline-none focus:outline-none ${
                 viewMode === 'list'
                   ? 'bg-base-2 text-text-primary shadow-xs font-semibold'
                   : 'text-text-muted hover:text-text-primary'
@@ -358,7 +358,6 @@ export const RepoList: React.FC = () => {
               </div>
             )}
             <div
-              className="animate-in fade-in duration-200"
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
@@ -374,9 +373,10 @@ export const RepoList: React.FC = () => {
               ))}
 
               {/* Quick Add Card */}
-              <div
+              <button
+                type="button"
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/25 hover:bg-base-1/50 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[110px] shadow-2xs"
+                className="border border-dashed border-border hover:border-commito-coral bg-base-1/25 hover:bg-base-1/50 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-75 group min-h-[110px] shadow-2xs outline-none focus:outline-none"
               >
                 <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/40 transition-colors mb-1.5 shadow-2xs">
                   <Plus className="w-3.5 h-3.5" />
@@ -387,12 +387,12 @@ export const RepoList: React.FC = () => {
                 <span className="text-[10px] text-text-muted mt-0.5">
                   Start fresh or open local directory
                 </span>
-              </div>
+              </button>
             </div>
           </div>
         ) : (
           /* List View */
-          <div className="flex flex-col gap-1.5 animate-in fade-in duration-200">
+          <div className="flex flex-col gap-1.5">
             {(filterTab === 'all' && !searchQuery && pinnedRepos.length > 0
               ? unpinnedFilteredRepos
               : filteredRepos
@@ -401,15 +401,16 @@ export const RepoList: React.FC = () => {
             ))}
 
             {/* Add Row */}
-            <div
+            <button
+              type="button"
               onClick={handleCreateRepo}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-base-1/30 hover:bg-base-1/70 border border-dashed border-border-strong hover:border-commito-coral rounded-sm cursor-pointer transition-all duration-150 text-text-muted hover:text-text-primary text-xs font-medium group"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-base-1/30 hover:bg-base-1/60 border border-dashed border-border hover:border-commito-coral rounded-sm cursor-pointer transition-colors duration-75 text-text-muted hover:text-text-primary text-xs font-medium group outline-none focus:outline-none"
             >
               <Plus className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-commito-coral transition-colors" />
               <span className="group-hover:text-commito-coral transition-colors font-medium">
                 Create or Add New Repository
               </span>
-            </div>
+            </button>
           </div>
         )
       ) : isLoading && repos.length === 0 ? (

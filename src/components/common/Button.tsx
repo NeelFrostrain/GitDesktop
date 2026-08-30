@@ -136,12 +136,22 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button disabled={disabled || isLoading} className={finalClass} {...props}>
       {isLoading ? (
-        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
       ) : leftIcon ? (
-        <span className="flex items-center shrink-0">{leftIcon}</span>
+        <span className="inline-flex items-center justify-center shrink-0 self-center leading-none">
+          {leftIcon}
+        </span>
       ) : null}
-      {children && <span className="truncate">{children}</span>}
-      {!isLoading && rightIcon && <span className="flex items-center shrink-0">{rightIcon}</span>}
+      {children && (
+        <span className="inline-flex items-center justify-center leading-none truncate self-center">
+          {children}
+        </span>
+      )}
+      {!isLoading && rightIcon && (
+        <span className="inline-flex items-center justify-center shrink-0 self-center leading-none">
+          {rightIcon}
+        </span>
+      )}
     </button>
   );
 };

@@ -239,7 +239,7 @@ export const GitLabSignInModal: React.FC = () => {
                 ) : (
                   <>
                     <ExternalLink className="w-4 h-4" />
-                    <span>Sign in with GitLab Browser</span>
+                    <span>Browser</span>
                   </>
                 )}
               </button>
