@@ -132,9 +132,12 @@ pub fn add_repo(path: &str) -> Result<RepoEntry, AppError> {
 
 pub fn remove_repo(id: &str) -> Result<(), AppError> {
     let mut reg = read_registry();
-    let normalized = id.replace('\\', "/");
-    reg.repos
-        .retain(|r| r.id != id && r.path.replace('\\', "/") != normalized);
+    let normalized = id.replace('\\', "/").to_lowercase();
+    reg.repos.retain(|r| {
+        let r_id = r.id.replace('\\', "/").to_lowercase();
+        let r_path = r.path.replace('\\', "/").to_lowercase();
+        r_id != normalized && r_path != normalized
+    });
     write_registry(&reg);
     Ok(())
 }

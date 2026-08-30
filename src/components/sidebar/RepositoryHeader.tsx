@@ -3,10 +3,12 @@ import { ChevronsUpDown, FolderGit2 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { RepoDrawer } from '../layout/RepoDrawer';
 import { Tabs } from '../common/Tabs';
+import { ChangesEmptySpaceContextMenu } from '../context-menus/ChangesEmptySpaceContextMenu';
 
 export const RepositoryHeader: React.FC = () => {
   const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
   const [isRepoDrawerOpen, setIsRepoDrawerOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const activeRepoName = activeRepoPath
     ? activeRepoPath.split(/[/\\]/).pop() || 'Repository'
@@ -21,6 +23,13 @@ export const RepositoryHeader: React.FC = () => {
     setIsRepoDrawerOpen(true);
   };
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!activeRepoPath) return;
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
+
   return (
     <>
       <div className="border-b border-border bg-base-0 select-none p-2 flex flex-col gap-2">
@@ -29,6 +38,7 @@ export const RepositoryHeader: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenRepoSwitcher}
+            onContextMenu={handleContextMenu}
             className="w-full h-8.5 px-2.5 rounded-sm border border-border bg-base-1/70 hover:bg-base-2 hover:border-border-strong active:bg-base-3 flex items-center justify-between gap-2 cursor-pointer transition shadow-2xs group outline-none text-left"
             title={`${activeRepoName}\nBranch: ${currentBranch}\nTotal Branches: ${branchCount}\nClick to switch repository`}
           >
@@ -85,6 +95,20 @@ export const RepositoryHeader: React.FC = () => {
 
       {/* Slide-over Drawer from the left */}
       <RepoDrawer isOpen={isRepoDrawerOpen} onClose={() => setIsRepoDrawerOpen(false)} />
+
+      {/* Right-click context menu on the repo name button */}
+      {contextMenu && (
+        <ChangesEmptySpaceContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onClose={() => setContextMenu(null)}
+          onNewFile={() => {}}
+          onNewFolder={() => {}}
+        />
+      )}
     </>
   );
 };
+
+
+
