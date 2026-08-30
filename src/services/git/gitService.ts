@@ -18,6 +18,7 @@ import {
   GitConfigItem,
   AiCommitSuggestion,
   RemoteValidationResult,
+  ImageDiffData,
 } from '../../types/git';
 
 /**
@@ -71,6 +72,21 @@ export class GitService {
     filePath: string
   ): Promise<DiffResult> {
     return invoke<DiffResult>('get_commit_file_diff', { repoPath, sha, filePath });
+  }
+
+  /**
+   * Retrieves image diff and preview payload (base64 data URLs, dimensions, file sizes).
+   */
+  static async getImageDiffData(
+    repoPath: string,
+    filePath: string,
+    commitSha?: string
+  ): Promise<ImageDiffData> {
+    return invoke<ImageDiffData>('get_image_diff_data', {
+      repoPath,
+      filePath,
+      commitSha: commitSha || null,
+    });
   }
 
   /**

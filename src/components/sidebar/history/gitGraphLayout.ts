@@ -59,13 +59,18 @@ export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, Commit
     const isMerge = parents.length > 1;
     const isHead = idx === 0;
 
-    // 1. Find ALL active lanes currently waiting for this commit SHA
+    // 1. Single-pass identification of matching and passing lanes
     const matchingLanes: number[] = [];
-    activeLanes.forEach((targetSha, lIdx) => {
+    const passingLanes: number[] = [];
+
+    for (let lIdx = 0; lIdx < activeLanes.length; lIdx++) {
+      const targetSha = activeLanes[lIdx];
       if (targetSha === commit.sha) {
         matchingLanes.push(lIdx);
+      } else if (targetSha !== null) {
+        passingLanes.push(lIdx);
       }
-    });
+    }
 
     let lane: number;
     const inSegments: GraphSegment[] = [];
@@ -100,16 +105,11 @@ export function computeGitGraphLayout(commits: CommitInfo[]): Map<string, Commit
     const hasIncoming = matchingLanes.length > 0;
     const colorIndex = lane % LANE_COLORS.length;
 
-    // 2. Identify passing lanes that enter from above and pass straight through
-    const passingLanes = activeLanes
-      .map((target, lIdx) => (target !== null && !matchingLanes.includes(lIdx) ? lIdx : -1))
-      .filter((l) => l !== -1);
-
-    // 3. Clear all matching lanes now that we have reached this commit
+    // 2. Clear all matching lanes now that we have reached this commit
     if (matchingLanes.length > 0) {
-      matchingLanes.forEach((l) => {
-        activeLanes[l] = null;
-      });
+      for (let i = 0; i < matchingLanes.length; i++) {
+        activeLanes[matchingLanes[i]] = null;
+      }
     } else {
       activeLanes[lane] = null;
     }

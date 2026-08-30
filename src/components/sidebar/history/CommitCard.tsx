@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { GitMerge, GitCommit, ShieldCheck, ShieldAlert, Tag } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { CommitInfo } from '../../../types/git';
 import { UserAvatar } from '../../common/UserAvatar';
 import { useSigningStore } from '../../../store/signingStore';
@@ -43,7 +44,7 @@ function renderCommitMessage(message: string) {
   );
 }
 
-export const CommitCard: React.FC<CommitCardProps> = ({
+export const CommitCard: React.FC<CommitCardProps> = React.memo(({
   commit,
   isSelected,
   isDragging,
@@ -53,9 +54,14 @@ export const CommitCard: React.FC<CommitCardProps> = ({
   onClick,
   onContextMenu,
 }) => {
-  const { activeRepoPath, tags } = useGitStore();
-  const { verifiedCommits, verifyCommit } = useSigningStore();
-  const verification = verifiedCommits[commit.sha];
+  const { activeRepoPath, tags } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      tags: s.tags,
+    }))
+  );
+  const verification = useSigningStore((s) => s.verifiedCommits[commit.sha]);
+  const verifyCommit = useSigningStore((s) => s.verifyCommit);
 
   // Match any tags pointing to this commit
   const commitTags = tags.filter(
@@ -125,7 +131,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
               <div
                 key={tag.name}
                 title={`Git Tag: ${tag.name}`}
-                className="flex items-center gap-0.5 px-1.5 py-0.2 bg-amber-500/15 border border-amber-500/30 rounded-xs text-[9px] font-mono font-bold text-amber-400 max-w-[95px]"
+                className="chip chip-tag max-w-[95px]"
               >
                 <Tag className="w-2.5 h-2.5 shrink-0 text-amber-400" />
                 <span className="truncate">{tag.name}</span>
@@ -134,7 +140,7 @@ export const CommitCard: React.FC<CommitCardProps> = ({
           ) : (
             <div
               title={`Commit: ${commit.sha}`}
-              className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted group-hover:text-text-secondary transition-colors"
+              className="chip chip-commit group-hover:border-border-strong transition-colors"
             >
               <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
               <span>{commit.short_sha}</span>
@@ -193,4 +199,4 @@ export const CommitCard: React.FC<CommitCardProps> = ({
       )}
     </div>
   );
-};
+});

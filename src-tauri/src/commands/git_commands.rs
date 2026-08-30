@@ -1,6 +1,8 @@
 use crate::error::AppError;
 use crate::git::commit as commit_mod;
-use crate::git::diff::{get_file_diff as diff_fn, DiffResult};
+use crate::git::diff::{
+    get_file_diff as diff_fn, get_image_diff_data as image_diff_fn, DiffResult, ImageDiffData,
+};
 use crate::git::history::{
     get_commit_details as details_fn, get_commit_history as history_fn, CommitDetails, CommitInfo,
 };
@@ -40,6 +42,19 @@ pub async fn get_commit_file_diff(
 ) -> Result<DiffResult, AppError> {
     tokio::task::spawn_blocking(move || {
         crate::git::diff::get_commit_file_diff(&repo_path, &sha, &file_path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn get_image_diff_data(
+    repo_path: String,
+    file_path: String,
+    commit_sha: Option<String>,
+) -> Result<ImageDiffData, AppError> {
+    tokio::task::spawn_blocking(move || {
+        image_diff_fn(&repo_path, &file_path, commit_sha.as_deref())
     })
     .await
     .map_err(|e| AppError::Unknown(e.to_string()))?

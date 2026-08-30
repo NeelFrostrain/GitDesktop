@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, FileText, RefreshCw } from 'lucide-react';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { BlameLine } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 
 /**
- * Line-by-line file blame viewer for inspecting commit authorship, dates, and jump-to-commit navigation.
+ * Line-by-line file blame viewer for inspecting commit authorship, dates, and jump-to-commit navigation
+ * with virtualized line rendering for handling huge files smoothly.
  */
 export const BlameViewer: React.FC = () => {
   const {
@@ -15,10 +18,27 @@ export const BlameViewer: React.FC = () => {
     setIsBlameModalOpen,
     setSelectedCommitSha,
     setCurrentNavView,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      blameFile: s.blameFile,
+      isBlameModalOpen: s.isBlameModalOpen,
+      setIsBlameModalOpen: s.setIsBlameModalOpen,
+      setSelectedCommitSha: s.setSelectedCommitSha,
+      setCurrentNavView: s.setCurrentNavView,
+    }))
+  );
 
   const [blameLines, setBlameLines] = useState<BlameLine[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: blameLines.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 28,
+    overscan: 20,
+  });
 
   useEffect(() => {
     if (!isBlameModalOpen || !activeRepoPath || !blameFile) return;
@@ -46,7 +66,7 @@ export const BlameViewer: React.FC = () => {
                 File Blame Explorer — {blameFile}
               </h2>
               <p className="text-[11px] text-text-muted">
-                Line-by-line commit authorship and date timeline
+                Line-by-line commit authorship and date timeline ({blameLines.length} lines)
               </p>
             </div>
           </div>
@@ -58,11 +78,14 @@ export const BlameViewer: React.FC = () => {
           </button>
         </div>
 
-        {/* Modal Body: Blame List */}
-        <div className="flex-1 overflow-y-auto font-mono text-xs select-text bg-base-0">
+        {/* Modal Body: Virtualized Blame List */}
+        <div
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto font-mono text-xs select-text bg-base-0"
+        >
           {isLoading ? (
             <div className="p-12 text-center text-text-muted italic flex items-center justify-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin" />
+              <RefreshCw className="w-4 h-4 animate-spin text-commito-coral" />
               <span>Analyzing line blame history...</span>
             </div>
           ) : blameLines.length === 0 ? (
@@ -70,45 +93,58 @@ export const BlameViewer: React.FC = () => {
               No blame history available for {blameFile}
             </div>
           ) : (
-            <div className="divide-y divide-border/40">
-              {blameLines.map((line) => (
-                <div
-                  key={line.line_num}
-                  className="flex items-stretch hover:bg-base-2 transition group"
-                >
-                  {/* Left Column: Author & Commit Meta */}
-                  <div className="w-64 px-3 py-1 bg-base-1 border-r border-border flex items-center justify-between flex-shrink-0 select-none text-[11px] text-text-muted">
-                    <div className="truncate min-w-0 pr-2">
-                      <span className="font-semibold text-text-secondary truncate block">
-                        {line.author_name}
-                      </span>
-                      <span className="text-[10px] text-text-faint">{line.date}</span>
+            <div
+              className="w-full relative divide-y divide-border/40"
+              style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+            >
+              {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                const line = blameLines[virtualRow.index];
+                return (
+                  <div
+                    key={line.line_num}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                    className="flex items-stretch hover:bg-base-2 transition group h-[28px]"
+                  >
+                    {/* Left Column: Author & Commit Meta */}
+                    <div className="w-64 px-3 py-1 bg-base-1 border-r border-border flex items-center justify-between flex-shrink-0 select-none text-[11px] text-text-muted">
+                      <div className="truncate min-w-0 pr-2">
+                        <span className="font-semibold text-text-secondary truncate block leading-tight">
+                          {line.author_name}
+                        </span>
+                        <span className="text-[10px] text-text-faint">{line.date}</span>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedCommitSha(line.commit_sha);
+                          setIsBlameModalOpen(false);
+                          setCurrentNavView('history');
+                        }}
+                        className="px-1.5 py-0.2 bg-base-3 hover:bg-base-0 border border-border rounded text-[10px] font-mono text-commito-coral transition flex-shrink-0 cursor-pointer"
+                        title={`Inspect commit ${line.commit_sha}`}
+                      >
+                        {line.short_sha}
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setSelectedCommitSha(line.commit_sha);
-                        setIsBlameModalOpen(false);
-                        setCurrentNavView('history');
-                      }}
-                      className="px-1.5 py-0.2 bg-base-3 hover:bg-base-0 border border-border rounded text-[10px] font-mono text-commito-coral transition flex-shrink-0 cursor-pointer"
-                      title={`Inspect commit ${line.commit_sha}`}
-                    >
-                      {line.short_sha}
-                    </button>
-                  </div>
+                    {/* Line Number */}
+                    <div className="w-12 py-1 px-2 text-right text-text-faint bg-base-1/50 border-r border-border flex-shrink-0 select-none text-[11px] flex items-center justify-end">
+                      {line.line_num}
+                    </div>
 
-                  {/* Line Number */}
-                  <div className="w-12 py-1 px-2 text-right text-text-faint bg-base-1/50 border-r border-border flex-shrink-0 select-none text-[11px]">
-                    {line.line_num}
+                    {/* Line Code Content */}
+                    <div className="flex-1 px-3 py-1 whitespace-pre text-text-primary text-[12px] flex items-center overflow-hidden">
+                      {line.content}
+                    </div>
                   </div>
-
-                  {/* Line Code Content */}
-                  <div className="flex-1 px-3 py-1 whitespace-pre text-text-primary text-[12px]">
-                    {line.content}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

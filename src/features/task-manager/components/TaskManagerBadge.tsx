@@ -61,11 +61,11 @@ export const TaskManagerBadge: React.FC<TaskManagerBadgeProps> = ({ className = 
         <>
           <Activity className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors shrink-0" />
           <span>Tasks</span>
-          {tasks.length > 0 && (
+          {/* {tasks.length > 0 && (
             <span className="text-text-muted font-normal">
               ({tasks.length})
             </span>
-          )}
+          )} */}
         </>
       )}
     </button>

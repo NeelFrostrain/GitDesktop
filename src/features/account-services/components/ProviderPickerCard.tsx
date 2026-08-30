@@ -8,24 +8,12 @@ import {
   ChevronUp,
   AlertCircle,
   X,
+  Key,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { useAccountServicesStore } from '../store/accountStore';
 import { Button } from '../../../components/common/Button';
-
-type ProviderKey = 'gitlab' | 'github' | 'bitbucket';
-
-interface ProviderConfig {
-  id: ProviderKey;
-  name: string;
-  badge: string;
-  defaultUrl: string;
-  description: string;
-  colorClass: string;
-  borderClass: string;
-  bgClass: string;
-  icon: React.ReactNode;
-}
+import { TokenSignInDialog, ProviderConfig, ProviderKey } from './TokenSignInDialog';
 
 const PROVIDERS: ProviderConfig[] = [
   {
@@ -79,6 +67,7 @@ export const ProviderPickerCard: React.FC = () => {
   const { accounts, startOAuth, loadAccounts } = useAccountServicesStore();
 
   const [activeWaitingProvider, setActiveWaitingProvider] = useState<ProviderKey | null>(null);
+  const [tokenDialogProvider, setTokenDialogProvider] = useState<ProviderConfig | null>(null);
   const [customUrls, setCustomUrls] = useState<Record<ProviderKey, string>>({
     gitlab: 'https://gitlab.com',
     github: 'https://github.com',
@@ -240,16 +229,28 @@ export const ProviderPickerCard: React.FC = () => {
                       </Button>
                     </div>
                   ) : (
-                    <Button
-                      type="button"
-                      variant="coral"
-                      size="sm"
-                      onClick={() => handleSignIn(provider)}
-                      leftIcon={<Globe className="w-3.5 h-3.5" />}
-                      rightIcon={<ExternalLink className="w-3 h-3 opacity-70" />}
-                    >
-                      Sign In with {provider.name}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setTokenDialogProvider(provider)}
+                        leftIcon={<Key className="w-3.5 h-3.5" />}
+                        title={`Sign in to ${provider.name} using a Personal Access Token`}
+                      >
+                        Use Token
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="coral"
+                        size="sm"
+                        onClick={() => handleSignIn(provider)}
+                        leftIcon={<Globe className="w-3.5 h-3.5" />}
+                        rightIcon={<ExternalLink className="w-3 h-3 opacity-70" />}
+                      >
+                        Sign In with {provider.name}
+                      </Button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -296,12 +297,26 @@ export const ProviderPickerCard: React.FC = () => {
 
       {/* Security Footer Note */}
       <div className="flex items-center justify-start gap-2 py-2 px-3 bg-base-1/40 border border-border rounded-sm text-[11px] text-text-muted text-center">
-        {/* <ShieldCheck className="w-3.5 h-3.5 text-git-added shrink-0" /> */}
         <span>
-          Secure OAuth 2.0 PKCE authentication in your default browser — tokens stored in your
-          operating system's keyring.
+          Secure OAuth 2.0 PKCE authentication in your default browser or direct Personal Access Token login — credentials stored in your operating system's keyring.
         </span>
       </div>
+
+      {/* Personal Access Token Dialog */}
+      {tokenDialogProvider && (
+        <TokenSignInDialog
+          isOpen={Boolean(tokenDialogProvider)}
+          provider={tokenDialogProvider}
+          initialInstanceUrl={customUrls[tokenDialogProvider.id]}
+          onClose={() => setTokenDialogProvider(null)}
+          onSuccess={(account) => {
+            setSuccessMsg(
+              `Successfully connected ${tokenDialogProvider.name} account (${account.handle})!`
+            );
+            setTokenDialogProvider(null);
+          }}
+        />
+      )}
     </div>
   );
 };

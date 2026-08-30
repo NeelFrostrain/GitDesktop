@@ -1,4 +1,4 @@
-import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../../store/useGitStore';
 import { RepositoryHeader } from '../../../components/sidebar/RepositoryHeader';
 import { ChangesPanel } from '../../../components/sidebar/changes/ChangesPanel';
@@ -8,7 +8,13 @@ import { CommitPanel } from '../../../components/sidebar/commit/CommitPanel';
 import { HistoryPanel } from '../../../components/sidebar/history/HistoryPanel';
 
 export const RepoSidebar: React.FC = () => {
-  const { activeTab, isViewingStashedChanges, currentBranchStash } = useGitStore();
+  const { activeTab, isViewingStashedChanges, currentBranchStash } = useGitStore(
+    useShallow((s) => ({
+      activeTab: s.activeTab,
+      isViewingStashedChanges: s.isViewingStashedChanges,
+      currentBranchStash: s.currentBranchStash,
+    }))
+  );
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-base-0 overflow-hidden select-none">

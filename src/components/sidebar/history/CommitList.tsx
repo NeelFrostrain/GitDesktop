@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Loader2, GitCommit } from 'lucide-react';
 import { CommitInfo } from '../../../types/git';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../../store/useGitStore';
 import { CommitCard } from './CommitCard';
 import { CommitContextMenu } from '../../context-menus/CommitContextMenu';
@@ -21,7 +22,12 @@ export const CommitList: React.FC<CommitListProps> = ({
   isLoadingInitial,
   onLoadMore,
 }) => {
-  const { selectedCommitSha, setSelectedCommitSha } = useGitStore();
+  const { selectedCommitSha, setSelectedCommitSha } = useGitStore(
+    useShallow((s) => ({
+      selectedCommitSha: s.selectedCommitSha,
+      setSelectedCommitSha: s.setSelectedCommitSha,
+    }))
+  );
   const [contextMenu, setContextMenu] = useState<{
     commit: CommitInfo;
     x: number;

@@ -52,12 +52,17 @@ pub fn get_file_diff(
     let parse_diff = |diff: &git2::Diff| -> (bool, Vec<DiffLine>) {
         let mut is_binary = false;
         let mut lines = Vec::new();
+        const MAX_DIFF_LINES: usize = 6000;
 
         let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+            if lines.len() >= MAX_DIFF_LINES {
+                return false;
+            }
+
             let origin = line.origin();
             if origin == 'B' {
                 is_binary = true;
-                return true;
+                return false;
             }
 
             let content = String::from_utf8_lossy(line.content()).to_string();
@@ -96,7 +101,7 @@ pub fn get_file_diff(
     opts.pathspec(file_path);
     opts.include_untracked(true);
     opts.show_untracked_content(true);
-    opts.recurse_untracked_dirs(true);
+    opts.recurse_untracked_dirs(false); // Do not walk untracked subtrees for targeted file diff
 
     let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
 
@@ -218,5 +223,124 @@ pub fn get_commit_file_diff(
         is_binary,
         is_large_file: false,
         file_size_bytes: 0,
+    })
+}
+
+use base64::Engine;
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ImageDiffData {
+    pub file_path: String,
+    pub current_data_url: Option<String>,
+    pub previous_data_url: Option<String>,
+    pub current_size_bytes: u64,
+    pub previous_size_bytes: u64,
+    pub mime_type: String,
+    pub is_new: bool,
+    pub is_deleted: bool,
+    pub is_modified: bool,
+}
+
+fn get_blob_bytes_from_tree(repo: &Repository, tree: &git2::Tree, path: &str) -> Option<Vec<u8>> {
+    let normalized = path.replace('\\', "/");
+    let entry = tree.get_path(Path::new(&normalized)).ok()?;
+    let object = entry.to_object(repo).ok()?;
+    let blob = object.as_blob()?;
+    Some(blob.content().to_vec())
+}
+
+fn get_mime_type_from_path(path: &str) -> String {
+    let ext = Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    match ext.as_str() {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "svg" => "image/svg+xml",
+        "webp" => "image/webp",
+        "ico" => "image/x-icon",
+        "bmp" => "image/bmp",
+        "avif" => "image/avif",
+        "tiff" | "tif" => "image/tiff",
+        _ => "application/octet-stream",
+    }
+    .to_string()
+}
+
+pub fn get_image_diff_data(
+    repo_path: &str,
+    file_path: &str,
+    commit_sha: Option<&str>,
+) -> Result<ImageDiffData, AppError> {
+    let repo = Repository::open(repo_path)
+        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
+
+    let mime_type = get_mime_type_from_path(file_path);
+
+    let (current_bytes, previous_bytes) = match commit_sha {
+        Some(sha) if !sha.trim().is_empty() => {
+            let oid = git2::Oid::from_str(sha.trim())
+                .map_err(|_| AppError::Validation(format!("Invalid commit SHA: {}", sha)))?;
+            let commit = repo.find_commit(oid)?;
+            let current_tree = commit.tree()?;
+            let curr = get_blob_bytes_from_tree(&repo, &current_tree, file_path);
+
+            let prev = commit
+                .parent(0)
+                .ok()
+                .and_then(|p| p.tree().ok())
+                .and_then(|pt| get_blob_bytes_from_tree(&repo, &pt, file_path));
+
+            (curr, prev)
+        }
+        _ => {
+            // Working directory vs HEAD
+            let full_path = Path::new(repo_path).join(file_path);
+            let curr = if full_path.exists() && full_path.is_file() {
+                fs::read(&full_path).ok()
+            } else {
+                None
+            };
+
+            let prev = repo
+                .head()
+                .and_then(|h| h.peel_to_tree())
+                .ok()
+                .and_then(|head_tree| get_blob_bytes_from_tree(&repo, &head_tree, file_path));
+
+            (curr, prev)
+        }
+    };
+
+    let is_new = previous_bytes.is_none() && current_bytes.is_some();
+    let is_deleted = previous_bytes.is_some() && current_bytes.is_none();
+    let is_modified = previous_bytes.is_some() && current_bytes.is_some();
+
+    let current_size_bytes = current_bytes.as_ref().map(|b| b.len() as u64).unwrap_or(0);
+    let previous_size_bytes = previous_bytes.as_ref().map(|b| b.len() as u64).unwrap_or(0);
+
+    let current_data_url = current_bytes.map(|bytes| {
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        format!("data:{};base64,{}", mime_type, b64)
+    });
+
+    let previous_data_url = previous_bytes.map(|bytes| {
+        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        format!("data:{};base64,{}", mime_type, b64)
+    });
+
+    Ok(ImageDiffData {
+        file_path: file_path.to_string(),
+        current_data_url,
+        previous_data_url,
+        current_size_bytes,
+        previous_size_bytes,
+        mime_type,
+        is_new,
+        is_deleted,
+        is_modified,
     })
 }

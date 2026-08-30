@@ -32,6 +32,11 @@ export interface CachedTagData {
 export type CacheUpdateType = 'prs' | 'branches' | 'releases' | 'commits' | 'tags';
 export type CacheListener = (repoPath: string, type: CacheUpdateType, data: unknown) => void;
 
+const DB_NAME = 'commito_repo_cache_v1';
+const STORE_NAME = 'repo_data';
+const DB_VERSION = 1;
+const MAX_REPO_CACHE_CAPACITY = 10;
+
 class RepoCacheServiceClass {
   private prCache = new Map<string, CachedPRData>();
   private branchCache = new Map<string, BranchInfo[]>();
@@ -40,6 +45,97 @@ class RepoCacheServiceClass {
   private tagCache = new Map<string, CachedTagData>();
   private inFlightPrecaching = new Set<string>();
   private listeners = new Set<CacheListener>();
+  private dbPromise: Promise<IDBDatabase | null> | null = null;
+  private isIndexedDBAvailable: boolean;
+
+  private enforceCapacity<T>(map: Map<string, T>, max = MAX_REPO_CACHE_CAPACITY): void {
+    while (map.size > max) {
+      const oldest = map.keys().next().value;
+      if (oldest) {
+        map.delete(oldest);
+      } else {
+        break;
+      }
+    }
+  }
+
+  constructor() {
+    this.isIndexedDBAvailable = typeof window !== 'undefined' && 'indexedDB' in window;
+    if (this.isIndexedDBAvailable) {
+      this.initDBAndRehydrate();
+    }
+  }
+
+  /**
+   * Initializes IndexedDB and rehydrates in-memory cache for 0ms cold startup.
+   */
+  private async initDBAndRehydrate(): Promise<void> {
+    if (!this.isIndexedDBAvailable) return;
+    try {
+      const db = await this.getDB();
+      if (!db) return;
+
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.getAll();
+
+      req.onsuccess = () => {
+        const records: Array<{ key: string; type: string; data: unknown }> = req.result || [];
+        for (const r of records) {
+          if (!r.key || !r.type) continue;
+          const repoPath = r.key;
+          if (r.type === 'prs') {
+            this.prCache.set(repoPath, r.data as CachedPRData);
+          } else if (r.type === 'branches') {
+            this.branchCache.set(repoPath, r.data as BranchInfo[]);
+          } else if (r.type === 'releases') {
+            this.releaseCache.set(repoPath, r.data as CachedReleaseData);
+          } else if (r.type === 'commits') {
+            this.commitCache.set(repoPath, r.data as CachedCommitData);
+          } else if (r.type === 'tags') {
+            this.tagCache.set(repoPath, r.data as CachedTagData);
+          }
+        }
+      };
+    } catch (err) {
+      console.warn('[RepoCacheService] IndexedDB rehydration error:', err);
+    }
+  }
+
+  private async getDB(): Promise<IDBDatabase | null> {
+    if (!this.isIndexedDBAvailable) return null;
+    if (this.dbPromise) return this.dbPromise;
+
+    this.dbPromise = new Promise<IDBDatabase | null>((resolve) => {
+      try {
+        const req = window.indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = (e) => {
+          const db = (e.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => resolve(null);
+      } catch {
+        resolve(null);
+      }
+    });
+
+    return this.dbPromise;
+  }
+
+  private async persistToIndexedDB(repoPath: string, type: string, data: unknown): Promise<void> {
+    if (!this.isIndexedDBAvailable || !repoPath) return;
+    try {
+      const db = await this.getDB();
+      if (!db) return;
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      const store = tx.objectStore(STORE_NAME);
+      const id = `${repoPath}:${type}`;
+      store.put({ id, key: repoPath, type, data, timestamp: Date.now() });
+    } catch {}
+  }
 
   /**
    * Subscribes to cache update events across any repository.
@@ -89,8 +185,10 @@ class RepoCacheServiceClass {
       repoName: resolvedName,
       fetchedAt: Date.now(),
     };
+    this.enforceCapacity(this.prCache);
     this.prCache.set(repoPath, data);
     this.notify(repoPath, 'prs', data);
+    this.persistToIndexedDB(repoPath, 'prs', data);
   }
 
   /**
@@ -106,8 +204,10 @@ class RepoCacheServiceClass {
    */
   public setBranches(repoPath: string, branches: BranchInfo[]): void {
     if (!repoPath) return;
+    this.enforceCapacity(this.branchCache);
     this.branchCache.set(repoPath, branches);
     this.notify(repoPath, 'branches', branches);
+    this.persistToIndexedDB(repoPath, 'branches', branches);
   }
 
   /**
@@ -125,11 +225,14 @@ class RepoCacheServiceClass {
    */
   public setReleases(repoPath: string, releases: ReleaseInfo[]): void {
     if (!repoPath) return;
-    this.releaseCache.set(repoPath, {
+    const data = {
       releases,
       fetchedAt: Date.now(),
-    });
+    };
+    this.enforceCapacity(this.releaseCache);
+    this.releaseCache.set(repoPath, data);
     this.notify(repoPath, 'releases', releases);
+    this.persistToIndexedDB(repoPath, 'releases', data);
   }
 
   /**
@@ -147,11 +250,14 @@ class RepoCacheServiceClass {
    */
   public setCommits(repoPath: string, commits: CommitInfo[]): void {
     if (!repoPath) return;
-    this.commitCache.set(repoPath, {
+    const data = {
       commits,
       fetchedAt: Date.now(),
-    });
+    };
+    this.enforceCapacity(this.commitCache);
+    this.commitCache.set(repoPath, data);
     this.notify(repoPath, 'commits', commits);
+    this.persistToIndexedDB(repoPath, 'commits', data);
   }
 
   /**
@@ -169,11 +275,14 @@ class RepoCacheServiceClass {
    */
   public setTags(repoPath: string, tags: TagInfo[]): void {
     if (!repoPath) return;
-    this.tagCache.set(repoPath, {
+    const data = {
       tags,
       fetchedAt: Date.now(),
-    });
+    };
+    this.enforceCapacity(this.tagCache);
+    this.tagCache.set(repoPath, data);
     this.notify(repoPath, 'tags', tags);
+    this.persistToIndexedDB(repoPath, 'tags', data);
   }
 
   /**

@@ -14,8 +14,10 @@ import {
   Calendar as CalendarIcon,
 } from 'lucide-react';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { GitService } from '../../services/git/gitService';
+import { RepoCacheService } from '../../services/git/repoCacheService';
 import { CommitInfo, BranchInfo, TagInfo } from '../../types/git';
 import { computeGitGraphLayout, LANE_COLORS } from '../sidebar/history/gitGraphLayout';
 import { CommitContextMenu } from '../context-menus/CommitContextMenu';
@@ -71,9 +73,27 @@ export const GitGraphView: React.FC = () => {
     setSelectedCommitSha,
     setCurrentNavView,
     repoSyncCounter,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      status: s.status,
+      branches: s.branches,
+      tags: s.tags,
+      user: s.user,
+      selectedCommitSha: s.selectedCommitSha,
+      setSelectedCommitSha: s.setSelectedCommitSha,
+      setCurrentNavView: s.setCurrentNavView,
+      repoSyncCounter: s.repoSyncCounter,
+    }))
+  );
 
-  const [commits, setCommits] = useState<CommitInfo[]>([]);
+  const [commits, setCommits] = useState<CommitInfo[]>(() => {
+    if (activeRepoPath) {
+      const cached = RepoCacheService.getCommits(activeRepoPath);
+      if (cached && cached.length > 0) return cached;
+    }
+    return [];
+  });
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingInitial, setIsLoadingInitial] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
