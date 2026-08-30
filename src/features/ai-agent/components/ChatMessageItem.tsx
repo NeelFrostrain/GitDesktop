@@ -295,7 +295,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
       <div className="flex items-center justify-between text-[11px] text-text-muted/60 select-none pb-0.5">
         <div className="flex items-center gap-1.5">
           <span className="font-semibold text-[11px] text-commito-coral flex items-center gap-1">
-            <Sparkles className="w-3 h-3 stroke-[2.2]" />
+            {/* <Sparkles className="w-3 h-3 stroke-[2.2]" /> */}
             {agentName || 'AI Git Agent'}
           </span>
           {message.modelUsed && (
