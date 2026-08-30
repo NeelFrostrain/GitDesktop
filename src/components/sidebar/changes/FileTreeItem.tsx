@@ -178,7 +178,7 @@ export const getStatusBadge = (statusStr?: string) => {
   ) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0"
         title="Added / Untracked"
       >
         A
