@@ -521,7 +521,7 @@ export const GitGraphView: React.FC = () => {
           <button
             type="button"
             onClick={() => setCurrentNavView('history')}
-            className="h-7 px-2.5 bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
+            className="h-7 px-1.5 bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
             title="Close Graph View (Esc)"
           >
             <X className="w-3.5 h-3.5 text-text-muted" />
