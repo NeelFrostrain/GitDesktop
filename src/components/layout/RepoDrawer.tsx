@@ -352,13 +352,13 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
                 >
                   {/* Left: Icon + Title & Path */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                    <FolderGit2
+                    {/* <FolderGit2
                       className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${
                         isActive
                           ? 'text-commito-coral'
                           : 'text-text-muted group-hover:text-commito-coral'
                       }`}
-                    />
+                    /> */}
 
                     <div className="min-w-0 flex-1">
                       {/* Top Line: Name + Provider Tag + Branch Chip */}
