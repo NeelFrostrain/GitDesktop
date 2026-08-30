@@ -13,10 +13,10 @@ export interface CommitGraphNode {
   colorIndex: number;
   isHead: boolean;
   isMerge: boolean;
-  hasIncoming: boolean;        // Whether there is at least one incoming line from above
-  inSegments: GraphSegment[];  // Incoming curves/lines entering into this commit from above
+  hasIncoming: boolean; // Whether there is at least one incoming line from above
+  inSegments: GraphSegment[]; // Incoming curves/lines entering into this commit from above
   outSegments: GraphSegment[]; // Outgoing curves/lines leaving to bottom (toward older commits)
-  activeLanes: number[];       // All lanes passing straight through this row from above
+  activeLanes: number[]; // All lanes passing straight through this row from above
 }
 
 export const LANE_COLORS = [

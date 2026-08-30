@@ -33,17 +33,20 @@ export const CherryPickModal: React.FC = () => {
   const [searchFilter, setSearchFilter] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const loadBranchCommits = useCallback(async (branch?: string) => {
-    if (!activeRepoPath) return;
+  const loadBranchCommits = useCallback(
+    async (branch?: string) => {
+      if (!activeRepoPath) return;
 
-    try {
-      const target = branch || sourceBranch;
-      const res = await GitService.getCommitHistory(activeRepoPath, 50, 0, target);
-      setCommits(res || []);
-    } catch {
-      setCommits([]);
-    }
-  }, [activeRepoPath, sourceBranch]);
+      try {
+        const target = branch || sourceBranch;
+        const res = await GitService.getCommitHistory(activeRepoPath, 50, 0, target);
+        setCommits(res || []);
+      } catch {
+        setCommits([]);
+      }
+    },
+    [activeRepoPath, sourceBranch]
+  );
 
   useEffect(() => {
     if (!isCherryPickModalOpen || !activeRepoPath) return;

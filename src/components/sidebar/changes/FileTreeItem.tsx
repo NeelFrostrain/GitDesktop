@@ -178,7 +178,7 @@ export const getStatusBadge = (statusStr?: string) => {
   ) {
     return (
       <span
-        className="px-1.5 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0"
+        className="px-1 py-0.2 rounded-xs font-mono font-bold text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 shrink-0"
         title="Added / Untracked"
       >
         A
@@ -223,154 +223,152 @@ interface FileTreeNodeProps {
   onOpenFileContext: (filePath: string, x: number, y: number) => void;
 }
 
-export const FileTreeNode: React.FC<FileTreeNodeProps> = React.memo(({
-  node,
-  expandedFolders,
-  onToggleFolder,
-  onOpenFolderContext,
-  onOpenFileContext,
-}) => {
-  const selectedFile = useGitStore((s) => s.selectedFile);
-  const setSelectedFile = useGitStore((s) => s.setSelectedFile);
-  const stagedFiles = useGitStore((s) => s.stagedFiles);
-  const toggleStageFile = useGitStore((s) => s.toggleStageFile);
-  const toggleStageFiles = useGitStore((s) => s.toggleStageFiles);
+export const FileTreeNode: React.FC<FileTreeNodeProps> = React.memo(
+  ({ node, expandedFolders, onToggleFolder, onOpenFolderContext, onOpenFileContext }) => {
+    const selectedFile = useGitStore((s) => s.selectedFile);
+    const setSelectedFile = useGitStore((s) => s.setSelectedFile);
+    const stagedFiles = useGitStore((s) => s.stagedFiles);
+    const toggleStageFile = useGitStore((s) => s.toggleStageFile);
+    const toggleStageFiles = useGitStore((s) => s.toggleStageFiles);
 
-  if (node.isFolder) {
-    const isExpanded = expandedFolders[node.path] ?? true;
-    const stagedCount = node.allFilePaths.filter((p) => stagedFiles.includes(p)).length;
-    const isAllStaged = node.allFilePaths.length > 0 && stagedCount === node.allFilePaths.length;
-    const isIndeterminate = stagedCount > 0 && !isAllStaged;
+    if (node.isFolder) {
+      const isExpanded = expandedFolders[node.path] ?? true;
+      const stagedCount = node.allFilePaths.filter((p) => stagedFiles.includes(p)).length;
+      const isAllStaged = node.allFilePaths.length > 0 && stagedCount === node.allFilePaths.length;
+      const isIndeterminate = stagedCount > 0 && !isAllStaged;
 
-    const parts = node.name.split('/');
+      const parts = node.name.split('/');
+
+      return (
+        <div className="flex flex-col select-none min-w-0">
+          {/* Folder Row */}
+          <div
+            onClick={() => onToggleFolder(node.path)}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenFolderContext(node.path, node.allFilePaths, e.clientX, e.clientY);
+            }}
+            style={{ paddingLeft: `${node.depth * 14 + 4}px` }}
+            className="group/folder flex items-center gap-1.5 h-6.5 pr-2 rounded-xs text-xs cursor-pointer hover:bg-base-2/60 text-text-subtle transition-colors duration-75 min-w-0"
+          >
+            {/* Chevron expander button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFolder(node.path);
+              }}
+              className="w-4 h-4 flex items-center justify-center text-text-muted/60 hover:text-text-primary rounded-xs transition-colors cursor-pointer shrink-0"
+            >
+              {isExpanded ? (
+                <ChevronDown className="w-3 h-3 text-text-muted" />
+              ) : (
+                <ChevronRight className="w-3 h-3 text-text-muted" />
+              )}
+            </button>
+
+            {/* Folder Staging Checkbox */}
+            <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
+              <Checkbox
+                checked={isAllStaged}
+                indeterminate={isIndeterminate}
+                onChange={() => toggleStageFiles(node.allFilePaths, !isAllStaged)}
+              />
+            </div>
+
+            {/* Folder Icon */}
+            <div className="shrink-0 flex items-center text-amber-400/80">
+              {isExpanded ? (
+                <FolderOpen className="w-3.5 h-3.5" />
+              ) : (
+                <Folder className="w-3.5 h-3.5" />
+              )}
+            </div>
+
+            {/* Folder Name with Clean Segment Styling */}
+            <div className="truncate flex-1 font-sans text-[11px] text-text-secondary group-hover/folder:text-text-primary flex items-center gap-0.5">
+              {parts.map((p, idx) => (
+                <React.Fragment key={idx}>
+                  {idx > 0 && <span className="text-text-faint/50 font-mono text-[10px]">/</span>}
+                  <span
+                    className={
+                      idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'
+                    }
+                  >
+                    {p}
+                  </span>
+                </React.Fragment>
+              ))}
+            </div>
+
+            {/* Changed files count badge */}
+            <span className="font-mono text-[9.5px] text-text-muted/60 group-hover/folder:text-text-muted px-1.5 py-0.2 rounded-xs bg-base-1/80 border border-border/40 shrink-0">
+              {node.allFilePaths.length}
+            </span>
+          </div>
+
+          {/* Children (if expanded) with subtle tree line */}
+          {isExpanded && (
+            <div className="flex flex-col border-l border-border/25 ml-[11px] min-w-0">
+              {node.children.map((child) => (
+                <FileTreeNode
+                  key={child.id}
+                  node={child}
+                  expandedFolders={expandedFolders}
+                  onToggleFolder={onToggleFolder}
+                  onOpenFolderContext={onOpenFolderContext}
+                  onOpenFileContext={onOpenFileContext}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // File Row
+    const file = node.file!;
+    const isStaged = stagedFiles.includes(file.path);
+    const isSelected = selectedFile === file.path;
 
     return (
-      <div className="flex flex-col select-none min-w-0">
-        {/* Folder Row */}
-        <div
-          onClick={() => onToggleFolder(node.path)}
-          onContextMenu={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenFolderContext(node.path, node.allFilePaths, e.clientX, e.clientY);
-          }}
-          style={{ paddingLeft: `${node.depth * 14 + 4}px` }}
-          className="group/folder flex items-center gap-1.5 h-6.5 pr-2 rounded-xs text-xs cursor-pointer hover:bg-base-2/60 text-text-subtle transition-colors duration-75 min-w-0"
-        >
-          {/* Chevron expander button */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleFolder(node.path);
-            }}
-            className="w-4 h-4 flex items-center justify-center text-text-muted/60 hover:text-text-primary rounded-xs transition-colors cursor-pointer shrink-0"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-3 h-3 text-text-muted" />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-text-muted" />
-            )}
-          </button>
-
-          {/* Folder Staging Checkbox */}
+      <div
+        onClick={() => setSelectedFile(file.path)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setSelectedFile(file.path);
+          onOpenFileContext(file.path, e.clientX, e.clientY);
+        }}
+        style={{ paddingLeft: `${node.depth * 14 + 6}px` }}
+        className={`group/file flex items-center justify-between gap-1.5 h-6.5 pr-2 rounded-xs border-l-2 text-xs cursor-pointer transition-all duration-75 min-w-0 select-none ${
+          isSelected
+            ? 'bg-base-2 border-l-commito-coral text-text-primary font-medium shadow-2xs'
+            : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+        }`}
+        title={file.path}
+      >
+        <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
+          {/* File Checkbox */}
           <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
-            <Checkbox
-              checked={isAllStaged}
-              indeterminate={isIndeterminate}
-              onChange={() => toggleStageFiles(node.allFilePaths, !isAllStaged)}
-            />
+            <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
           </div>
 
-          {/* Folder Icon */}
-          <div className="shrink-0 flex items-center text-amber-400/80">
-            {isExpanded ? (
-              <FolderOpen className="w-3.5 h-3.5" />
-            ) : (
-              <Folder className="w-3.5 h-3.5" />
-            )}
-          </div>
+          {/* Dynamic File Type Icon */}
+          {/* {getFileIcon(node.name)} */}
 
-          {/* Folder Name with Clean Segment Styling */}
-          <div className="truncate flex-1 font-sans text-[11px] text-text-secondary group-hover/folder:text-text-primary flex items-center gap-0.5">
-            {parts.map((p, idx) => (
-              <React.Fragment key={idx}>
-                {idx > 0 && <span className="text-text-faint/50 font-mono text-[10px]">/</span>}
-                <span
-                  className={
-                    idx === parts.length - 1 ? 'font-medium text-text-primary' : 'text-text-muted'
-                  }
-                >
-                  {p}
-                </span>
-              </React.Fragment>
-            ))}
-          </div>
-
-          {/* Changed files count badge */}
-          <span className="font-mono text-[9.5px] text-text-muted/60 group-hover/folder:text-text-muted px-1.5 py-0.2 rounded-xs bg-base-1/80 border border-border/40 shrink-0">
-            {node.allFilePaths.length}
+          {/* File Name */}
+          <span className="truncate block font-mono text-[11px] leading-tight text-text-primary">
+            {node.name}
           </span>
         </div>
 
-        {/* Children (if expanded) with subtle tree line */}
-        {isExpanded && (
-          <div className="flex flex-col border-l border-border/25 ml-[11px] min-w-0">
-            {node.children.map((child) => (
-              <FileTreeNode
-                key={child.id}
-                node={child}
-                expandedFolders={expandedFolders}
-                onToggleFolder={onToggleFolder}
-                onOpenFolderContext={onOpenFolderContext}
-                onOpenFileContext={onOpenFileContext}
-              />
-            ))}
-          </div>
-        )}
+        {/* Status Badge (M, A, D, R) */}
+        {getStatusBadge(file.status)}
       </div>
     );
   }
+);
 
-  // File Row
-  const file = node.file!;
-  const isStaged = stagedFiles.includes(file.path);
-  const isSelected = selectedFile === file.path;
-
-  return (
-    <div
-      onClick={() => setSelectedFile(file.path)}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedFile(file.path);
-        onOpenFileContext(file.path, e.clientX, e.clientY);
-      }}
-      style={{ paddingLeft: `${node.depth * 14 + 6}px` }}
-      className={`group/file flex items-center justify-between gap-1.5 h-6.5 pr-2 rounded-xs border-l-2 text-xs cursor-pointer transition-all duration-75 min-w-0 select-none ${
-        isSelected
-          ? 'bg-base-2 border-l-commito-coral text-text-primary font-medium shadow-2xs'
-          : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
-      }`}
-      title={file.path}
-    >
-      <div className="flex items-center gap-1.5 min-w-0 flex-1 truncate">
-        {/* File Checkbox */}
-        <div onClick={(e) => e.stopPropagation()} className="flex items-center shrink-0">
-          <Checkbox checked={isStaged} onChange={() => toggleStageFile(file.path)} />
-        </div>
-
-        {/* Dynamic File Type Icon */}
-        {getFileIcon(node.name)}
-
-        {/* File Name */}
-        <span className="truncate block font-mono text-[11px] leading-tight text-text-primary">
-          {node.name}
-        </span>
-      </div>
-
-      {/* Status Badge (M, A, D, R) */}
-      {getStatusBadge(file.status)}
-    </div>
-  );
-});
+FileTreeNode.displayName = 'FileTreeNode';

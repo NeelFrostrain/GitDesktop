@@ -208,8 +208,28 @@ const RemoteNotFoundModal = lazy(() =>
     default: m.RemoteNotFoundModal,
   }))
 );
+const MissingRepoModal = lazy(() =>
+  import('./components/modals/MissingRepoModal').then((m) => ({
+    default: m.MissingRepoModal,
+  }))
+);
 const AiAgentPanel = lazy(() =>
   import('./features/ai-agent').then((m) => ({ default: m.AiAgentPanel }))
+);
+const OnboardingScreen = lazy(() =>
+  import('./components/onboarding/OnboardingScreen').then((m) => ({
+    default: m.OnboardingScreen,
+  }))
+);
+const TaskManagerModal = lazy(() =>
+  import('./features/task-manager').then((m) => ({
+    default: m.TaskManagerModal,
+  }))
+);
+const FloatingTaskWidget = lazy(() =>
+  import('./features/task-manager').then((m) => ({
+    default: m.FloatingTaskWidget,
+  }))
 );
 
 /**
@@ -232,12 +252,25 @@ export const App: React.FC = () => {
     setEditingRelease,
     isCreateTagModalOpen,
     setIsCreateTagModalOpen,
+    tagModalTargetCommitSha,
+    setTagModalTargetCommitSha,
   } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    try {
+      return localStorage.getItem('app_onboarded') !== 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
-    // Consolidated startup: load accounts and repos concurrently in one shot
+    // Consolidated startup: load settings, accounts and repos concurrently in one shot
+    useSettingsStore
+      .getState()
+      .loadSettings()
+      .catch(() => {});
     useAccountServicesStore
       .getState()
       .loadAccounts()
@@ -369,6 +402,17 @@ export const App: React.FC = () => {
       if (isDisposed || isSyncing) return;
       isSyncing = true;
       try {
+        // Fast path validation check on active repository
+        const validation = await GitService.validateRepoPath(activeRepoPath);
+        if (validation && validation.is_valid === false && !isDisposed) {
+          useGitStore.getState().setIsMissingRepoModalOpen(
+            true,
+            activeRepoPath,
+            validation.error_message || 'Active repository folder or .git structure is missing'
+          );
+          return;
+        }
+
         const res = await GitService.getRepoStatus(activeRepoPath);
         if (!isDisposed) {
           setStatus(res);
@@ -433,10 +477,40 @@ export const App: React.FC = () => {
     };
   }, [activeRepoPath, setStatus, setBranches, setTags]);
 
+  // Window focus listener for Home dashboard: re-validates known repositories
+  useEffect(() => {
+    const handleHomeFocus = () => {
+      if (currentNavView === 'home') {
+        useRepoStore.getState().loadRepos().catch(() => {});
+      }
+    };
+
+    window.addEventListener('focus', handleHomeFocus);
+    const appWindow = getCurrentWindow();
+    let unlistenHomeFocus: (() => void) | undefined;
+    appWindow
+      .onFocusChanged(({ payload: focused }) => {
+        if (focused && currentNavView === 'home') {
+          useRepoStore.getState().loadRepos().catch(() => {});
+        }
+      })
+      .then((fn) => {
+        unlistenHomeFocus = fn;
+      });
+
+    return () => {
+      window.removeEventListener('focus', handleHomeFocus);
+      if (unlistenHomeFocus) unlistenHomeFocus();
+    };
+  }, [currentNavView]);
+
   // Global shortcuts: Ctrl+K / Ctrl+P (Command Palette), Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'p' || e.key === 'P')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'k' || e.key === 'K' || e.key === 'p' || e.key === 'P')
+      ) {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       } else if ((e.ctrlKey || e.metaKey) && e.key === '`') {
@@ -629,7 +703,11 @@ export const App: React.FC = () => {
           <RewriteHistoryModal />
           <CreateTagModal
             isOpen={isCreateTagModalOpen}
-            onClose={() => setIsCreateTagModalOpen(false)}
+            targetCommitSha={tagModalTargetCommitSha}
+            onClose={() => {
+              setIsCreateTagModalOpen(false);
+              setTagModalTargetCommitSha(null);
+            }}
           />
           <CreateReleaseModal
             isOpen={isCreateReleaseModalOpen}
@@ -651,10 +729,17 @@ export const App: React.FC = () => {
           <AccountServicesModal />
           <PublishRepoModal />
           <RemoteNotFoundModal />
+          <MissingRepoModal />
           <CommandPaletteModal
             isOpen={isCommandPaletteOpen}
             onClose={() => setIsCommandPaletteOpen(false)}
           />
+          <OnboardingScreen
+            isOpen={isOnboardingOpen}
+            onComplete={() => setIsOnboardingOpen(false)}
+          />
+          <TaskManagerModal />
+          <FloatingTaskWidget />
         </Suspense>
 
         {/* Global Toast Notifications */}

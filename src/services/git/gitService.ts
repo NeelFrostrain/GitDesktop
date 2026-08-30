@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { RepoEntry, RepoValidationResult } from '../../types/home';
 import {
   RepoStatus,
   FileStatus,
@@ -635,5 +636,30 @@ export class GitService {
    */
   static async unlockLfsFile(repoPath: string, path: string, force = false): Promise<void> {
     return invoke<void>('unlock_lfs_file', { repoPath, path, force });
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /* Repository Path Validation & Registry Management                            */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Validates if a directory exists and has a valid .git repository.
+   */
+  static async validateRepoPath(path: string): Promise<RepoValidationResult> {
+    return invoke<RepoValidationResult>('validate_repo_path_cmd', { path });
+  }
+
+  /**
+   * Relocates an existing registered repository to a new filesystem path.
+   */
+  static async relocateRepo(oldPath: string, newPath: string): Promise<RepoEntry> {
+    return invoke<RepoEntry>('relocate_repo_cmd', { oldPath, newPath });
+  }
+
+  /**
+   * Scans all known repositories in registry and removes ones whose paths/git are invalid.
+   */
+  static async removeInvalidRepos(): Promise<string[]> {
+    return invoke<string[]>('remove_invalid_repos_cmd');
   }
 }

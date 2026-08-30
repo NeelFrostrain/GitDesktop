@@ -364,7 +364,8 @@ const THEME_PRESETS: Record<ThemePresetId, ThemeDefinition> = {
     id: 'codex-graphite',
     name: 'Codex Graphite',
     isDark: true,
-    description: 'Near-black graphite workspace with quiet gray hierarchy and a cool blue focus accent',
+    description:
+      'Near-black graphite workspace with quiet gray hierarchy and a cool blue focus accent',
     variables: {
       '--surface': '#161616',
       '--surface-subtle': '#101010',

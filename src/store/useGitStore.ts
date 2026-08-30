@@ -19,6 +19,8 @@ import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
 import { avatarCache } from '../services/accounts/avatarCacheService';
+import { RepoCacheService } from '../services/git/repoCacheService';
+import { useTaskStore } from '../features/task-manager';
 
 /**
  * Top-level application navigation views.
@@ -130,6 +132,8 @@ export interface GitState {
   setMergeRequestModalTab: (tab: 'create' | 'list' | 'edit') => void;
   openMergeRequestModal: (tab?: 'create' | 'list' | 'edit', prId?: string | null) => void;
   isWorktreeModalOpen: boolean;
+  worktreeModalInitialBranch: string | null;
+  openWorktreeModal: (branch?: string | null) => void;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
   isBlameModalOpen: boolean;
@@ -139,6 +143,7 @@ export interface GitState {
   isConfigModalOpen: boolean;
   isRewriteModalOpen: boolean;
   isCreateTagModalOpen: boolean;
+  tagModalTargetCommitSha: string | null;
   isCreateReleaseModalOpen: boolean;
   editingRelease: ReleaseInfo | null;
   pendingHistoryOp: HistoryOperation | null;
@@ -194,7 +199,13 @@ export interface GitState {
   setActiveTab: (tab: 'changes' | 'history') => void;
   setDiffViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   setCurrentNavView: (view: NavView) => void;
+  repoSyncCounter: number;
+  reloadActiveRepo: (full?: boolean) => Promise<void>;
 
+  isMissingRepoModalOpen: boolean;
+  missingRepoPath: string | null;
+  missingRepoReason: string | null;
+  setIsMissingRepoModalOpen: (open: boolean, path?: string | null, reason?: string | null) => void;
   setIsRepoModalOpen: (open: boolean) => void;
   setIsCreateRepoModalOpen: (open: boolean) => void;
   isPublishRepoModalOpen: boolean;
@@ -215,6 +226,7 @@ export interface GitState {
   setIsConfigModalOpen: (open: boolean) => void;
   setIsRewriteModalOpen: (open: boolean) => void;
   setIsCreateTagModalOpen: (open: boolean) => void;
+  setTagModalTargetCommitSha: (sha: string | null) => void;
   setIsCreateReleaseModalOpen: (open: boolean) => void;
   setEditingRelease: (release: ReleaseInfo | null) => void;
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
@@ -270,6 +282,15 @@ export const useGitStore = create<GitState>((set, get) => ({
   diffViewMode: 'unified',
   currentNavView: 'home',
 
+  isMissingRepoModalOpen: false,
+  missingRepoPath: null,
+  missingRepoReason: null,
+  setIsMissingRepoModalOpen: (open, path = null, reason = null) =>
+    set({
+      isMissingRepoModalOpen: open,
+      missingRepoPath: open ? (path ?? get().activeRepoPath) : null,
+      missingRepoReason: open ? reason : null,
+    }),
   isRepoModalOpen: false,
   isCreateRepoModalOpen: false,
   isPublishRepoModalOpen: false,
@@ -280,6 +301,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   selectedMergeRequestId: null,
   mergeRequestModalTab: 'create',
   isWorktreeModalOpen: false,
+  worktreeModalInitialBranch: null,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
   isBlameModalOpen: false,
@@ -289,6 +311,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   isConfigModalOpen: false,
   isRewriteModalOpen: false,
   isCreateTagModalOpen: false,
+  tagModalTargetCommitSha: null,
   isCreateReleaseModalOpen: false,
   editingRelease: null,
   pendingHistoryOp: null,
@@ -301,6 +324,47 @@ export const useGitStore = create<GitState>((set, get) => ({
   isPulling: false,
   lastFetchedTimestamp: null,
   error: null,
+  repoSyncCounter: 0,
+
+  reloadActiveRepo: async (full = false) => {
+    const { activeRepoPath } = get();
+    if (!activeRepoPath) return;
+
+    try {
+      if (full) {
+        await GitService.fetchRemote(activeRepoPath).catch(() => {});
+      }
+
+      const res = await GitService.getRepoStatus(activeRepoPath);
+      get().setStatus(res);
+
+      const [branches, tags, submodules] = await Promise.all([
+        GitService.listBranches(activeRepoPath).catch(() => []),
+        GitService.listTags(activeRepoPath).catch(() => []),
+        GitService.listSubmodules(activeRepoPath).catch(() => []),
+      ]);
+
+      if (branches && branches.length > 0) get().setBranches(branches);
+      if (tags) get().setTags(tags);
+      if (submodules) get().setSubmodules(submodules);
+
+      await get().loadBranchStashes();
+
+      // Trigger reactive components (History, Graph, Diff)
+      set((s) => ({ repoSyncCounter: s.repoSyncCounter + 1 }));
+
+      // Adjust selectedFile if no longer valid
+      const currentFiles = res.files || [];
+      const currentSelected = get().selectedFile;
+      if (currentSelected && !currentFiles.some((f) => f.path === currentSelected)) {
+        set({ selectedFile: currentFiles.length > 0 ? currentFiles[0].path : null });
+      }
+    } catch (err) {
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Failed to sync repo state: ${getErrorMessage(err)}`);
+    }
+  },
 
   setActiveRepoPath: (path) => {
     if (path) {
@@ -331,6 +395,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       selectedStashFile: null,
       currentNavView: path ? 'workspace' : 'home',
     });
+
+    if (path) {
+      RepoCacheService.precacheRepository(path).catch(() => {});
+    }
   },
 
   addRecentRepo: (path) => {
@@ -563,6 +631,15 @@ export const useGitStore = create<GitState>((set, get) => ({
     const { activeRepoPath, currentBranchStash, setStatus } = get();
     if (!activeRepoPath || !currentBranchStash) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Restore stash on ${currentBranchStash.branch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
       await GitService.popStash(activeRepoPath, currentBranchStash.index);
       useLogStore
@@ -574,8 +651,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       get()
         .loadBranchStashes()
         .catch(() => {});
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, msg);
       useLogStore.getState().addLog('error', 'Git', `Failed to restore stash: ${msg}`);
       throw error;
     }
@@ -585,6 +664,15 @@ export const useGitStore = create<GitState>((set, get) => ({
     const { activeRepoPath, currentBranchStash } = get();
     if (!activeRepoPath || !currentBranchStash) return;
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'stash',
+      title: `Discard stash on ${currentBranchStash.branch}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
       await GitService.dropStash(activeRepoPath, currentBranchStash.index);
       useLogStore.getState().addLog('info', 'Git', `Discarded stashed changes`);
@@ -592,8 +680,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       get()
         .loadBranchStashes()
         .catch(() => {});
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, msg);
       useLogStore.getState().addLog('error', 'Git', `Failed to discard stash: ${msg}`);
       throw error;
     }
@@ -774,7 +864,16 @@ export const useGitStore = create<GitState>((set, get) => ({
       mergeRequestModalTab: tab,
       selectedMergeRequestId: prId,
     }),
-  setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
+  setIsWorktreeModalOpen: (isWorktreeModalOpen) =>
+    set({
+      isWorktreeModalOpen,
+      worktreeModalInitialBranch: isWorktreeModalOpen ? get().worktreeModalInitialBranch : null,
+    }),
+  openWorktreeModal: (branch = null) =>
+    set({
+      isWorktreeModalOpen: true,
+      worktreeModalInitialBranch: branch || null,
+    }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),
   setIsBlameModalOpen: (isBlameModalOpen) => set({ isBlameModalOpen }),
@@ -785,6 +884,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
   setIsCreateTagModalOpen: (isCreateTagModalOpen) => set({ isCreateTagModalOpen }),
+  setTagModalTargetCommitSha: (tagModalTargetCommitSha) => set({ tagModalTargetCommitSha }),
   setIsCreateReleaseModalOpen: (isCreateReleaseModalOpen) => set({ isCreateReleaseModalOpen }),
   setEditingRelease: (editingRelease) => set({ editingRelease }),
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),

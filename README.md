@@ -242,10 +242,10 @@ src-tauri/src/git/
    ```bash
    git clone <repo-url>
    cd gitlab-desktop
-   
+
    # Using Bun (recommended)
    bun install
-   
+
    # OR using npm
    npm install
    ```
@@ -255,7 +255,7 @@ src-tauri/src/git/
    ```bash
    # Frontend + Tauri dev environment (hot reload)
    bun run dev:app
-   
+
    # OR individual commands:
    bun run dev          # Vite dev server only (port 1420)
    bun run tauri dev    # Tauri desktop app with Rust backend
@@ -280,17 +280,17 @@ src-tauri/src/git/
 
 ## Development Scripts
 
-| Script              | Command                   | Purpose                                      |
-| :------------------ | :------------------------ | :------------------------------------------- |
-| `dev`               | `vite`                    | Start Vite dev server (React frontend only) |
-| `dev:app`           | `tauri dev`               | Launch Tauri desktop app with hot reload    |
-| `build`             | `tsc && vite build`       | Production build (frontend bundle)          |
-| `build:app`         | `tauri build`             | Build desktop binary & installer            |
-| `typecheck`         | `tsc --noEmit`            | Check TypeScript without emitting           |
-| `test`              | `vitest run`              | Run all unit tests once                      |
-| `lint`              | `eslint --cache .`        | Lint TypeScript & React files                |
-| `format`            | `prettier --write .`      | Format code with Prettier                   |
-| `preview`           | `vite preview`            | Preview production build locally             |
+| Script      | Command              | Purpose                                     |
+| :---------- | :------------------- | :------------------------------------------ |
+| `dev`       | `vite`               | Start Vite dev server (React frontend only) |
+| `dev:app`   | `tauri dev`          | Launch Tauri desktop app with hot reload    |
+| `build`     | `tsc && vite build`  | Production build (frontend bundle)          |
+| `build:app` | `tauri build`        | Build desktop binary & installer            |
+| `typecheck` | `tsc --noEmit`       | Check TypeScript without emitting           |
+| `test`      | `vitest run`         | Run all unit tests once                     |
+| `lint`      | `eslint --cache .`   | Lint TypeScript & React files               |
+| `format`    | `prettier --write .` | Format code with Prettier                   |
+| `preview`   | `vite preview`       | Preview production build locally            |
 
 ### Quick Start Examples
 
@@ -322,6 +322,7 @@ The project uses **ESLint v9** with TypeScript, React, and React Hooks support.
 - **Run**: `bun run lint` or `bun run lint --fix`
 
 **Key rules:**
+
 - ✅ Disables `react/react-in-jsx-scope` (React 17+ doesn't require it)
 - ✅ Warns on unused props (allow `_` prefix for intentional omissions)
 - ✅ Enforces React Hooks rules

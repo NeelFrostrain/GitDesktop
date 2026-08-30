@@ -3,6 +3,7 @@ import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
 import { GitService } from '../services/git/gitService';
 import { toAppError } from '../shared/utils/errorUtils';
+import { useTaskStore } from '../features/task-manager';
 
 /**
  * Hook providing form state, identity checks, and execution dispatch for creating Git commits.
@@ -58,6 +59,20 @@ export function useCommitForm() {
     }
 
     setIsCommitting(true);
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'commit',
+      title: `Commit: ${commitSummary}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Staging & Committing',
+      percent: 45,
+      detail: `Committing changes to branch...`,
+    });
 
     try {
       if (stagedFiles.length > 0) {
@@ -78,7 +93,16 @@ export function useCommitForm() {
 
       const newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Completed',
+        percent: 100,
+        detail: `Committed: ${commitSummary}`,
+      });
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = toAppError(error, 'GIT_ERROR').message;
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'GIT_ERROR'));
     } finally {
       setIsCommitting(false);

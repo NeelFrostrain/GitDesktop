@@ -39,7 +39,7 @@ export const CleanWorkingTreeView: React.FC = () => {
           <button
             type="button"
             onClick={() => setActiveTab('history')}
-            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 shrink-0"
+            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
           >
             <History className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">View History</span>
@@ -47,7 +47,7 @@ export const CleanWorkingTreeView: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenVSCode}
-            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 shrink-0"
+            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
           >
             <Code2 className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">Open in VS Code</span>
@@ -55,7 +55,7 @@ export const CleanWorkingTreeView: React.FC = () => {
           <button
             type="button"
             onClick={handleOpenTerminal}
-            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 shrink-0"
+            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
           >
             <Terminal className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">Terminal</span>
@@ -63,7 +63,7 @@ export const CleanWorkingTreeView: React.FC = () => {
           <button
             type="button"
             onClick={handleShowExplorer}
-            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95 shrink-0"
+            className="px-2.5 py-1.5 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-muted hover:text-text-primary flex items-center justify-center gap-1.5 transition cursor-pointer shadow-xs shrink-0"
           >
             <FolderOpen className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">Show in Explorer</span>

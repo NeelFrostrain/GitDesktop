@@ -70,6 +70,7 @@ export const GitGraphView: React.FC = () => {
     selectedCommitSha,
     setSelectedCommitSha,
     setCurrentNavView,
+    repoSyncCounter,
   } = useGitStore();
 
   const [commits, setCommits] = useState<CommitInfo[]>([]);
@@ -165,7 +166,7 @@ export const GitGraphView: React.FC = () => {
 
   useEffect(() => {
     loadInitialCommits();
-  }, [loadInitialCommits]);
+  }, [loadInitialCommits, status?.current_branch, repoSyncCounter]);
 
   // Copy SHA to clipboard
   const handleCopySha = (sha: string, e: React.MouseEvent) => {
@@ -361,8 +362,10 @@ export const GitGraphView: React.FC = () => {
     [filteredCommits, hasUncommittedRow, rowVirtualizer, setSelectedCommitSha]
   );
 
-  // Dynamic onScroll listener
+  // Dynamic onScroll listener with hover card dismiss optimization
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (hoveredCommit) setHoveredCommit(null);
+    if (contextMenu) setContextMenu(null);
     if (!hasMore || isLoadingMore || isLoadingInitial) return;
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - scrollTop - clientHeight < 350) {
@@ -418,9 +421,9 @@ export const GitGraphView: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full min-h-0 bg-base-0 select-none overflow-hidden font-sans">
       {/* Top Header Control Toolbar */}
-      <div className="h-10 px-1.5 bg-base-0 border-b border-border flex items-center justify-between gap-3 shrink-0 text-xs select-none z-10">
+      <div className="h-10 px-1.5 bg-base-0 border-b border-border flex items-center justify-between gap-1.5 shrink-0 text-xs select-none z-10">
         {/* Left: Filter Controls */}
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-0.5 min-w-0 flex-1 overflow-hidden">
           {/* Branch Dropdown */}
           <Dropdown<string>
             options={branchOptions}
@@ -477,7 +480,7 @@ export const GitGraphView: React.FC = () => {
         </div>
 
         {/* Right: Search, Commit Counter, Refresh & Close */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <div className="relative flex items-center">
             <Search className="w-3 h-3 text-text-muted absolute left-2 pointer-events-none" />
             <input
@@ -513,13 +516,13 @@ export const GitGraphView: React.FC = () => {
             <RefreshCw className={`w-3.5 h-3.5 ${isLoadingInitial ? 'animate-spin' : ''}`} />
           </button>
 
-          <div className="h-4 w-px bg-border/80 mx-0.5" />
+          {/* <div className="h-4 w-px bg-border/80 mx-0.5" /> */}
 
           {/* Close Graph View Button */}
           <button
             type="button"
             onClick={() => setCurrentNavView('history')}
-            className="h-7 px-2.5 bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
+            className="h-7 px-1.5 bg-base-1 hover:bg-base-2 text-text-secondary hover:text-text-primary border border-border rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0"
             title="Close Graph View (Esc)"
           >
             <X className="w-3.5 h-3.5 text-text-muted" />

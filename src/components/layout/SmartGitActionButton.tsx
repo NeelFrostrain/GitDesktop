@@ -36,16 +36,16 @@ function getButtonConfig(
 ): ButtonConfig {
   const disabledBase = 'opacity-60 cursor-not-allowed';
   const primaryCls =
-    'h-6.5 px-2 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
+    'h-6.5 px-2 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer select-none relative overflow-hidden';
   const secondaryCls =
-    'h-6.5 px-2 rounded-xs bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer active:scale-95 select-none relative overflow-hidden';
+    'h-6.5 px-2 rounded-xs bg-info hover:bg-blue-600 active:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 transition shadow-2xs cursor-pointer select-none relative overflow-hidden';
   const mutedCls =
     'h-6.5 px-2 rounded-xs text-text-muted text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
   const warnCls =
     'h-6.5 px-2 rounded-xs bg-warning text-black text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-default select-none';
 
   const neutralCls =
-    'h-6.5 px-2 rounded-xs hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition cursor-pointer active:scale-95 select-none group relative overflow-hidden';
+    'h-6.5 px-2 rounded-xs hover:bg-base-2 active:bg-base-3 text-text-secondary hover:text-text-primary text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 transition cursor-pointer select-none group relative overflow-hidden';
 
   if (!hasRepo) {
     return {
@@ -66,8 +66,8 @@ function getButtonConfig(
           ? 'Fetching...'
           : 'Working...';
     const busyVariantCls = isPulling
-      ? `${secondaryCls} opacity-90 cursor-wait active:scale-100`
-      : `${primaryCls} opacity-90 cursor-wait active:scale-100`;
+      ? `${secondaryCls} opacity-90 cursor-wait`
+      : `${primaryCls} opacity-90 cursor-wait`;
 
     return {
       icon: <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />,

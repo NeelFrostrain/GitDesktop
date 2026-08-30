@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GitCommit, GitPullRequest, AlertCircle, Eye, Activity } from 'lucide-react';
+import { GitCommit, GitPullRequest, AlertCircle, Eye } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 
 export const ContributionActivityRadar: React.FC = () => {
@@ -39,7 +39,6 @@ export const ContributionActivityRadar: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-2">
         <div className="flex items-center gap-1.5">
-          <Activity className="w-3.5 h-3.5 text-emerald-400" />
           <span className="text-xs font-semibold text-text-primary tracking-tight">
             Activity Overview
           </span>

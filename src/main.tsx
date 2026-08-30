@@ -30,9 +30,21 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   </QueryClientProvider>
 );
 
-// Show the window after React's first paint.
-// The window starts hidden (visible: false in tauri.conf.json) to prevent
-// the black-screen flash during startup. Requires core:window:allow-show capability.
-requestAnimationFrame(() => {
-  getCurrentWindow().show().catch(console.error);
+// Ensure window is shown, restored to screen bounds, and focused
+requestAnimationFrame(async () => {
+  try {
+    const win = getCurrentWindow();
+    await win.show();
+    await win.unminimize();
+    const isMax = await win.isMaximized().catch(() => false);
+    if (!isMax) {
+      const pos = await win.outerPosition().catch(() => null);
+      if (pos && (pos.x < -200 || pos.y < -200 || pos.x > 8000 || pos.y > 8000)) {
+        await win.center().catch(() => {});
+      }
+    }
+    await win.setFocus().catch(() => {});
+  } catch (err) {
+    console.error('Window recovery error:', err);
+  }
 });

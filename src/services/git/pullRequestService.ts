@@ -75,6 +75,8 @@ export class PullRequestService {
         labels,
         milestone,
         is_draft: isDraft,
+        repo_full_name: (mr.repo_full_name as string) || undefined,
+        total_count: (mr.total_count as number) || undefined,
       };
     });
   }

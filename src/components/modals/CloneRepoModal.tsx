@@ -1,26 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  Download,
-  FolderOpen,
-  Loader2,
-  AlertCircle,
-  Shield,
-  KeyRound,
-  User,
-  Eye,
-  EyeOff,
-  GitBranch,
-  Layers,
-  Folder,
-  Globe,
-  Lock,
-  Check,
-  FolderGit2,
-  ShieldCheck,
-} from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
+import { X, Loader2, AlertCircle, Eye, EyeOff, Check, Clock } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore, openRepo } from '../../features/repos';
@@ -32,6 +14,16 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { RemoteAccountReposTab } from './repo/RemoteAccountReposTab';
+import { useAccountServicesStore } from '../../features/account-services';
+import { useTaskStore, formatEta } from '../../features/task-manager';
+import { useToastStore } from '../../store/useToastStore';
+
+export interface CloneProgressPayload {
+  stage: string;
+  percent: number;
+  detail: string;
+  message: string;
+}
 
 type CloneModalTab = 'remote' | 'url';
 type AuthMode = 'saved' | 'credentials' | 'public';
@@ -70,9 +62,15 @@ export const CloneRepoModal: React.FC = () => {
     setActiveRepoPath,
     setStatus,
     setError,
-    accounts,
   } = useGitStore();
   const addRepo = useRepoStore((s) => s.addRepo);
+  const {
+    accounts: serviceAccounts,
+    activeAccount,
+    loadAccounts,
+    setActiveAccount: setActiveServiceAccount,
+    openModalWithTab,
+  } = useAccountServicesStore();
 
   const [activeMainTab, setActiveMainTab] = useState<CloneModalTab>('remote');
   const [url, setUrl] = useState('');
@@ -86,7 +84,7 @@ export const CloneRepoModal: React.FC = () => {
 
   // Auth State
   const [authMode, setAuthMode] = useState<AuthMode>(() =>
-    accounts.length > 0 ? 'saved' : 'credentials'
+    serviceAccounts.length > 0 ? 'saved' : 'credentials'
   );
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [username, setUsername] = useState('');
@@ -103,7 +101,8 @@ export const CloneRepoModal: React.FC = () => {
 
   // Execution state
   const [isCloning, setIsCloning] = useState(false);
-  const [cloneProgressMessage, setCloneProgressMessage] = useState('');
+  const [cloneStartedAt, setCloneStartedAt] = useState<number>(0);
+  const [cloneProgress, setCloneProgress] = useState<CloneProgressPayload | null>(null);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const urlInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +113,31 @@ export const CloneRepoModal: React.FC = () => {
     isDirty,
     onClose: () => setIsCloneRepoModalOpen(false),
   });
+
+  // Listen to backend real-time git clone progress events
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<CloneProgressPayload>('git:clone:progress', (event) => {
+          setCloneProgress(event.payload);
+        });
+      } catch (err) {
+        console.warn('Failed to listen to git clone progress:', err);
+      }
+    };
+    setupListener();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
+
+  // Ensure accounts are loaded on modal open
+  useEffect(() => {
+    if (isCloneRepoModalOpen) {
+      loadAccounts().catch(() => {});
+    }
+  }, [isCloneRepoModalOpen, loadAccounts]);
 
   // Initialize on modal open
   useEffect(() => {
@@ -127,10 +151,11 @@ export const CloneRepoModal: React.FC = () => {
       }
       setLocalError(null);
       setIsCloning(false);
-      setCloneProgressMessage('');
-      if (accounts.length > 0) {
+      setCloneProgress(null);
+      if (serviceAccounts.length > 0) {
         setAuthMode('saved');
-        setSelectedAccountId(accounts[0].id || accounts[0].username);
+        const defaultAcc = activeAccount || serviceAccounts[0];
+        setSelectedAccountId(defaultAcc ? defaultAcc.id : '');
       } else {
         setAuthMode('credentials');
       }
@@ -141,7 +166,7 @@ export const CloneRepoModal: React.FC = () => {
         }, 60);
       }
     }
-  }, [isCloneRepoModalOpen, cloneModalInitialUrl, accounts]);
+  }, [isCloneRepoModalOpen, cloneModalInitialUrl, serviceAccounts.length]);
 
   // Auto-update folder name when URL changes (unless user manually customized it)
   const handleUrlChange = (newUrl: string) => {
@@ -152,27 +177,22 @@ export const CloneRepoModal: React.FC = () => {
   const detectedProvider = useMemo(() => detectProviderFromUrl(url), [url]);
 
   const authTabs = useMemo<TabItem<AuthMode>[]>(() => {
-    const items: TabItem<AuthMode>[] = [];
-    if (accounts.length > 0) {
-      items.push({
+    return [
+      {
         id: 'saved',
         label: 'Saved Account',
-        badge: accounts.length,
-        icon: <Shield className="w-3.5 h-3.5" />,
-      });
-    }
-    items.push({
-      id: 'credentials',
-      label: 'Username & Password / Token',
-      icon: <KeyRound className="w-3.5 h-3.5" />,
-    });
-    items.push({
-      id: 'public',
-      label: 'Public / Anonymous',
-      icon: <Globe className="w-3.5 h-3.5" />,
-    });
-    return items;
-  }, [accounts.length]);
+        badge: serviceAccounts.length > 0 ? serviceAccounts.length : undefined,
+      },
+      {
+        id: 'credentials',
+        label: 'Username & Token',
+      },
+      {
+        id: 'public',
+        label: 'Public / Anonymous',
+      },
+    ];
+  }, [serviceAccounts.length]);
 
   const repoName = useMemo(() => extractRepoNameFromUrl(url) || 'cloned-repo', [url]);
   const fullDestinationPath = parentPath
@@ -197,13 +217,60 @@ export const CloneRepoModal: React.FC = () => {
     e.preventDefault();
     if (!url.trim() || isCloning) return;
 
+    // Check if repository already exists locally
+    try {
+      const existingStatus = await GitService.getRepoStatus(fullDestinationPath);
+      if (existingStatus) {
+        await addRepo(fullDestinationPath);
+        await openRepo(fullDestinationPath);
+        setActiveRepoPath(fullDestinationPath);
+        setStatus(existingStatus);
+        useToastStore.getState().showToast({
+          type: 'info',
+          title: 'Repository Opened',
+          message: `'${repoName}' already exists locally at '${fullDestinationPath}'. Opened repository!`,
+        });
+        useLogStore
+          .getState()
+          .addLog('info', 'Git', `Repository '${repoName}' already exists at '${fullDestinationPath}'. Opened existing repository.`);
+        setIsCloneRepoModalOpen(false);
+        return;
+      }
+    } catch {
+      // Folder is not an existing Git repo, proceed to clone
+    }
+
     setIsCloning(true);
+    setCloneStartedAt(Date.now());
     setLocalError(null);
-    setCloneProgressMessage(`Cloning repository into ${repoName}...`);
+    setCloneProgress({
+      stage: 'Connecting',
+      percent: 2,
+      detail: `Cloning into ${repoName}...`,
+      message: `Cloning into ${repoName}...`,
+    });
+
+    const taskId = useTaskStore.getState().addTask({
+      type: 'clone',
+      title: `Cloning ${repoName}`,
+      description: `Cloning into ${fullDestinationPath}`,
+      repoName,
+      remoteUrl: url,
+      localPath: fullDestinationPath,
+    });
 
     try {
+      // If Saved Account auth mode, ensure the selected account is active in backend
+      if (authMode === 'saved' && selectedAccountId) {
+        try {
+          await setActiveServiceAccount(selectedAccountId);
+        } catch (err) {
+          console.warn('Failed to switch active account before clone:', err);
+        }
+      }
+
       // Format clone URL with credentials if specified in Credentials mode
-      let effectiveCloneUrl = url.trim();
+      let effectiveCloneUrl = url.trim().replace(/\/+$/, '');
 
       if (authMode === 'credentials' && username.trim() && passwordOrToken.trim()) {
         const cleanUser = encodeURIComponent(username.trim());
@@ -222,6 +289,14 @@ export const CloneRepoModal: React.FC = () => {
       await invoke('clone_repository', {
         remoteUrl: effectiveCloneUrl,
         localPath: fullDestinationPath,
+      });
+
+      useTaskStore.getState().completeTask(taskId);
+
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Clone Completed',
+        message: `Successfully cloned '${repoName}' to '${fullDestinationPath}'`,
       });
 
       useLogStore
@@ -259,11 +334,19 @@ export const CloneRepoModal: React.FC = () => {
         formattedError = `Target directory '${fullDestinationPath}' already exists and is not empty. Please select another folder name or destination path.`;
       }
 
+      useTaskStore.getState().failTask(taskId, formattedError);
+
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Clone Failed',
+        message: formattedError,
+      });
+
       setLocalError(formattedError);
       setError(toAppError(err, 'CLONE_ERROR'));
     } finally {
       setIsCloning(false);
-      setCloneProgressMessage('');
+      setCloneProgress(null);
     }
   };
 
@@ -322,12 +405,10 @@ export const CloneRepoModal: React.FC = () => {
               {
                 id: 'remote',
                 label: 'Your Repositories',
-                icon: <FolderGit2 className="w-3.5 h-3.5 text-commito-coral" />,
               },
               {
                 id: 'url',
                 label: 'Clone by URL',
-                icon: <Globe className="w-3.5 h-3.5" />,
               },
             ]}
             activeTab={activeMainTab}
@@ -375,7 +456,7 @@ export const CloneRepoModal: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="relative">
+                <div>
                   <input
                     ref={urlInputRef}
                     type="text"
@@ -383,9 +464,8 @@ export const CloneRepoModal: React.FC = () => {
                     value={url}
                     onChange={(e) => handleUrlChange(e.target.value)}
                     placeholder="https://gitlab.com/owner/project.git or git@github.com:owner/project.git"
-                    className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                   />
-                  <Globe className="w-4 h-4 text-text-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -408,17 +488,15 @@ export const CloneRepoModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleSelectParentFolder}
-                    className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                    className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center justify-center cursor-pointer shrink-0"
                     title="Browse local directory"
                   >
-                    <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
                     <span>Choose...</span>
                   </button>
                 </div>
 
                 {/* Destination Path Preview Card */}
-                <div className="px-3 py-1.5 bg-base-1/70 border border-border/70 rounded-sm flex items-center gap-2 text-[11.5px] text-text-muted font-mono truncate">
-                  <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                <div className="px-3 py-1.5 bg-base-1/70 border border-border/70 rounded-sm flex items-center gap-1.5 text-[11.5px] text-text-muted font-mono truncate">
                   <span className="text-text-muted shrink-0">Will clone to:</span>
                   <span
                     className="text-text-secondary font-medium truncate"
@@ -432,8 +510,7 @@ export const CloneRepoModal: React.FC = () => {
               {/* 3. Authentication & Security Card */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-commito-coral" />
+                  <div className="text-xs font-semibold text-text-secondary">
                     <span>Authentication</span>
                   </div>
                 </div>
@@ -449,23 +526,59 @@ export const CloneRepoModal: React.FC = () => {
                 />
 
                 {/* Mode: Saved Account */}
-                {authMode === 'saved' && accounts.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-medium text-text-secondary">
-                      Connected Account
-                    </label>
-                    <Dropdown
-                      options={accounts.map((a) => ({
-                        value: a.id || a.username,
-                        label: `${a.username} (${a.provider === 'github' ? 'GitHub' : 'GitLab'})`,
-                      }))}
-                      value={selectedAccountId}
-                      onChange={setSelectedAccountId}
-                      className="w-full"
-                    />
-                    <p className="text-[11px] text-text-muted">
-                      Cloning will use the authenticated access token for this account.
-                    </p>
+                {authMode === 'saved' && (
+                  <div className="space-y-2 pt-1">
+                    {serviceAccounts.length > 0 ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-medium text-text-secondary">
+                            Connected Account
+                          </label>
+                          <span className="text-[11px] text-emerald-400 font-medium">
+                            ✓ Authenticated
+                          </span>
+                        </div>
+                        <Dropdown
+                          options={serviceAccounts.map((a) => {
+                            const cleanHandle = a.handle.replace(/^@/, '') || a.display_name;
+                            const provName =
+                              a.provider === 'github'
+                                ? 'GitHub'
+                                : a.provider === 'gitlab'
+                                ? 'GitLab'
+                                : a.provider === 'bitbucket'
+                                ? 'Bitbucket'
+                                : 'Custom';
+                            return {
+                              value: a.id,
+                              label: `${cleanHandle} (${provName})`,
+                            };
+                          })}
+                          value={selectedAccountId}
+                          onChange={setSelectedAccountId}
+                          className="w-full"
+                        />
+                        <p className="text-[11px] text-text-muted">
+                          Cloning will use the authenticated access token for this account.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="p-3.5 bg-base-1 border border-border rounded-sm text-center space-y-2">
+                        <p className="text-xs text-text-secondary">
+                          No connected accounts found.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCloneRepoModalOpen(false);
+                            openModalWithTab('add');
+                          }}
+                          className="h-7.5 px-3 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                        >
+                          Connect GitHub Account
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -476,10 +589,11 @@ export const CloneRepoModal: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* Username */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-text-muted" />
-                          <span>Username</span>
-                        </label>
+                        <div className="h-5 flex items-center justify-between">
+                          <label className="text-xs font-medium text-text-secondary">
+                            <span>Username</span>
+                          </label>
+                        </div>
                         <input
                           type="text"
                           value={username}
@@ -491,15 +605,14 @@ export const CloneRepoModal: React.FC = () => {
 
                       {/* Password / Personal Access Token */}
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                            <KeyRound className="w-3.5 h-3.5 text-text-muted" />
-                            <span>Password / Token</span>
+                        <div className="h-5 flex items-center justify-between">
+                          <label className="text-xs font-medium text-text-secondary">
+                            <span>Personal Access Token (PAT)</span>
                           </label>
                           <button
                             type="button"
                             onClick={() => setHas2FaEnabled(!has2FaEnabled)}
-                            className="text-[11px] text-commito-coral hover:underline cursor-pointer font-medium"
+                            className="text-[11px] text-commito-coral hover:underline cursor-pointer font-medium leading-none"
                           >
                             {has2FaEnabled ? 'Hide 2FA' : '2FA / MFA?'}
                           </button>
@@ -509,14 +622,14 @@ export const CloneRepoModal: React.FC = () => {
                             type={showPassword ? 'text' : 'password'}
                             value={passwordOrToken}
                             onChange={(e) => setPasswordOrToken(e.target.value)}
-                            placeholder="Password or Token (glpat-... / ghp_...)"
+                            placeholder="Personal Token (ghp_... / glpat-...)"
                             className="w-full h-8 pl-2.5 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-sans text-text-primary placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
                             className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary cursor-pointer p-0.5"
-                            title={showPassword ? 'Hide password' : 'Show password'}
+                            title={showPassword ? 'Hide token' : 'Show token'}
                           >
                             {showPassword ? (
                               <EyeOff className="w-3.5 h-3.5" />
@@ -528,11 +641,14 @@ export const CloneRepoModal: React.FC = () => {
                       </div>
                     </div>
 
+                    <p className="text-[11px] text-text-muted leading-tight">
+                      For GitHub, enter a <strong>Personal Access Token (PAT)</strong> with <code className="text-commito-coral font-mono">repo</code> permissions (classic <code className="font-mono">ghp_...</code> or fine-grained <code className="font-mono">github_pat_...</code>). Account passwords are not accepted by GitHub.
+                    </p>
+
                     {/* 2FA / MFA Verification Drawer */}
                     {has2FaEnabled && (
                       <div className="p-3 bg-base-2/80 border border-border rounded-sm space-y-2 animate-in fade-in duration-100">
-                        <div className="flex items-start gap-2 text-xs text-text-primary font-medium">
-                          <Lock className="w-3.5 h-3.5 text-commito-coral shrink-0 mt-0.5" />
+                        <div className="text-xs text-text-primary font-medium">
                           <div>
                             <p className="text-xs font-semibold text-text-primary">
                               Two-Factor Authentication (2FA)
@@ -572,29 +688,18 @@ export const CloneRepoModal: React.FC = () => {
                           : 'bg-base-1/50 border-border hover:bg-base-1'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                            saveCredentials
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-base-0 text-text-muted border border-border'
-                          }`}
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                          <span>Remember credentials in system keyring</span>
+                          {saveCredentials && (
+                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
+                              Saved
+                            </span>
+                          )}
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                            <span>Remember credentials in system keyring</span>
-                            {saveCredentials && (
-                              <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
-                                Saved
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-text-muted mt-1 leading-none">
-                            Securely persist username and token in OS credential vault
-                          </p>
-                        </div>
+                        <p className="text-[11px] text-text-muted mt-1 leading-none">
+                          Securely persist username and token in OS credential vault
+                        </p>
                       </div>
 
                       {/* Toggle Switch */}
@@ -630,8 +735,7 @@ export const CloneRepoModal: React.FC = () => {
               <div className="space-y-3">
                 {/* Branch / Tag Input */}
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                    <GitBranch className="w-3.5 h-3.5 text-text-muted" />
+                  <label className="text-xs font-medium text-text-secondary">
                     <span>
                       Branch / Tag{' '}
                       <span className="text-text-muted font-normal text-[11px]">(optional)</span>
@@ -646,7 +750,7 @@ export const CloneRepoModal: React.FC = () => {
                   />
                 </div>
 
-                {/* Toggle Options: Rich Cards */}
+                {/* Toggle Options: Clean Cards */}
                 <div className="space-y-2 pt-0.5">
                   {/* Option 1: Recurse Submodules */}
                   <div
@@ -660,29 +764,18 @@ export const CloneRepoModal: React.FC = () => {
                         : 'bg-base-1/50 border-border hover:bg-base-1'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                          recurseSubmodules
-                            ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                            : 'bg-base-0 text-text-muted border border-border'
-                        }`}
-                      >
-                        <FolderGit2 className="w-3.5 h-3.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                        <span>Recurse submodules</span>
+                        {recurseSubmodules && (
+                          <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
+                            Active
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                          <span>Recurse submodules</span>
-                          {recurseSubmodules && (
-                            <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-1 leading-none">
-                          Automatically initialize and clone all nested submodules
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-text-muted mt-1 leading-none">
+                        Automatically initialize and clone all nested submodules
+                      </p>
                     </div>
 
                     {/* Toggle Switch */}
@@ -713,29 +806,18 @@ export const CloneRepoModal: React.FC = () => {
                         : 'bg-base-1/50 border-border hover:bg-base-1'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                          isShallowClone
-                            ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                            : 'bg-base-0 text-text-muted border border-border'
-                        }`}
-                      >
-                        <Layers className="w-3.5 h-3.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                        <span>Shallow clone (--depth 1)</span>
+                        {isShallowClone && (
+                          <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
+                            Fast
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                          <span>Shallow clone (--depth 1)</span>
-                          {isShallowClone && (
-                            <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
-                              Fast
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-1 leading-none">
-                          Fetch only the latest commit without downloading full commit history
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-text-muted mt-1 leading-none">
+                        Fetch only the latest commit without downloading full commit history
+                      </p>
                     </div>
 
                     {/* Toggle Switch */}
@@ -755,17 +837,55 @@ export const CloneRepoModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Footer Actions */}
-            <div className="px-5 py-3 bg-base-1 border-t border-border flex items-center justify-between shrink-0">
-              <div className="text-xs text-text-muted truncate">
-                {cloneProgressMessage && (
-                  <span className="flex items-center gap-2 text-commito-coral font-medium animate-pulse">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
-                    <span className="truncate">{cloneProgressMessage}</span>
-                  </span>
+            {/* Footer Actions with Integrated Real-Time Progress */}
+            <div className="px-5 py-3.5 bg-base-1 border-t border-border flex items-center justify-between gap-4 shrink-0">
+              {/* Left Side: Idle hint OR Live Progress */}
+              <div className="flex-1 min-w-0 pr-2">
+                {isCloning ? (
+                  <div className="space-y-1.5 animate-in fade-in duration-100">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+                        <span className="font-semibold text-text-primary text-xs truncate">
+                          {cloneProgress?.stage || 'Cloning repository...'}
+                        </span>
+                        {cloneProgress?.detail && (
+                          <span className="text-[11px] text-text-muted font-mono truncate hidden sm:inline">
+                            ({cloneProgress.detail})
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {cloneStartedAt > 0 && cloneProgress && (
+                          <span className="text-[11px] text-text-muted font-mono flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5 opacity-70" />
+                            <span>{formatEta(cloneStartedAt, cloneProgress.percent) || 'Estimating...'}</span>
+                          </span>
+                        )}
+                        <span className="font-mono text-commito-coral font-bold text-xs shrink-0">
+                          {cloneProgress?.percent || 0}%
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Compact Sleek Progress Track */}
+                    <div className="w-full h-1.5 bg-base-2 rounded-full overflow-hidden border border-border/60 relative">
+                      <div
+                        className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
+                        style={{ width: `${Math.max(4, cloneProgress?.percent || 4)}%` }}
+                      >
+                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-[11.5px] text-text-muted truncate">
+                    Will clone to <span className="font-mono text-text-secondary">{fullDestinationPath}</span>
+                  </div>
                 )}
               </div>
 
+              {/* Right Side: Action Buttons */}
               <div className="flex items-center gap-2.5 shrink-0">
                 <button
                   type="button"
@@ -778,18 +898,15 @@ export const CloneRepoModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isCloning || !url.trim()}
-                  className="px-4.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98"
+                  className="px-4.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center justify-center transition shadow-xs cursor-pointer active:scale-98 min-w-[140px]"
                 >
                   {isCloning ? (
-                    <>
+                    <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>Cloning Repository...</span>
-                    </>
+                      <span>{cloneProgress?.percent ? `Cloning ${cloneProgress.percent}%` : 'Cloning...'}</span>
+                    </span>
                   ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Clone Repository</span>
-                    </>
+                    <span>Clone Repository</span>
                   )}
                 </button>
               </div>

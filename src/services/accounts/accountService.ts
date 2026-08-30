@@ -122,8 +122,9 @@ export class AccountService {
   /**
    * Clones a remote repository to local destination directory.
    */
-  static async cloneRepository(url: string, targetPath: string): Promise<string> {
-    return invoke<string>('clone_repository', { url, targetPath });
+  static async cloneRepository(remoteUrl: string, localPath: string): Promise<string> {
+    await invoke('clone_repository', { remoteUrl, localPath });
+    return localPath;
   }
 
   // ── Multi-Provider Account Services ──────────────────────────────────────────

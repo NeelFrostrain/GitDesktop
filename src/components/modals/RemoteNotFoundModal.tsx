@@ -8,11 +8,8 @@ import { useGitStore } from '../../store/useGitStore';
  * renamed, or is inaccessible on GitHub, GitLab, or Bitbucket.
  */
 export const RemoteNotFoundModal: React.FC = () => {
-  const {
-    isRemoteNotFoundModalOpen,
-    setIsRemoteNotFoundModalOpen,
-    setIsPublishRepoModalOpen,
-  } = useGitStore();
+  const { isRemoteNotFoundModalOpen, setIsRemoteNotFoundModalOpen, setIsPublishRepoModalOpen } =
+    useGitStore();
 
   const handleClose = useCallback(() => {
     setIsRemoteNotFoundModalOpen(false);

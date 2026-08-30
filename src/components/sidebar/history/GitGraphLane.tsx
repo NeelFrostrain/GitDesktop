@@ -30,8 +30,8 @@ export const GitGraphLane: React.FC<GitGraphLaneProps> = ({
   const maxLane = Math.max(
     lane,
     ...(activeLanes || [0]),
-    ...((inSegments || []).map((s) => s.fromLane)),
-    ...((outSegments || []).map((s) => s.toLane))
+    ...(inSegments || []).map((s) => s.fromLane),
+    ...(outSegments || []).map((s) => s.toLane)
   );
   const svgWidth = Math.max(22, PADDING_LEFT + (maxLane + 1) * LANE_WIDTH + 4);
 

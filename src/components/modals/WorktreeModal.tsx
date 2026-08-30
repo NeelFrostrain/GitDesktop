@@ -4,6 +4,8 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 import { X, Layers, Plus, Trash2, FolderOpen, GitBranch, RefreshCw } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
+import { useToastStore } from '../../store/useToastStore';
+import { useTaskStore } from '../../features/task-manager';
 import { WorktreeInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
@@ -17,6 +19,7 @@ export const WorktreeModal: React.FC = () => {
     setActiveRepoPath,
     isWorktreeModalOpen,
     setIsWorktreeModalOpen,
+    worktreeModalInitialBranch,
     branches,
     setError,
   } = useGitStore();
@@ -43,23 +46,63 @@ export const WorktreeModal: React.FC = () => {
   useEffect(() => {
     if (!isWorktreeModalOpen || !activeRepoPath) return;
     loadWorktrees();
-  }, [isWorktreeModalOpen, activeRepoPath]);
+
+    if (worktreeModalInitialBranch) {
+      setNewWorktreeBranch(worktreeModalInitialBranch);
+      const cleanBranch = worktreeModalInitialBranch.replace(/[/\\:]+/g, '-');
+      const parentDir = activeRepoPath.replace(/[/\\][^/\\]+$/, '');
+      const repoBaseName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'repo';
+      setNewWorktreePath(`${parentDir}\\${repoBaseName}-${cleanBranch}`);
+    }
+  }, [isWorktreeModalOpen, activeRepoPath, worktreeModalInitialBranch]);
+
+  const handleBranchChange = (branchName: string) => {
+    setNewWorktreeBranch(branchName);
+    if (!newWorktreePath || newWorktreePath.includes('-')) {
+      const cleanBranch = branchName.replace(/[/\\:]+/g, '-');
+      const parentDir = activeRepoPath ? activeRepoPath.replace(/[/\\][^/\\]+$/, '') : '';
+      const repoBaseName = activeRepoPath ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'repo' : 'repo';
+      if (parentDir) {
+        setNewWorktreePath(`${parentDir}\\${repoBaseName}-${cleanBranch}`);
+      }
+    }
+  };
 
   const handleCreateWorktree = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeRepoPath || !newWorktreePath.trim()) return;
 
     setIsSubmitting(true);
+    const targetPath = newWorktreePath.trim();
+    const branch = newWorktreeBranch.trim() || undefined;
+    const worktreeName = targetPath.split(/[/\\]/).filter(Boolean).pop() || 'worktree';
+
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Creating Worktree: ${worktreeName}`,
+      description: `Linked branch '${branch || 'HEAD'}' at ${targetPath}`,
+      repoName: worktreeName,
+      localPath: targetPath,
+    });
+
     try {
       await invoke('create_worktree', {
         repoPath: activeRepoPath,
-        path: newWorktreePath.trim(),
-        branch: newWorktreeBranch.trim() || null,
+        path: targetPath,
+        branch: branch || null,
+      });
+
+      useTaskStore.getState().completeTask(taskId);
+
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Worktree Created',
+        message: `Linked worktree created at '${targetPath}'`,
       });
 
       useLogStore
         .getState()
-        .addLog('success', 'Worktree', `Created worktree at '${newWorktreePath.trim()}'`);
+        .addLog('success', 'Worktree', `Created worktree at '${targetPath}'`);
       setNewWorktreePath('');
       setNewWorktreeBranch('');
       loadWorktrees();
@@ -149,7 +192,7 @@ export const WorktreeModal: React.FC = () => {
                   list="worktree-branches"
                   placeholder="e.g. hotfix/patch-v1.1"
                   value={newWorktreeBranch}
-                  onChange={(e) => setNewWorktreeBranch(e.target.value)}
+                  onChange={(e) => handleBranchChange(e.target.value)}
                   className="w-full px-3 py-1.5 bg-base-0 border border-border hover:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none focus:border-border-strong font-mono"
                 />
                 <datalist id="worktree-branches">
@@ -194,7 +237,9 @@ export const WorktreeModal: React.FC = () => {
                   <div
                     key={wt.path}
                     className={`p-3 bg-base-1 border rounded-sm flex items-center justify-between transition shadow-xs ${
-                      isActive ? 'border-commito-coral/60 bg-base-2/60' : 'border-border hover:border-border-strong'
+                      isActive
+                        ? 'border-commito-coral/60 bg-base-2/60'
+                        : 'border-border hover:border-border-strong'
                     }`}
                   >
                     <div className="min-w-0 truncate pr-3">

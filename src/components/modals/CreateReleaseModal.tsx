@@ -403,7 +403,6 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     });
   }, [tags, releases]);
 
-
   // Reset form when modal opens or initialRelease changes
   useEffect(() => {
     if (isOpen) {

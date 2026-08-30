@@ -148,7 +148,11 @@ export const ReflogModal: React.FC = () => {
                 <div key={entry.index + entry.sha} className="flex items-stretch gap-2 group">
                   {/* Visual Timeline Spine */}
                   <div className="w-6 shrink-0 relative flex items-center justify-center">
-                    <svg width="24" height="100%" className="absolute inset-0 w-full h-full overflow-visible">
+                    <svg
+                      width="24"
+                      height="100%"
+                      className="absolute inset-0 w-full h-full overflow-visible"
+                    >
                       {/* Vertical connector line */}
                       <line
                         x1="12"

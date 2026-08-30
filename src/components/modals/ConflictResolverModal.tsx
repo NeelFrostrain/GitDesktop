@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  CheckCircle2,
-  FileText,
-  Check,
-  ArrowRight,
-  Split,
-} from 'lucide-react';
+import { X, CheckCircle2, FileText, Check, ArrowRight, Split } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitService } from '../../services/git/gitService';
@@ -102,7 +95,10 @@ export const ConflictResolverModal: React.FC = () => {
       }));
 
     setConflictFiles(conflicted);
-    if (conflicted.length > 0 && (!selectedFilePath || !conflicted.some((c) => c.path === selectedFilePath))) {
+    if (
+      conflicted.length > 0 &&
+      (!selectedFilePath || !conflicted.some((c) => c.path === selectedFilePath))
+    ) {
       setSelectedFilePath(conflicted[0].path);
     }
   }, [isConflictResolverModalOpen, status, selectedFilePath]);
@@ -116,7 +112,7 @@ export const ConflictResolverModal: React.FC = () => {
         const content = await GitService.getFileContent(activeRepoPath, filePath);
         const parsed = parseConflictMarkers(content || '');
         setParsedData(parsed);
-      } catch (err) {
+      } catch {
         setParsedData(null);
       } finally {
         setIsLoadingFile(false);

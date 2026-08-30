@@ -44,10 +44,9 @@ describe('UserAvatar Component', () => {
     expect(img.getAttribute('src')).toBe(avatarUrl);
   });
 
-  it('does NOT leak active user avatar to another account with empty url', () => {
-    // When rendering Bitbucket account with url="" and name="NEEL", it should render initials "NE" not active user's image
-    render(<UserAvatar url="" name="NEEL" provider="bitbucket" />);
-    expect(screen.getByText('NE')).toBeTruthy();
+  it('does NOT leak active user avatar to commit authors with only name/email passed', () => {
+    render(<UserAvatar name="Andy Carlson" email="andy@example.com" />);
+    expect(screen.getByText('AC')).toBeTruthy();
     expect(screen.queryByRole('img')).toBeNull();
   });
 });

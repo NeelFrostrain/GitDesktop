@@ -229,6 +229,8 @@ export interface UnifiedMergeRequest {
   labels?: MergeRequestLabel[];
   milestone?: string;
   is_draft?: boolean;
+  repo_full_name?: string;
+  total_count?: number;
 }
 
 /**

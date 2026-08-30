@@ -83,7 +83,11 @@ export const useContributionsStore = create<ContributionsState>((set, get) => ({
 
         // If 'all' or 'local', or specific account id
         const cal = await ContributionsService.getContributionsCalendar(
-          targetAccountId === 'all' ? 'all' : targetAccountId === 'local' ? 'local' : targetAccountId,
+          targetAccountId === 'all'
+            ? 'all'
+            : targetAccountId === 'local'
+              ? 'local'
+              : targetAccountId,
           repoPaths
         );
 

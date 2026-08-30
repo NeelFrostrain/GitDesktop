@@ -1,14 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  RefreshCw,
-  ChevronDown,
-  Layers,
-  Check,
-  Flame,
-  FolderGit2,
-  Calendar as CalendarIcon,
-  Zap,
-} from 'lucide-react';
+import { RefreshCw, ChevronDown, Check, Flame, Calendar as CalendarIcon, Zap } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 import { useAccountServicesStore } from '../../features/account-services';
 import { ContributionCommitList } from './ContributionCommitList';
@@ -94,13 +85,6 @@ export const ContributionHeatmap: React.FC = () => {
     return calendar?.account_handle || 'All Accounts';
   };
 
-  const getActiveAccountProvider = () => {
-    if (selectedAccountId === 'all') return 'all';
-    if (selectedAccountId === 'local') return 'local';
-    const found = accounts.find((a) => a.id === selectedAccountId);
-    return found?.provider || 'gitlab';
-  };
-
   return (
     <div className="p-3.5 sm:p-4 bg-base-1/50 border border-border rounded-sm shadow-2xs space-y-3.5 select-none font-sans relative">
       {/* ── 1. Top Section Header with KPIs & Account Switcher ── */}
@@ -170,17 +154,6 @@ export const ContributionHeatmap: React.FC = () => {
                   : 'bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border hover:border-border-strong text-text-primary'
               }`}
             >
-              {selectedAccountId === 'all' ? (
-                <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-              ) : selectedAccountId === 'local' ? (
-                <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
-              ) : (
-                <UserAvatar
-                  url={calendar?.account_avatar}
-                  name={getActiveAccountLabel()}
-                  className="w-4 h-4 rounded-sm border border-border shrink-0"
-                />
-              )}
               <span className="truncate max-w-[150px]">{getActiveAccountLabel()}</span>
               <ChevronDown
                 className={`w-3 h-3 text-text-muted transition-transform duration-150 ml-0.5 shrink-0 ${
@@ -206,7 +179,6 @@ export const ContributionHeatmap: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-commito-coral" />
                       <span>All Accounts (Merged)</span>
                     </div>
                     {selectedAccountId === 'all' && (
@@ -227,7 +199,6 @@ export const ContributionHeatmap: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
                       <span>Local Git Repos Only</span>
                     </div>
                     {selectedAccountId === 'local' && (
@@ -390,10 +361,11 @@ export const ContributionHeatmap: React.FC = () => {
         {/* Heatmap Footer Bar: Active Account & Scale */}
         <div className="mt-2.5 pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-[11px] text-text-muted font-sans">
           <div className="flex items-center gap-2">
-            {getActiveAccountProvider() === 'all' ? (
-              <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+            {/* {getActiveAccountProvider() === 'all' ? (
+              // <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+              ""
             ) : getActiveAccountProvider() === 'local' ? (
-              <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
+              // <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
             ) : (
               <span
                 className={`text-[8.5px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border shrink-0 ${
@@ -406,7 +378,7 @@ export const ContributionHeatmap: React.FC = () => {
               >
                 {getActiveAccountProvider()}
               </span>
-            )}
+            )} */}
             <button
               type="button"
               onClick={() => setSelectedDate(null)}

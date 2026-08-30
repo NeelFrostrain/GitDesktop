@@ -24,11 +24,13 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
+import { RepoCacheService } from '../../services/git/repoCacheService';
 import { BranchInfo, UnifiedMergeRequest } from '../../types/git';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
 import { Tabs } from '../common/Tabs';
 import { Button } from '../common/Button';
+import { useTaskStore } from '../../features/task-manager';
 
 function formatRelativeTime(dateStr: string): string {
   try {
@@ -48,6 +50,215 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
+interface LocalBranchRowProps {
+  branchItem: BranchInfo & { remoteTracking: string | null; remotePrefix: string | null };
+  isCurrent: boolean;
+  onSelect: (name: string) => void;
+}
+
+const LocalBranchRow = React.memo<LocalBranchRowProps>(({ branchItem, isCurrent, onSelect }) => {
+  return (
+    <div
+      onClick={() => onSelect(branchItem.name)}
+      className={`group relative flex items-center justify-between gap-2 px-3 py-1.5 border-l-2 cursor-pointer transition-colors select-none ${
+        isCurrent
+          ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
+          : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+      }`}
+    >
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div
+          className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
+            isCurrent
+              ? 'bg-commito-coral/20 text-commito-coral'
+              : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
+          }`}
+        >
+          <GitBranch className="w-3 h-3" />
+        </div>
+
+        <div className="flex items-center gap-1.5 min-w-0 truncate">
+          <span
+            className={`truncate text-xs font-mono transition-colors ${
+              isCurrent
+                ? 'font-bold text-commito-coral'
+                : 'font-medium text-text group-hover:text-text-primary'
+            }`}
+          >
+            {branchItem.name}
+          </span>
+
+          {branchItem.remoteTracking && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
+              title={`Tracks remote '${branchItem.remoteTracking}'`}
+            >
+              <Globe className="w-2.5 h-2.5 flex-shrink-0" />
+              <span className="truncate max-w-[70px]">
+                {branchItem.remotePrefix || 'origin'}
+              </span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {isCurrent ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral text-white tracking-wider leading-none shadow-2xs select-none">
+            CURRENT
+          </span>
+          <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+        </div>
+      ) : (
+        <span className="text-[10.5px] font-sans font-semibold text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/15 px-1.5 py-0.5 rounded-xs">
+          <span>Switch</span>
+          <ArrowRight className="w-2.5 h-2.5" />
+        </span>
+      )}
+    </div>
+  );
+});
+
+interface RemoteBranchRowProps {
+  branchItem: BranchInfo;
+  onSelect: (name: string) => void;
+}
+
+const RemoteBranchRow = React.memo<RemoteBranchRowProps>(({ branchItem, onSelect }) => {
+  const slashIdx = branchItem.name.indexOf('/');
+  const prefix = slashIdx !== -1 ? branchItem.name.slice(0, slashIdx + 1) : '';
+  const nameWithoutPrefix =
+    slashIdx !== -1 ? branchItem.name.slice(slashIdx + 1) : branchItem.name;
+
+  return (
+    <div
+      onClick={() => onSelect(branchItem.name)}
+      className="group relative flex items-center justify-between gap-2 px-3 py-1.5 border-l-2 border-l-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-colors select-none"
+    >
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-5 h-5 rounded-xs bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
+          <Globe className="w-3 h-3" />
+        </div>
+        <div className="min-w-0 truncate font-mono text-xs">
+          {prefix && (
+            <span className="text-text-muted text-[11px] font-normal">
+              {prefix}
+            </span>
+          )}
+          <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
+            {nameWithoutPrefix}
+          </span>
+        </div>
+      </div>
+
+      <span className="text-[10px] font-sans font-medium text-gitlab-blue opacity-0 group-hover:opacity-100 transition-opacity bg-gitlab-blue/10 border border-gitlab-blue/30 px-1.5 py-0.5 rounded-xs">
+        Checkout
+      </span>
+    </div>
+  );
+});
+
+interface PullRequestRowProps {
+  pr: UnifiedMergeRequest;
+  isCurrent: boolean;
+  provider?: string;
+  onSelect: (pr: UnifiedMergeRequest) => void;
+  onOpenBrowser: (url: string, e: React.MouseEvent) => void;
+}
+
+const PullRequestRow = React.memo<PullRequestRowProps>(
+  ({ pr, isCurrent, provider, onSelect, onOpenBrowser }) => {
+    const prNumber = pr.iid || pr.id;
+    const numberPrefix = provider === 'github' ? '#' : '!';
+    const isDraft =
+      pr.is_draft ||
+      pr.title.toLowerCase().startsWith('draft:') ||
+      pr.title.toLowerCase().startsWith('wip:') ||
+      pr.title.toLowerCase().startsWith('spec:');
+
+    return (
+      <div
+        onClick={() => onSelect(pr)}
+        className={`group relative flex items-start justify-between gap-2.5 p-2 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
+          isCurrent
+            ? 'bg-base-1 border-commito-coral/50 shadow-xs'
+            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
+        }`}
+        title={`Open Pull Request ${numberPrefix}${prNumber}: ${pr.title}`}
+      >
+        <div className="flex items-start gap-2 min-w-0 flex-1">
+          <div
+            className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 mt-0.5 ${
+              isDraft
+                ? 'bg-base-2 text-text-muted border border-border/60'
+                : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+            }`}
+          >
+            <GitPullRequest className="w-3 h-3" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors flex-1">
+                {pr.title}
+              </span>
+              {isDraft && (
+                <span className="text-[9px] font-semibold uppercase px-1 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border/60 shrink-0">
+                  Draft
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap text-[10.5px] text-text-muted">
+              <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs leading-none">
+                {numberPrefix}
+                {prNumber}
+              </span>
+
+              <div className="flex items-center gap-1 font-mono text-[9.5px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
+                <GitFork className="w-2.5 h-2.5 text-text-faint shrink-0" />
+                <span className="truncate max-w-[90px]" title={pr.source_branch}>
+                  {pr.source_branch}
+                </span>
+                <ArrowRight className="w-2 h-2 text-text-faint shrink-0" />
+                <span className="truncate max-w-[90px]" title={pr.target_branch}>
+                  {pr.target_branch}
+                </span>
+              </div>
+
+              <span className="truncate flex items-center gap-1">
+                <User className="w-2.5 h-2.5 text-text-faint shrink-0" />
+                <span>{pr.author_name}</span>
+              </span>
+
+              <span>• {formatRelativeTime(pr.created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Checkmark if current, plus external link */}
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          {isCurrent && (
+            <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
+              <span>CURRENT</span>
+              <Check className="w-2.5 h-2.5" />
+            </span>
+          )}
+          {pr.web_url && pr.web_url !== '#' && (
+            <button
+              type="button"
+              onClick={(e) => onOpenBrowser(pr.web_url, e)}
+              className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+              title="Open in browser"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
 /**
  * Dropdown component displaying current branch, Branches vs. Pull Requests tabs,
  * search filtering, smooth branch checkout, and inline PR inspection.
@@ -56,7 +267,6 @@ export const BranchDropdown: React.FC = () => {
   const {
     activeRepoPath,
     status,
-    setStatus,
     branches,
     setBranches,
     setError,
@@ -71,7 +281,13 @@ export const BranchDropdown: React.FC = () => {
   const [filterQuery, setFilterQuery] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isLoadingPRs, setIsLoadingPRs] = useState(false);
-  const [pullRequests, setPullRequests] = useState<UnifiedMergeRequest[]>([]);
+  const [pullRequests, setPullRequests] = useState<UnifiedMergeRequest[]>(() => {
+    if (activeRepoPath) {
+      const cached = RepoCacheService.getPullRequests(activeRepoPath);
+      if (cached && cached.prs) return cached.prs;
+    }
+    return [];
+  });
   const [prError, setPrError] = useState<string | null>(null);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
@@ -82,6 +298,8 @@ export const BranchDropdown: React.FC = () => {
 
   // Pending target branch for safe checkout with uncommitted changes
   const [pendingTargetBranch, setPendingTargetBranch] = useState<string | null>(null);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [switchingBranchName, setSwitchingBranchName] = useState<string | null>(null);
 
   // Collapsible sections state (with persistence)
   const [isLocalCollapsed, setIsLocalCollapsed] = useState<boolean>(() => {
@@ -138,10 +356,19 @@ export const BranchDropdown: React.FC = () => {
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
-    setIsLoadingBranches(true);
+    const cached = RepoCacheService.getBranches(activeRepoPath);
+    if (cached && cached.length > 0) {
+      setBranches(cached);
+      setIsLoadingBranches(false);
+    } else if (branches.length === 0) {
+      setIsLoadingBranches(true);
+    }
     try {
       const res = await GitService.listBranches(activeRepoPath);
-      setBranches(res || []);
+      if (res && res.length > 0) {
+        RepoCacheService.setBranches(activeRepoPath, res);
+        setBranches(res);
+      }
     } catch {
       // Silently ignore background branch fetch errors
     } finally {
@@ -151,7 +378,13 @@ export const BranchDropdown: React.FC = () => {
 
   const loadPullRequests = async () => {
     if (!activeRepoPath) return;
-    setIsLoadingPRs(true);
+    const cached = RepoCacheService.getPullRequests(activeRepoPath);
+    if (cached?.prs && cached.prs.length > 0) {
+      setPullRequests(cached.prs);
+      setIsLoadingPRs(false);
+    } else if (pullRequests.length === 0) {
+      setIsLoadingPRs(true);
+    }
     setPrError(null);
     try {
       let currentRemotes = useRemoteStore.getState().remotes;
@@ -170,38 +403,128 @@ export const BranchDropdown: React.FC = () => {
         currentRemotes = useRemoteStore.getState().remotes;
       }
 
-      const remote = currentRemotes.find((r) => r.name === activeRemote) || currentRemotes[0];
-      const remoteInfo = parseRemoteRepoInfo(remote?.url || remote?.push_url);
+      const upstream = currentRemotes.find((r) => r.name.toLowerCase() === 'upstream');
+      const origin = currentRemotes.find((r) => r.name.toLowerCase() === 'origin');
+      const primaryRemote = upstream || currentRemotes.find((r) => r.name === activeRemote) || origin || currentRemotes[0];
+      const primaryInfo = parseRemoteRepoInfo(primaryRemote?.url || primaryRemote?.push_url);
 
-      if (!remoteInfo?.projectPath) {
+      if (!primaryInfo?.projectPath) {
         setPullRequests([]);
         return;
       }
 
-      const projectPath = remoteInfo.projectPath;
-      const serverUrl = remoteInfo.serverUrl;
+      const projectPath = primaryInfo.projectPath;
+      const serverUrl = primaryInfo.serverUrl;
       const provider =
-        remoteInfo.provider !== 'unknown' ? remoteInfo.provider : user?.provider || 'github';
+        primaryInfo.provider !== 'unknown' ? primaryInfo.provider : user?.provider || 'github';
 
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
-      setPullRequests(res || []);
+      let combinedPRs = res || [];
+
+      // If user also has another remote (e.g. origin fork vs upstream parent)
+      const secondaryRemote = upstream ? (origin && origin !== upstream ? origin : null) : null;
+      if (secondaryRemote) {
+        const secInfo = parseRemoteRepoInfo(secondaryRemote.url || secondaryRemote.push_url);
+        if (secInfo?.projectPath && secInfo.projectPath.toLowerCase() !== projectPath.toLowerCase()) {
+          try {
+            const secRes = await PullRequestService.listOpenPullRequests(
+              secInfo.projectPath,
+              secInfo.serverUrl,
+              secInfo.provider !== 'unknown' ? secInfo.provider : provider
+            );
+            if (secRes && secRes.length > 0) {
+              const existingIds = new Set(combinedPRs.map((p) => p.id));
+              for (const p of secRes) {
+                if (!existingIds.has(p.id)) {
+                  combinedPRs.push(p);
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      combinedPRs.sort((a, b) => Number(b.iid || b.id || 0) - Number(a.iid || a.id || 0));
+      RepoCacheService.setPullRequests(activeRepoPath, combinedPRs);
+      setPullRequests(combinedPRs);
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       console.error('Error fetching pull requests:', err);
       setPrError(msg);
-      setPullRequests([]);
+      if (pullRequests.length === 0) setPullRequests([]);
     } finally {
       setIsLoadingPRs(false);
     }
   };
 
+  const [visibleLocalCount, setVisibleLocalCount] = useState(60);
+  const [visibleRemoteCount, setVisibleRemoteCount] = useState(60);
+  const [visiblePRCount, setVisiblePRCount] = useState(40);
+
+  // Subscribe to background RepoCacheService updates for 0ms reactivity
+  useEffect(() => {
+    const unsubscribe = RepoCacheService.subscribe((repoPath, type, data) => {
+      if (repoPath === activeRepoPath) {
+        if (type === 'prs') {
+          const prData = data as { prs: UnifiedMergeRequest[]; totalCount: number };
+          setPullRequests(prData.prs);
+          setIsLoadingPRs(false);
+        } else if (type === 'branches') {
+          setBranches(data as BranchInfo[]);
+          setIsLoadingBranches(false);
+        }
+      }
+    });
+    return unsubscribe;
+  }, [activeRepoPath, setBranches]);
+
+  useEffect(() => {
+    if (activeRepoPath) {
+      const cachedPRs = RepoCacheService.getPullRequests(activeRepoPath);
+      if (cachedPRs?.prs) {
+        setPullRequests(cachedPRs.prs);
+        setIsLoadingPRs(false);
+      }
+      const cachedBranches = RepoCacheService.getBranches(activeRepoPath);
+      if (cachedBranches && cachedBranches.length > 0) {
+        setBranches(cachedBranches);
+        setIsLoadingBranches(false);
+      }
+    }
+  }, [activeRepoPath, setBranches]);
+
   useEffect(() => {
     if (isOpen && activeRepoPath) {
-      loadBranches();
-      loadPullRequests();
+      const cachedBranches = RepoCacheService.getBranches(activeRepoPath);
+      if (!cachedBranches && branches.length === 0) {
+        loadBranches();
+      }
+      const cachedPRs = RepoCacheService.getPullRequests(activeRepoPath);
+      if (!cachedPRs && pullRequests.length === 0) {
+        loadPullRequests();
+      }
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
-  }, [isOpen, activeRepoPath]);
+  }, [isOpen, activeRepoPath, activeTab]);
+
+  // Reset pagination when search query or tab changes
+  useEffect(() => {
+    setVisibleLocalCount(60);
+    setVisibleRemoteCount(60);
+    setVisiblePRCount(40);
+  }, [filterQuery, activeTab]);
+
+  const handleBranchListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 120) {
+      if (visibleRemoteCount < remoteOnlyBranches.length) {
+        setVisibleRemoteCount((prev) => Math.min(prev + 60, remoteOnlyBranches.length));
+      }
+      if (visibleLocalCount < localBranches.length) {
+        setVisibleLocalCount((prev) => Math.min(prev + 60, localBranches.length));
+      }
+    }
+  };
 
   // Handle click outside to dismiss dropdown
   useEffect(() => {
@@ -253,15 +576,45 @@ export const BranchDropdown: React.FC = () => {
 
   const executeDirectCheckout = async (branchName: string) => {
     if (!activeRepoPath) return;
+    setIsSwitching(true);
+    setSwitchingBranchName(branchName);
+
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'checkout',
+      title: `Switch to ${branchName}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
     try {
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Checking out',
+        percent: 35,
+        detail: `Resolving ref & checking out ${branchName}...`,
+      });
+
       await GitService.checkoutBranch(activeRepoPath, branchName);
+
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Finalizing',
+        percent: 90,
+        detail: 'Syncing repository state...',
+      });
+
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
 
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
+
+      useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
+      const errMsg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, errMsg);
       setError(toAppError(error, 'CHECKOUT_ERROR'));
+    } finally {
+      setIsSwitching(false);
+      setSwitchingBranchName(null);
     }
   };
 
@@ -278,9 +631,7 @@ export const BranchDropdown: React.FC = () => {
       setNewBranchName('');
       setShowCreateModal(false);
 
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     } finally {
@@ -294,11 +645,6 @@ export const BranchDropdown: React.FC = () => {
     return slashIdx !== -1 ? remoteBranchName.slice(slashIdx + 1) : remoteBranchName;
   };
 
-  const getRemotePrefix = (remoteBranchName: string): string => {
-    const slashIdx = remoteBranchName.indexOf('/');
-    return slashIdx !== -1 ? remoteBranchName.slice(0, slashIdx) : 'origin';
-  };
-
   const queryLower = filterQuery.trim().toLowerCase();
 
   // 1. All valid remote branches (excluding symbolic refs like origin/HEAD)
@@ -306,38 +652,69 @@ export const BranchDropdown: React.FC = () => {
     return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD'));
   }, [branches]);
 
-  // 2. Set of local branch names
+  // 2. Fast O(1) Map for remote branch names -> clean name and prefix
+  const remoteBranchMap = useMemo(() => {
+    const map = new Map<string, { fullName: string; prefix: string }>();
+    for (let i = 0; i < validRemoteBranches.length; i++) {
+      const b = validRemoteBranches[i];
+      const slashIdx = b.name.indexOf('/');
+      const clean = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+      const prefix = slashIdx !== -1 ? b.name.slice(0, slashIdx) : 'origin';
+      if (!map.has(clean)) {
+        map.set(clean, { fullName: b.name, prefix });
+      }
+    }
+    return map;
+  }, [validRemoteBranches]);
+
+  // 3. Set of local branch names
   const localBranchNames = useMemo(() => {
-    return new Set(branches.filter((b: BranchInfo) => !b.is_remote).map((b: BranchInfo) => b.name));
+    const set = new Set<string>();
+    for (let i = 0; i < branches.length; i++) {
+      if (!branches[i].is_remote) set.add(branches[i].name);
+    }
+    return set;
   }, [branches]);
 
-  // 3. Local branches merged with remote tracking indicator
+  // 4. Local branches with O(1) remote tracking lookup
   const localBranches = useMemo(() => {
-    return branches
-      .filter((b: BranchInfo) => !b.is_remote)
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower))
-      .map((b: BranchInfo) => {
-        const matchingRemote = validRemoteBranches.find((r: BranchInfo) => {
-          return getCleanRemoteBranchName(r.name) === b.name;
-        });
+    const list: (BranchInfo & { remoteTracking: string | null; remotePrefix: string | null })[] = [];
+    for (let i = 0; i < branches.length; i++) {
+      const b = branches[i];
+      if (b.is_remote) continue;
+      if (queryLower && !b.name.toLowerCase().includes(queryLower)) continue;
 
-        return {
-          ...b,
-          remoteTracking: matchingRemote ? matchingRemote.name : null,
-          remotePrefix: matchingRemote ? getRemotePrefix(matchingRemote.name) : null,
-        };
+      const remoteMeta = remoteBranchMap.get(b.name);
+      list.push({
+        ...b,
+        remoteTracking: remoteMeta ? remoteMeta.fullName : null,
+        remotePrefix: remoteMeta ? remoteMeta.prefix : null,
       });
-  }, [branches, validRemoteBranches, queryLower]);
+    }
+    return list;
+  }, [branches, remoteBranchMap, queryLower]);
 
-  // 4. Remote-only branches (remote branches that do not exist locally)
+  // 5. Remote-only branches (remote branches that do not exist locally) with O(1) check
   const remoteOnlyBranches = useMemo(() => {
-    return validRemoteBranches
-      .filter((b: BranchInfo) => {
-        const clean = getCleanRemoteBranchName(b.name);
-        return !localBranchNames.has(clean);
-      })
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
+    const list: BranchInfo[] = [];
+    for (let i = 0; i < validRemoteBranches.length; i++) {
+      const b = validRemoteBranches[i];
+      const slashIdx = b.name.indexOf('/');
+      const clean = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+      if (localBranchNames.has(clean)) continue;
+      if (queryLower && !b.name.toLowerCase().includes(queryLower)) continue;
+      list.push(b);
+    }
+    return list;
   }, [validRemoteBranches, localBranchNames, queryLower]);
+
+  const displayedLocalBranches = useMemo(() => {
+    return localBranches.slice(0, visibleLocalCount);
+  }, [localBranches, visibleLocalCount]);
+
+  const displayedRemoteBranches = useMemo(() => {
+    return remoteOnlyBranches.slice(0, visibleRemoteCount);
+  }, [remoteOnlyBranches, visibleRemoteCount]);
 
   // Pull Requests Filtering
   const filteredPullRequests = useMemo(() => {
@@ -354,6 +731,27 @@ export const BranchDropdown: React.FC = () => {
     });
   }, [pullRequests, queryLower]);
 
+  const displayedPullRequests = useMemo(() => {
+    return filteredPullRequests.slice(0, visiblePRCount);
+  }, [filteredPullRequests, visiblePRCount]);
+
+  const handlePRListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 100) {
+      if (visiblePRCount < filteredPullRequests.length) {
+        setVisiblePRCount((prev) => Math.min(prev + 40, filteredPullRequests.length));
+      }
+    }
+  };
+
+  const totalOpenPRCount = useMemo(() => {
+    return pullRequests[0]?.total_count || pullRequests.length;
+  }, [pullRequests]);
+
+  const resolvedPRRepoName = useMemo(() => {
+    return pullRequests[0]?.repo_full_name || activeProjectPath || 'repository';
+  }, [pullRequests, activeProjectPath]);
+
   const menuWidth = 390;
   const leftPos = triggerRect
     ? Math.min(triggerRect.right - menuWidth, window.innerWidth - menuWidth - 12)
@@ -365,35 +763,48 @@ export const BranchDropdown: React.FC = () => {
   return (
     <>
       {/* Trigger Button */}
-      <button
-        ref={triggerRef}
-        type="button"
-        onClick={handleToggle}
-        className={`h-6.5 px-2 rounded-xs transition-all duration-150 flex items-center gap-1.5 cursor-pointer select-none active:scale-95 group ${
-          isOpen
-            ? 'bg-base-2 text-text-primary font-semibold'
-            : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
-        }`}
-        title={`Current branch: ${currentBranch}`}
-      >
-        <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0 group-hover:scale-105 transition-transform" />
-        <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
-          {currentBranch}
-        </span>
-
-        {currentPR && (
-          <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
-            <span>#{currentPR.iid || currentPR.id}</span>
-            <Check className="w-2.5 h-2.5 text-emerald-400" />
+      {isSwitching ? (
+        <div
+          className="h-6.5 px-2 rounded-xs bg-base-2 border border-border text-text-primary inline-flex items-center gap-1.5 select-none leading-none max-w-[220px]"
+          title={`Switching to branch ${switchingBranchName || ''}`}
+        >
+          <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+          <span className="text-[11px] text-text-muted shrink-0 font-medium font-sans">Switching:</span>
+          <span className="truncate font-mono text-xs font-semibold text-text-primary">
+            {switchingBranchName || '...'}
           </span>
-        )}
-
-        <ChevronDown
-          className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
-            isOpen ? 'rotate-180 text-commito-coral' : ''
+        </div>
+      ) : (
+        <button
+          ref={triggerRef}
+          type="button"
+          onClick={handleToggle}
+          className={`h-6.5 px-2 rounded-xs transition-colors duration-150 flex items-center gap-1.5 cursor-pointer select-none group ${
+            isOpen
+              ? 'bg-base-2 text-text-primary font-semibold'
+              : 'text-text-secondary hover:text-text-primary hover:bg-base-2'
           }`}
-        />
-      </button>
+          title={`Current branch: ${currentBranch}`}
+        >
+          <GitBranch className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+          <span className="truncate max-w-[130px] font-mono text-xs font-semibold text-zinc-100 group-hover:text-commito-coral transition-colors">
+            {currentBranch}
+          </span>
+
+          {currentPR && (
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
+              <span>#{currentPR.iid || currentPR.id}</span>
+              <Check className="w-2.5 h-2.5 text-emerald-400" />
+            </span>
+          )}
+
+          <ChevronDown
+            className={`w-3 h-3 text-zinc-400 group-hover:text-zinc-200 transition-transform duration-150 shrink-0 ${
+              isOpen ? 'rotate-180 text-commito-coral' : ''
+            }`}
+          />
+        </button>
+      )}
 
       {/* Dropdown Menu Portal */}
       {isOpen &&
@@ -443,8 +854,8 @@ export const BranchDropdown: React.FC = () => {
                       ),
                       badge: isLoadingPRs ? (
                         <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
-                      ) : pullRequests.length > 0 ? (
-                        pullRequests.length
+                      ) : totalOpenPRCount > 0 ? (
+                        totalOpenPRCount
                       ) : undefined,
                       badgeVariant: 'emerald',
                     },
@@ -534,7 +945,10 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Tab Body: Branches View */}
             {activeTab === 'branches' && (
-              <div className="flex-1 overflow-y-auto p-2 space-y-2.5 min-h-0 scrollbar-thin">
+              <div
+                onScroll={handleBranchListScroll}
+                className="flex-1 overflow-y-auto p-2 space-y-2.5 min-h-0 scrollbar-thin"
+              >
                 {/* Local Branches Section */}
                 <div className="space-y-1">
                   <button
@@ -570,70 +984,25 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col -mx-2">
-                        {localBranches.map((branchItem) => {
-                          const isCurrent = branchItem.name === currentBranch;
-                          return (
-                            <div
-                              key={branchItem.name}
-                              onClick={() => handleSelectBranch(branchItem.name)}
-                              className={`group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 cursor-pointer transition-all duration-100 select-none ${
-                                isCurrent
-                                  ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
-                                  : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div
-                                  className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
-                                    isCurrent
-                                      ? 'bg-commito-coral/20 text-commito-coral'
-                                      : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
-                                  }`}
-                                >
-                                  <GitBranch className="w-3 h-3" />
-                                </div>
-
-                                <div className="flex items-center gap-1.5 min-w-0 truncate">
-                                  <span
-                                    className={`truncate text-xs font-mono transition-colors ${
-                                      isCurrent
-                                        ? 'font-bold text-commito-coral'
-                                        : 'font-medium text-text group-hover:text-text-primary'
-                                    }`}
-                                  >
-                                    {branchItem.name}
-                                  </span>
-
-                                  {branchItem.remoteTracking && (
-                                    <span
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
-                                      title={`Tracks remote '${branchItem.remoteTracking}'`}
-                                    >
-                                      <Globe className="w-2.5 h-2.5 flex-shrink-0" />
-                                      <span className="truncate max-w-[70px]">
-                                        {branchItem.remotePrefix || 'origin'}
-                                      </span>
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {isCurrent ? (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral text-white tracking-wider leading-none shadow-2xs select-none">
-                                    CURRENT
-                                  </span>
-                                  <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                                </div>
-                              ) : (
-                                <span className="text-[10.5px] font-sans font-semibold text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/15 px-1.5 py-0.5 rounded-xs">
-                                  <span>Switch</span>
-                                  <ArrowRight className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {displayedLocalBranches.map((branchItem) => (
+                          <LocalBranchRow
+                            key={branchItem.name}
+                            branchItem={branchItem}
+                            isCurrent={branchItem.name === currentBranch}
+                            onSelect={handleSelectBranch}
+                          />
+                        ))}
+                        {localBranches.length > visibleLocalCount && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleLocalCount((c) => Math.min(c + 60, localBranches.length))
+                            }
+                            className="w-full py-1.5 text-center text-[10.5px] font-mono text-commito-coral hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                          >
+                            Show more ({localBranches.length - visibleLocalCount} remaining)...
+                          </button>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -678,43 +1047,26 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col -mx-2">
-                        {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
-                          const slashIdx = remoteBranchItem.name.indexOf('/');
-                          const prefix =
-                            slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
-                          const nameWithoutPrefix =
-                            slashIdx !== -1
-                              ? remoteBranchItem.name.slice(slashIdx + 1)
-                              : remoteBranchItem.name;
-
-                          return (
-                            <div
-                              key={remoteBranchItem.name}
-                              onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                              className="group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 border-l-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-all duration-100 select-none"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div className="w-5 h-5 rounded-xs bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
-                                  <Globe className="w-3 h-3" />
-                                </div>
-                                <div className="min-w-0 truncate font-mono text-xs">
-                                  {prefix && (
-                                    <span className="text-text-muted text-[11px] font-normal">
-                                      {prefix}
-                                    </span>
-                                  )}
-                                  <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
-                                    {nameWithoutPrefix}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <span className="text-[10px] font-sans font-medium text-gitlab-blue opacity-0 group-hover:opacity-100 transition-opacity bg-gitlab-blue/10 border border-gitlab-blue/30 px-1.5 py-0.5 rounded-xs">
-                                Checkout
-                              </span>
-                            </div>
-                          );
-                        })}
+                        {displayedRemoteBranches.map((remoteBranchItem: BranchInfo) => (
+                          <RemoteBranchRow
+                            key={remoteBranchItem.name}
+                            branchItem={remoteBranchItem}
+                            onSelect={handleSelectBranch}
+                          />
+                        ))}
+                        {remoteOnlyBranches.length > visibleRemoteCount && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleRemoteCount((c) =>
+                                Math.min(c + 60, remoteOnlyBranches.length)
+                              )
+                            }
+                            className="w-full py-1.5 text-center text-[10.5px] font-mono text-gitlab-blue hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                          >
+                            Show more ({remoteOnlyBranches.length - visibleRemoteCount} remaining)...
+                          </button>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -723,7 +1075,10 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Tab Body: Pull Requests View */}
             {activeTab === 'pull-requests' && (
-              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 scrollbar-thin">
+              <div
+                onScroll={handlePRListScroll}
+                className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 scrollbar-thin"
+              >
                 {isLoadingPRs && pullRequests.length === 0 ? (
                   <div className="py-8 flex flex-col items-center justify-center gap-2 text-text-muted">
                     <Loader2 className="w-5 h-5 animate-spin text-commito-coral" />
@@ -775,7 +1130,7 @@ export const BranchDropdown: React.FC = () => {
                           setIsOpen(false);
                           setIsMergeRequestModalOpen(true);
                         }}
-                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+                        className="mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 bg-commito-coral/15 hover:bg-commito-coral border border-commito-coral/40 text-commito-coral hover:text-white rounded-sm text-xs font-semibold shadow-xs transition-all cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Create Pull Request</span>
@@ -784,92 +1139,50 @@ export const BranchDropdown: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    {/* Section Header */}
-                    {activeProjectPath && (
-                      <div className="px-1.5 pt-0.5 pb-1 text-[10.5px] font-semibold text-text-muted select-none truncate">
-                        Pull requests in{' '}
-                        <span className="text-text-primary font-mono">{activeProjectPath}</span>
+                    {/* Section Header with dynamic Count and resolved parent repository */}
+                    <div className="px-1.5 pt-0.5 pb-1 flex items-center justify-between text-[10.5px] font-semibold text-text-muted select-none">
+                      <div className="flex items-center gap-1.5 truncate min-w-0 flex-1">
+                        <span className="shrink-0">Pull requests in</span>
+                        <span
+                          className="text-text-primary font-mono truncate"
+                          title={resolvedPRRepoName}
+                        >
+                          {resolvedPRRepoName}
+                        </span>
                       </div>
-                    )}
+                      <span className="font-mono text-[9.5px] px-1.5 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border/50 shrink-0 ml-2">
+                        {filterQuery
+                          ? `${filteredPullRequests.length} of ${totalOpenPRCount}`
+                          : `${totalOpenPRCount} open`}
+                      </span>
+                    </div>
 
                     <div className="space-y-1.5 p-0.5">
-                      {filteredPullRequests.map((pr) => {
-                        const isCurrent = isCurrentPR(pr.source_branch);
-                        const prNumber = pr.iid || pr.id;
-                        const numberPrefix = user?.provider === 'github' ? '#' : '!';
+                      {displayedPullRequests.map((pr) => (
+                        <PullRequestRow
+                          key={pr.id}
+                          pr={pr}
+                          isCurrent={isCurrentPR(pr.source_branch)}
+                          provider={user?.provider || 'github'}
+                          onSelect={handleSelectPullRequest}
+                          onOpenBrowser={(url, e) => {
+                            e.stopPropagation();
+                            openUrl(url).catch(() => {});
+                          }}
+                        />
+                      ))}
 
-                        return (
-                          <div
-                            key={pr.id}
-                            onClick={() => handleSelectPullRequest(pr)}
-                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
-                              isCurrent
-                                ? 'bg-base-1 border-border-strong shadow-xs'
-                                : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
-                            }`}
-                            title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
-                          >
-                            <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                              <div className="w-5 h-5 rounded-sm bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                                <GitPullRequest className="w-3 h-3" />
-                              </div>
-                              <div className="min-w-0 flex-1 space-y-1">
-                                <div className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors">
-                                  {pr.title}
-                                </div>
-
-                                <div className="flex items-center gap-2 flex-wrap text-[10.5px] text-text-muted">
-                                  <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs">
-                                    {numberPrefix}
-                                    {prNumber}
-                                  </span>
-
-                                  <div className="flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
-                                    <GitFork className="w-2.5 h-2.5 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">
-                                      {pr.source_branch}
-                                    </span>
-                                    <ArrowRight className="w-2 h-2 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">
-                                      {pr.target_branch}
-                                    </span>
-                                  </div>
-
-                                  <span className="truncate flex items-center gap-1">
-                                    <User className="w-2.5 h-2.5 text-text-faint" />
-                                    <span>{pr.author_name}</span>
-                                  </span>
-
-                                  <span>• {formatRelativeTime(pr.created_at)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Right: Checkmark if current, plus external link */}
-                            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                              {isCurrent && (
-                                <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
-                                  <span>CURRENT</span>
-                                  <Check className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                              {pr.web_url && pr.web_url !== '#' && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openUrl(pr.web_url).catch(() => {});
-                                  }}
-                                  className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                                  title="Open in browser"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {filteredPullRequests.length > visiblePRCount && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVisiblePRCount((c) => Math.min(c + 40, filteredPullRequests.length))
+                          }
+                          className="w-full py-1.5 text-center text-[10.5px] font-mono text-commito-coral hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                        >
+                          Show more ({filteredPullRequests.length - visiblePRCount} remaining)...
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

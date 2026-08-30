@@ -248,14 +248,24 @@ fn apply_git_auth_args(cmd: &mut Command, auth_info: &GitAuthInfo) {
     if let Some(ref t) = auth_info.token {
         let t_clean = t.trim();
         if !t_clean.is_empty() {
-            let auth_user = if auth_info.provider == "github" {
-                "x-access-token"
+            let auth_str = if auth_info.provider == "github" {
+                if t_clean.starts_with("gho_") || t_clean.starts_with("ghu_") {
+                    format!("x-oauth-basic:{}", t_clean)
+                } else if let Some(ref u) = auth_info.username {
+                    let u_trimmed = u.trim();
+                    if !u_trimmed.is_empty() {
+                        format!("{}:{}", u_trimmed, t_clean)
+                    } else {
+                        format!("x-oauth-basic:{}", t_clean)
+                    }
+                } else {
+                    format!("x-oauth-basic:{}", t_clean)
+                }
             } else if auth_info.provider == "bitbucket" {
-                "x-token-auth"
+                format!("x-token-auth:{}", t_clean)
             } else {
-                "oauth2"
+                format!("oauth2:{}", t_clean)
             };
-            let auth_str = format!("{}:{}", auth_user, t_clean);
             let encoded = STANDARD.encode(auth_str.as_bytes());
 
             cmd.arg("-c")
@@ -544,7 +554,17 @@ pub fn push_specific_remote(
     } else {
         remote_name.trim()
     };
-    let clean_branch = branch_name.trim();
+    let raw_branch = branch_name.trim();
+    let clean_branch = if let Some(stripped) = raw_branch.strip_prefix(&format!("{}/", clean_remote)) {
+        stripped
+    } else if raw_branch.starts_with("origin/") {
+        raw_branch.strip_prefix("origin/").unwrap_or(raw_branch)
+    } else if raw_branch.starts_with("upstream/") {
+        raw_branch.strip_prefix("upstream/").unwrap_or(raw_branch)
+    } else {
+        raw_branch
+    };
+
     let auth_info = get_git_auth_info(repo_path);
 
     let mut cmd = silent_git_command();
@@ -565,6 +585,23 @@ pub fn push_specific_remote(
         let combined = format!("{}\n{}", stderr.trim(), stdout.trim());
         let err_msg = combined.trim().to_string();
         let lower = err_msg.to_lowercase();
+
+        // If push failed specifically because git-lfs pre-push hook couldn't find 'git-lfs' on PATH
+        if lower.contains("git-lfs") && (lower.contains("not found") || lower.contains("pre-push")) {
+            let mut fallback_cmd = silent_git_command();
+            fallback_cmd.current_dir(repo_path);
+            apply_git_auth_args(&mut fallback_cmd, &auth_info);
+            fallback_cmd.arg("push").arg("-u").arg("--no-verify");
+            if force {
+                fallback_cmd.arg("--force-with-lease");
+            }
+            fallback_cmd.arg(clean_remote).arg(clean_branch);
+            if let Ok(fb_out) = fallback_cmd.output() {
+                if fb_out.status.success() {
+                    return Ok(());
+                }
+            }
+        }
 
         if lower.contains("repository not found")
             || lower.contains("fatal: repository")
@@ -677,7 +714,17 @@ pub fn pull_specific_remote(
     } else {
         remote_name.trim()
     };
-    let clean_branch = branch_name.trim();
+    let raw_branch = branch_name.trim();
+    let clean_branch = if let Some(stripped) = raw_branch.strip_prefix(&format!("{}/", clean_remote)) {
+        stripped
+    } else if raw_branch.starts_with("origin/") {
+        raw_branch.strip_prefix("origin/").unwrap_or(raw_branch)
+    } else if raw_branch.starts_with("upstream/") {
+        raw_branch.strip_prefix("upstream/").unwrap_or(raw_branch)
+    } else {
+        raw_branch
+    };
+
     let auth_info = get_git_auth_info(repo_path);
 
     let head_before = silent_git_command()
@@ -783,7 +830,194 @@ pub fn pull_specific_remote(
     })
 }
 
-pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppError> {
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CloneProgressPayload {
+    pub stage: String,
+    pub percent: u32,
+    pub detail: String,
+    pub message: String,
+}
+
+fn extract_percent(s: &str) -> Option<u32> {
+    if let Some(idx) = s.find('%') {
+        let before = &s[..idx];
+        let num_str: String = before.chars().rev().take_while(|c| c.is_ascii_digit()).collect();
+        let num_str: String = num_str.chars().rev().collect();
+        num_str.parse::<u32>().ok()
+    } else {
+        None
+    }
+}
+
+fn parse_git_clone_progress(line: &str) -> Option<CloneProgressPayload> {
+    let trimmed = line.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if trimmed.contains("Filtering content:") || trimmed.contains("Downloading LFS") || trimmed.contains("Git LFS:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (90 + (sub_percent * 9 / 100)).min(99);
+        return Some(CloneProgressPayload {
+            stage: "Downloading LFS assets".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Downloading LFS assets ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Updating files:") || trimmed.contains("Checking out files:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (88 + (sub_percent * 10 / 100)).min(98);
+        return Some(CloneProgressPayload {
+            stage: "Checking out files".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Checking out files ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Resolving deltas:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (75 + (sub_percent * 13 / 100)).min(88);
+        return Some(CloneProgressPayload {
+            stage: "Resolving deltas".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Resolving deltas ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Receiving objects:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (15 + (sub_percent * 60 / 100)).min(75);
+        let detail = if let Some(comma_idx) = trimmed.find(',') {
+            trimmed[comma_idx + 1..].trim().to_string()
+        } else {
+            trimmed.to_string()
+        };
+        return Some(CloneProgressPayload {
+            stage: "Receiving objects".to_string(),
+            percent: overall,
+            detail,
+            message: format!("Receiving objects ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Compressing objects:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(25);
+        let overall = (10 + (sub_percent * 5 / 100)).min(15);
+        return Some(CloneProgressPayload {
+            stage: "Compressing objects".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Compressing objects ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Counting objects:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(10);
+        let overall = (sub_percent * 10 / 100).max(3).min(10);
+        return Some(CloneProgressPayload {
+            stage: "Counting objects".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Counting objects ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Cloning into") {
+        return Some(CloneProgressPayload {
+            stage: "Connecting".to_string(),
+            percent: 3,
+            detail: "Connecting to remote repository...".to_string(),
+            message: "Connecting to remote repository...".to_string(),
+        });
+    }
+
+    None
+}
+
+use std::sync::atomic::{AtomicU32, Ordering};
+static ACTIVE_CLONE_PID: AtomicU32 = AtomicU32::new(0);
+
+pub fn cancel_active_clone_process() -> bool {
+    let pid = ACTIVE_CLONE_PID.swap(0, Ordering::SeqCst);
+    if pid > 0 {
+        #[cfg(windows)]
+        {
+            let _ = crate::git::command::silent_command("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
+        }
+        #[cfg(unix)]
+        {
+            let _ = std::process::Command::new("kill")
+                .args(["-9", &pid.to_string()])
+                .output();
+        }
+        true
+    } else {
+        false
+    }
+}
+
+fn run_git_clone_with_progress(
+    mut cmd: std::process::Command,
+    app: Option<&tauri::AppHandle>,
+) -> Result<std::process::Output, std::io::Error> {
+    use std::io::Read;
+    use std::process::Stdio;
+    use tauri::Emitter;
+
+    cmd.arg("--progress");
+    cmd.stdin(Stdio::null());
+    cmd.stderr(Stdio::piped());
+    cmd.stdout(Stdio::null());
+
+    let mut child = cmd.spawn()?;
+    let child_pid = child.id();
+    ACTIVE_CLONE_PID.store(child_pid, Ordering::SeqCst);
+
+    let stderr = child.stderr.take();
+
+    let mut all_stderr = Vec::new();
+
+    if let Some(mut pipe) = stderr {
+        let mut line_buf = Vec::with_capacity(1024);
+        let mut chunk = [0u8; 8192];
+
+        while let Ok(n) = pipe.read(&mut chunk) {
+            if n == 0 {
+                break;
+            }
+            let bytes = &chunk[..n];
+            all_stderr.extend_from_slice(bytes);
+
+            for &b in bytes {
+                if b == b'\r' || b == b'\n' {
+                    if !line_buf.is_empty() {
+                        if let Ok(line) = std::str::from_utf8(&line_buf) {
+                            if let Some(progress) = parse_git_clone_progress(line) {
+                                if let Some(app_handle) = app {
+                                    let _ = app_handle.emit("git:clone:progress", &progress);
+                                }
+                            }
+                        }
+                        line_buf.clear();
+                    }
+                } else {
+                    line_buf.push(b);
+                }
+            }
+        }
+    }
+
+    let status = child.wait();
+    ACTIVE_CLONE_PID.store(0, Ordering::SeqCst);
+    let status = status?;
+
+    Ok(std::process::Output {
+        status,
+        stdout: Vec::new(),
+        stderr: all_stderr,
+    })
+}
+
+pub fn clone_repository(
+    app: Option<&tauri::AppHandle>,
+    remote_url: &str,
+    local_path: &str,
+) -> Result<(), AppError> {
+    let clean_url = remote_url.trim().trim_end_matches('/');
     let path = Path::new(local_path);
     if path.exists() && fs_is_not_empty(path) {
         return Err(AppError::Validation(format!(
@@ -792,23 +1026,120 @@ pub fn clone_repository(remote_url: &str, local_path: &str) -> Result<(), AppErr
         )));
     }
 
-    let auth_info = get_git_auth_info_for_url(".", Some(remote_url));
+    let auth_info = get_git_auth_info_for_url(".", Some(clean_url));
 
-    let mut cmd = silent_git_command();
-    apply_git_auth_args(&mut cmd, &auth_info);
-    cmd.arg("clone").arg(remote_url).arg(local_path);
+    let mut target_clone_url = clean_url.to_string();
+    let mut needs_remote_sanitize = false;
 
-    let output = cmd.output()?;
+    if !clean_url.contains('@') {
+        if let Some(ref t) = auth_info.token {
+            let t_clean = t.trim();
+            if !t_clean.is_empty() {
+                let user_prefix = if auth_info.provider == "github" {
+                    if t_clean.starts_with("gho_") || t_clean.starts_with("ghu_") {
+                        "x-oauth-basic".to_string()
+                    } else if let Some(ref u) = auth_info.username {
+                        let u_trimmed = u.trim();
+                        if !u_trimmed.is_empty() {
+                            urlencoding::encode(u_trimmed).to_string()
+                        } else {
+                            "x-oauth-basic".to_string()
+                        }
+                    } else {
+                        "x-oauth-basic".to_string()
+                    }
+                } else if auth_info.provider == "bitbucket" {
+                    "x-token-auth".to_string()
+                } else {
+                    "oauth2".to_string()
+                };
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        return Err(AppError::Git(format!(
-            "Failed to clone repository: {}",
-            stderr
-        )));
+                let enc_token = urlencoding::encode(t_clean);
+                if clean_url.starts_with("https://") {
+                    let rest = &clean_url[8..];
+                    target_clone_url = format!("https://{}:{}@{}", user_prefix, enc_token, rest);
+                    needs_remote_sanitize = true;
+                } else if clean_url.starts_with("http://") {
+                    let rest = &clean_url[7..];
+                    target_clone_url = format!("http://{}:{}@{}", user_prefix, enc_token, rest);
+                    needs_remote_sanitize = true;
+                }
+            }
+        }
     }
 
-    Ok(())
+    // First attempt: Standard high-performance clone with extraHeader auth
+    let mut cmd = silent_git_command();
+    cmd.arg("-c").arg("core.fscache=true");
+    cmd.arg("-c").arg("core.preloadIndex=true");
+    cmd.arg("-c").arg("pack.threads=0");
+    cmd.arg("-c").arg("http.postBuffer=524288000");
+    cmd.arg("-c").arg("protocol.version=2");
+    apply_git_auth_args(&mut cmd, &auth_info);
+    cmd.arg("clone").arg(clean_url).arg(local_path);
+
+    let output = run_git_clone_with_progress(cmd, app)?;
+
+    if output.status.success() {
+        return Ok(());
+    }
+
+    // Second attempt (if extraHeader failed): Injected URL credentials
+    if needs_remote_sanitize {
+        if path.exists() {
+            let _ = std::fs::remove_dir_all(path);
+        }
+        let mut url_auth_cmd = silent_git_command();
+        url_auth_cmd.arg("-c").arg("core.fscache=true");
+        url_auth_cmd.arg("-c").arg("core.preloadIndex=true");
+        url_auth_cmd.arg("-c").arg("pack.threads=0");
+        url_auth_cmd.arg("-c").arg("http.postBuffer=524288000");
+        url_auth_cmd.arg("-c").arg("protocol.version=2");
+        url_auth_cmd.arg("clone").arg(&target_clone_url).arg(local_path);
+        if let Ok(url_out) = run_git_clone_with_progress(url_auth_cmd, app) {
+            if url_out.status.success() {
+                // Sanitize origin remote URL so credentials are never saved in local .git/config
+                let mut clean_remote_cmd = silent_git_command();
+                clean_remote_cmd
+                    .arg("-C")
+                    .arg(local_path)
+                    .arg("remote")
+                    .arg("set-url")
+                    .arg("origin")
+                    .arg(clean_url);
+                let _ = clean_remote_cmd.output();
+                return Ok(());
+            }
+        }
+    }
+
+    // Third attempt: Fallback to system Git / Git Credential Manager
+    if path.exists() {
+        let _ = std::fs::remove_dir_all(path);
+    }
+    let mut fallback_cmd = silent_git_command();
+    fallback_cmd.arg("-c").arg("core.fscache=true");
+    fallback_cmd.arg("-c").arg("core.preloadIndex=true");
+    fallback_cmd.arg("-c").arg("pack.threads=0");
+    fallback_cmd.arg("-c").arg("http.postBuffer=524288000");
+    fallback_cmd.arg("-c").arg("protocol.version=2");
+    fallback_cmd.arg("clone").arg(clean_url).arg(local_path);
+    if let Ok(fb_out) = run_git_clone_with_progress(fallback_cmd, app) {
+        if fb_out.status.success() {
+            return Ok(());
+        }
+    }
+
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let redacted_stderr = if let Some(ref t) = auth_info.token {
+        stderr.replace(t.trim(), "******")
+    } else {
+        stderr
+    };
+    Err(AppError::Git(format!(
+        "Failed to clone repository: {}",
+        redacted_stderr
+    )))
 }
 
 fn fs_is_not_empty(path: &Path) -> bool {

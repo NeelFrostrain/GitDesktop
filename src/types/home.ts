@@ -22,6 +22,19 @@ export interface RepoDashboardStatus {
   last_commit_sha: string;
   remote_name?: string | null;
   remote_provider?: 'gitlab' | 'github' | 'other' | null;
+  is_valid?: boolean;
+  error_type?: 'folder_missing' | 'not_a_git_repo' | 'corrupt_git_repo' | string | null;
+  error_message?: string | null;
+}
+
+/**
+ * Result of checking a repository folder and .git structure validity.
+ */
+export interface RepoValidationResult {
+  path: string;
+  is_valid: boolean;
+  error_type?: string | null;
+  error_message?: string | null;
 }
 
 /**

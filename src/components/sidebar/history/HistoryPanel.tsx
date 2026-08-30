@@ -3,6 +3,7 @@ import { CommitInfo } from '../../../types/git';
 import { useGitStore } from '../../../store/useGitStore';
 import { useSigningStore } from '../../../store/signingStore';
 import { GitService } from '../../../services/git/gitService';
+import { RepoCacheService } from '../../../services/git/repoCacheService';
 import { CommitFilters, CommitQuickFilter } from './CommitFilters';
 import { CommitList } from './CommitList';
 
@@ -35,15 +36,41 @@ const sampleCommits: CommitInfo[] = [
  */
 export const HistoryPanel: React.FC = () => {
   const [commitFilter, setCommitFilter] = useState('');
-  const [commits, setCommits] = useState<CommitInfo[]>([]);
+  const {
+    activeTab,
+    activeRepoPath,
+    selectedCommitSha,
+    setSelectedCommitSha,
+    setTags,
+    status,
+    repoSyncCounter,
+  } = useGitStore();
+
+  const [commits, setCommits] = useState<CommitInfo[]>(() => {
+    if (activeRepoPath) {
+      const cached = RepoCacheService.getCommits(activeRepoPath);
+      if (cached && cached.length > 0) return cached;
+    }
+    return [];
+  });
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingInitial, setIsLoadingInitial] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha, setTags } =
-    useGitStore();
-
   const isFetchingRef = useRef(false);
+
+  // Sync with cached commits when activeRepoPath changes
+  useEffect(() => {
+    if (activeRepoPath) {
+      const cached = RepoCacheService.getCommits(activeRepoPath);
+      if (cached && cached.length > 0) {
+        setCommits(cached);
+        if (!selectedCommitSha) {
+          setSelectedCommitSha(cached[0].sha);
+        }
+      }
+    }
+  }, [activeRepoPath]);
 
   // Load initial batch of commits
   const loadInitialCommits = useCallback(async () => {
@@ -56,7 +83,9 @@ export const HistoryPanel: React.FC = () => {
       return;
     }
 
-    setIsLoadingInitial(true);
+    if (commits.length === 0) {
+      setIsLoadingInitial(true);
+    }
     setHasMore(true);
 
     try {
@@ -70,11 +99,17 @@ export const HistoryPanel: React.FC = () => {
       // 2. Fetch first batch of commits
       const res = await GitService.getCommitHistory(activeRepoPath, PAGE_SIZE, 0);
       if (res && res.length > 0) {
+        RepoCacheService.setCommits(activeRepoPath, res);
         setCommits(res);
         setHasMore(res.length === PAGE_SIZE);
+        const hasSelected = selectedCommitSha && res.some((c) => c.sha === selectedCommitSha);
+        if (!hasSelected) {
+          setSelectedCommitSha(res[0].sha);
+        }
       } else {
         setCommits([]);
         setHasMore(false);
+        setSelectedCommitSha(null);
       }
     } catch {
       setCommits(sampleCommits);
@@ -82,13 +117,13 @@ export const HistoryPanel: React.FC = () => {
     } finally {
       setIsLoadingInitial(false);
     }
-  }, [activeRepoPath, setTags]);
+  }, [activeRepoPath, setTags, selectedCommitSha, setSelectedCommitSha]);
 
   useEffect(() => {
     if (activeTab === 'history') {
       loadInitialCommits();
     }
-  }, [activeTab, activeRepoPath, loadInitialCommits]);
+  }, [activeTab, activeRepoPath, status?.current_branch, repoSyncCounter, loadInitialCommits]);
 
   // Load next batch on scroll
   const handleLoadMore = useCallback(async () => {
@@ -157,7 +192,8 @@ export const HistoryPanel: React.FC = () => {
       if (!v || v.status !== 'Verified') return false;
     } else if (activeQuickFilter === 'tagged') {
       const hasTag = tags.some(
-        (t) => t.sha && (t.sha === c.sha || c.sha.startsWith(t.sha) || t.sha.startsWith(c.short_sha))
+        (t) =>
+          t.sha && (t.sha === c.sha || c.sha.startsWith(t.sha) || t.sha.startsWith(c.short_sha))
       );
       if (!hasTag) return false;
     }

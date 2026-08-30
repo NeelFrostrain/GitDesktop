@@ -96,7 +96,7 @@ export const Header: React.FC = () => {
       ref={headerRef}
       className="h-10 bg-base-0 border-b border-border px-1.5 py-3 flex items-center justify-between gap-3 flex-shrink-0 select-none relative z-30"
     >
-      {/* Left: Quick Create Tools Segmented Pill */}
+      {/* Left: Quick Create Tools & Task Manager */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {!isHome && (
           <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-sm p-0.5 shadow-2xs">
@@ -381,7 +381,7 @@ export const Header: React.FC = () => {
                       e.preventDefault();
                       setIsRemoteMenuOpen(true);
                     }}
-                    className="h-6.5 w-6.5 flex items-center justify-center rounded-xs text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer active:scale-95"
+                    className="h-6.5 w-6.5 flex items-center justify-center rounded-xs text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer"
                     title={
                       remotes.length === 1
                         ? `Open ${remotes[0].name} in browser (${remotes[0].url})`

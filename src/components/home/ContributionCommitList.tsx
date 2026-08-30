@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FolderGit2, Calendar, Clock, X, ExternalLink } from 'lucide-react';
+import { FolderGit2, Clock, X, ExternalLink } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 import { openRepo } from '../../features/repos';
 import { useRepoStore } from '../../store/repoStore';
@@ -14,7 +14,10 @@ export const ContributionCommitList: React.FC = () => {
   const repos = useRepoStore((s) => s.repos);
 
   const commits = useMemo(() => getRecentCommits(30), [getRecentCommits, selectedDate, calendar]);
-  const selectedDay = useMemo(() => getSelectedDayData(), [getSelectedDayData, selectedDate, calendar]);
+  const selectedDay = useMemo(
+    () => getSelectedDayData(),
+    [getSelectedDayData, selectedDate, calendar]
+  );
 
   const formatDateTitle = (dateStr: string) => {
     try {
@@ -48,7 +51,7 @@ export const ContributionCommitList: React.FC = () => {
       {/* Header with Title and Clear Filter */}
       <div className="flex items-center justify-between gap-2 px-0.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Calendar className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+          {/* <Calendar className="w-3.5 h-3.5 text-commito-coral shrink-0" /> */}
           <span className="text-xs font-semibold text-text-secondary tracking-tight truncate">
             {selectedDate ? (
               <>

@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import {
   Search,
   FolderGit2,
@@ -20,6 +21,8 @@ import { useAccountServicesStore } from '../../../features/account-services';
 import { AccountService } from '../../../services/accounts/accountService';
 import { GitService } from '../../../services/git/gitService';
 import { getErrorMessage, toAppError } from '../../../shared/utils/errorUtils';
+import { useTaskStore } from '../../../features/task-manager';
+import { useToastStore } from '../../../store/useToastStore';
 
 interface RemoteAccountReposTabProps {
   parentPath: string;
@@ -43,8 +46,37 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
   const [pagedData, setPagedData] = useState<PagedResult<UnifiedRepo> | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cloningRepoId, setCloningRepoId] = useState<number | null>(null);
+  const [cloneProgress, setCloneProgress] = useState<{
+    stage: string;
+    percent: number;
+    detail: string;
+    message: string;
+  } | null>(null);
   const [isAccountDropdownOpen, setIsAccountDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Listen to backend real-time git clone progress events
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    const setupListener = async () => {
+      try {
+        unlisten = await listen<{
+          stage: string;
+          percent: number;
+          detail: string;
+          message: string;
+        }>('git:clone:progress', (event) => {
+          setCloneProgress(event.payload);
+        });
+      } catch (err) {
+        console.warn('Failed to listen to git clone progress:', err);
+      }
+    };
+    setupListener();
+    return () => {
+      if (unlisten) unlisten();
+    };
+  }, []);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -127,13 +159,55 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
       ? `${parentPath.replace(/[/\\]+$/, '')}\\${repoName}`
       : repoName;
 
+    const cloneUrl = repo.http_url_to_repo || repo.ssh_url_to_repo;
+
+    // Check if repository already exists locally
+    try {
+      const existingStatus = await GitService.getRepoStatus(targetFolder);
+      if (existingStatus) {
+        await addRepo(targetFolder);
+        await openRepo(targetFolder);
+        setActiveRepoPath(targetFolder);
+        setStatus(existingStatus);
+        useToastStore.getState().showToast({
+          type: 'info',
+          title: 'Repository Opened',
+          message: `'${repo.name}' already exists locally at '${targetFolder}'. Opened repository!`,
+        });
+        useLogStore
+          .getState()
+          .addLog('info', 'Git', `Repository '${repo.name}' already exists at '${targetFolder}'. Opened existing repository.`);
+        setCloningRepoId(null);
+        onClose();
+        return;
+      }
+    } catch {
+      // Folder is not an existing Git repo, proceed to clone
+    }
+
+    const taskId = useTaskStore.getState().addTask({
+      type: 'clone',
+      title: `Cloning ${repoName}`,
+      description: `Cloning from ${cloneUrl} into ${targetFolder}`,
+      repoName,
+      remoteUrl: cloneUrl,
+      localPath: targetFolder,
+    });
+
     useLogStore
       .getState()
       .addLog('info', 'Git', `Initiating clone for '${repo.name}' into '${targetFolder}'...`);
 
     try {
-      const cloneUrl = repo.http_url_to_repo || repo.ssh_url_to_repo;
-      const finalPath = await AccountService.cloneRepository(cloneUrl, parentPath);
+      const finalPath = await AccountService.cloneRepository(cloneUrl, targetFolder);
+
+      useTaskStore.getState().completeTask(taskId);
+
+      useToastStore.getState().showToast({
+        type: 'success',
+        title: 'Clone Completed',
+        message: `Successfully cloned '${repo.name}' to '${finalPath}'`,
+      });
 
       useLogStore
         .getState()
@@ -153,6 +227,12 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
       onClose();
     } catch (error: unknown) {
       const msg = getErrorMessage(error);
+      useTaskStore.getState().failTask(taskId, msg);
+      useToastStore.getState().showToast({
+        type: 'error',
+        title: 'Clone Failed',
+        message: msg,
+      });
       setError(toAppError(error, 'CLONE_ERROR'));
       useLogStore.getState().addLog('error', 'Git', `Clone failed: ${msg}`, msg);
     } finally {
@@ -188,6 +268,25 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
       (r.path_with_namespace && r.path_with_namespace.toLowerCase().includes(q))
     );
   });
+
+  // Group repositories by organization / owner (matching GitHub Desktop)
+  const groupedRepos = useMemo<Record<string, UnifiedRepo[]>>(() => {
+    const groups: Record<string, UnifiedRepo[]> = {};
+    for (const repo of filteredRepos) {
+      const namespace = repo.path_with_namespace
+        ? repo.path_with_namespace.split('/')[0]
+        : currentHandle;
+      const isOwner =
+        namespace.toLowerCase() === currentHandle.toLowerCase() ||
+        namespace.toLowerCase() === (currentAcc?.handle || '').replace(/^@/, '').toLowerCase();
+      const groupKey = isOwner ? 'Your repositories' : namespace;
+      if (!groups[groupKey]) {
+        groups[groupKey] = [];
+      }
+      groups[groupKey].push(repo);
+    }
+    return groups;
+  }, [filteredRepos, currentHandle, currentAcc]);
 
   if (accounts.length === 0) {
     return (
@@ -269,18 +368,6 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
 
               <div className="border-t border-border/70 my-1" />
 
-              {/* <button
-                type="button"
-                onClick={() => {
-                  setIsAccountDropdownOpen(false);
-                  openModalWithTab('add');
-                }}
-                className="w-full px-3 py-1.5 text-left text-[11px] text-text-secondary hover:text-commito-coral hover:bg-commito-coral/10 transition flex items-center gap-2 cursor-pointer font-medium"
-              >
-                <Plus className="w-3.5 h-3.5 text-commito-coral" />
-                <span>Add GitHub / GitLab Scope</span>
-              </button> */}
-
               <button
                 type="button"
                 onClick={() => {
@@ -312,6 +399,39 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
         </div>
       </div>
 
+      {/* Real-time Clone Progress Indicator */}
+      {cloningRepoId !== null && (
+        <div className="p-2.5 bg-base-1 border border-border rounded-sm space-y-1.5 animate-in fade-in slide-in-from-top-1 duration-150 shadow-2xs">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
+              <span className="font-semibold text-text-primary text-xs truncate">
+                {cloneProgress?.stage || 'Cloning selected repository...'}
+              </span>
+            </div>
+            <span className="font-mono text-commito-coral font-bold text-xs shrink-0">
+              {cloneProgress?.percent || 0}%
+            </span>
+          </div>
+
+          <div className="w-full h-1 bg-base-0 rounded-full overflow-hidden border border-border/80 relative">
+            <div
+              className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
+              style={{ width: `${Math.max(4, cloneProgress?.percent || 4)}%` }}
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
+            <span className="truncate max-w-[85%]">
+              {cloneProgress?.detail || 'Downloading repository objects...'}
+            </span>
+            <span className="shrink-0">{cloneProgress?.percent || 0}%</span>
+          </div>
+        </div>
+      )}
+
       {/* Repositories List Container */}
       <div className="bg-base-1/40 border border-border rounded-sm overflow-hidden min-h-[320px] max-h-[420px] overflow-y-auto divide-y divide-border/60">
         {isLoading && filteredRepos.length === 0 ? (
@@ -326,60 +446,68 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
               : 'No repositories found for this account.'}
           </div>
         ) : (
-          filteredRepos.map((repo) => {
-            const isCloning = cloningRepoId === repo.id;
-            const isPrivate = repo.visibility === 'private';
+          Object.entries(groupedRepos).map(([groupName, groupList]) => (
+            <div key={groupName} className="divide-y divide-border/40">
+              <div className="px-4 py-1.5 bg-base-2/80 text-[11px] font-bold text-text-muted uppercase tracking-wider sticky top-0 z-10 backdrop-blur-xs flex items-center justify-between">
+                <span>{groupName}</span>
+                <span className="text-[10px] font-mono opacity-80">{groupList.length}</span>
+              </div>
+              {groupList.map((repo) => {
+                const isCloning = cloningRepoId === repo.id;
+                const isPrivate = repo.visibility === 'private';
 
-            return (
-              <div
-                key={repo.id}
-                className="px-4 py-3 hover:bg-base-1/80 transition-colors flex items-center justify-between gap-3 group"
-              >
-                {/* Left: Repo metadata */}
-                <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
-                  <div className="min-w-0 truncate">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="font-bold text-xs text-text-primary truncate group-hover:text-commito-coral transition">
-                        {repo.name}
-                      </span>
-                      {isPrivate ? (
-                        <span title="Private repository" className="inline-flex items-center">
-                          <Lock className="w-3 h-3 text-text-muted shrink-0" />
-                        </span>
-                      ) : (
-                        <span title="Public repository" className="inline-flex items-center">
-                          <Globe className="w-3 h-3 text-text-muted shrink-0" />
-                        </span>
-                      )}
+                return (
+                  <div
+                    key={repo.id}
+                    className="px-4 py-3 hover:bg-base-1/80 transition-colors flex items-center justify-between gap-3 group"
+                  >
+                    {/* Left: Repo metadata */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                      <div className="min-w-0 truncate">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="font-bold text-xs text-text-primary truncate group-hover:text-commito-coral transition">
+                            {repo.name}
+                          </span>
+                          {isPrivate ? (
+                            <span title="Private repository" className="inline-flex items-center">
+                              <Lock className="w-3 h-3 text-text-muted shrink-0" />
+                            </span>
+                          ) : (
+                            <span title="Public repository" className="inline-flex items-center">
+                              <Globe className="w-3 h-3 text-text-muted shrink-0" />
+                            </span>
+                          )}
+                        </div>
+
+                        {repo.path_with_namespace && (
+                          <div className="text-[11px] text-text-muted truncate font-mono mt-0.5">
+                            {repo.path_with_namespace}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    {repo.path_with_namespace && (
-                      <div className="text-[11px] text-text-muted truncate font-mono mt-0.5">
-                        {repo.path_with_namespace}
-                      </div>
-                    )}
+                    {/* Right: Import / Clone Action Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleImportClone(repo)}
+                      disabled={isCloning || cloningRepoId !== null}
+                      className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 active:scale-98"
+                    >
+                      {isCloning ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin text-commito-coral" />
+                          <span>Cloning...</span>
+                        </>
+                      ) : (
+                        <span>Clone</span>
+                      )}
+                    </button>
                   </div>
-                </div>
-
-                {/* Right: Import / Clone Action Button */}
-                <button
-                  type="button"
-                  onClick={() => handleImportClone(repo)}
-                  disabled={isCloning || cloningRepoId !== null}
-                  className="h-7.5 px-3.5 bg-base-0 hover:bg-base-2 border border-border hover:border-border-strong text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1.5 transition shadow-2xs cursor-pointer disabled:opacity-50 shrink-0 active:scale-98"
-                >
-                  {isCloning ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin text-commito-coral" />
-                      <span>Cloning...</span>
-                    </>
-                  ) : (
-                    <span>Clone</span>
-                  )}
-                </button>
-              </div>
-            );
-          })
+                );
+              })}
+            </div>
+          ))
         )}
       </div>
 

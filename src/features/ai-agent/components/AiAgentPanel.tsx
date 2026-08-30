@@ -20,6 +20,7 @@ import { useAiAgentStore } from '../store/useAiAgentStore';
 import { ChatMessageItem } from './ChatMessageItem';
 import { QuickPromptChips } from './QuickPromptChips';
 import { useSettingsStore } from '../../settings';
+import { Button } from '../../../components/common/Button';
 
 const MODEL_OPTIONS = [
   {
@@ -73,6 +74,8 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
   const {
     isOpen,
     setIsOpen,
+    agentName,
+    setAgentName,
     sessions,
     activeSessionId,
     status,
@@ -96,6 +99,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
 
   const [panelWidth] = useState<number>(getStoredWidth);
   const [inputVal, setInputVal] = useState('');
+  const [namingInput, setNamingInput] = useState('');
   const [isSessionMenuOpen, setIsSessionMenuOpen] = useState(false);
   const [isModelMenuOpen, setIsModelMenuOpen] = useState(false);
   const [isAttachMenuOpen, setIsAttachMenuOpen] = useState(false);
@@ -174,6 +178,94 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
 
   // Use externally controlled width if provided; fall back to internal drag width
   const effectiveWidth = widthProp ?? panelWidth;
+
+  // First-time Agent Naming Screen (Seamless minimalist layout on solid background)
+  if (!agentName) {
+    return (
+      <aside
+        style={{ width: `${effectiveWidth}px` }}
+        className="relative h-full bg-base-0 border-l border-border/80 flex flex-col justify-between select-none shrink-0 z-30 shadow-2xs overflow-hidden"
+      >
+        {/* Top Header */}
+        <div className="h-11 px-3 bg-base-1/90 border-b border-border/80 flex items-center justify-between gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
+            {/* <Sparkles className="w-4 h-4 text-commito-coral" /> */}
+            <span>AI Coding Agent</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(false)}
+            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer"
+            title="Close AI Agent"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Naming Form Body */}
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none font-sans max-w-xs mx-auto w-full gap-5">
+          {/* <div className="w-11 h-11 rounded-md bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shadow-lg">
+            <Sparkles className="w-5 h-5 stroke-[2.2]" />
+          </div> */}
+
+          <div className="space-y-1">
+            <h2 className="text-sm font-bold text-text-primary tracking-tight">
+              Name Your AI Agent
+            </h2>
+            <p className="text-xs text-text-muted leading-relaxed">
+              Give your assistant a custom name. The agent will introduce itself and respond using
+              this identity.
+            </p>
+          </div>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (namingInput.trim()) {
+                setAgentName(namingInput.trim());
+              }
+            }}
+            className="w-full space-y-3"
+          >
+            <input
+              type="text"
+              required
+              autoFocus
+              placeholder="e.g. GitBot, Nova, Commitor, Alex..."
+              value={namingInput}
+              onChange={(e) => setNamingInput(e.target.value)}
+              className="w-full px-3 py-2 bg-base-1 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs text-text-primary placeholder:text-text-muted focus:outline-none transition font-sans shadow-2xs text-center"
+            />
+
+            {/* Quick Suggestion Chips */}
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-1">
+              {['GitBot', 'Nova', 'Commitor', 'Alex', 'Jarvis'].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setNamingInput(preset)}
+                  className="px-2 py-0.5 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-[10.5px] text-text-muted hover:text-text-primary font-mono transition cursor-pointer"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              type="submit"
+              variant="coral"
+              size="md"
+              disabled={!namingInput.trim()}
+              className="w-full justify-center shadow-md mt-2 py-2"
+              leftIcon={<Check className="w-4 h-4" />}
+            >
+              Continue
+            </Button>
+          </form>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside

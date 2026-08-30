@@ -19,6 +19,7 @@ import { useAccountServicesStore } from '../../features/account-services';
 import { UserAvatar } from '../common/UserAvatar';
 import { SystemService } from '../../services/system/systemService';
 import { AccountService } from '../../services/accounts/accountService';
+import { TaskManagerBadge } from '../../features/task-manager';
 
 /**
  * Custom frameless application titlebar with drag region, user profile menu,
@@ -123,20 +124,56 @@ export const Titlebar: React.FC = () => {
 
   const titlebarRef = React.useRef<HTMLElement>(null);
 
-  // Native mousedown → startDragging must fire inside the real pointer-down
-  // event. React's synthetic event layer is enough to break Tauri's context.
+  // Native drag handler that gracefully unmaximizes and moves window without vanishing
   useEffect(() => {
     const el = titlebarRef.current;
     if (!el) return;
-    const handleNativeDrag = (e: MouseEvent) => {
+
+    let startX = 0;
+    let startY = 0;
+    let isTracking = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
       if (target.closest('button, input, select, a, [role="button"], .titlebar-no-drag')) return;
-      // startDragging must be called synchronously here — no await
-      appWindow.startDragging().catch(() => {});
+
+      startX = e.clientX;
+      startY = e.clientY;
+      isTracking = true;
     };
-    el.addEventListener('mousedown', handleNativeDrag);
-    return () => el.removeEventListener('mousedown', handleNativeDrag);
+
+    const handleMouseMove = async (e: MouseEvent) => {
+      if (!isTracking) return;
+      const dx = Math.abs(e.clientX - startX);
+      const dy = Math.abs(e.clientY - startY);
+      if (dx > 3 || dy > 3) {
+        isTracking = false;
+        try {
+          const maximized = await appWindow.isMaximized();
+          if (maximized) {
+            await appWindow.unmaximize();
+            setIsMaximized(false);
+          }
+          appWindow.startDragging().catch(() => {});
+        } catch {
+          appWindow.startDragging().catch(() => {});
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      isTracking = false;
+    };
+
+    el.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      el.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
   }, [appWindow]);
 
   const handleSignOut = async () => {
@@ -188,11 +225,12 @@ export const Titlebar: React.FC = () => {
         className="titlebar-no-drag flex items-center gap-1.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
+                <TaskManagerBadge />
         {currentNavView !== 'home' && (
           <button
             type="button"
             onClick={() => setCurrentNavView('home')}
-            className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer text-xs font-semibold select-none active:scale-95 group shadow-2xs"
+            className="titlebar-no-drag h-6.5 px-2.5 flex items-center gap-1.5 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer text-xs font-semibold select-none group shadow-2xs"
             title="Go to Home"
           >
             <Home className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition-colors" />
@@ -205,7 +243,7 @@ export const Titlebar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsProfileOpen((o) => !o)}
-            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer select-none active:scale-95 shadow-2xs"
+            className="h-6.5 px-1.5 flex items-center gap-1 rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-primary transition cursor-pointer select-none shadow-2xs"
             title={user ? user.name || user.username : 'Account Menu'}
           >
             <UserAvatar
@@ -300,7 +338,7 @@ export const Titlebar: React.FC = () => {
         <button
           type="button"
           onClick={() => useSettingsStore.getState().openSettings()}
-          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer select-none active:scale-95 group shadow-2xs"
+          className="titlebar-no-drag h-6.5 w-6.5 flex items-center justify-center rounded-sm border border-border bg-base-1 hover:bg-base-2 active:bg-base-3 text-text-muted hover:text-text-primary transition cursor-pointer select-none group shadow-2xs"
           title="Open Settings (Ctrl+,)"
         >
           <Settings className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary group-hover:rotate-45 transition-all duration-200" />

@@ -14,12 +14,74 @@ pub struct RepoDashboardStatus {
     pub last_commit_sha: String,
     pub remote_name: Option<String>,
     pub remote_provider: Option<String>, // "gitlab" | "github" | "other"
+    #[serde(default = "default_true")]
+    pub is_valid: bool,
+    #[serde(default)]
+    pub error_type: Option<String>, // "folder_missing" | "not_a_git_repo" | "corrupt_git_repo"
+    #[serde(default)]
+    pub error_message: Option<String>,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppError> {
     let repo_path = Path::new(path);
-    let repo = Repository::open(repo_path)
-        .map_err(|e| AppError::Git(format!("Failed to open repo '{}': {}", path, e)))?;
+
+    // 0. Check directory existence on disk
+    if !repo_path.exists() {
+        return Ok(RepoDashboardStatus {
+            current_branch: "Unavailable".to_string(),
+            ahead: 0,
+            behind: 0,
+            dirty_files: 0,
+            last_commit_summary: "Folder not found".to_string(),
+            last_commit_at: 0,
+            last_commit_sha: String::new(),
+            remote_name: None,
+            remote_provider: None,
+            is_valid: false,
+            error_type: Some("folder_missing".to_string()),
+            error_message: Some(format!("Directory '{}' does not exist on disk", path)),
+        });
+    }
+
+    // Check git repository integrity
+    let repo = match Repository::open(repo_path) {
+        Ok(r) => r,
+        Err(e) => {
+            let git_dir = repo_path.join(".git");
+            let (err_type, summary, msg) = if !git_dir.exists() {
+                (
+                    "not_a_git_repo",
+                    "Missing .git folder",
+                    format!("Directory '{}' is not a Git repository (.git directory missing)", path),
+                )
+            } else {
+                (
+                    "corrupt_git_repo",
+                    "Corrupted .git",
+                    format!("Corrupted or unreadable Git repository at '{}': {}", path, e),
+                )
+            };
+
+            return Ok(RepoDashboardStatus {
+                current_branch: "Invalid".to_string(),
+                ahead: 0,
+                behind: 0,
+                dirty_files: 0,
+                last_commit_summary: summary.to_string(),
+                last_commit_at: 0,
+                last_commit_sha: String::new(),
+                remote_name: None,
+                remote_provider: None,
+                is_valid: false,
+                error_type: Some(err_type.to_string()),
+                error_message: Some(msg),
+            });
+        }
+    };
 
     // 1. Current branch
     let current_branch = repo
@@ -105,5 +167,8 @@ pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppE
         last_commit_sha,
         remote_name,
         remote_provider,
+        is_valid: true,
+        error_type: None,
+        error_message: None,
     })
 }

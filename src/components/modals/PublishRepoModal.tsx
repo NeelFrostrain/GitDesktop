@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
+import { useRepoStore } from '../../store/repoStore';
+import { useRemoteStore } from '../../store/remoteStore';
 import { useAccounts, useAccountServicesStore } from '../../features/account-services';
 import { GitService } from '../../services/git/gitService';
 import { AccountService } from '../../services/accounts/accountService';
@@ -24,6 +26,7 @@ import { NamespaceOption } from '../../types/git';
 import { UserAvatar } from '../common/UserAvatar';
 import { Checkbox } from '../common/Checkbox';
 import { getErrorMessage } from '../../shared/utils/errorUtils';
+import { useTaskStore } from '../../features/task-manager';
 
 export const PublishRepoModal: React.FC = () => {
   const { activeRepoPath, isPublishRepoModalOpen, setIsPublishRepoModalOpen, setStatus, setError } =
@@ -261,6 +264,21 @@ export const PublishRepoModal: React.FC = () => {
     setIsPublishing(true);
     setLocalError(null);
 
+    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || name.trim() || 'Repository';
+    const taskId = useTaskStore.getState().addTask({
+      type: 'publish',
+      title: `Publish '${name.trim()}' to ${currentAccount?.provider || 'remote'}`,
+      repoName,
+      localPath: activeRepoPath,
+      cancellable: false,
+    });
+
+    useTaskStore.getState().updateTaskProgress(taskId, {
+      stage: 'Creating remote repo',
+      percent: 30,
+      detail: `Creating repository on ${currentAccount?.provider || 'remote'}...`,
+    });
+
     try {
       useLogStore
         .getState()
@@ -285,17 +303,35 @@ export const PublishRepoModal: React.FC = () => {
         namespaceId: effectiveNamespace,
       });
 
+      useTaskStore.getState().updateTaskProgress(taskId, {
+        stage: 'Completed',
+        percent: 100,
+        detail: `Published to ${result.remote_url}`,
+      });
+      useTaskStore.getState().completeTask(taskId);
+
       useLogStore
         .getState()
         .addLog('success', 'Remote', `Successfully published repository to ${result.remote_url}`);
 
-      // Refresh repository status
+      // Refresh the active repo status (updates has_remote, remote_url, ahead/behind)
       const updatedStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(updatedStatus);
+
+      // Refresh the header remote list so the Globe button and SmartGitActionButton update immediately
+      useRemoteStore.getState().loadRemotes(activeRepoPath);
+
+      // Also refresh the Home Dashboard card and ensure the repo is registered
+      useRepoStore.getState().refreshStatus(activeRepoPath);
+      useRepoStore
+        .getState()
+        .addRepo(activeRepoPath)
+        .catch(() => {});
 
       setIsPublishRepoModalOpen(false);
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
+      useTaskStore.getState().failTask(taskId, msg);
       setLocalError(msg);
       setError({ code: 'GIT_PUBLISH_ERROR', message: msg });
       useLogStore.getState().addLog('error', 'Remote', `Failed to publish repository: ${msg}`);

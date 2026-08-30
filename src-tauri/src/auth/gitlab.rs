@@ -362,6 +362,8 @@ pub struct MergeRequest {
     pub labels: Option<Vec<MergeRequestLabel>>,
     pub milestone: Option<String>,
     pub is_draft: Option<bool>,
+    pub repo_full_name: Option<String>,
+    pub total_count: Option<u64>,
 }
 
 pub struct GitLabClient {
@@ -638,6 +640,8 @@ impl GitLabClient {
                 labels: Some(labels),
                 milestone,
                 is_draft: Some(is_draft),
+                repo_full_name: Some(project_id.to_string()),
+                total_count: None,
             });
         }
 

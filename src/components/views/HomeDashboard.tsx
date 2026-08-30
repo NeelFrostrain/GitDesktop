@@ -57,9 +57,11 @@ export const HomeDashboard: React.FC = () => {
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative shrink-0 flex items-center">
             <UserAvatar
-              url={user?.avatar_url}
-              name={user?.name || user?.username}
-              provider={user?.provider}
+              url={user?.avatar_url || accounts.find((a) => a.is_active)?.avatar_url}
+              name={user?.name || user?.username || accounts.find((a) => a.is_active)?.display_name}
+              handle={user?.username || accounts.find((a) => a.is_active)?.handle}
+              provider={user?.provider || accounts.find((a) => a.is_active)?.provider}
+              email={user?.email || accounts.find((a) => a.is_active)?.commit_email}
               className="w-9 h-9 rounded-sm ring-1 ring-border shadow-xs"
               iconClassName="w-4.5 h-4.5"
             />
@@ -87,7 +89,7 @@ export const HomeDashboard: React.FC = () => {
         {/* Right Side: Quick Stats & Primary Action Buttons */}
         <div className="flex items-center gap-3 shrink-0">
           {/* Quick Metrics Badges */}
-          <div className="hidden md:flex h-full items-center gap-2 text-xs text-text-muted select-none bg-base-1 border border-border rounded-sm px-2.5 py-1">
+          <div className="hidden md:flex h-full items-center gap-2 text-xs text-text-muted select-none bg-base-1 border border-border rounded-sm px-2.5 py-1.5">
             <span className="flex items-center gap-1.5">
               <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
               <span className="font-semibold text-text-primary">{metrics.total}</span> Repos
@@ -168,16 +170,16 @@ export const HomeDashboard: React.FC = () => {
       </header>
 
       {/* ── Main Workspace Bento Grid ── */}
-      <main className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+      <main className="p-2 sm:p-3 lg:p-5 w-full mx-auto space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
           {/* Main Left Section: Repositories Hub + Contribution Heatmap */}
-          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-8 space-y-6 min-w-0">
             <RepoList />
             <ContributionHeatmap />
           </div>
 
           {/* Right Sidebar Section: Connected Accounts + Activity Radar Overview */}
-          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0">
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-4 space-y-6 min-w-0">
             <AccountsWidget />
             <ContributionActivityRadar />
           </div>

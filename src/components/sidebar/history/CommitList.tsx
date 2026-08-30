@@ -64,7 +64,7 @@ export const CommitList: React.FC<CommitListProps> = ({
     <div
       ref={commitListRef}
       onScroll={handleScroll}
-      className="flex-1 overflow-y-auto p-2 space-y-1.5 scrollbar-thin select-none"
+      className="flex-1 overflow-y-auto pl-2 py-2 space-y-1.5 scrollbar-thin select-none"
     >
       {commits.map((commit) => {
         const isSelected = selectedCommitSha === commit.sha;

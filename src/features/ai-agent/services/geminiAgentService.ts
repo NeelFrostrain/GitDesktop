@@ -8,6 +8,7 @@ export interface GeminiAgentRequestOptions {
   systemInstruction?: string;
   messages: AgentMessage[];
   repoContextPrompt?: string;
+  agentName?: string;
 }
 
 export interface GeminiAgentResponse {
@@ -32,7 +33,10 @@ export class GeminiAgentService {
       systemInstruction = '',
       messages,
       repoContextPrompt = '',
+      agentName,
     } = options;
+
+    const nameToUse = agentName?.trim() || 'AI Git Agent';
 
     // Build ordered list of API keys to attempt
     const keysToTry: string[] = [];
@@ -51,10 +55,10 @@ export class GeminiAgentService {
 
     // Build system instruction with TOON token-efficiency support
     const fullSystemInstruction = [
-      `You are the Git Desktop AI Agent & Coding Assistant, an expert coding and Git assistant integrated directly into Git Desktop.`,
+      `You are ${nameToUse}, an expert coding and Git assistant integrated directly into Git Desktop.`,
       `You have full capabilities to explain code, write code, create files, edit files, delete files, manage branches, and execute Git operations safely.`,
       `Guidelines:`,
-      `- When the user sends a greeting or small talk (e.g. "hello", "hi", "help"), respond warmly and concisely. Introduce what you can do (write/edit files, run Git commands, analyze diffs, resolve conflicts).`,
+      `- When the user sends a greeting or asks for your identity/name (e.g. "hello", "hi", "who are you"), respond warmly and introduce yourself as ${nameToUse}. Briefly introduce what you can do (write/edit files, run Git commands, analyze diffs, resolve conflicts).`,
       `- To execute terminal/git commands, format the command in a \`\`\`bash markdown code block. The app turns this into a 1-click execution button for the user's terminal.`,
       `- To CREATE or EDIT a file in the repository, output:`,
       `  [FILE_WRITE: relative/path/to/file.ext]`,

@@ -11,6 +11,7 @@ import {
   GitPullRequest,
   X,
   Globe,
+  Layers,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -18,13 +19,20 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
 import { BranchInfo } from '../../types/git';
 import { Button } from '../common/Button';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 /**
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
  */
 export const BranchesView: React.FC = () => {
-  const { activeRepoPath, setStatus, branches, setBranches, setError, setIsMergeRequestModalOpen } =
-    useGitStore();
+  const {
+    activeRepoPath,
+    branches,
+    setBranches,
+    setError,
+    setIsMergeRequestModalOpen,
+    openWorktreeModal,
+  } = useGitStore();
 
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +40,7 @@ export const BranchesView: React.FC = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [editingBranch, setEditingBranch] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
@@ -57,10 +66,7 @@ export const BranchesView: React.FC = () => {
     try {
       await GitService.checkoutBranch(activeRepoPath, branchName);
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     }
@@ -77,10 +83,7 @@ export const BranchesView: React.FC = () => {
         .addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
       setNewBranchName('');
       setShowCreateModal(false);
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     }
@@ -96,26 +99,21 @@ export const BranchesView: React.FC = () => {
         .addLog('info', 'Git', `Renamed branch '${oldName}' to '${renameValue.trim()}'`);
       setEditingBranch(null);
       setRenameValue('');
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'RENAME_BRANCH_ERROR'));
     }
   };
 
-  const handleDeleteBranch = async (branchName: string) => {
-    if (!activeRepoPath) return;
-
-    if (!confirm(`Are you sure you want to delete branch '${branchName}'?`)) {
-      return;
-    }
+  const handleConfirmDeleteBranch = async () => {
+    if (!activeRepoPath || !branchToDelete) return;
+    const name = branchToDelete;
+    setBranchToDelete(null);
 
     try {
-      await GitService.deleteBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${branchName}'`);
-      loadBranches();
+      await GitService.deleteBranch(activeRepoPath, name, true);
+      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${name}'`);
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
     }
@@ -129,7 +127,7 @@ export const BranchesView: React.FC = () => {
       useLogStore
         .getState()
         .addLog('success', 'Git', `Pushed branch '${branchName}' to origin with upstream set`);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'PUSH_BRANCH_ERROR'));
     }
@@ -407,6 +405,16 @@ export const BranchesView: React.FC = () => {
 
                     {/* Actions Toolbar */}
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Create Linked Worktree */}
+                      <button
+                        type="button"
+                        onClick={() => openWorktreeModal(b.name)}
+                        className="p-1.5 text-text-muted hover:text-sky-400 bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                        title={`Create Linked Worktree for branch '${b.name}'`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handlePushBranch(b.name)}
@@ -449,7 +457,7 @@ export const BranchesView: React.FC = () => {
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteBranch(b.name)}
+                            onClick={() => setBranchToDelete(b.name)}
                             className="p-1.5 text-text-muted hover:text-git-removed bg-base-1 hover:bg-git-removed-bg border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
                             title="Delete branch"
                           >
@@ -531,6 +539,19 @@ export const BranchesView: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Delete Branch Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={branchToDelete !== null}
+        variant="danger"
+        title="Delete Branch"
+        subtitle={branchToDelete || ''}
+        description={`Are you sure you want to permanently delete the branch '${branchToDelete}'? This cannot be undone if the branch has unmerged commits.`}
+        discardText="Delete Branch"
+        cancelText="Cancel"
+        onDiscard={handleConfirmDeleteBranch}
+        onCancel={() => setBranchToDelete(null)}
+      />
     </div>
   );
 };

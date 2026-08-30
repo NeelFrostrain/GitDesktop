@@ -141,7 +141,7 @@ export const CoAuthorButton: React.FC<CoAuthorButtonProps> = ({ onAddCoAuthor })
           setIsOpen(!isOpen);
         }}
         title="Add Co-Author (Co-authored-by: Name <email>)"
-        className={`p-1 rounded-sm transition cursor-pointer text-xs flex items-center justify-center active:scale-95 ${
+        className={`p-1 rounded-sm transition cursor-pointer text-xs flex items-center justify-center ${
           isOpen
             ? 'bg-commito-coral/15 text-commito-coral'
             : 'text-text-muted hover:text-text-primary hover:bg-base-2'

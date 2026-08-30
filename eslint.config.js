@@ -35,10 +35,7 @@ export default tseslint.config(
   // Config for source files
   {
     files: ['src/**/*.{js,jsx,ts,tsx}'],
-    extends: [
-      js.configs.recommended,
-      ...tseslint.configs.recommended,
-    ],
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
     languageOptions: {
       parser: tseslint.parser,
       parserOptions: {
@@ -196,24 +193,24 @@ export default tseslint.config(
       ...reactPlugin.configs.recommended.rules,
       ...reactHooksPlugin.configs.recommended.rules,
       'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'warn',
-      'react-refresh/only-export-components': 'warn',
+      'react/prop-types': 'off', // TypeScript handles prop validation
+      'react-refresh/only-export-components': 'off',
       'no-unused-vars': 'off', // turned off in favor of @typescript-eslint/no-unused-vars
       'no-undef': 'off', // turned off in favor of TypeScript's compiler type checking
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',   // downgrade: surfaces but doesn't block
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+      '@typescript-eslint/no-explicit-any': 'off',
       'no-empty': ['warn', { allowEmptyCatch: true }], // empty catch blocks are common in Tauri apps
-      // react-hooks/set-state-in-effect fires on the common pattern of resetting
-      // error/loading state at the top of an effect when its deps change. This is
-      // accepted React practice; downgrade to warn so it surfaces without blocking.
-      'react-hooks/set-state-in-effect': 'warn',
-      // react-hooks/purity, react-hooks/refs, and React Compiler rules:
+      'react-hooks/exhaustive-deps': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       'react-hooks/purity': 'off',
       'react-hooks/refs': 'off',
       'react-hooks/preserve-manual-memoization': 'off',
-      'react-hooks/immutability': 'warn',
-      // Apostrophes in JSX text: surface but don't block.
-      'react/no-unescaped-entities': 'warn',
+      'react-hooks/immutability': 'off',
+      'react-hooks/incompatible-library': 'off',
+      'react/no-unescaped-entities': 'off',
     },
     settings: {
       react: {

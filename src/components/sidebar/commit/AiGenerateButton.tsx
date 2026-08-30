@@ -157,7 +157,7 @@ export const AiGenerateButton: React.FC<AiGenerateButtonProps> = ({
           ? `Analyze ${stagedFiles.length} staged ${stagedFiles.length === 1 ? 'file' : 'files'} with Commit-AI`
           : 'Select/stage files to analyze with Commit-AI'
       }
-      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+      className="p-1 rounded-sm text-text-muted hover:text-commito-coral hover:bg-base-2 transition cursor-pointer text-xs flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed"
     >
       {isGenerating ? (
         <Loader2 className="w-3.5 h-3.5 animate-spin text-commito-coral" />

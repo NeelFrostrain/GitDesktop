@@ -11,6 +11,8 @@ import {
   Pin,
   FileEdit,
   PlusSquare,
+  AlertCircle,
+  Trash2,
 } from 'lucide-react';
 import { useRepoStore } from '../../store/repoStore';
 import { useGitStore } from '../../store/useGitStore';
@@ -30,6 +32,7 @@ export const RepoList: React.FC = () => {
   const isLoading = useRepoStore((s) => s.isLoading);
   const loadRepos = useRepoStore((s) => s.loadRepos);
   const addRepo = useRepoStore((s) => s.addRepo);
+  const removeInvalidRepos = useRepoStore((s) => s.removeInvalidRepos);
 
   const { setIsCloneRepoModalOpen, setIsCreateRepoModalOpen } = useGitStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,6 +118,10 @@ export const RepoList: React.FC = () => {
     [filteredRepos]
   );
 
+  const invalidRepos = useMemo(() => {
+    return repos.filter((r) => statuses[r.path]?.is_valid === false);
+  }, [repos, statuses]);
+
   const dirtyCount = useMemo(() => {
     let count = 0;
     Object.values(statuses).forEach((s) => {
@@ -124,7 +131,43 @@ export const RepoList: React.FC = () => {
   }, [statuses]);
 
   return (
-    <div className="space-y-4 select-none font-sans w-full">
+    <div className="space-y-4 select-none font-sans w-full md:min-h-[60vh] lg:min-h-[43vh]">
+      {/* Missing / Invalid Repositories Top Alert Banner */}
+      {invalidRepos.length > 0 && (
+        <div className="flex items-center justify-between gap-3 px-3.5 py-2 rounded-sm bg-base-1 border border-border text-xs text-text-primary shadow-2xs animate-in fade-in duration-150">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-5 h-5 rounded-xs bg-git-removed-bg border border-git-removed/30 flex items-center justify-center shrink-0 text-git-removed">
+              <AlertCircle className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0 text-xs text-text-secondary">
+              <span className="font-semibold text-text-primary">
+                {invalidRepos.length} missing {invalidRepos.length === 1 ? 'repository' : 'repositories'}
+              </span>
+              <span className="text-border hidden sm:inline">•</span>
+              <span className="text-text-muted hidden sm:inline truncate">
+                Folder or <code className="font-mono text-[11px] text-text-secondary">.git</code> metadata could not be located on disk.
+              </span>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (
+                confirm(
+                  `Remove all ${invalidRepos.length} missing/invalid repositories from your workspace? (Files on disk will not be touched)`
+                )
+              ) {
+                await removeInvalidRepos();
+              }
+            }}
+            className="h-6.5 px-2.5 rounded-xs bg-git-removed-bg hover:bg-red-500/25 border border-git-removed/30 text-git-removed hover:text-red-300 text-[11px] font-medium flex items-center gap-1.5 transition cursor-pointer shrink-0 active:scale-[0.98]"
+          >
+            <Trash2 className="w-3 h-3" />
+            <span>Clean Up Missing</span>
+          </button>
+        </div>
+      )}
+
       {/* Top Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Left: Filter Tabs */}
@@ -276,7 +319,7 @@ export const RepoList: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                 gap: '10px',
               }}
             >
@@ -318,7 +361,7 @@ export const RepoList: React.FC = () => {
               className="animate-in fade-in duration-200"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                 gap: '10px',
               }}
             >
@@ -333,9 +376,9 @@ export const RepoList: React.FC = () => {
               {/* Quick Add Card */}
               <div
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/30 hover:bg-base-1/60 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[110px] shadow-2xs"
+                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/25 hover:bg-base-1/50 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[110px] shadow-2xs"
               >
-                <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors mb-1.5 shadow-2xs">
+                <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/40 transition-colors mb-1.5 shadow-2xs">
                   <Plus className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-[11.5px] font-semibold text-text-secondary group-hover:text-text-primary transition-colors">

@@ -7,7 +7,7 @@ import { FolderContextMenu } from '../../context-menus/FolderContextMenu';
 import { ChangesEmptySpaceContextMenu } from '../../context-menus/ChangesEmptySpaceContextMenu';
 import { CreateItemModal } from '../../modals/CreateItemModal';
 import { SystemService } from '../../../services/system/systemService';
-import { buildFileTree, FileTreeNode, getStatusBadge, getFileIcon, TreeItem } from './FileTreeItem';
+import { buildFileTree, FileTreeNode, getStatusBadge, TreeItem } from './FileTreeItem';
 
 export type ChangesViewMode = 'tree' | 'list';
 
@@ -257,7 +257,7 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
                     </div>
 
                     {/* Dynamic File Type Icon */}
-                    {getFileIcon(fileName)}
+                    {/* {getFileIcon(fileName)} */}
 
                     {/* File Name & Folder Subtitle */}
                     <div className="min-w-0 truncate">

@@ -26,18 +26,13 @@ const LogEntryRow = memo(({ entry, isExpanded, copiedId, onToggle, onCopy }: Log
   const hasMeta = Boolean(entry.metadata);
 
   return (
-    <div
-      className="leading-snug hover:bg-base-2/60 px-1.5 py-0.5 rounded transition group/entry flex flex-col"
-    >
+    <div className="leading-snug hover:bg-base-2/60 px-1.5 py-0.5 rounded transition group/entry flex flex-col">
       <div className="flex items-start gap-2 break-all">
         <span className="text-text-muted select-none flex-shrink-0 font-mono text-[11px]">
           [{timeStr}]
         </span>
 
-        <span
-          style={{ color: levelColor }}
-          className="font-bold flex-shrink-0 text-[11px]"
-        >
+        <span style={{ color: levelColor }} className="font-bold flex-shrink-0 text-[11px]">
           [{levelTag}]
         </span>
 
@@ -65,11 +60,7 @@ const LogEntryRow = memo(({ entry, isExpanded, copiedId, onToggle, onCopy }: Log
         <button
           type="button"
           onClick={(e) =>
-            onCopy(
-              e,
-              entry.id,
-              `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`
-            )
+            onCopy(e, entry.id, `[${timeStr}] [${levelTag}] [${entry.category}] ${entry.message}`)
           }
           className="opacity-0 group-hover/entry:opacity-100 text-text-muted hover:text-text-primary p-0.5 flex-shrink-0 transition cursor-pointer select-none"
           title="Copy line"

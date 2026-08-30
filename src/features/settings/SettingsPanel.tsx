@@ -219,31 +219,46 @@ export const SettingsPanel: React.FC = () => {
             ) : (
               /* 2. Category View Mode */
               <div className="space-y-4">
-                {/* Render dedicated AppearanceTab for theme selection */}
-                {selectedCategory === 'appearance' && <ThemeSelectorTab />}
+                {/* Render dedicated AppearanceTab for theme selection only when viewing All Appearance or Color Theme */}
+                {selectedCategory === 'appearance' &&
+                  (!selectedSubcategory || selectedSubcategory === 'Color Theme') && (
+                    <ThemeSelectorTab />
+                  )}
 
                 {/* Render dedicated AiSettingsTab with multi-key pool */}
                 {selectedCategory === 'ai' && <AiSettingsTab />}
 
-                {/* Subcategory sections (for other non-AI categories) */}
-                {groupedSettings.map(([subcategory, settings]) => {
-                  return (
-                    <section key={subcategory} className="space-y-2.5">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider">
-                          {subcategory}
-                        </h4>
-                        <div className="flex-1 h-px bg-border/50" />
-                      </div>
+                {/* Subcategory sections */}
+                {groupedSettings
+                  .filter(([subcategory]) => {
+                    // Hide duplicate generic Color Theme dropdown when ThemeSelectorTab is already rendered
+                    if (
+                      selectedCategory === 'appearance' &&
+                      (!selectedSubcategory || selectedSubcategory === 'Color Theme') &&
+                      subcategory === 'Color Theme'
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })
+                  .map(([subcategory, settings]) => {
+                    return (
+                      <section key={subcategory} className="space-y-2.5">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider">
+                            {subcategory}
+                          </h4>
+                          <div className="flex-1 h-px bg-border/50" />
+                        </div>
 
-                      <div className="space-y-2">
-                        {settings.map((setting) => (
-                          <SettingRow key={setting.id} setting={setting} />
-                        ))}
-                      </div>
-                    </section>
-                  );
-                })}
+                        <div className="space-y-2">
+                          {settings.map((setting) => (
+                            <SettingRow key={setting.id} setting={setting} />
+                          ))}
+                        </div>
+                      </section>
+                    );
+                  })}
               </div>
             )}
           </main>
