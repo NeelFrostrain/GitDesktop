@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FolderGit2, Calendar, Clock, X, ExternalLink } from 'lucide-react';
+import { FolderGit2, Clock, X, ExternalLink } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 import { openRepo } from '../../features/repos';
 import { useRepoStore } from '../../store/repoStore';

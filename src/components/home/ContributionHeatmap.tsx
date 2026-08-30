@@ -2,10 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import {
   RefreshCw,
   ChevronDown,
-  Layers,
   Check,
   Flame,
-  FolderGit2,
   Calendar as CalendarIcon,
   Zap,
 } from 'lucide-react';
@@ -92,13 +90,6 @@ export const ContributionHeatmap: React.FC = () => {
     const found = accounts.find((a) => a.id === selectedAccountId);
     if (found) return found.display_name || found.handle;
     return calendar?.account_handle || 'All Accounts';
-  };
-
-  const getActiveAccountProvider = () => {
-    if (selectedAccountId === 'all') return 'all';
-    if (selectedAccountId === 'local') return 'local';
-    const found = accounts.find((a) => a.id === selectedAccountId);
-    return found?.provider || 'gitlab';
   };
 
   return (

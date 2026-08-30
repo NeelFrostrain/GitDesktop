@@ -1,21 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import {
-  Search,
-  GitBranch,
-  Terminal,
-  Layers,
-  Archive,
-  Tag,
-  Settings,
-  Sparkles,
-  GitPullRequest,
-  PackagePlus,
-  ArrowRight,
-  FolderOpen,
-  Code2,
-  FileCode,
-  History,
-} from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useTerminalStore } from '../../features/terminal/store/terminalStore';
 import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
@@ -27,7 +11,7 @@ export interface PaletteCommand {
   id: string;
   title: string;
   category: 'Navigation' | 'Git Actions' | 'Branches' | 'Workspace';
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   shortcut?: string;
   action: () => void;
   keywords?: string[];
@@ -70,7 +54,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-changes',
         title: 'Go to Changes (Working Tree)',
         category: 'Navigation',
-        icon: <FileCode className="w-4 h-4 text-git-modified" />,
         action: () => setCurrentNavView('changes'),
         keywords: ['status', 'diff', 'diffs', 'staging', 'commit'],
       },
@@ -78,7 +61,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-history',
         title: 'Go to Commit History',
         category: 'Navigation',
-        icon: <History className="w-4 h-4 text-commito-coral" />,
         action: () => setCurrentNavView('history'),
         keywords: ['log', 'timeline', 'commits'],
       },
@@ -86,7 +68,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-graph',
         title: 'Go to Visual Git Graph Table',
         category: 'Navigation',
-        icon: <GitBranch className="w-4 h-4 text-blue-400" />,
         action: () => setCurrentNavView('graph'),
         keywords: ['graph', 'tree', 'railway', 'network', 'timeline', 'branches'],
       },
@@ -94,7 +75,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-files',
         title: 'Go to Files Tree Explorer',
         category: 'Navigation',
-        icon: <FolderOpen className="w-4 h-4 text-gitlab-teal" />,
         action: () => setCurrentNavView('files'),
         keywords: ['tree', 'browser', 'directory'],
       },
@@ -102,7 +82,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-stashes',
         title: 'Go to Stashes Manager',
         category: 'Navigation',
-        icon: <Archive className="w-4 h-4 text-amber-400" />,
         action: () => setCurrentNavView('stashes'),
         keywords: ['stash', 'shelve', 'wip'],
       },
@@ -110,7 +89,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-worktrees',
         title: 'Open Git Worktrees Manager',
         category: 'Navigation',
-        icon: <Layers className="w-4 h-4 text-commito-coral" />,
         action: () => setIsWorktreeModalOpen(true),
         keywords: ['worktree', 'linked'],
       },
@@ -118,7 +96,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-settings',
         title: 'Open Settings & Themes',
         category: 'Navigation',
-        icon: <Settings className="w-4 h-4 text-text-muted" />,
         shortcut: 'Ctrl+,',
         action: () => useSettingsStore.getState().openSettings(),
         keywords: ['preferences', 'appearance', 'theme', 'config'],
@@ -127,7 +104,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-ai',
         title: 'Toggle AI Coding Agent',
         category: 'Navigation',
-        icon: <Sparkles className="w-4 h-4 text-commito-coral" />,
         shortcut: 'Ctrl+I',
         action: () => useAiAgentStore.getState().toggleIsOpen(),
         keywords: ['ai', 'agent', 'assistant', 'chat'],
@@ -136,7 +112,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'nav-terminal',
         title: 'Toggle Integrated Terminal',
         category: 'Navigation',
-        icon: <Terminal className="w-4 h-4 text-text-muted" />,
         shortcut: 'Ctrl+`',
         action: () => useTerminalStore.getState().toggleIsOpen(),
         keywords: ['console', 'shell', 'bash', 'powershell', 'cmd'],
@@ -147,7 +122,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'git-new-branch',
         title: 'Manage Branches / Create Branch...',
         category: 'Git Actions',
-        icon: <GitBranch className="w-4 h-4 text-commito-coral" />,
         action: () => setCurrentNavView('branches'),
         keywords: ['checkout', 'fork', 'branch', 'new branch'],
       },
@@ -155,7 +129,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'git-create-pr',
         title: 'Create Merge / Pull Request...',
         category: 'Git Actions',
-        icon: <GitPullRequest className="w-4 h-4 text-commito-coral" />,
         action: () => setIsMergeRequestModalOpen(true),
         keywords: ['pr', 'mr', 'pull request', 'merge request'],
       },
@@ -163,7 +136,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'git-draft-release',
         title: 'Draft New Release...',
         category: 'Git Actions',
-        icon: <PackagePlus className="w-4 h-4 text-commito-coral" />,
         action: () => setIsCreateReleaseModalOpen(true),
         keywords: ['release', 'tag', 'changelog'],
       },
@@ -171,7 +143,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'git-create-tag',
         title: 'Create Git Tag...',
         category: 'Git Actions',
-        icon: <Tag className="w-4 h-4 text-amber-400" />,
         action: () => setIsCreateTagModalOpen(true),
         keywords: ['tag', 'version', 'v1'],
       },
@@ -179,7 +150,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'git-stash-wip',
         title: 'Stash Working Changes (WIP)',
         category: 'Git Actions',
-        icon: <Archive className="w-4 h-4 text-amber-400" />,
         action: () => {
           if (activeRepoPath) {
             GitService.createStash(activeRepoPath, 'WIP Stash from Command Palette', true);
@@ -193,7 +163,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'tool-vscode',
         title: 'Open Repository in VS Code',
         category: 'Workspace',
-        icon: <Code2 className="w-4 h-4 text-blue-400" />,
         action: () => {
           if (activeRepoPath) SystemService.openInVSCode(activeRepoPath);
         },
@@ -203,7 +172,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         id: 'tool-explorer',
         title: 'Show Repository in File Explorer',
         category: 'Workspace',
-        icon: <FolderOpen className="w-4 h-4 text-amber-300" />,
         action: () => {
           if (activeRepoPath) SystemService.showInExplorer(activeRepoPath);
         },
@@ -218,7 +186,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
           id: `branch-${b.name}`,
           title: `Switch to branch: ${b.name}`,
           category: 'Branches',
-          icon: <GitBranch className="w-4 h-4 text-commito-coral" />,
           action: () => {
             if (activeRepoPath) {
               GitService.checkoutBranch(activeRepoPath, b.name);
@@ -294,7 +261,6 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
       >
         {/* Search Input Bar */}
         <div className="p-3 border-b border-border bg-base-1 flex items-center gap-2.5 shrink-0">
-          <Search className="w-4 h-4 text-commito-coral shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -332,13 +298,8 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
                       : 'text-text-secondary hover:text-text-primary hover:bg-base-1 border border-transparent'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-5 h-5 rounded-xs bg-base-1 flex items-center justify-center shrink-0">
-                      {cmd.icon}
-                    </div>
-                    <div className="min-w-0 truncate">
-                      <span className="text-xs">{cmd.title}</span>
-                    </div>
+                  <div className="flex items-center min-w-0">
+                    <span className="text-xs truncate">{cmd.title}</span>
                   </div>
 
                   <div className="flex items-center gap-2 shrink-0">
