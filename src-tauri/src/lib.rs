@@ -242,6 +242,7 @@ pub fn run() {
             accounts_remove,
             accounts_start_oauth,
             accounts_exchange_oauth_code,
+            accounts_connect_with_token,
             accounts_list_namespaces,
             repo_publish,
             remotes_list,

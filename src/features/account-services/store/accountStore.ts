@@ -22,6 +22,12 @@ interface AccountServicesState {
   updateAccount: (id: string, patch: AccountPatch) => Promise<void>;
   removeAccount: (id: string) => Promise<void>;
   startOAuth: (provider: string, instanceUrl?: string) => Promise<void>;
+  connectWithToken: (
+    provider: string,
+    token: string,
+    instanceUrl?: string,
+    username?: string
+  ) => Promise<ProviderAccount>;
 }
 
 export const useAccountServicesStore = create<AccountServicesState>((set, get) => ({
@@ -144,6 +150,40 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       useLogStore
         .getState()
         .addLog('error', 'Auth', `Failed to start OAuth: ${err?.message || err}`);
+      throw err;
+    }
+  },
+
+  connectWithToken: async (
+    provider: string,
+    token: string,
+    instanceUrl?: string,
+    username?: string
+  ) => {
+    try {
+      const account = await invoke<ProviderAccount>('accounts_connect_with_token', {
+        provider,
+        token,
+        instanceUrl: instanceUrl?.trim() || null,
+        username: username?.trim() || null,
+      });
+      await get().loadAccounts();
+      useLogStore
+        .getState()
+        .addLog(
+          'info',
+          'Auth',
+          `Connected ${provider} account for ${account.handle} via Personal Access Token`
+        );
+      return account;
+    } catch (err: any) {
+      useLogStore
+        .getState()
+        .addLog(
+          'error',
+          'Auth',
+          `Failed to connect ${provider} via token: ${err?.message || err}`
+        );
       throw err;
     }
   },

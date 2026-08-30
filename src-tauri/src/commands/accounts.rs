@@ -1,7 +1,7 @@
 use crate::domain::accounts::active_account;
 use crate::domain::accounts::oauth_pkce;
 use crate::domain::accounts::provider::{
-    AccountPatch, AuthProvider, ProviderAccount, ProviderKind,
+    AccountPatch, AuthProvider, ProviderAccount, ProviderKind, TokenStatus,
 };
 use crate::domain::accounts::token_store;
 use crate::error::AppError;
@@ -331,4 +331,368 @@ pub async fn accounts_exchange_oauth_code(
     Ok(account)
 }
 
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct GitLabTokenUser {
+    id: u64,
+    username: String,
+    name: String,
+    email: Option<String>,
+    avatar_url: Option<String>,
+    web_url: Option<String>,
+}
 
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct GitHubTokenUser {
+    id: u64,
+    login: String,
+    name: Option<String>,
+    email: Option<String>,
+    avatar_url: Option<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct GitHubEmailItem {
+    email: String,
+    primary: bool,
+    verified: bool,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct BitbucketTokenUser {
+    #[serde(default)]
+    uuid: String,
+    username: Option<String>,
+    nickname: Option<String>,
+    display_name: Option<String>,
+    links: Option<BitbucketLinksToken>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize, Default)]
+struct BitbucketLinksToken {
+    avatar: Option<BitbucketAvatarHref>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize, Default)]
+struct BitbucketAvatarHref {
+    href: Option<String>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct BitbucketEmailsTokenResponse {
+    values: Option<Vec<BitbucketEmailTokenItem>>,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, serde::Deserialize)]
+struct BitbucketEmailTokenItem {
+    email: String,
+    is_primary: Option<bool>,
+    is_confirmed: Option<bool>,
+}
+
+#[command]
+pub async fn accounts_connect_with_token(
+    provider: String,
+    token: String,
+    instance_url: Option<String>,
+    username: Option<String>,
+) -> Result<ProviderAccount, AppError> {
+    use base64::Engine;
+    use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
+
+    let prov = provider.to_lowercase();
+    let token = token.trim();
+    if token.is_empty() {
+        return Err(AppError::Validation("Token cannot be empty".to_string()));
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| AppError::Unknown(e.to_string()))?;
+
+    let account = match prov.as_str() {
+        "gitlab" => {
+            let base_url = instance_url
+                .filter(|u| !u.trim().is_empty())
+                .unwrap_or_else(|| "https://gitlab.com".to_string());
+            let clean_url = base_url.trim_end_matches('/').to_string();
+
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                "PRIVATE-TOKEN",
+                HeaderValue::from_str(token)
+                    .map_err(|_| AppError::Validation("Invalid characters in token".to_string()))?,
+            );
+            headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
+
+            let user_url = format!("{}/api/v4/user", clean_url);
+            let resp = client
+                .get(&user_url)
+                .headers(headers)
+                .send()
+                .await
+                .map_err(|e| AppError::Auth(format!("Failed to connect to GitLab at {}: {}", clean_url, e)))?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(AppError::Auth(format!(
+                    "GitLab authentication failed (HTTP {}): {}",
+                    status,
+                    if body.is_empty() { "Check your Personal Access Token and instance URL" } else { &body }
+                )));
+            }
+
+            let user: GitLabTokenUser = resp.json().await.map_err(|e| {
+                AppError::Auth(format!("Failed to parse GitLab user profile: {}", e))
+            })?;
+
+            let host = url::Url::parse(&clean_url)
+                .map(|u| u.host_str().unwrap_or("gitlab.com").to_string())
+                .unwrap_or_else(|_| "gitlab.com".to_string());
+
+            let account_id = format!("gitlab:{}:{}", host, user.id);
+            let handle = if user.username.starts_with('@') {
+                user.username.clone()
+            } else {
+                format!("@{}", user.username)
+            };
+
+            let acc = ProviderAccount {
+                id: account_id,
+                provider: ProviderKind::Gitlab,
+                instance_url: clean_url,
+                handle,
+                display_name: if !user.name.is_empty() {
+                    user.name
+                } else {
+                    user.username.clone()
+                },
+                avatar_url: user.avatar_url.unwrap_or_default(),
+                commit_email: user.email.unwrap_or_default(),
+                is_active: false,
+                token_status: TokenStatus::Valid,
+                scopes: vec![
+                    "api".to_string(),
+                    "read_user".to_string(),
+                    "write_repository".to_string(),
+                    "read_repository".to_string(),
+                ],
+                expires_at: None,
+                refresh_token_expires_at: None,
+            };
+
+            token_store::save_account(acc.clone(), token, None)?;
+            acc
+        }
+        "github" => {
+            let base_url = instance_url
+                .filter(|u| !u.trim().is_empty())
+                .unwrap_or_else(|| "https://github.com".to_string());
+            let clean_url = base_url.trim_end_matches('/').to_string();
+
+            let api_base = if clean_url.contains("github.com") {
+                "https://api.github.com".to_string()
+            } else {
+                format!("{}/api/v3", clean_url)
+            };
+
+            let mut headers = HeaderMap::new();
+            headers.insert(
+                AUTHORIZATION,
+                HeaderValue::from_str(&format!("Bearer {}", token))
+                    .map_err(|_| AppError::Validation("Invalid characters in token".to_string()))?,
+            );
+            headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
+            headers.insert(ACCEPT, HeaderValue::from_static("application/vnd.github.v3+json"));
+
+            let user_url = format!("{}/user", api_base);
+            let resp = client
+                .get(&user_url)
+                .headers(headers.clone())
+                .send()
+                .await
+                .map_err(|e| AppError::Auth(format!("Failed to connect to GitHub at {}: {}", clean_url, e)))?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(AppError::Auth(format!(
+                    "GitHub authentication failed (HTTP {}): {}",
+                    status,
+                    if body.is_empty() { "Check your Personal Access Token and scopes" } else { &body }
+                )));
+            }
+
+            let scopes_header = resp
+                .headers()
+                .get("x-oauth-scopes")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("repo, read:user, user:email");
+
+            let scopes_vec: Vec<String> = scopes_header
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect();
+
+            let user: GitHubTokenUser = resp.json().await.map_err(|e| {
+                AppError::Auth(format!("Failed to parse GitHub user profile: {}", e))
+            })?;
+
+            let mut user_email = user.email.unwrap_or_default();
+            if user_email.is_empty() {
+                if let Ok(emails_resp) = client
+                    .get(format!("{}/user/emails", api_base))
+                    .headers(headers)
+                    .send()
+                    .await
+                {
+                    if let Ok(emails) = emails_resp.json::<Vec<GitHubEmailItem>>().await {
+                        if let Some(primary) = emails.iter().find(|e| e.primary && e.verified).or_else(|| emails.first()) {
+                            user_email = primary.email.clone();
+                        }
+                    }
+                }
+            }
+
+            let host = url::Url::parse(&clean_url)
+                .map(|u| u.host_str().unwrap_or("github.com").to_string())
+                .unwrap_or_else(|_| "github.com".to_string());
+
+            let account_id = format!("github:{}:{}", host, user.id);
+            let handle = format!("@{}", user.login);
+
+            let acc = ProviderAccount {
+                id: account_id,
+                provider: ProviderKind::Github,
+                instance_url: clean_url,
+                handle,
+                display_name: user.name.unwrap_or(user.login),
+                avatar_url: user.avatar_url.unwrap_or_default(),
+                commit_email: user_email,
+                is_active: false,
+                token_status: TokenStatus::Valid,
+                scopes: if scopes_vec.is_empty() {
+                    vec!["repo".to_string(), "read:user".to_string(), "user:email".to_string()]
+                } else {
+                    scopes_vec
+                },
+                expires_at: None,
+                refresh_token_expires_at: None,
+            };
+
+            token_store::save_account(acc.clone(), token, None)?;
+            acc
+        }
+        "bitbucket" => {
+            let clean_url = "https://bitbucket.org".to_string();
+            let mut headers = HeaderMap::new();
+            headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
+            headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+
+            let auth_header = if let Some(ref u) = username.filter(|u| !u.trim().is_empty()) {
+                let creds = format!("{}:{}", u.trim(), token);
+                let encoded = base64::engine::general_purpose::STANDARD.encode(creds.as_bytes());
+                format!("Basic {}", encoded)
+            } else {
+                format!("Bearer {}", token)
+            };
+
+            headers.insert(
+                AUTHORIZATION,
+                HeaderValue::from_str(&auth_header)
+                    .map_err(|_| AppError::Validation("Invalid credentials".to_string()))?,
+            );
+
+            let resp = client
+                .get("https://api.bitbucket.org/2.0/user")
+                .headers(headers.clone())
+                .send()
+                .await
+                .map_err(|e| AppError::Auth(format!("Failed to connect to Bitbucket: {}", e)))?;
+
+            if !resp.status().is_success() {
+                let status = resp.status();
+                let body = resp.text().await.unwrap_or_default();
+                return Err(AppError::Auth(format!(
+                    "Bitbucket authentication failed (HTTP {}): {}",
+                    status,
+                    if body.is_empty() { "Check your Bitbucket username and App Password" } else { &body }
+                )));
+            }
+
+            let user: BitbucketTokenUser = resp.json().await.map_err(|e| {
+                AppError::Auth(format!("Failed to parse Bitbucket user profile: {}", e))
+            })?;
+
+            let user_handle = user
+                .username
+                .or(user.nickname)
+                .unwrap_or_else(|| user.uuid.clone());
+
+            let mut user_email = String::new();
+            if let Ok(emails_resp) = client
+                .get("https://api.bitbucket.org/2.0/user/emails")
+                .headers(headers)
+                .send()
+                .await
+            {
+                if let Ok(emails_data) = emails_resp.json::<BitbucketEmailsTokenResponse>().await {
+                    if let Some(list) = emails_data.values {
+                        if let Some(primary) = list.iter().find(|e| e.is_primary == Some(true)).or_else(|| list.first()) {
+                            user_email = primary.email.clone();
+                        }
+                    }
+                }
+            }
+
+            let avatar_url = user.links.and_then(|l| l.avatar).and_then(|a| a.href).unwrap_or_default();
+            let account_id = format!("bitbucket:bitbucket.org:{}", user_handle);
+
+            let acc = ProviderAccount {
+                id: account_id,
+                provider: ProviderKind::Bitbucket,
+                instance_url: clean_url,
+                handle: format!("@{}", user_handle),
+                display_name: user.display_name.unwrap_or(user_handle),
+                avatar_url,
+                commit_email: user_email,
+                is_active: false,
+                token_status: TokenStatus::Valid,
+                scopes: vec![
+                    "account".to_string(),
+                    "repository".to_string(),
+                    "pullrequest".to_string(),
+                ],
+                expires_at: None,
+                refresh_token_expires_at: None,
+            };
+
+            token_store::save_account(acc.clone(), token, None)?;
+            acc
+        }
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Unsupported provider '{}'",
+                provider
+            )))
+        }
+    };
+
+    crate::log_info!(
+        crate::core::logging::LogCategory::Account,
+        format!("Successfully added {} account via personal token: {}", provider, account.handle);
+        meta: serde_json::json!({ "account_id": account.id, "provider": provider })
+    );
+
+    Ok(account)
+}
