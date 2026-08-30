@@ -20,6 +20,7 @@ export const RepositoryHeader: React.FC = () => {
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
     e.stopPropagation();
+    setContextMenu(null);
     setIsRepoDrawerOpen(true);
   };
 
@@ -27,6 +28,7 @@ export const RepositoryHeader: React.FC = () => {
     if (!activeRepoPath) return;
     e.preventDefault();
     e.stopPropagation();
+    setIsRepoDrawerOpen(false);
     setContextMenu({ x: e.clientX, y: e.clientY });
   };
 

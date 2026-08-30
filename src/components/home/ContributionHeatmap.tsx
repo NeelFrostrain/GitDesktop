@@ -170,17 +170,6 @@ export const ContributionHeatmap: React.FC = () => {
                   : 'bg-base-1 hover:bg-base-2 active:bg-base-2/80 border border-border hover:border-border-strong text-text-primary'
               }`}
             >
-              {selectedAccountId === 'all' ? (
-                <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-              ) : selectedAccountId === 'local' ? (
-                <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
-              ) : (
-                <UserAvatar
-                  url={calendar?.account_avatar}
-                  name={getActiveAccountLabel()}
-                  className="w-4 h-4 rounded-sm border border-border shrink-0"
-                />
-              )}
               <span className="truncate max-w-[150px]">{getActiveAccountLabel()}</span>
               <ChevronDown
                 className={`w-3 h-3 text-text-muted transition-transform duration-150 ml-0.5 shrink-0 ${
@@ -206,7 +195,6 @@ export const ContributionHeatmap: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-commito-coral" />
                       <span>All Accounts (Merged)</span>
                     </div>
                     {selectedAccountId === 'all' && (
@@ -227,7 +215,6 @@ export const ContributionHeatmap: React.FC = () => {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <FolderGit2 className="w-3.5 h-3.5 text-text-muted" />
                       <span>Local Git Repos Only</span>
                     </div>
                     {selectedAccountId === 'local' && (

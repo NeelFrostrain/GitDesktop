@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, ChevronRight, Users } from 'lucide-react';
+import { Plus, ChevronRight } from 'lucide-react';
 import {
   useAccounts,
   ProviderAccount,
@@ -52,7 +52,6 @@ export const AccountsWidget: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/60 pb-2 mb-2">
         <div className="flex items-center gap-1.5">
-          <Users className="w-3.5 h-3.5 text-commito-coral" />
           <span className="text-xs font-semibold text-text-primary tracking-tight">
             Connected Accounts
           </span>

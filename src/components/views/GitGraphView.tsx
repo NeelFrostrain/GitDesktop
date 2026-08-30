@@ -361,8 +361,10 @@ export const GitGraphView: React.FC = () => {
     [filteredCommits, hasUncommittedRow, rowVirtualizer, setSelectedCommitSha]
   );
 
-  // Dynamic onScroll listener
+  // Dynamic onScroll listener with hover card dismiss optimization
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (hoveredCommit) setHoveredCommit(null);
+    if (contextMenu) setContextMenu(null);
     if (!hasMore || isLoadingMore || isLoadingInitial) return;
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     if (scrollHeight - scrollTop - clientHeight < 350) {
