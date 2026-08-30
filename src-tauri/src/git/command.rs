@@ -61,5 +61,13 @@ pub fn silent_git_command() -> Command {
     cmd.env("GIT_TERMINAL_PROMPT", "0");
     cmd.env("GCM_INTERACTIVE", "never");
     cmd.env("GIT_ASKPASS", "echo");
+
+    // Global high-performance Git flags for ultra-fast Windows filesystem & multi-core performance
+    cmd.arg("-c").arg("core.fscache=true");
+    cmd.arg("-c").arg("core.preloadIndex=true");
+    cmd.arg("-c").arg("core.untrackedCache=true");
+    cmd.arg("-c").arg("pack.threads=0");
+    cmd.arg("-c").arg("protocol.version=2");
+
     cmd
 }

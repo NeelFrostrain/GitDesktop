@@ -123,7 +123,7 @@ impl GitHubClient {
 
     pub async fn fetch_repos(&self, page: u32) -> Result<Vec<UnifiedRepo>, AppError> {
         let url = format!(
-            "{}/user/repos?per_page=20&page={}&sort=updated&affiliation=owner,collaborator,organization_member",
+            "{}/user/repos?per_page=100&page={}&sort=updated&affiliation=owner,collaborator,organization_member",
             GITHUB_API_URL, page
         );
         let resp = self.client.get(&url).send().await?;
@@ -136,10 +136,34 @@ impl GitHubClient {
             )));
         }
 
-        let repos: Vec<GitHubRepo> = resp
+        let mut repos: Vec<GitHubRepo> = resp
             .json()
             .await
             .map_err(|e| AppError::Network(format!("Failed to parse GitHub repos JSON: {}", e)))?;
+
+        // On page 1, also fetch repos from all user organizations (e.g. EpicGames)
+        if page == 1 {
+            #[derive(Deserialize)]
+            struct GitHubOrg {
+                login: String,
+            }
+            if let Ok(orgs_resp) = self.client.get(format!("{}/user/orgs", GITHUB_API_URL)).send().await {
+                if let Ok(orgs) = orgs_resp.json::<Vec<GitHubOrg>>().await {
+                    for org in orgs {
+                        let org_url = format!("{}/orgs/{}/repos?per_page=100&sort=updated", GITHUB_API_URL, org.login);
+                        if let Ok(org_repos_resp) = self.client.get(&org_url).send().await {
+                            if let Ok(org_repos) = org_repos_resp.json::<Vec<GitHubRepo>>().await {
+                                for r in org_repos {
+                                    if !repos.iter().any(|existing| existing.id == r.id) {
+                                        repos.push(r);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         Ok(repos
             .into_iter()
@@ -160,6 +184,61 @@ impl GitHubClient {
                 provider: "github".to_string(),
             })
             .collect())
+    }
+
+    pub async fn search_repos(&self, query: &str, page: u32) -> Result<Vec<UnifiedRepo>, AppError> {
+        let all = self.fetch_repos(page).await?;
+        let q_lower = query.to_lowercase();
+        let matched: Vec<UnifiedRepo> = all
+            .into_iter()
+            .filter(|r| {
+                r.name.to_lowercase().contains(&q_lower)
+                    || r.path_with_namespace.to_lowercase().contains(&q_lower)
+            })
+            .collect();
+
+        if !matched.is_empty() {
+            return Ok(matched);
+        }
+
+        let url = format!(
+            "{}/search/repositories?q={}+fork:true&per_page=100&page={}",
+            GITHUB_API_URL,
+            urlencoding::encode(query),
+            page
+        );
+        if let Ok(resp) = self.client.get(&url).send().await {
+            if resp.status().is_success() {
+                #[derive(Deserialize)]
+                struct SearchResponse {
+                    items: Vec<GitHubRepo>,
+                }
+                if let Ok(result) = resp.json::<SearchResponse>().await {
+                    return Ok(result
+                        .items
+                        .into_iter()
+                        .map(|r| UnifiedRepo {
+                            id: r.id,
+                            name: r.name.clone(),
+                            path_with_namespace: r.full_name.clone(),
+                            http_url_to_repo: r.clone_url,
+                            ssh_url_to_repo: r.ssh_url,
+                            web_url: r.html_url,
+                            default_branch: r.default_branch,
+                            star_count: r.stargazers_count,
+                            visibility: if r.private {
+                                "private".to_string()
+                            } else {
+                                "public".to_string()
+                            },
+                            provider: "github".to_string(),
+                        })
+                        .collect());
+                }
+            }
+        }
+
+        Ok(Vec::new())
     }
 
     pub async fn create_repo(

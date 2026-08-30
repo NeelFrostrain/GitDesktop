@@ -79,7 +79,7 @@ impl AuthProvider for GitHubAuthProvider {
             oauth_pkce::generate_pkce_session("github", clean_url, &redirect_uri);
 
         let auth_url = format!(
-            "{}/login/oauth/authorize?client_id={}&redirect_uri={}&scope={}&state={}&code_challenge={}&code_challenge_method=S256",
+            "{}/login/oauth/authorize?client_id={}&redirect_uri={}&scope={}&state={}&code_challenge={}&code_challenge_method=S256&prompt=consent",
             clean_url,
             urlencoding::encode(&client_id),
             urlencoding::encode(&redirect_uri),

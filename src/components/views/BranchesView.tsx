@@ -11,6 +11,7 @@ import {
   GitPullRequest,
   X,
   Globe,
+  Layers,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -24,8 +25,15 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
  */
 export const BranchesView: React.FC = () => {
-  const { activeRepoPath, setStatus, branches, setBranches, setError, setIsMergeRequestModalOpen } =
-    useGitStore();
+  const {
+    activeRepoPath,
+    setStatus,
+    branches,
+    setBranches,
+    setError,
+    setIsMergeRequestModalOpen,
+    openWorktreeModal,
+  } = useGitStore();
 
   const [filter, setFilter] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -407,6 +415,16 @@ export const BranchesView: React.FC = () => {
 
                     {/* Actions Toolbar */}
                     <div className="flex items-center gap-1.5 shrink-0">
+                      {/* Create Linked Worktree */}
+                      <button
+                        type="button"
+                        onClick={() => openWorktreeModal(b.name)}
+                        className="p-1.5 text-text-muted hover:text-sky-400 bg-base-1 hover:bg-base-3 border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
+                        title={`Create Linked Worktree for branch '${b.name}'`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                      </button>
+
                       <button
                         type="button"
                         onClick={() => handlePushBranch(b.name)}

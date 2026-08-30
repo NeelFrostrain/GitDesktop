@@ -333,17 +333,17 @@ pub async fn fetch_user_repositories(
 
     if resolved_provider == "github" {
         let client = get_github_client_for_account(target_acc_id).await?;
-        let mut repos = client.fetch_repos(p).await?;
-        if let Some(ref q) = search {
-            let query = q.trim().to_lowercase();
+        let repos = if let Some(ref q) = search {
+            let query = q.trim();
             if !query.is_empty() {
-                repos.retain(|r| {
-                    r.name.to_lowercase().contains(&query)
-                        || r.path_with_namespace.to_lowercase().contains(&query)
-                });
+                client.search_repos(query, p).await?
+            } else {
+                client.fetch_repos(p).await?
             }
-        }
-        let total = if repos.len() < 20 { p } else { p + 1 }; // GitHub doesn't return total pages
+        } else {
+            client.fetch_repos(p).await?
+        };
+        let total = if repos.len() < 100 { p } else { p + 1 };
         return Ok(PagedResult {
             items: repos,
             page: p,
@@ -378,10 +378,16 @@ pub async fn fetch_user_repositories(
 }
 
 #[command]
-pub async fn clone_repository(remote_url: String, local_path: String) -> Result<(), AppError> {
-    tokio::task::spawn_blocking(move || remote::clone_repository(&remote_url, &local_path))
-        .await
-        .map_err(|e| AppError::Unknown(e.to_string()))?
+pub async fn clone_repository(
+    app: tauri::AppHandle,
+    remote_url: String,
+    local_path: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        remote::clone_repository(Some(&app), &remote_url, &local_path)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
 }
 
 #[command]

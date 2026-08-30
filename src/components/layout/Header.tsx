@@ -22,6 +22,7 @@ import { SmartGitActionButton } from './SmartGitActionButton';
 import { BranchDropdown } from './BranchDropdown';
 import { SystemService } from '../../services/system/systemService';
 import { getWebUrlFromRemoteUrl } from '../../shared/utils/urlUtils';
+import { TaskManagerBadge } from '../../features/task-manager';
 
 /**
  * Top application header bar displaying quick creation tools (Terminal, AI Agent, 3-dot actions),
@@ -96,8 +97,9 @@ export const Header: React.FC = () => {
       ref={headerRef}
       className="h-10 bg-base-0 border-b border-border px-1.5 py-3 flex items-center justify-between gap-3 flex-shrink-0 select-none relative z-30"
     >
-      {/* Left: Quick Create Tools Segmented Pill */}
+      {/* Left: Quick Create Tools & Task Manager */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        <TaskManagerBadge />
         {!isHome && (
           <div className="flex items-center gap-0.5 bg-base-1/70 border border-border/80 rounded-sm p-0.5 shadow-2xs">
             {/* When full space is available: show individual quick-action buttons */}

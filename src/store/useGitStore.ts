@@ -130,6 +130,8 @@ export interface GitState {
   setMergeRequestModalTab: (tab: 'create' | 'list' | 'edit') => void;
   openMergeRequestModal: (tab?: 'create' | 'list' | 'edit', prId?: string | null) => void;
   isWorktreeModalOpen: boolean;
+  worktreeModalInitialBranch: string | null;
+  openWorktreeModal: (branch?: string | null) => void;
   isRebaseModalOpen: boolean;
   isCherryPickModalOpen: boolean;
   isBlameModalOpen: boolean;
@@ -282,6 +284,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   selectedMergeRequestId: null,
   mergeRequestModalTab: 'create',
   isWorktreeModalOpen: false,
+  worktreeModalInitialBranch: null,
   isRebaseModalOpen: false,
   isCherryPickModalOpen: false,
   isBlameModalOpen: false,
@@ -777,7 +780,16 @@ export const useGitStore = create<GitState>((set, get) => ({
       mergeRequestModalTab: tab,
       selectedMergeRequestId: prId,
     }),
-  setIsWorktreeModalOpen: (isWorktreeModalOpen) => set({ isWorktreeModalOpen }),
+  setIsWorktreeModalOpen: (isWorktreeModalOpen) =>
+    set({
+      isWorktreeModalOpen,
+      worktreeModalInitialBranch: isWorktreeModalOpen ? get().worktreeModalInitialBranch : null,
+    }),
+  openWorktreeModal: (branch = null) =>
+    set({
+      isWorktreeModalOpen: true,
+      worktreeModalInitialBranch: branch || null,
+    }),
   setIsRebaseModalOpen: (isRebaseModalOpen) => set({ isRebaseModalOpen }),
   setIsCherryPickModalOpen: (isCherryPickModalOpen) => set({ isCherryPickModalOpen }),
   setIsBlameModalOpen: (isBlameModalOpen) => set({ isBlameModalOpen }),

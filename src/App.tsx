@@ -216,6 +216,16 @@ const OnboardingScreen = lazy(() =>
     default: m.OnboardingScreen,
   }))
 );
+const TaskManagerModal = lazy(() =>
+  import('./features/task-manager').then((m) => ({
+    default: m.TaskManagerModal,
+  }))
+);
+const FloatingTaskWidget = lazy(() =>
+  import('./features/task-manager').then((m) => ({
+    default: m.FloatingTaskWidget,
+  }))
+);
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -684,6 +694,8 @@ export const App: React.FC = () => {
             isOpen={isOnboardingOpen}
             onComplete={() => setIsOnboardingOpen(false)}
           />
+          <TaskManagerModal />
+          <FloatingTaskWidget />
         </Suspense>
 
         {/* Global Toast Notifications */}
