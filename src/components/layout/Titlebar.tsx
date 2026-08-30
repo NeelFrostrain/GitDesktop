@@ -123,20 +123,56 @@ export const Titlebar: React.FC = () => {
 
   const titlebarRef = React.useRef<HTMLElement>(null);
 
-  // Native mousedown → startDragging must fire inside the real pointer-down
-  // event. React's synthetic event layer is enough to break Tauri's context.
+  // Native drag handler that gracefully unmaximizes and moves window without vanishing
   useEffect(() => {
     const el = titlebarRef.current;
     if (!el) return;
-    const handleNativeDrag = (e: MouseEvent) => {
+
+    let startX = 0;
+    let startY = 0;
+    let isTracking = false;
+
+    const handleMouseDown = (e: MouseEvent) => {
       if (e.button !== 0) return;
       const target = e.target as HTMLElement;
       if (target.closest('button, input, select, a, [role="button"], .titlebar-no-drag')) return;
-      // startDragging must be called synchronously here — no await
-      appWindow.startDragging().catch(() => {});
+
+      startX = e.clientX;
+      startY = e.clientY;
+      isTracking = true;
     };
-    el.addEventListener('mousedown', handleNativeDrag);
-    return () => el.removeEventListener('mousedown', handleNativeDrag);
+
+    const handleMouseMove = async (e: MouseEvent) => {
+      if (!isTracking) return;
+      const dx = Math.abs(e.clientX - startX);
+      const dy = Math.abs(e.clientY - startY);
+      if (dx > 3 || dy > 3) {
+        isTracking = false;
+        try {
+          const maximized = await appWindow.isMaximized();
+          if (maximized) {
+            await appWindow.unmaximize();
+            setIsMaximized(false);
+          }
+          appWindow.startDragging().catch(() => {});
+        } catch {
+          appWindow.startDragging().catch(() => {});
+        }
+      }
+    };
+
+    const handleMouseUp = () => {
+      isTracking = false;
+    };
+
+    el.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      el.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
   }, [appWindow]);
 
   const handleSignOut = async () => {

@@ -170,16 +170,16 @@ export const HomeDashboard: React.FC = () => {
       </header>
 
       {/* ── Main Workspace Bento Grid ── */}
-      <main className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 w-full">
+      <main className="p-2 sm:p-3 lg:p-5 w-full mx-auto space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
           {/* Main Left Section: Repositories Hub + Contribution Heatmap */}
-          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-8 space-y-4 min-w-0">
+          <div className="lg:col-span-8 xl:col-span-8 2xl:col-span-8 space-y-6 min-w-0">
             <RepoList />
             <ContributionHeatmap />
           </div>
 
           {/* Right Sidebar Section: Connected Accounts + Activity Radar Overview */}
-          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-4 space-y-4 min-w-0">
+          <div className="lg:col-span-4 xl:col-span-4 2xl:col-span-4 space-y-6 min-w-0">
             <AccountsWidget />
             <ContributionActivityRadar />
           </div>

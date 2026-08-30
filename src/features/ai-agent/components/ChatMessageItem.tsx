@@ -7,7 +7,6 @@ import {
   VolumeX,
   RotateCw,
   Play,
-  Sparkles,
 } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { renderSafeMarkdown } from '../../../shared/utils/markdown';

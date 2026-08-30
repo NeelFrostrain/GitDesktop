@@ -124,7 +124,7 @@ export const RepoList: React.FC = () => {
   }, [statuses]);
 
   return (
-    <div className="space-y-4 select-none font-sans w-full">
+    <div className="space-y-4 select-none font-sans w-full min-h-[60vh]">
       {/* Top Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Left: Filter Tabs */}
@@ -276,7 +276,7 @@ export const RepoList: React.FC = () => {
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                 gap: '10px',
               }}
             >
@@ -318,7 +318,7 @@ export const RepoList: React.FC = () => {
               className="animate-in fade-in duration-200"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))',
                 gap: '10px',
               }}
             >
@@ -333,9 +333,9 @@ export const RepoList: React.FC = () => {
               {/* Quick Add Card */}
               <div
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/30 hover:bg-base-1/60 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[110px] shadow-2xs"
+                className="border border-dashed border-border-strong hover:border-commito-coral bg-base-1/25 hover:bg-base-1/50 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-150 hover:-translate-y-0.5 active:scale-[0.99] group min-h-[110px] shadow-2xs"
               >
-                <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-border-strong transition-colors mb-1.5 shadow-2xs">
+                <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/40 transition-colors mb-1.5 shadow-2xs">
                   <Plus className="w-3.5 h-3.5" />
                 </div>
                 <span className="text-[11.5px] font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
