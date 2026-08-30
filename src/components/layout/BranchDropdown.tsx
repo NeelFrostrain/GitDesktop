@@ -24,6 +24,7 @@ import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { GitService } from '../../services/git/gitService';
 import { PullRequestService, parseRemoteRepoInfo } from '../../services/git/pullRequestService';
+import { RepoCacheService } from '../../services/git/repoCacheService';
 import { BranchInfo, UnifiedMergeRequest } from '../../types/git';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { BranchCheckoutModal } from '../modals/BranchCheckoutModal';
@@ -280,7 +281,13 @@ export const BranchDropdown: React.FC = () => {
   const [filterQuery, setFilterQuery] = useState('');
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isLoadingPRs, setIsLoadingPRs] = useState(false);
-  const [pullRequests, setPullRequests] = useState<UnifiedMergeRequest[]>([]);
+  const [pullRequests, setPullRequests] = useState<UnifiedMergeRequest[]>(() => {
+    if (activeRepoPath) {
+      const cached = RepoCacheService.getPullRequests(activeRepoPath);
+      if (cached && cached.prs) return cached.prs;
+    }
+    return [];
+  });
   const [prError, setPrError] = useState<string | null>(null);
   const [triggerRect, setTriggerRect] = useState<DOMRect | null>(null);
 
@@ -349,10 +356,19 @@ export const BranchDropdown: React.FC = () => {
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
-    setIsLoadingBranches(true);
+    const cached = RepoCacheService.getBranches(activeRepoPath);
+    if (cached && cached.length > 0) {
+      setBranches(cached);
+      setIsLoadingBranches(false);
+    } else if (branches.length === 0) {
+      setIsLoadingBranches(true);
+    }
     try {
       const res = await GitService.listBranches(activeRepoPath);
-      setBranches(res || []);
+      if (res && res.length > 0) {
+        RepoCacheService.setBranches(activeRepoPath, res);
+        setBranches(res);
+      }
     } catch {
       // Silently ignore background branch fetch errors
     } finally {
@@ -362,7 +378,13 @@ export const BranchDropdown: React.FC = () => {
 
   const loadPullRequests = async () => {
     if (!activeRepoPath) return;
-    setIsLoadingPRs(true);
+    const cached = RepoCacheService.getPullRequests(activeRepoPath);
+    if (cached?.prs && cached.prs.length > 0) {
+      setPullRequests(cached.prs);
+      setIsLoadingPRs(false);
+    } else if (pullRequests.length === 0) {
+      setIsLoadingPRs(true);
+    }
     setPrError(null);
     try {
       let currentRemotes = useRemoteStore.getState().remotes;
@@ -423,12 +445,13 @@ export const BranchDropdown: React.FC = () => {
       }
 
       combinedPRs.sort((a, b) => Number(b.iid || b.id || 0) - Number(a.iid || a.id || 0));
+      RepoCacheService.setPullRequests(activeRepoPath, combinedPRs);
       setPullRequests(combinedPRs);
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       console.error('Error fetching pull requests:', err);
       setPrError(msg);
-      setPullRequests([]);
+      if (pullRequests.length === 0) setPullRequests([]);
     } finally {
       setIsLoadingPRs(false);
     }
@@ -438,12 +461,46 @@ export const BranchDropdown: React.FC = () => {
   const [visibleRemoteCount, setVisibleRemoteCount] = useState(60);
   const [visiblePRCount, setVisiblePRCount] = useState(40);
 
+  // Subscribe to background RepoCacheService updates for 0ms reactivity
+  useEffect(() => {
+    const unsubscribe = RepoCacheService.subscribe((repoPath, type, data) => {
+      if (repoPath === activeRepoPath) {
+        if (type === 'prs') {
+          const prData = data as { prs: UnifiedMergeRequest[]; totalCount: number };
+          setPullRequests(prData.prs);
+          setIsLoadingPRs(false);
+        } else if (type === 'branches') {
+          setBranches(data as BranchInfo[]);
+          setIsLoadingBranches(false);
+        }
+      }
+    });
+    return unsubscribe;
+  }, [activeRepoPath, setBranches]);
+
+  useEffect(() => {
+    if (activeRepoPath) {
+      const cachedPRs = RepoCacheService.getPullRequests(activeRepoPath);
+      if (cachedPRs?.prs) {
+        setPullRequests(cachedPRs.prs);
+        setIsLoadingPRs(false);
+      }
+      const cachedBranches = RepoCacheService.getBranches(activeRepoPath);
+      if (cachedBranches && cachedBranches.length > 0) {
+        setBranches(cachedBranches);
+        setIsLoadingBranches(false);
+      }
+    }
+  }, [activeRepoPath, setBranches]);
+
   useEffect(() => {
     if (isOpen && activeRepoPath) {
-      if (branches.length === 0) {
+      const cachedBranches = RepoCacheService.getBranches(activeRepoPath);
+      if (!cachedBranches && branches.length === 0) {
         loadBranches();
       }
-      if (activeTab === 'pull-requests' && pullRequests.length === 0) {
+      const cachedPRs = RepoCacheService.getPullRequests(activeRepoPath);
+      if (!cachedPRs && pullRequests.length === 0) {
         loadPullRequests();
       }
       setTimeout(() => searchInputRef.current?.focus(), 50);

@@ -19,6 +19,7 @@ import { GitService } from '../services/git/gitService';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useLogStore } from './useLogStore';
 import { avatarCache } from '../services/accounts/avatarCacheService';
+import { RepoCacheService } from '../services/git/repoCacheService';
 import { useTaskStore } from '../features/task-manager';
 
 /**
@@ -394,6 +395,10 @@ export const useGitStore = create<GitState>((set, get) => ({
       selectedStashFile: null,
       currentNavView: path ? 'workspace' : 'home',
     });
+
+    if (path) {
+      RepoCacheService.precacheRepository(path).catch(() => {});
+    }
   },
 
   addRecentRepo: (path) => {

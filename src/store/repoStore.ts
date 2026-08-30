@@ -6,6 +6,7 @@ import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
 import { useContributionsStore } from './contributionsStore';
 import { GitService } from '../services/git/gitService';
+import { RepoCacheService } from '../services/git/repoCacheService';
 
 /**
  * State and actions for managing the local repository registry and dashboard summaries.
@@ -213,5 +214,8 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
 
     // Touch last_opened_at timestamp in backend registry
     invoke('add_repo_to_registry_cmd', { path }).catch(() => {});
+
+    // Pre-cache all cloud and local repository metadata in background
+    RepoCacheService.precacheRepository(path).catch(() => {});
   },
 }));
