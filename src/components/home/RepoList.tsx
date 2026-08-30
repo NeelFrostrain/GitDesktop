@@ -124,7 +124,7 @@ export const RepoList: React.FC = () => {
   }, [statuses]);
 
   return (
-    <div className="space-y-4 select-none font-sans w-full min-h-[60vh]">
+    <div className="space-y-4 select-none font-sans w-full md:min-h-[60vh] lg:min-h-[43vh]">
       {/* Top Toolbar */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         {/* Left: Filter Tabs */}
