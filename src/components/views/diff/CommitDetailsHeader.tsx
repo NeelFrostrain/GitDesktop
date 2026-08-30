@@ -154,7 +154,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
             type="button"
             onClick={handleCopySha}
             title="Click to copy full commit SHA"
-            className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted hover:text-text-primary bg-base-0 hover:bg-base-2 border border-border rounded-sm px-1.5 py-0.5 transition cursor-pointer active:scale-95"
+            className="chip chip-commit hover:border-border-strong cursor-pointer active:scale-95"
           >
             <GitCommit className="w-3 h-3 text-commito-coral flex-shrink-0" />
             <span>{commitDetails.commit.short_sha}</span>
@@ -170,7 +170,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
             <span
               key={tag.name}
               title={tag.message ? `Git Tag: ${tag.name} (${tag.message})` : `Git Tag: ${tag.name}`}
-              className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 rounded-sm px-1.5 py-0.5"
+              className="chip chip-tag"
             >
               <Tag className="w-2.5 h-2.5" />
               <span>{tag.name}</span>
@@ -188,7 +188,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
           <span className="text-text-faint select-none">/</span>
 
           {/* Merged Changed Files Badge */}
-          <div className="inline-flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-0 border border-border/80 rounded-sm px-1.5 py-0.5">
+          <div className="chip chip-commit">
             <Files className="w-2.5 h-2.5 text-commito-coral" />
             <span>{commitDetails.changed_files.length} changed</span>
           </div>
@@ -197,7 +197,7 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
         {/* Right: Diff stats + Expand/Collapse All + Expand details button */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {(additions > 0 || deletions > 0) && (
-            <div className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold px-2 py-0.5 rounded-sm bg-base-0 border border-border shadow-2xs">
+            <div className="chip chip-stat text-[11px] px-2 py-0.5 gap-1.5 shadow-2xs">
               {additions > 0 && <span className="text-git-added">+{additions}</span>}
               {deletions > 0 && <span className="text-git-removed">-{deletions}</span>}
             </div>

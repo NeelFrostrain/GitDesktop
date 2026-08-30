@@ -397,10 +397,14 @@ export const App: React.FC = () => {
 
     let isDisposed = false;
     let isSyncing = false;
+    let lastSyncTime = 0;
+    let pollIntervalMs = 5000;
 
     const syncStatus = async () => {
-      if (isDisposed || isSyncing) return;
+      const now = Date.now();
+      if (isDisposed || isSyncing || now - lastSyncTime < 800) return;
       isSyncing = true;
+      const startTime = performance.now();
       try {
         // Fast path validation check on active repository
         const validation = await GitService.validateRepoPath(activeRepoPath);
@@ -417,9 +421,18 @@ export const App: React.FC = () => {
         if (!isDisposed) {
           setStatus(res);
         }
+
+        // Adaptive polling throttle for massive repos: if status scan takes > 600ms, back off interval
+        const elapsed = performance.now() - startTime;
+        if (elapsed > 600) {
+          pollIntervalMs = Math.min(15000, Math.max(8000, Math.round(elapsed * 8)));
+        } else {
+          pollIntervalMs = 5000;
+        }
       } catch {
         // Silently ignore background polling sync errors
       } finally {
+        lastSyncTime = Date.now();
         isSyncing = false;
       }
     };
@@ -440,13 +453,20 @@ export const App: React.FC = () => {
       })
       .catch(() => {});
 
-    // 1. Periodic background polling (every 5 seconds) for external file modifications
-    // Pauses when document is hidden/minimized to save CPU and battery.
-    const intervalId = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        syncStatus();
-      }
-    }, 5000);
+    // 1. Adaptive periodic background polling for external file modifications
+    let timerId: ReturnType<typeof setTimeout>;
+    const scheduleNextPoll = () => {
+      timerId = setTimeout(() => {
+        if (!isDisposed && document.visibilityState === 'visible') {
+          syncStatus().finally(() => {
+            if (!isDisposed) scheduleNextPoll();
+          });
+        } else if (!isDisposed) {
+          scheduleNextPoll();
+        }
+      }, pollIntervalMs);
+    };
+    scheduleNextPoll();
 
     // 2. Window focus & document visibility sync
     const handleFocus = () => syncStatus();
@@ -470,7 +490,7 @@ export const App: React.FC = () => {
 
     return () => {
       isDisposed = true;
-      clearInterval(intervalId);
+      clearTimeout(timerId);
       window.removeEventListener('focus', handleFocus);
       document.removeEventListener('visibilitychange', handleVisibility);
       if (unlistenTauriFocus) unlistenTauriFocus();

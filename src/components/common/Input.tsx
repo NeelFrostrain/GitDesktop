@@ -23,12 +23,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           <input
             ref={ref}
-            className={`w-full bg-base-0 border rounded-sm text-xs text-text-primary placeholder-text-muted focus:outline-none font-sans transition ${
-              isSearch ? 'pl-8 pr-3 py-1.5' : 'px-2.5 py-1.5'
-            } ${
-              error
-                ? 'border-git-removed focus:border-danger'
-                : 'border-border hover:border-border-strong focus:border-border-strong'
+            className={`input-field ${isSearch ? 'input-search' : ''} ${
+              error ? '!border-git-removed focus:!border-danger' : ''
             } ${className}`}
             {...props}
           />

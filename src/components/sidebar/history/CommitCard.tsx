@@ -131,7 +131,7 @@ export const CommitCard: React.FC<CommitCardProps> = React.memo(({
               <div
                 key={tag.name}
                 title={`Git Tag: ${tag.name}`}
-                className="flex items-center gap-0.5 px-1.5 py-0.2 bg-amber-500/15 border border-amber-500/30 rounded-xs text-[9px] font-mono font-bold text-amber-400 max-w-[95px]"
+                className="chip chip-tag max-w-[95px]"
               >
                 <Tag className="w-2.5 h-2.5 shrink-0 text-amber-400" />
                 <span className="truncate">{tag.name}</span>
@@ -140,7 +140,7 @@ export const CommitCard: React.FC<CommitCardProps> = React.memo(({
           ) : (
             <div
               title={`Commit: ${commit.sha}`}
-              className="flex items-center gap-0.5 px-1.5 py-0.2 bg-base-0 border border-border/70 rounded-xs text-[9.5px] font-mono text-text-muted group-hover:text-text-secondary transition-colors"
+              className="chip chip-commit group-hover:border-border-strong transition-colors"
             >
               <GitCommit className="w-2.5 h-2.5 text-commito-coral" />
               <span>{commit.short_sha}</span>

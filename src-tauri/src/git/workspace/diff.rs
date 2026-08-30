@@ -52,12 +52,17 @@ pub fn get_file_diff(
     let parse_diff = |diff: &git2::Diff| -> (bool, Vec<DiffLine>) {
         let mut is_binary = false;
         let mut lines = Vec::new();
+        const MAX_DIFF_LINES: usize = 6000;
 
         let _ = diff.print(git2::DiffFormat::Patch, |_delta, _hunk, line| {
+            if lines.len() >= MAX_DIFF_LINES {
+                return false;
+            }
+
             let origin = line.origin();
             if origin == 'B' {
                 is_binary = true;
-                return true;
+                return false;
             }
 
             let content = String::from_utf8_lossy(line.content()).to_string();
@@ -96,7 +101,7 @@ pub fn get_file_diff(
     opts.pathspec(file_path);
     opts.include_untracked(true);
     opts.show_untracked_content(true);
-    opts.recurse_untracked_dirs(true);
+    opts.recurse_untracked_dirs(false); // Do not walk untracked subtrees for targeted file diff
 
     let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
 

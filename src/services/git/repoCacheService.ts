@@ -35,6 +35,7 @@ export type CacheListener = (repoPath: string, type: CacheUpdateType, data: unkn
 const DB_NAME = 'commito_repo_cache_v1';
 const STORE_NAME = 'repo_data';
 const DB_VERSION = 1;
+const MAX_REPO_CACHE_CAPACITY = 10;
 
 class RepoCacheServiceClass {
   private prCache = new Map<string, CachedPRData>();
@@ -46,6 +47,17 @@ class RepoCacheServiceClass {
   private listeners = new Set<CacheListener>();
   private dbPromise: Promise<IDBDatabase | null> | null = null;
   private isIndexedDBAvailable: boolean;
+
+  private enforceCapacity<T>(map: Map<string, T>, max = MAX_REPO_CACHE_CAPACITY): void {
+    while (map.size > max) {
+      const oldest = map.keys().next().value;
+      if (oldest) {
+        map.delete(oldest);
+      } else {
+        break;
+      }
+    }
+  }
 
   constructor() {
     this.isIndexedDBAvailable = typeof window !== 'undefined' && 'indexedDB' in window;
@@ -173,6 +185,7 @@ class RepoCacheServiceClass {
       repoName: resolvedName,
       fetchedAt: Date.now(),
     };
+    this.enforceCapacity(this.prCache);
     this.prCache.set(repoPath, data);
     this.notify(repoPath, 'prs', data);
     this.persistToIndexedDB(repoPath, 'prs', data);
@@ -191,6 +204,7 @@ class RepoCacheServiceClass {
    */
   public setBranches(repoPath: string, branches: BranchInfo[]): void {
     if (!repoPath) return;
+    this.enforceCapacity(this.branchCache);
     this.branchCache.set(repoPath, branches);
     this.notify(repoPath, 'branches', branches);
     this.persistToIndexedDB(repoPath, 'branches', branches);
@@ -215,6 +229,7 @@ class RepoCacheServiceClass {
       releases,
       fetchedAt: Date.now(),
     };
+    this.enforceCapacity(this.releaseCache);
     this.releaseCache.set(repoPath, data);
     this.notify(repoPath, 'releases', releases);
     this.persistToIndexedDB(repoPath, 'releases', data);
@@ -239,6 +254,7 @@ class RepoCacheServiceClass {
       commits,
       fetchedAt: Date.now(),
     };
+    this.enforceCapacity(this.commitCache);
     this.commitCache.set(repoPath, data);
     this.notify(repoPath, 'commits', commits);
     this.persistToIndexedDB(repoPath, 'commits', data);
@@ -263,6 +279,7 @@ class RepoCacheServiceClass {
       tags,
       fetchedAt: Date.now(),
     };
+    this.enforceCapacity(this.tagCache);
     this.tagCache.set(repoPath, data);
     this.notify(repoPath, 'tags', tags);
     this.persistToIndexedDB(repoPath, 'tags', data);

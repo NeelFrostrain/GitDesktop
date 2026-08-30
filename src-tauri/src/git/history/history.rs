@@ -136,22 +136,31 @@ pub fn get_commit_details(repo_path: &str, sha: &str) -> Result<CommitDetails, A
                 total_deletions = stats.deletions();
             }
 
+            let num_deltas = diff.deltas().len();
             use std::collections::HashMap;
             let mut file_line_counts: HashMap<String, (usize, usize)> = HashMap::new();
-            let _ = diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
-                if let Some(path) = delta.new_file().path() {
-                    let path_str = path.to_string_lossy().to_string();
-                    let entry = file_line_counts.entry(path_str).or_insert((0, 0));
-                    match line.origin() {
-                        '+' => entry.0 += 1,
-                        '-' => entry.1 += 1,
-                        _ => {}
+
+            // Only run line-by-line patch count if the changeset is small (<= 60 files) to avoid CPU lockup on massive 500GB repo commits
+            if num_deltas <= 60 {
+                let _ = diff.print(git2::DiffFormat::Patch, |delta, _hunk, line| {
+                    if let Some(path) = delta.new_file().path() {
+                        let path_str = path.to_string_lossy().to_string();
+                        let entry = file_line_counts.entry(path_str).or_insert((0, 0));
+                        match line.origin() {
+                            '+' => entry.0 += 1,
+                            '-' => entry.1 += 1,
+                            _ => {}
+                        }
                     }
-                }
-                true
-            });
+                    true
+                });
+            }
 
             for delta in diff.deltas() {
+                if changed_files.len() >= 5000 {
+                    // Safety cap for astronomical monolith changesets
+                    break;
+                }
                 if let Some(path) = delta.new_file().path() {
                     let path_str = path.to_string_lossy().to_string();
                     changed_files.push(path_str.clone());

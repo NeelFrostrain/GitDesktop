@@ -766,3 +766,298 @@ a:focus-visible,
   transform-origin: center;
   will-change: transform;
 }
+
+/* ==========================================================================
+   7. Reusable Component & Utility Classes
+   ========================================================================== */
+
+/* --- Buttons (.btn) --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+  user-select: none;
+  border: 1px solid transparent;
+  text-decoration: none;
+  outline: none;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-xs {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  gap: 4px;
+  border-radius: 3px;
+}
+
+.btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.btn-md {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.btn-lg {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  gap: 8px;
+  border-radius: 5px;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-color: rgba(224, 86, 56, 0.85);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: var(--surface-elevated);
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: #ffffff;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-subtle);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  color: var(--text);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: #ffffff;
+  border-color: rgba(239, 68, 68, 0.85);
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: #ffffff;
+  border-color: rgba(34, 197, 94, 0.85);
+}
+.btn-success:hover:not(:disabled) {
+  background-color: #16a34a;
+}
+
+/* --- Badges (.badge) --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  line-height: 1;
+}
+
+.badge-success {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: var(--git-added);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-error,
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--git-removed);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge-warning {
+  background-color: rgba(234, 179, 8, 0.15);
+  color: var(--git-modified);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.badge-info {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.badge-accent {
+  background-color: rgba(224, 86, 56, 0.15);
+  color: var(--accent);
+  border-color: rgba(224, 86, 56, 0.35);
+}
+
+.badge-neutral {
+  background-color: var(--surface-hover);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* --- Chips (.chip) --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+
+.chip-branch {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+  font-weight: 600;
+}
+
+.chip-tag {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+  font-weight: 700;
+}
+
+.chip-commit {
+  background-color: var(--surface-subtle);
+  color: var(--text-subtle);
+  border-color: var(--border);
+}
+
+.chip-stat {
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+}
+
+/* --- Inputs (.input-field) --- */
+.input-field {
+  width: 100%;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 10px;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  outline: none;
+}
+
+.input-field:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface);
+}
+
+.input-field:focus {
+  border-color: var(--border-strong);
+  background-color: var(--surface);
+}
+
+.input-search {
+  padding-left: 28px;
+}
+
+/* --- Cards & Panels (.card-panel) --- */
+.card-panel {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.card-panel-subtle {
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.panel-body {
+  padding: 12px;
+}
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-subtle);
+}
+
+/* --- Modals (.modal-overlay, .modal-box) --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.modal-box {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+

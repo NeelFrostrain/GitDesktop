@@ -65,47 +65,32 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
     // Calculate ahead/behind counts if tracking branch exists
     let (ahead, behind) = get_ahead_behind(&repo, &current_branch).unwrap_or((0, 0));
 
-    // Check if origin remote is configured
-    let has_remote = silent_git_command()
-        .args(["remote", "get-url", "origin"])
-        .current_dir(path)
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false);
-
-    let remote_url = if has_remote {
-        silent_git_command()
-            .args(["remote", "get-url", "origin"])
-            .current_dir(path)
-            .output()
-            .ok()
-            .and_then(|o| {
-                if o.status.success() {
-                    let u = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                    if !u.is_empty() {
-                        Some(u)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-    } else {
-        None
+    // Check if origin remote is configured via libgit2 (zero process-spawning overhead)
+    let (has_remote, remote_url) = match repo.find_remote("origin") {
+        Ok(remote) => {
+            let url = remote.url().map(|u| u.to_string());
+            (true, url)
+        }
+        Err(_) => (false, None),
     };
 
-    // Get status list
+    // Get status list optimized for large repositories (do not recursively walk untracked directories)
     let mut opts = StatusOptions::new();
     opts.include_untracked(true)
-        .recurse_untracked_dirs(true)
-        .include_ignored(false);
+        .recurse_untracked_dirs(false)
+        .include_ignored(false)
+        .renames_head_to_index(true)
+        .renames_index_to_workdir(true);
 
     let statuses = repo.statuses(Some(&mut opts))?;
-    let mut files = Vec::new();
+    let mut files = Vec::with_capacity(statuses.len().min(5000));
     let mut has_conflicts = false;
 
     for entry in statuses.iter() {
+        if files.len() >= 10000 {
+            // Cap at 10,000 files to prevent serialization crashes on extreme monolith changesets
+            break;
+        }
         let path_str = entry.path().unwrap_or("").to_string();
         if path_str.is_empty() {
             continue;
