@@ -7,6 +7,7 @@ import {
   VolumeX,
   RotateCw,
   Play,
+  Sparkles,
 } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { renderSafeMarkdown } from '../../../shared/utils/markdown';
@@ -54,6 +55,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
   const regenerateMessage = useAiAgentStore((s) => s.regenerateMessage);
   const executeAllToolCallsChained = useAiAgentStore((s) => s.executeAllToolCallsChained);
   const status = useAiAgentStore((s) => s.status);
+  const agentName = useAiAgentStore((s) => s.agentName);
 
   const [copied, setCopied] = useState(false);
   const [copiedChained, setCopiedChained] = useState(false);
@@ -291,9 +293,13 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     <div ref={messageRef} className="mb-6 group/msg select-text space-y-2">
       {/* Subtle Meta Header */}
       <div className="flex items-center justify-between text-[11px] text-text-muted/60 select-none pb-0.5">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <span className="font-semibold text-[11px] text-commito-coral flex items-center gap-1">
+            <Sparkles className="w-3 h-3 stroke-[2.2]" />
+            {agentName || 'AI Git Agent'}
+          </span>
           {message.modelUsed && (
-            <span className="font-mono text-[10px] text-text-muted/80">{message.modelUsed}</span>
+            <span className="font-mono text-[10px] text-text-muted/70">• {message.modelUsed}</span>
           )}
         </div>
         <span className="font-mono text-[10px] text-text-muted/60">

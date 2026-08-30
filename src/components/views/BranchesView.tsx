@@ -18,6 +18,7 @@ import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
 import { BranchInfo } from '../../types/git';
 import { Button } from '../common/Button';
+import { ConfirmDialog } from '../common/ConfirmDialog';
 
 /**
  * Main view for inspecting, filtering, switching, creating, renaming, pushing, and deleting repository branches.
@@ -32,6 +33,7 @@ export const BranchesView: React.FC = () => {
   const [newBranchName, setNewBranchName] = useState('');
   const [editingBranch, setEditingBranch] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const [branchToDelete, setBranchToDelete] = useState<string | null>(null);
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
@@ -105,16 +107,14 @@ export const BranchesView: React.FC = () => {
     }
   };
 
-  const handleDeleteBranch = async (branchName: string) => {
-    if (!activeRepoPath) return;
-
-    if (!confirm(`Are you sure you want to delete branch '${branchName}'?`)) {
-      return;
-    }
+  const handleConfirmDeleteBranch = async () => {
+    if (!activeRepoPath || !branchToDelete) return;
+    const name = branchToDelete;
+    setBranchToDelete(null);
 
     try {
-      await GitService.deleteBranch(activeRepoPath, branchName, true);
-      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${branchName}'`);
+      await GitService.deleteBranch(activeRepoPath, name, true);
+      useLogStore.getState().addLog('info', 'Git', `Deleted branch '${name}'`);
       loadBranches();
     } catch (error: unknown) {
       setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
@@ -449,7 +449,7 @@ export const BranchesView: React.FC = () => {
 
                           <button
                             type="button"
-                            onClick={() => handleDeleteBranch(b.name)}
+                            onClick={() => setBranchToDelete(b.name)}
                             className="p-1.5 text-text-muted hover:text-git-removed bg-base-1 hover:bg-git-removed-bg border border-border/60 rounded-sm transition cursor-pointer shadow-xs"
                             title="Delete branch"
                           >
@@ -531,6 +531,19 @@ export const BranchesView: React.FC = () => {
           )}
         </div>
       )}
+
+      {/* Delete Branch Confirm Dialog */}
+      <ConfirmDialog
+        isOpen={branchToDelete !== null}
+        variant="danger"
+        title="Delete Branch"
+        subtitle={branchToDelete || ''}
+        description={`Are you sure you want to permanently delete the branch '${branchToDelete}'? This cannot be undone if the branch has unmerged commits.`}
+        discardText="Delete Branch"
+        cancelText="Cancel"
+        onDiscard={handleConfirmDeleteBranch}
+        onCancel={() => setBranchToDelete(null)}
+      />
     </div>
   );
 };

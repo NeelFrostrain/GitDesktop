@@ -22,6 +22,7 @@ import { GitService } from '../../../services/git/gitService';
 
 interface AiAgentState {
   isOpen: boolean;
+  agentName: string;
   status: AgentStatus;
   securityMode: AgentSecurityMode;
   error: string | null;
@@ -32,6 +33,7 @@ interface AiAgentState {
   // Panel View Actions
   setIsOpen: (isOpen: boolean) => void;
   toggleIsOpen: () => void;
+  setAgentName: (name: string) => void;
   setSecurityMode: (mode: AgentSecurityMode) => void;
 
   // Session Actions
@@ -86,8 +88,17 @@ if (!initialActiveId || !initialSessions.some((s) => s.id === initialActiveId)) 
   initialActiveId = initialSessions[0]?.id || null;
 }
 
+const getStoredAgentName = (): string => {
+  try {
+    return localStorage.getItem('ai_agent_custom_name') || '';
+  } catch {
+    return '';
+  }
+};
+
 export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   isOpen: false,
+  agentName: getStoredAgentName(),
   status: 'idle',
   securityMode: (localStorage.getItem('ai_agent_security_mode') as AgentSecurityMode) || 'strict',
   error: null,
@@ -97,6 +108,30 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
   setIsOpen: (isOpen) => set({ isOpen }),
   toggleIsOpen: () => set((s) => ({ isOpen: !s.isOpen })),
+  setAgentName: (name: string) => {
+    const cleanName = name.trim();
+    try {
+      localStorage.setItem('ai_agent_custom_name', cleanName);
+    } catch {}
+
+    set((state) => {
+      // Update welcome message if present
+      const updated = state.sessions.map((s) => ({
+        ...s,
+        messages: s.messages.map((m) => {
+          if (m.id.startsWith('msg-welcome-') || m.content.includes("👋 **Hello! I'm")) {
+            return {
+              ...m,
+              content: `👋 **Hello! I'm ${cleanName || 'your AI Git Agent'}.**\n\nI can inspect your repository changes, explain complex diffs, write commit messages, resolve merge conflicts, and execute Git operations on your integrated terminal.\n\nHow can I help with your repository today?`,
+            };
+          }
+          return m;
+        }),
+      }));
+      saveStoredSessions(updated, state.activeSessionId);
+      return { agentName: cleanName, sessions: updated };
+    });
+  },
   setSecurityMode: (mode) => {
     try {
       localStorage.setItem('ai_agent_security_mode', mode);
@@ -110,6 +145,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
   createSession: (repoPath) => {
     const uniqueId = `session-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const currentAgentName = get().agentName || 'your AI Git Agent';
     const newSession: AgentSession = {
       id: uniqueId,
       title: 'New Chat',
@@ -121,7 +157,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'assistant',
           content:
-            "👋 **Hello! I'm your AI Git Agent.**\n\nI can inspect your repository changes, explain complex diffs, write commit messages, resolve merge conflicts, and execute Git operations on your integrated terminal.\n\nHow can I help with your repository today?",
+            `👋 **Hello! I'm ${currentAgentName}.**\n\nI can inspect your repository changes, explain complex diffs, write commit messages, resolve merge conflicts, and execute Git operations on your integrated terminal.\n\nHow can I help with your repository today?`,
           timestamp: Date.now(),
         },
       ],
@@ -376,6 +412,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         model: selectedModel,
         messages: historyMessages,
         repoContextPrompt,
+        agentName: get().agentName || 'AI Git Agent',
       });
 
       const assistantMessage: AgentMessage = {
@@ -535,6 +572,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         model: selectedModel,
         messages: historyBefore,
         repoContextPrompt,
+        agentName: get().agentName || 'AI Git Agent',
       });
 
       const newAssistantMessage: AgentMessage = {

@@ -38,10 +38,11 @@ pub fn cherry_pick_commits(
 }
 
 pub fn cherry_pick_continue(repo_path: &str) -> Result<(), AppError> {
+    let noop_editor = if cfg!(windows) { "cmd /c exit 0" } else { "true" };
     let output = silent_git_command()
         .arg("cherry-pick")
         .arg("--continue")
-        .env("GIT_EDITOR", "true")
+        .env("GIT_EDITOR", noop_editor)
         .current_dir(repo_path)
         .output()?;
 

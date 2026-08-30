@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ProviderAccount, AccountPatch } from '../types';
 import { useGitStore } from '../../../store/useGitStore';
 import { useLogStore } from '../../../store/useLogStore';
+import { useContributionsStore } from '../../../store/contributionsStore';
 import { avatarCache } from '../../../services/accounts/avatarCacheService';
 
 interface AccountServicesState {
@@ -79,12 +80,10 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
       }
 
       // Sync contribution calendar with updated accounts
-      import('../../../store/contributionsStore').then((m) => {
-        m.useContributionsStore
-          .getState()
-          .loadContributions()
-          .catch(() => {});
-      });
+      useContributionsStore
+        .getState()
+        .loadContributions()
+        .catch(() => {});
     } catch (err: any) {
       console.warn('Failed to load accounts:', err);
     } finally {

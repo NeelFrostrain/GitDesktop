@@ -125,16 +125,7 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     }
   };
 
-  const handleOpenCommandPrompt = async () => {
-    onClose();
-    if (!activeRepoPath) return;
-    try {
-      await SystemService.openInTerminal(activeRepoPath);
-      useLogStore.getState().addLog('info', 'System', `Opened terminal at '${activeRepoPath}'`);
-    } catch (err: unknown) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open terminal: ${getErrorMessage(err)}`);
-    }
-  };
+
 
   const handleOpenVSCode = async () => {
     onClose();

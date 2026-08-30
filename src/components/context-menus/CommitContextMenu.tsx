@@ -17,7 +17,6 @@ import { useLogStore } from '../../store/useLogStore';
 import { CommitInfo } from '../../types/git';
 import { GitService } from '../../services/git/gitService';
 import { toAppError } from '../../shared/utils/errorUtils';
-import { CreateTagModal } from '../modals/CreateTagModal';
 
 interface CommitContextMenuProps {
   commit: CommitInfo;
@@ -38,11 +37,12 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({ commit, x,
     setCommitSummary,
     setActiveTab,
     setIsCherryPickModalOpen,
+    setIsCreateTagModalOpen,
+    setTagModalTargetCommitSha,
     user,
   } = useGitStore();
 
   const menuRef = useRef<HTMLDivElement>(null);
-  const [isTagModalOpen, setIsTagModalOpen] = React.useState(false);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -213,7 +213,9 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({ commit, x,
 
   // 6. Create Tag...
   const handleCreateTag = () => {
-    setIsTagModalOpen(true);
+    setTagModalTargetCommitSha(commit.sha);
+    setIsCreateTagModalOpen(true);
+    onClose();
   };
 
   // 7. Cherry-pick commit...
@@ -369,17 +371,6 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({ commit, x,
           </div>
         </div>,
         document.body
-      )}
-
-      {isTagModalOpen && (
-        <CreateTagModal
-          isOpen={isTagModalOpen}
-          targetCommitSha={commit.sha}
-          onClose={() => {
-            setIsTagModalOpen(false);
-            onClose();
-          }}
-        />
       )}
     </>
   );

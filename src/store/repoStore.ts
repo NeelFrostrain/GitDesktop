@@ -4,6 +4,7 @@ import { RepoEntry, RepoDashboardStatus } from '../types/home';
 import { getErrorMessage } from '../shared/utils/errorUtils';
 import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
+import { useContributionsStore } from './contributionsStore';
 import { GitService } from '../services/git/gitService';
 
 /**
@@ -37,12 +38,10 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       set({ repos: repos || [] });
 
       // Trigger contribution calendar sync
-      import('./contributionsStore').then((m) => {
-        m.useContributionsStore
-          .getState()
-          .loadContributions()
-          .catch(() => {});
-      });
+      useContributionsStore
+        .getState()
+        .loadContributions()
+        .catch(() => {});
 
       // Fetch statuses in parallel (fast local git2 inspection)
       if (repos && repos.length > 0) {

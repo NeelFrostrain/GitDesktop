@@ -329,18 +329,30 @@ pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Re
 pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppError> {
     let full_path = Path::new(repo_path).join(file_path);
 
+    // 1. Reset from staging index if staged (handles newly added files and modified staged files)
+    let _ = silent_git_command()
+        .current_dir(repo_path)
+        .args(["reset", "HEAD", "--", file_path])
+        .output();
+
+    // 2. Discard tracked modifications from HEAD
     let mut cmd = silent_git_command();
     cmd.current_dir(repo_path);
     cmd.args(["checkout", "HEAD", "--", file_path]);
     let output = cmd.output()?;
 
+    // 3. If file wasn't in HEAD (untracked/newly added), clean it
     if !output.status.success() {
         let mut cmd2 = silent_git_command();
         cmd2.current_dir(repo_path);
-        cmd2.args(["clean", "-f", "--", file_path]);
+        cmd2.args(["clean", "-fd", "--", file_path]);
         let output2 = cmd2.output()?;
         if !output2.status.success() && full_path.exists() {
-            let _ = std::fs::remove_file(&full_path);
+            if full_path.is_dir() {
+                let _ = std::fs::remove_dir_all(&full_path);
+            } else {
+                let _ = std::fs::remove_file(&full_path);
+            }
         }
     }
     Ok(())

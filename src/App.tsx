@@ -211,6 +211,11 @@ const RemoteNotFoundModal = lazy(() =>
 const AiAgentPanel = lazy(() =>
   import('./features/ai-agent').then((m) => ({ default: m.AiAgentPanel }))
 );
+const OnboardingScreen = lazy(() =>
+  import('./components/onboarding/OnboardingScreen').then((m) => ({
+    default: m.OnboardingScreen,
+  }))
+);
 
 /**
  * Root application component orchestrating top-level layout, deep links,
@@ -232,9 +237,18 @@ export const App: React.FC = () => {
     setEditingRelease,
     isCreateTagModalOpen,
     setIsCreateTagModalOpen,
+    tagModalTargetCommitSha,
+    setTagModalTargetCommitSha,
   } = useGitStore();
   const { showInstallPrompt, setShowInstallPrompt } = useGitRuntime();
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => {
+    try {
+      return localStorage.getItem('app_onboarded') !== 'true';
+    } catch {
+      return false;
+    }
+  });
 
   useEffect(() => {
     // Consolidated startup: load settings, accounts and repos concurrently in one shot
@@ -633,7 +647,11 @@ export const App: React.FC = () => {
           <RewriteHistoryModal />
           <CreateTagModal
             isOpen={isCreateTagModalOpen}
-            onClose={() => setIsCreateTagModalOpen(false)}
+            targetCommitSha={tagModalTargetCommitSha}
+            onClose={() => {
+              setIsCreateTagModalOpen(false);
+              setTagModalTargetCommitSha(null);
+            }}
           />
           <CreateReleaseModal
             isOpen={isCreateReleaseModalOpen}
@@ -658,6 +676,10 @@ export const App: React.FC = () => {
           <CommandPaletteModal
             isOpen={isCommandPaletteOpen}
             onClose={() => setIsCommandPaletteOpen(false)}
+          />
+          <OnboardingScreen
+            isOpen={isOnboardingOpen}
+            onComplete={() => setIsOnboardingOpen(false)}
           />
         </Suspense>
 

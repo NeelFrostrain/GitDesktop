@@ -26,7 +26,6 @@ import { GitService } from '../../services/git/gitService';
 import { ReleaseService } from '../../services/git/releaseService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { Button } from '../common/Button';
-import { CreateTagModal } from '../modals/CreateTagModal';
 import { Dropdown } from '../common/Dropdown';
 import { MarkdownPreview } from '../common/MarkdownPreview';
 import { ReleaseInfo } from '../../types/git';
@@ -45,12 +44,12 @@ export const TagsView: React.FC = () => {
     setError,
     setIsCreateReleaseModalOpen,
     setEditingRelease,
+    setIsCreateTagModalOpen,
   } = useGitStore();
   const { remotes, activeRemote, loadRemotes } = useRemoteStore();
 
   const [activeTab, setActiveTab] = useState<'releases' | 'tags'>('releases');
   const [filter, setFilter] = useState('');
-  const [isCreateTagModalOpen, setIsCreateTagModalOpen] = useState(false);
   const [selectedRemote, setSelectedRemote] = useState('origin');
   const [isLoading, setIsLoading] = useState(false);
   const [isPushingAll, setIsPushingAll] = useState(false);
@@ -763,13 +762,6 @@ export const TagsView: React.FC = () => {
           })}
         </div>
       )}
-
-      {/* Embedded Create Tag Modal */}
-      <CreateTagModal
-        isOpen={isCreateTagModalOpen}
-        onClose={() => setIsCreateTagModalOpen(false)}
-        onSuccess={loadData}
-      />
     </div>
   );
 };

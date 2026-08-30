@@ -11,6 +11,7 @@ interface UserAvatarProps {
   className?: string;
   iconClassName?: string;
   provider?: string;
+  showInitials?: boolean;
 }
 
 /**
@@ -39,7 +40,7 @@ function getProviderStyle(provider?: string): string {
     case 'gitlab':
       return 'bg-orange-950/40 text-orange-400 border-orange-800/40';
     default:
-      return 'bg-base-2 text-commito-coral border-border';
+      return 'bg-base-2 text-text-muted border-border';
   }
 }
 
@@ -69,9 +70,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
   className = 'w-8 h-8',
   iconClassName = 'w-4 h-4',
   provider,
+  showInitials = false,
 }) => {
   const { user } = useGitStore();
   const accounts = useAccountServicesStore((s) => s.accounts);
+  const activeAccount = useAccountServicesStore((s) => s.activeAccount);
 
   // If ANY prop is explicitly passed, do not fallback to global active session user
   const isExplicit =
@@ -81,11 +84,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     email !== undefined ||
     provider !== undefined;
 
-  const currentProvider = provider || (isExplicit ? undefined : user?.provider);
+  const currentProvider = provider || (isExplicit ? undefined : user?.provider || activeAccount?.provider);
   const targetName =
-    name !== undefined ? name : isExplicit ? '' : user?.name || user?.username || '';
-  const targetHandle = handle !== undefined ? handle : isExplicit ? '' : user?.username;
-  const targetEmail = email !== undefined ? email : isExplicit ? '' : user?.email;
+    name !== undefined ? name : isExplicit ? '' : user?.name || user?.username || activeAccount?.display_name || '';
+  const targetHandle = handle !== undefined ? handle : isExplicit ? '' : user?.username || activeAccount?.handle;
+  const targetEmail = email !== undefined ? email : isExplicit ? '' : user?.email || activeAccount?.commit_email;
 
   const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
   const [candidateIndex, setCandidateIndex] = useState<number>(0);
@@ -118,7 +121,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     const list: string[] = [];
 
     // 1. Explicit avatar URL for this entity
-    const primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url;
+    const primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url || activeAccount?.avatar_url;
     if (primaryUrl && primaryUrl !== 'null' && primaryUrl.trim() !== '') {
       let trimmed = primaryUrl.trim();
       if (trimmed.startsWith('/')) {
@@ -127,7 +130,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       list.push(trimmed);
     }
 
-    // 2. Check if this entity's email or name matches any configured/connected provider account
+    // 2. Check if this entity's email, name or handle matches any configured/connected provider account
     const normEmail = targetEmail?.trim().toLowerCase();
     const normName = targetName?.trim().toLowerCase();
     const normHandle = targetHandle?.trim().replace(/^@+/, '').toLowerCase();
@@ -143,7 +146,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
         if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName)
           return true;
         return false;
-      });
+      }) || activeAccount;
 
       if (matchedAccount) {
         if (matchedAccount.avatar_url && matchedAccount.avatar_url.trim()) {
@@ -157,7 +160,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       }
     }
 
-    // 3. Direct provider avatar CDN (ONLY if an explicit username/handle is provided, never from display name)
+    // 3. Direct provider avatar CDN (if handle is present and provider is GitHub)
     if (targetHandle) {
       const cleanHandle = targetHandle.trim().replace(/^@+/, '');
       if (cleanHandle && !cleanHandle.includes(' ') && /^[a-zA-Z0-9_-]+$/.test(cleanHandle)) {
@@ -181,6 +184,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     provider,
     isExplicit,
     user?.avatar_url,
+    activeAccount,
     currentProvider,
     gravatarUrl,
     targetEmail,
@@ -188,10 +192,7 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     accounts,
   ]);
 
-  // Reset candidate index when candidate list changes.
-  // By tracking a "canonical key" derived from the list we can initialise
-  // candidateIndex to 0 inside useMemo so there is no separate effect-triggered
-  // setState call, satisfying the react-hooks/set-state-in-effect rule.
+  // Reset candidate index when candidate list changes
   const candidateUrlsKey = candidateUrls.join('|');
   const [prevCandidateUrlsKey, setPrevCandidateUrlsKey] = useState(candidateUrlsKey);
   if (prevCandidateUrlsKey !== candidateUrlsKey) {
@@ -221,14 +222,14 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     );
   }
 
-  // Fallback with initials or User icon
+  // Fallback with User icon or initials if explicitly requested
   return (
     <div
-      className={`${className} ${roundedClass} ${providerStyle} flex items-center justify-center flex-shrink-0 border shadow-xs font-mono font-bold select-none`}
+      className={`${className} ${roundedClass} ${providerStyle} flex items-center justify-center flex-shrink-0 border shadow-xs select-none`}
       title={targetName || targetHandle || 'User'}
     >
-      {initials ? (
-        <span className="text-[10px] leading-none tracking-tight uppercase">{initials}</span>
+      {showInitials && initials ? (
+        <span className="text-[10px] font-mono font-bold leading-none tracking-tight uppercase">{initials}</span>
       ) : (
         <User className={`${iconClassName} opacity-80`} />
       )}

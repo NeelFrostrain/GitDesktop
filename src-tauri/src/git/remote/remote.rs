@@ -544,7 +544,17 @@ pub fn push_specific_remote(
     } else {
         remote_name.trim()
     };
-    let clean_branch = branch_name.trim();
+    let raw_branch = branch_name.trim();
+    let clean_branch = if let Some(stripped) = raw_branch.strip_prefix(&format!("{}/", clean_remote)) {
+        stripped
+    } else if raw_branch.starts_with("origin/") {
+        raw_branch.strip_prefix("origin/").unwrap_or(raw_branch)
+    } else if raw_branch.starts_with("upstream/") {
+        raw_branch.strip_prefix("upstream/").unwrap_or(raw_branch)
+    } else {
+        raw_branch
+    };
+
     let auth_info = get_git_auth_info(repo_path);
 
     let mut cmd = silent_git_command();
@@ -677,7 +687,17 @@ pub fn pull_specific_remote(
     } else {
         remote_name.trim()
     };
-    let clean_branch = branch_name.trim();
+    let raw_branch = branch_name.trim();
+    let clean_branch = if let Some(stripped) = raw_branch.strip_prefix(&format!("{}/", clean_remote)) {
+        stripped
+    } else if raw_branch.starts_with("origin/") {
+        raw_branch.strip_prefix("origin/").unwrap_or(raw_branch)
+    } else if raw_branch.starts_with("upstream/") {
+        raw_branch.strip_prefix("upstream/").unwrap_or(raw_branch)
+    } else {
+        raw_branch
+    };
+
     let auth_info = get_git_auth_info(repo_path);
 
     let head_before = silent_git_command()

@@ -57,9 +57,11 @@ export const HomeDashboard: React.FC = () => {
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative shrink-0 flex items-center">
             <UserAvatar
-              url={user?.avatar_url}
-              name={user?.name || user?.username}
-              provider={user?.provider}
+              url={user?.avatar_url || accounts.find((a) => a.is_active)?.avatar_url}
+              name={user?.name || user?.username || accounts.find((a) => a.is_active)?.display_name}
+              handle={user?.username || accounts.find((a) => a.is_active)?.handle}
+              provider={user?.provider || accounts.find((a) => a.is_active)?.provider}
+              email={user?.email || accounts.find((a) => a.is_active)?.commit_email}
               className="w-9 h-9 rounded-sm ring-1 ring-border shadow-xs"
               iconClassName="w-4.5 h-4.5"
             />
