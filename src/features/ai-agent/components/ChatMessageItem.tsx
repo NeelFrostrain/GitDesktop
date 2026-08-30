@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import {
-  Copy,
-  Check,
-  Paperclip,
-  Volume2,
-  VolumeX,
-  RotateCw,
-  Play,
-} from 'lucide-react';
+import { Copy, Check, Paperclip, Volume2, VolumeX, RotateCw, Play } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { renderSafeMarkdown } from '../../../shared/utils/markdown';
 import { AgentMessage } from '../types';
@@ -431,4 +423,3 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     </div>
   );
 };
-

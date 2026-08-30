@@ -84,11 +84,18 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     email !== undefined ||
     provider !== undefined;
 
-  const currentProvider = provider || (isExplicit ? undefined : user?.provider || activeAccount?.provider);
+  const currentProvider =
+    provider || (isExplicit ? undefined : user?.provider || activeAccount?.provider);
   const targetName =
-    name !== undefined ? name : isExplicit ? '' : user?.name || user?.username || activeAccount?.display_name || '';
-  const targetHandle = handle !== undefined ? handle : isExplicit ? '' : user?.username || activeAccount?.handle;
-  const targetEmail = email !== undefined ? email : isExplicit ? '' : user?.email || activeAccount?.commit_email;
+    name !== undefined
+      ? name
+      : isExplicit
+        ? ''
+        : user?.name || user?.username || activeAccount?.display_name || '';
+  const targetHandle =
+    handle !== undefined ? handle : isExplicit ? '' : user?.username || activeAccount?.handle;
+  const targetEmail =
+    email !== undefined ? email : isExplicit ? '' : user?.email || activeAccount?.commit_email;
 
   const [gravatarUrl, setGravatarUrl] = useState<string | null>(null);
   const [candidateIndex, setCandidateIndex] = useState<number>(0);
@@ -121,7 +128,8 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     const list: string[] = [];
 
     // 1. Explicit avatar URL for this entity
-    const primaryUrl = url !== undefined ? url : isExplicit ? null : user?.avatar_url || activeAccount?.avatar_url;
+    const primaryUrl =
+      url !== undefined ? url : isExplicit ? null : user?.avatar_url || activeAccount?.avatar_url;
     if (primaryUrl && primaryUrl !== 'null' && primaryUrl.trim() !== '') {
       let trimmed = primaryUrl.trim();
       if (trimmed.startsWith('/')) {
@@ -137,16 +145,18 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
 
     if (normEmail || normName || normHandle) {
       // Find matching account in connected registry
-      const matchedAccount = accounts.find((a) => {
-        if (normEmail && a.commit_email && a.commit_email.toLowerCase() === normEmail) return true;
-        if (normEmail && a.handle && a.handle.toLowerCase() === normEmail) return true;
-        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle)
-          return true;
-        if (normName && a.display_name && a.display_name.toLowerCase() === normName) return true;
-        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName)
-          return true;
-        return false;
-      }) || activeAccount;
+      const matchedAccount =
+        accounts.find((a) => {
+          if (normEmail && a.commit_email && a.commit_email.toLowerCase() === normEmail)
+            return true;
+          if (normEmail && a.handle && a.handle.toLowerCase() === normEmail) return true;
+          if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle)
+            return true;
+          if (normName && a.display_name && a.display_name.toLowerCase() === normName) return true;
+          if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName)
+            return true;
+          return false;
+        }) || activeAccount;
 
       if (matchedAccount) {
         if (matchedAccount.avatar_url && matchedAccount.avatar_url.trim()) {
@@ -229,7 +239,9 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       title={targetName || targetHandle || 'User'}
     >
       {showInitials && initials ? (
-        <span className="text-[10px] font-mono font-bold leading-none tracking-tight uppercase">{initials}</span>
+        <span className="text-[10px] font-mono font-bold leading-none tracking-tight uppercase">
+          {initials}
+        </span>
       ) : (
         <User className={`${iconClassName} opacity-80`} />
       )}

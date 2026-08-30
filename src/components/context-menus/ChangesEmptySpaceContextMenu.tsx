@@ -83,8 +83,14 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
   }, [onClose]);
 
   // ── Group 1: File Creation ────────────────────────────────────────────────
-  const handleNewFileClick = () => { onClose(); onNewFile(); };
-  const handleNewFolderClick = () => { onClose(); onNewFolder(); };
+  const handleNewFileClick = () => {
+    onClose();
+    onNewFile();
+  };
+  const handleNewFolderClick = () => {
+    onClose();
+    onNewFolder();
+  };
 
   // ── Group 2: Explorer & Integrated Terminal ───────────────────────────────
   const handleRevealInExplorer = async () => {
@@ -93,11 +99,16 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     try {
       await SystemService.showInExplorer(activeRepoPath);
     } catch (err: unknown) {
-      useLogStore.getState().addLog('error', 'System', `Failed to reveal in Explorer: ${getErrorMessage(err)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'System', `Failed to reveal in Explorer: ${getErrorMessage(err)}`);
     }
   };
 
-  const handleOpenIntegratedTerminal = () => { onClose(); setTerminalOpen(true); };
+  const handleOpenIntegratedTerminal = () => {
+    onClose();
+    setTerminalOpen(true);
+  };
 
   // ── Group 3: Copy ─────────────────────────────────────────────────────────
   const handleCopyRepoName = () => {
@@ -110,7 +121,9 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
   const handleCopyRepoPath = () => {
     if (!activeRepoPath) return;
     navigator.clipboard.writeText(activeRepoPath);
-    useLogStore.getState().addLog('info', 'System', `Copied repo path '${activeRepoPath}' to clipboard`);
+    useLogStore
+      .getState()
+      .addLog('info', 'System', `Copied repo path '${activeRepoPath}' to clipboard`);
     onClose();
   };
 
@@ -121,11 +134,11 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     try {
       await SystemService.openInBrowser(webUrl);
     } catch (err: unknown) {
-      useLogStore.getState().addLog('warning', 'Remote', `Could not open remote URL: ${getErrorMessage(err)}`);
+      useLogStore
+        .getState()
+        .addLog('warning', 'Remote', `Could not open remote URL: ${getErrorMessage(err)}`);
     }
   };
-
-
 
   const handleOpenVSCode = async () => {
     onClose();
@@ -134,7 +147,9 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
       await SystemService.openInVSCode(activeRepoPath);
       useLogStore.getState().addLog('info', 'System', `Opened VS Code at '${activeRepoPath}'`);
     } catch (err: unknown) {
-      useLogStore.getState().addLog('error', 'System', `Failed to open VS Code: ${getErrorMessage(err)}`);
+      useLogStore
+        .getState()
+        .addLog('error', 'System', `Failed to open VS Code: ${getErrorMessage(err)}`);
     }
   };
 
@@ -154,7 +169,8 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     // 1. Remove from registry (dashboard)
     try {
       const registryEntry = repos.find(
-        (r) => r.path.replace(/\\/g, '/').toLowerCase() === targetPath.replace(/\\/g, '/').toLowerCase()
+        (r) =>
+          r.path.replace(/\\/g, '/').toLowerCase() === targetPath.replace(/\\/g, '/').toLowerCase()
       );
       await removeRepo(registryEntry ? registryEntry.id : targetPath);
     } catch {
@@ -218,12 +234,7 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
 
       {/* ── Group 3: Copy ── */}
       <div className="p-1 space-y-0.5">
-        <button
-          type="button"
-          onClick={handleCopyRepoName}
-          disabled={!repoName}
-          className={item}
-        >
+        <button type="button" onClick={handleCopyRepoName} disabled={!repoName} className={item}>
           <Copy className="w-3.5 h-3.5 text-text-muted flex-shrink-0" />
           <span>Copy Repo Name</span>
         </button>
@@ -295,5 +306,3 @@ export const ChangesEmptySpaceContextMenu: React.FC<ChangesEmptySpaceContextMenu
     </>
   );
 };
-
-

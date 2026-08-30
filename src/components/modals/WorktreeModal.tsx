@@ -194,7 +194,9 @@ export const WorktreeModal: React.FC = () => {
                   <div
                     key={wt.path}
                     className={`p-3 bg-base-1 border rounded-sm flex items-center justify-between transition shadow-xs ${
-                      isActive ? 'border-commito-coral/60 bg-base-2/60' : 'border-border hover:border-border-strong'
+                      isActive
+                        ? 'border-commito-coral/60 bg-base-2/60'
+                        : 'border-border hover:border-border-strong'
                     }`}
                   >
                     <div className="min-w-0 truncate pr-3">

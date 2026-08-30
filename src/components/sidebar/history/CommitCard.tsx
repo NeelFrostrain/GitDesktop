@@ -20,7 +20,7 @@ interface CommitCardProps {
  * Parses Conventional Commit patterns (e.g. "feat(ui): add button" -> type, scope, title).
  */
 function renderCommitMessage(message: string) {
-  const match = message.match(/^([a-zA-Z]+)(\([^\)]+\))?(!)?:\s*(.*)$/);
+  const match = message.match(/^([a-zA-Z]+)(\([^)]+\))?(!)?:\s*(.*)$/);
   if (!match) {
     return (
       <span className="truncate text-xs font-medium text-text-primary group-hover:text-commito-coral transition-colors leading-tight">

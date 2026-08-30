@@ -1,9 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import {
-  GitCommit,
-  Calendar,
-} from 'lucide-react';
+import { GitCommit, Calendar } from 'lucide-react';
 import { CommitInfo, BranchInfo, TagInfo } from '../../types/git';
 import { UserAvatar } from './UserAvatar';
 
@@ -125,9 +122,7 @@ export const CommitHoverCard: React.FC<CommitHoverCardProps> = ({
               className="w-3.5 h-3.5 rounded-full ring-1 ring-border/50 shrink-0"
               iconClassName="w-2 h-2"
             />
-            <span className="font-medium text-text-secondary truncate">
-              {commit.author_name}
-            </span>
+            <span className="font-medium text-text-secondary truncate">{commit.author_name}</span>
             {commit.author_email && (
               <span className="text-[10px] text-text-faint truncate">
                 &lt;{commit.author_email}&gt;

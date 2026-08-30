@@ -1,18 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  FolderPlus,
-  FolderOpen,
-  Plus,
-  Loader2,
-  AlertCircle,
-  FileCode,
-  Scale,
-  FileText,
-  Folder,
-} from 'lucide-react';
+import { X, Loader2, AlertCircle } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useRepoStore } from '../../store/repoStore';
 import { useLogStore } from '../../store/useLogStore';
@@ -185,22 +174,16 @@ export const CreateRepoModal: React.FC = () => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="px-4 py-3 border-b border-border bg-base-1/80 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-6.5 h-6.5 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
-              <FolderPlus className="w-3.5 h-3.5" />
-            </div>
-            <div>
-              <h2
-                id="create-repo-modal-title"
-                className="text-xs font-bold text-text-primary leading-tight"
-              >
-                Create a New Repository
-              </h2>
-              <p className="text-[10.5px] text-text-muted mt-0.2">
-                Initialize a Git repository in your local filesystem
-              </p>
-            </div>
+        <div className="px-4.5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <h2
+              id="create-repo-modal-title"
+              className="text-xs font-bold text-text-primary leading-none"
+            >
+              Create a New Repository
+            </h2>
+            <span className="text-border">•</span>
+            <span className="text-[11px] text-text-muted leading-none">Local Git repository</span>
           </div>
 
           <button
@@ -276,17 +259,15 @@ export const CreateRepoModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleSelectParentFolder}
-                  className="h-8 px-3 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0 shadow-2xs"
+                  className="h-8 px-3 bg-base-1 hover:bg-base-2 border border-border hover:border-border-strong rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center justify-center cursor-pointer shrink-0 shadow-2xs"
                   title="Browse local directory"
                 >
-                  <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
                   <span>Choose...</span>
                 </button>
               </div>
 
               {/* Destination Path Preview */}
               <div className="pt-0.5 flex items-center gap-1.5 text-[10.5px] text-text-muted font-mono truncate">
-                <Folder className="w-3 h-3 text-text-muted shrink-0" />
                 <span className="shrink-0 text-text-faint">Path:</span>
                 <span className="text-text-secondary truncate" title={fullDestinationPath}>
                   {fullDestinationPath}
@@ -309,8 +290,8 @@ export const CreateRepoModal: React.FC = () => {
               />
             </div>
 
-            {/* 4. Initialization Options Card */}
-            <div className="p-3 bg-base-1/50 border border-border/70 rounded-sm space-y-3 shadow-2xs">
+            {/* 4. Initialization Options Section */}
+            <div className="space-y-3 pt-1">
               <div className="text-[11px] font-bold text-text-muted uppercase tracking-wider">
                 Initialization Options
               </div>
@@ -318,39 +299,44 @@ export const CreateRepoModal: React.FC = () => {
               {/* Initialize with README toggle */}
               <div
                 onClick={() => setInitReadme(!initReadme)}
-                className="flex items-center justify-between gap-3 py-1 cursor-pointer select-none group"
+                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
+                  initReadme
+                    ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
+                    : 'bg-base-1/50 border-border hover:bg-base-1'
+                }`}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <FileText className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                  <div>
-                    <div className="text-xs font-medium text-text-primary group-hover:text-commito-coral transition-colors">
-                      Initialize with README.md
-                    </div>
-                    <div className="text-[10.5px] text-text-muted">
-                      Creates an initial README file to document the repository
-                    </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                    <span>Initialize with README.md</span>
+                    {initReadme && (
+                      <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
+                        Active
+                      </span>
+                    )}
                   </div>
+                  <p className="text-[11px] text-text-muted mt-1 leading-none">
+                    Creates an initial README file to document the repository
+                  </p>
                 </div>
 
-                {/* Clean Theme-Matching Switch */}
+                {/* Standardized Rectangular Toggle Switch */}
                 <div
-                  className={`relative inline-flex items-center w-7 h-3.5 rounded-full px-0.5 transition-colors shrink-0 ${
-                    initReadme ? 'bg-commito-coral' : 'bg-base-3 border border-border'
+                  className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
+                    initReadme ? 'bg-commito-coral border-commito-coral' : 'bg-base-2 border-border'
                   }`}
                 >
                   <div
-                    className={`w-2.5 h-2.5 rounded-full bg-white transition-transform duration-100 shadow-2xs ${
+                    className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
                       initReadme ? 'translate-x-3' : 'translate-x-0'
                     }`}
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-border/50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
                 {/* Gitignore Template */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5">
-                    <FileCode className="w-3 h-3 text-gitlab-blue" />
+                  <label className="text-[11.5px] font-medium text-text-secondary block">
                     <span>.gitignore template</span>
                   </label>
                   <Dropdown
@@ -363,8 +349,7 @@ export const CreateRepoModal: React.FC = () => {
 
                 {/* License Template */}
                 <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-text-secondary flex items-center gap-1.5">
-                    <Scale className="w-3 h-3 text-amber-400" />
+                  <label className="text-[11.5px] font-medium text-text-secondary block">
                     <span>License</span>
                   </label>
                   <Dropdown
@@ -391,18 +376,15 @@ export const CreateRepoModal: React.FC = () => {
             <button
               type="submit"
               disabled={isCreating || !cleanName || hasInvalidChars}
-              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98"
+              className="px-4 py-1.5 bg-commito-coral hover:bg-commito-coralHover disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center justify-center transition shadow-xs cursor-pointer active:scale-98"
             >
               {isCreating ? (
-                <>
+                <span className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   <span>Creating...</span>
-                </>
+                </span>
               ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Create Repository</span>
-                </>
+                <span>Create Repository</span>
               )}
             </button>
           </div>

@@ -454,7 +454,10 @@ export const App: React.FC = () => {
   // Global shortcuts: Ctrl+K / Ctrl+P (Command Palette), Ctrl+` / Cmd+` (Terminal), Ctrl+, / Cmd+, (Settings), Ctrl+I / Cmd+I (AI Agent)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K' || e.key === 'p' || e.key === 'P')) {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === 'k' || e.key === 'K' || e.key === 'p' || e.key === 'P')
+      ) {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       } else if ((e.ctrlKey || e.metaKey) && e.key === '`') {

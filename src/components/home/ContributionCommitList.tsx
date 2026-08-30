@@ -14,7 +14,10 @@ export const ContributionCommitList: React.FC = () => {
   const repos = useRepoStore((s) => s.repos);
 
   const commits = useMemo(() => getRecentCommits(30), [getRecentCommits, selectedDate, calendar]);
-  const selectedDay = useMemo(() => getSelectedDayData(), [getSelectedDayData, selectedDate, calendar]);
+  const selectedDay = useMemo(
+    () => getSelectedDayData(),
+    [getSelectedDayData, selectedDate, calendar]
+  );
 
   const formatDateTitle = (dateStr: string) => {
     try {

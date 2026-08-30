@@ -212,9 +212,7 @@ export const CommitDetailsInspector: React.FC<CommitDetailsInspectorProps> = ({
   const parents = commit.parent_shas || [];
 
   // Format exact date
-  const exactDate = commit.timestamp
-    ? new Date(commit.timestamp * 1000).toUTCString()
-    : '—';
+  const exactDate = commit.timestamp ? new Date(commit.timestamp * 1000).toUTCString() : '—';
 
   return (
     <div className="h-full flex flex-col bg-base-1 select-none font-sans text-xs overflow-hidden">
@@ -261,7 +259,11 @@ export const CommitDetailsInspector: React.FC<CommitDetailsInspectorProps> = ({
                 className="p-0.5 hover:text-text-primary text-text-muted cursor-pointer shrink-0 transition"
                 title="Copy full SHA"
               >
-                {copiedSha ? <Check className="w-3 h-3 text-git-added" /> : <Copy className="w-3 h-3" />}
+                {copiedSha ? (
+                  <Check className="w-3 h-3 text-git-added" />
+                ) : (
+                  <Copy className="w-3 h-3" />
+                )}
               </button>
             </div>
 

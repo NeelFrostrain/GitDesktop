@@ -157,7 +157,8 @@ export const HistoryPanel: React.FC = () => {
       if (!v || v.status !== 'Verified') return false;
     } else if (activeQuickFilter === 'tagged') {
       const hasTag = tags.some(
-        (t) => t.sha && (t.sha === c.sha || c.sha.startsWith(t.sha) || t.sha.startsWith(c.short_sha))
+        (t) =>
+          t.sha && (t.sha === c.sha || c.sha.startsWith(t.sha) || t.sha.startsWith(c.short_sha))
       );
       if (!hasTag) return false;
     }

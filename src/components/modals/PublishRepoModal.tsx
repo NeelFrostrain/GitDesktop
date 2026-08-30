@@ -300,7 +300,10 @@ export const PublishRepoModal: React.FC = () => {
 
       // Also refresh the Home Dashboard card and ensure the repo is registered
       useRepoStore.getState().refreshStatus(activeRepoPath);
-      useRepoStore.getState().addRepo(activeRepoPath).catch(() => {});
+      useRepoStore
+        .getState()
+        .addRepo(activeRepoPath)
+        .catch(() => {});
 
       setIsPublishRepoModalOpen(false);
     } catch (err: unknown) {

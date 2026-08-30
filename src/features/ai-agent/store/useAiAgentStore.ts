@@ -156,8 +156,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         {
           id: `msg-welcome-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           role: 'assistant',
-          content:
-            `👋 **Hello! I'm ${currentAgentName}.**\n\nI can inspect your repository changes, explain complex diffs, write commit messages, resolve merge conflicts, and execute Git operations on your integrated terminal.\n\nHow can I help with your repository today?`,
+          content: `👋 **Hello! I'm ${currentAgentName}.**\n\nI can inspect your repository changes, explain complex diffs, write commit messages, resolve merge conflicts, and execute Git operations on your integrated terminal.\n\nHow can I help with your repository today?`,
           timestamp: Date.now(),
         },
       ],
@@ -837,7 +836,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       // 4. Clean up ANSI color codes and command echo
-      // eslint-disable-next-line no-control-regex
+       
       let cleanOutput = capturedOutput
         // eslint-disable-next-line no-control-regex
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
@@ -964,7 +963,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // 5. Clean output
-    // eslint-disable-next-line no-control-regex
+     
     const cleanOutput = capturedOutput
       // eslint-disable-next-line no-control-regex
       .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')

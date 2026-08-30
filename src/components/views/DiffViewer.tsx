@@ -128,18 +128,21 @@ export const DiffViewer: React.FC = () => {
     };
   }, [activeRepoPath, selectedFile, activeTab, setError]);
 
-  const fetchCommitFileDiff = useCallback(async (sha: string, filePath: string) => {
-    if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
-    setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
-    try {
-      const res = await GitService.getCommitFileDiff(activeRepoPath, sha, filePath);
-      setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
-    } catch (err: unknown) {
-      setError(toAppError(err, 'GIT_ERROR'));
-    } finally {
-      setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
-    }
-  }, [activeRepoPath, expandedHistoryFiles, setError]);
+  const fetchCommitFileDiff = useCallback(
+    async (sha: string, filePath: string) => {
+      if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
+      setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
+      try {
+        const res = await GitService.getCommitFileDiff(activeRepoPath, sha, filePath);
+        setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
+      } catch (err: unknown) {
+        setError(toAppError(err, 'GIT_ERROR'));
+      } finally {
+        setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
+      }
+    },
+    [activeRepoPath, expandedHistoryFiles, setError]
+  );
 
   // Fetch commit details when selected commit changes in History tab
   useEffect(() => {

@@ -232,9 +232,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
       setSelectedIndex((prev) => (prev + 1) % Math.max(1, filteredCommands.length));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev <= 0 ? Math.max(0, filteredCommands.length - 1) : prev - 1
-      );
+      setSelectedIndex((prev) => (prev <= 0 ? Math.max(0, filteredCommands.length - 1) : prev - 1));
     } else if (e.key === 'Enter') {
       e.preventDefault();
       const selected = filteredCommands[selectedIndex];
@@ -311,7 +309,9 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
                         {cmd.shortcut}
                       </span>
                     )}
-                    {isSelected && <ArrowRight className="w-3.5 h-3.5 text-commito-coral shrink-0" />}
+                    {isSelected && (
+                      <ArrowRight className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+                    )}
                   </div>
                 </div>
               );

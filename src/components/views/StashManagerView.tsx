@@ -191,7 +191,8 @@ export const StashManagerView: React.FC = () => {
             bg = 'bg-base-3/40 text-text-muted font-bold py-0.5 border-b border-border/40';
             textClass = 'text-text-muted font-semibold';
           } else if (isHunk) {
-            bg = 'bg-commito-coral/10 text-commito-coral font-semibold border-y border-commito-coral/20 py-0.5';
+            bg =
+              'bg-commito-coral/10 text-commito-coral font-semibold border-y border-commito-coral/20 py-0.5';
             textClass = 'text-commito-coral';
           } else if (isAdd) {
             bg = 'bg-diff-add-bg text-diff-add-text';
@@ -227,9 +228,7 @@ export const StashManagerView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-text-primary leading-none">
-                Stash Management
-              </h2>
+              <h2 className="text-sm font-bold text-text-primary leading-none">Stash Management</h2>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted font-bold">
                 {stashes.length} {stashes.length === 1 ? 'entry' : 'entries'}
               </span>
@@ -481,4 +480,3 @@ export const StashManagerView: React.FC = () => {
     </div>
   );
 };
-

@@ -11,8 +11,7 @@ export interface ConflictHunk {
 }
 
 export type ConflictSegment =
-  | { type: 'plain'; content: string }
-  | { type: 'conflict'; hunk: ConflictHunk };
+  { type: 'plain'; content: string } | { type: 'conflict'; hunk: ConflictHunk };
 
 export interface ParsedConflictFile {
   hasConflicts: boolean;
@@ -130,14 +129,10 @@ export function reconstructResolvedFile(segments: ConflictSegment[]): string {
           parts.push(hunk.incomingContent);
           break;
         case 'both-ours-first':
-          parts.push(
-            [hunk.currentContent, hunk.incomingContent].filter(Boolean).join('\n')
-          );
+          parts.push([hunk.currentContent, hunk.incomingContent].filter(Boolean).join('\n'));
           break;
         case 'both-theirs-first':
-          parts.push(
-            [hunk.incomingContent, hunk.currentContent].filter(Boolean).join('\n')
-          );
+          parts.push([hunk.incomingContent, hunk.currentContent].filter(Boolean).join('\n'));
           break;
         case 'custom':
           parts.push(hunk.customContent);

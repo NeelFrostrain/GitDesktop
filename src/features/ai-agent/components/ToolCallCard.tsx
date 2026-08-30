@@ -57,11 +57,7 @@ export const ToolCallCard: React.FC<ToolCallCardProps> = ({ toolCall }) => {
           className="p-0.5 text-text-muted hover:text-text-primary rounded-xs transition cursor-pointer shrink-0"
           title="Copy"
         >
-          {copied ? (
-            <Check className="w-3 h-3 text-emerald-400" />
-          ) : (
-            <Copy className="w-3 h-3" />
-          )}
+          {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
         </button>
       </div>
 

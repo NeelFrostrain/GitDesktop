@@ -55,7 +55,11 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
 
     useLogStore
       .getState()
-      .addLog('info', 'System', `Welcome to GitDesktop, ${cleanName}! Workspace profile initialized.`);
+      .addLog(
+        'info',
+        'System',
+        `Welcome to GitDesktop, ${cleanName}! Workspace profile initialized.`
+      );
 
     onComplete(cleanName, cleanEmail || undefined);
   };
@@ -181,23 +185,23 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
             <div className="p-4 overflow-y-auto text-xs text-text-secondary leading-relaxed space-y-3 font-sans">
               {showTermsModal === 'terms' ? (
                 <>
-                  <p className="font-semibold text-text-primary">
-                    1. Acceptance of Terms
-                  </p>
+                  <p className="font-semibold text-text-primary">1. Acceptance of Terms</p>
                   <p>
-                    By downloading, installing, or using GitDesktop, you agree to comply with and be bound by these Terms of Service. If you do not agree to these terms, do not use the application.
+                    By downloading, installing, or using GitDesktop, you agree to comply with and be
+                    bound by these Terms of Service. If you do not agree to these terms, do not use
+                    the application.
                   </p>
-                  <p className="font-semibold text-text-primary">
-                    2. Local Data & Git Operations
-                  </p>
+                  <p className="font-semibold text-text-primary">2. Local Data & Git Operations</p>
                   <p>
-                    GitDesktop operates as a client-side Git management desktop tool. All Git operations, credentials, and local commits are processed on your local device and directly between your computer and your configured Git hosting providers (e.g. GitHub, GitLab).
+                    GitDesktop operates as a client-side Git management desktop tool. All Git
+                    operations, credentials, and local commits are processed on your local device
+                    and directly between your computer and your configured Git hosting providers
+                    (e.g. GitHub, GitLab).
                   </p>
-                  <p className="font-semibold text-text-primary">
-                    3. User Responsibility
-                  </p>
+                  <p className="font-semibold text-text-primary">3. User Responsibility</p>
                   <p>
-                    You are solely responsible for all Git repositories, code commits, branch pushes, and credentials managed using this application.
+                    You are solely responsible for all Git repositories, code commits, branch
+                    pushes, and credentials managed using this application.
                   </p>
                 </>
               ) : (
@@ -206,19 +210,20 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
                     1. Privacy First & Local Storage
                   </p>
                   <p>
-                    GitDesktop does not sell or distribute your personal source code. Repository data, commit history, and personal settings remain stored on your local disk.
+                    GitDesktop does not sell or distribute your personal source code. Repository
+                    data, commit history, and personal settings remain stored on your local disk.
                   </p>
-                  <p className="font-semibold text-text-primary">
-                    2. Authentication & Credentials
-                  </p>
+                  <p className="font-semibold text-text-primary">2. Authentication & Credentials</p>
                   <p>
-                    Authentication tokens (such as GitHub or GitLab Personal Access Tokens) are stored securely in your operating system's native credential manager or local application vault.
+                    Authentication tokens (such as GitHub or GitLab Personal Access Tokens) are
+                    stored securely in your operating system's native credential manager or local
+                    application vault.
                   </p>
-                  <p className="font-semibold text-text-primary">
-                    3. AI Services (Optional)
-                  </p>
+                  <p className="font-semibold text-text-primary">3. AI Services (Optional)</p>
                   <p>
-                    When using optional AI features (such as AI commit message generation), diff snippets are processed securely via your chosen API provider strictly for generating summaries.
+                    When using optional AI features (such as AI commit message generation), diff
+                    snippets are processed securely via your chosen API provider strictly for
+                    generating summaries.
                   </p>
                 </>
               )}

@@ -213,7 +213,8 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
               Name Your AI Agent
             </h2>
             <p className="text-xs text-text-muted leading-relaxed">
-              Give your assistant a custom name. The agent will introduce itself and respond using this identity.
+              Give your assistant a custom name. The agent will introduce itself and respond using
+              this identity.
             </p>
           </div>
 

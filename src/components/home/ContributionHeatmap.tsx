@@ -1,12 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import {
-  RefreshCw,
-  ChevronDown,
-  Check,
-  Flame,
-  Calendar as CalendarIcon,
-  Zap,
-} from 'lucide-react';
+import { RefreshCw, ChevronDown, Check, Flame, Calendar as CalendarIcon, Zap } from 'lucide-react';
 import { useContributionsStore } from '../../store/contributionsStore';
 import { useAccountServicesStore } from '../../features/account-services';
 import { ContributionCommitList } from './ContributionCommitList';

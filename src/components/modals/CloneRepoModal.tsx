@@ -1,26 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { invoke } from '@tauri-apps/api/core';
-import {
-  X,
-  Download,
-  FolderOpen,
-  Loader2,
-  AlertCircle,
-  Shield,
-  KeyRound,
-  User,
-  Eye,
-  EyeOff,
-  GitBranch,
-  Layers,
-  Folder,
-  Globe,
-  Lock,
-  Check,
-  FolderGit2,
-  ShieldCheck,
-} from 'lucide-react';
+import { X, Loader2, AlertCircle, Eye, EyeOff, Check } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRepoStore, openRepo } from '../../features/repos';
@@ -158,18 +139,15 @@ export const CloneRepoModal: React.FC = () => {
         id: 'saved',
         label: 'Saved Account',
         badge: accounts.length,
-        icon: <Shield className="w-3.5 h-3.5" />,
       });
     }
     items.push({
       id: 'credentials',
       label: 'Username & Password / Token',
-      icon: <KeyRound className="w-3.5 h-3.5" />,
     });
     items.push({
       id: 'public',
       label: 'Public / Anonymous',
-      icon: <Globe className="w-3.5 h-3.5" />,
     });
     return items;
   }, [accounts.length]);
@@ -322,12 +300,10 @@ export const CloneRepoModal: React.FC = () => {
               {
                 id: 'remote',
                 label: 'Your Repositories',
-                icon: <FolderGit2 className="w-3.5 h-3.5 text-commito-coral" />,
               },
               {
                 id: 'url',
                 label: 'Clone by URL',
-                icon: <Globe className="w-3.5 h-3.5" />,
               },
             ]}
             activeTab={activeMainTab}
@@ -375,7 +351,7 @@ export const CloneRepoModal: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="relative">
+                <div>
                   <input
                     ref={urlInputRef}
                     type="text"
@@ -383,9 +359,8 @@ export const CloneRepoModal: React.FC = () => {
                     value={url}
                     onChange={(e) => handleUrlChange(e.target.value)}
                     placeholder="https://gitlab.com/owner/project.git or git@github.com:owner/project.git"
-                    className="w-full h-8.5 pl-3 pr-8 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
+                    className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs"
                   />
-                  <Globe className="w-4 h-4 text-text-muted absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
               </div>
 
@@ -408,17 +383,15 @@ export const CloneRepoModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleSelectParentFolder}
-                    className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                    className="h-8.5 px-3 bg-base-2 hover:bg-base-3 border border-border rounded-sm text-xs font-medium text-text-secondary hover:text-text-primary transition flex items-center justify-center cursor-pointer shrink-0"
                     title="Browse local directory"
                   >
-                    <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
                     <span>Choose...</span>
                   </button>
                 </div>
 
                 {/* Destination Path Preview Card */}
-                <div className="px-3 py-1.5 bg-base-1/70 border border-border/70 rounded-sm flex items-center gap-2 text-[11.5px] text-text-muted font-mono truncate">
-                  <Folder className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                <div className="px-3 py-1.5 bg-base-1/70 border border-border/70 rounded-sm flex items-center gap-1.5 text-[11.5px] text-text-muted font-mono truncate">
                   <span className="text-text-muted shrink-0">Will clone to:</span>
                   <span
                     className="text-text-secondary font-medium truncate"
@@ -432,8 +405,7 @@ export const CloneRepoModal: React.FC = () => {
               {/* 3. Authentication & Security Card */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold text-text-secondary flex items-center gap-1.5">
-                    <Shield className="w-3.5 h-3.5 text-commito-coral" />
+                  <div className="text-xs font-semibold text-text-secondary">
                     <span>Authentication</span>
                   </div>
                 </div>
@@ -476,10 +448,11 @@ export const CloneRepoModal: React.FC = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       {/* Username */}
                       <div className="space-y-1.5">
-                        <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5 text-text-muted" />
-                          <span>Username</span>
-                        </label>
+                        <div className="h-5 flex items-center justify-between">
+                          <label className="text-xs font-medium text-text-secondary">
+                            <span>Username</span>
+                          </label>
+                        </div>
                         <input
                           type="text"
                           value={username}
@@ -491,15 +464,14 @@ export const CloneRepoModal: React.FC = () => {
 
                       {/* Password / Personal Access Token */}
                       <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                            <KeyRound className="w-3.5 h-3.5 text-text-muted" />
+                        <div className="h-5 flex items-center justify-between">
+                          <label className="text-xs font-medium text-text-secondary">
                             <span>Password / Token</span>
                           </label>
                           <button
                             type="button"
                             onClick={() => setHas2FaEnabled(!has2FaEnabled)}
-                            className="text-[11px] text-commito-coral hover:underline cursor-pointer font-medium"
+                            className="text-[11px] text-commito-coral hover:underline cursor-pointer font-medium leading-none"
                           >
                             {has2FaEnabled ? 'Hide 2FA' : '2FA / MFA?'}
                           </button>
@@ -531,8 +503,7 @@ export const CloneRepoModal: React.FC = () => {
                     {/* 2FA / MFA Verification Drawer */}
                     {has2FaEnabled && (
                       <div className="p-3 bg-base-2/80 border border-border rounded-sm space-y-2 animate-in fade-in duration-100">
-                        <div className="flex items-start gap-2 text-xs text-text-primary font-medium">
-                          <Lock className="w-3.5 h-3.5 text-commito-coral shrink-0 mt-0.5" />
+                        <div className="text-xs text-text-primary font-medium">
                           <div>
                             <p className="text-xs font-semibold text-text-primary">
                               Two-Factor Authentication (2FA)
@@ -572,29 +543,18 @@ export const CloneRepoModal: React.FC = () => {
                           : 'bg-base-1/50 border-border hover:bg-base-1'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div
-                          className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                            saveCredentials
-                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                              : 'bg-base-0 text-text-muted border border-border'
-                          }`}
-                        >
-                          <ShieldCheck className="w-3.5 h-3.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                          <span>Remember credentials in system keyring</span>
+                          {saveCredentials && (
+                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
+                              Saved
+                            </span>
+                          )}
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                            <span>Remember credentials in system keyring</span>
-                            {saveCredentials && (
-                              <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
-                                Saved
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-text-muted mt-1 leading-none">
-                            Securely persist username and token in OS credential vault
-                          </p>
-                        </div>
+                        <p className="text-[11px] text-text-muted mt-1 leading-none">
+                          Securely persist username and token in OS credential vault
+                        </p>
                       </div>
 
                       {/* Toggle Switch */}
@@ -630,8 +590,7 @@ export const CloneRepoModal: React.FC = () => {
               <div className="space-y-3">
                 {/* Branch / Tag Input */}
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-text-secondary flex items-center gap-1.5">
-                    <GitBranch className="w-3.5 h-3.5 text-text-muted" />
+                  <label className="text-xs font-medium text-text-secondary">
                     <span>
                       Branch / Tag{' '}
                       <span className="text-text-muted font-normal text-[11px]">(optional)</span>
@@ -646,7 +605,7 @@ export const CloneRepoModal: React.FC = () => {
                   />
                 </div>
 
-                {/* Toggle Options: Rich Cards */}
+                {/* Toggle Options: Clean Cards */}
                 <div className="space-y-2 pt-0.5">
                   {/* Option 1: Recurse Submodules */}
                   <div
@@ -660,29 +619,18 @@ export const CloneRepoModal: React.FC = () => {
                         : 'bg-base-1/50 border-border hover:bg-base-1'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                          recurseSubmodules
-                            ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                            : 'bg-base-0 text-text-muted border border-border'
-                        }`}
-                      >
-                        <FolderGit2 className="w-3.5 h-3.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                        <span>Recurse submodules</span>
+                        {recurseSubmodules && (
+                          <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
+                            Active
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                          <span>Recurse submodules</span>
-                          {recurseSubmodules && (
-                            <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-1 leading-none">
-                          Automatically initialize and clone all nested submodules
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-text-muted mt-1 leading-none">
+                        Automatically initialize and clone all nested submodules
+                      </p>
                     </div>
 
                     {/* Toggle Switch */}
@@ -713,29 +661,18 @@ export const CloneRepoModal: React.FC = () => {
                         : 'bg-base-1/50 border-border hover:bg-base-1'
                     }`}
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 transition ${
-                          isShallowClone
-                            ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                            : 'bg-base-0 text-text-muted border border-border'
-                        }`}
-                      >
-                        <Layers className="w-3.5 h-3.5" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
+                        <span>Shallow clone (--depth 1)</span>
+                        {isShallowClone && (
+                          <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
+                            Fast
+                          </span>
+                        )}
                       </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
-                          <span>Shallow clone (--depth 1)</span>
-                          {isShallowClone && (
-                            <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
-                              Fast
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-text-muted mt-1 leading-none">
-                          Fetch only the latest commit without downloading full commit history
-                        </p>
-                      </div>
+                      <p className="text-[11px] text-text-muted mt-1 leading-none">
+                        Fetch only the latest commit without downloading full commit history
+                      </p>
                     </div>
 
                     {/* Toggle Switch */}
@@ -778,18 +715,15 @@ export const CloneRepoModal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isCloning || !url.trim()}
-                  className="px-4.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center gap-1.5 transition shadow-xs cursor-pointer active:scale-98"
+                  className="px-4.5 py-1.5 bg-commito-coral hover:bg-commito-coralLight disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-sm text-xs font-bold flex items-center justify-center transition shadow-xs cursor-pointer active:scale-98"
                 >
                   {isCloning ? (
-                    <>
+                    <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
                       <span>Cloning Repository...</span>
-                    </>
+                    </span>
                   ) : (
-                    <>
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Clone Repository</span>
-                    </>
+                    <span>Clone Repository</span>
                   )}
                 </button>
               </div>
