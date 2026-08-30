@@ -157,6 +157,107 @@ const RemoteBranchRow = React.memo<RemoteBranchRowProps>(({ branchItem, onSelect
   );
 });
 
+interface PullRequestRowProps {
+  pr: UnifiedMergeRequest;
+  isCurrent: boolean;
+  provider?: string;
+  onSelect: (pr: UnifiedMergeRequest) => void;
+  onOpenBrowser: (url: string, e: React.MouseEvent) => void;
+}
+
+const PullRequestRow = React.memo<PullRequestRowProps>(
+  ({ pr, isCurrent, provider, onSelect, onOpenBrowser }) => {
+    const prNumber = pr.iid || pr.id;
+    const numberPrefix = provider === 'github' ? '#' : '!';
+    const isDraft =
+      pr.is_draft ||
+      pr.title.toLowerCase().startsWith('draft:') ||
+      pr.title.toLowerCase().startsWith('wip:') ||
+      pr.title.toLowerCase().startsWith('spec:');
+
+    return (
+      <div
+        onClick={() => onSelect(pr)}
+        className={`group relative flex items-start justify-between gap-2.5 p-2 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
+          isCurrent
+            ? 'bg-base-1 border-commito-coral/50 shadow-xs'
+            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
+        }`}
+        title={`Open Pull Request ${numberPrefix}${prNumber}: ${pr.title}`}
+      >
+        <div className="flex items-start gap-2 min-w-0 flex-1">
+          <div
+            className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 mt-0.5 ${
+              isDraft
+                ? 'bg-base-2 text-text-muted border border-border/60'
+                : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+            }`}
+          >
+            <GitPullRequest className="w-3 h-3" />
+          </div>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <span className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors flex-1">
+                {pr.title}
+              </span>
+              {isDraft && (
+                <span className="text-[9px] font-semibold uppercase px-1 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border/60 shrink-0">
+                  Draft
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5 flex-wrap text-[10.5px] text-text-muted">
+              <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs leading-none">
+                {numberPrefix}
+                {prNumber}
+              </span>
+
+              <div className="flex items-center gap-1 font-mono text-[9.5px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
+                <GitFork className="w-2.5 h-2.5 text-text-faint shrink-0" />
+                <span className="truncate max-w-[90px]" title={pr.source_branch}>
+                  {pr.source_branch}
+                </span>
+                <ArrowRight className="w-2 h-2 text-text-faint shrink-0" />
+                <span className="truncate max-w-[90px]" title={pr.target_branch}>
+                  {pr.target_branch}
+                </span>
+              </div>
+
+              <span className="truncate flex items-center gap-1">
+                <User className="w-2.5 h-2.5 text-text-faint shrink-0" />
+                <span>{pr.author_name}</span>
+              </span>
+
+              <span>• {formatRelativeTime(pr.created_at)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Checkmark if current, plus external link */}
+        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+          {isCurrent && (
+            <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
+              <span>CURRENT</span>
+              <Check className="w-2.5 h-2.5" />
+            </span>
+          )}
+          {pr.web_url && pr.web_url !== '#' && (
+            <button
+              type="button"
+              onClick={(e) => onOpenBrowser(pr.web_url, e)}
+              className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
+              title="Open in browser"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+);
+
 /**
  * Dropdown component displaying current branch, Branches vs. Pull Requests tabs,
  * search filtering, smooth branch checkout, and inline PR inspection.
@@ -165,7 +266,6 @@ export const BranchDropdown: React.FC = () => {
   const {
     activeRepoPath,
     status,
-    setStatus,
     branches,
     setBranches,
     setError,
@@ -281,21 +381,49 @@ export const BranchDropdown: React.FC = () => {
         currentRemotes = useRemoteStore.getState().remotes;
       }
 
-      const remote = currentRemotes.find((r) => r.name === activeRemote) || currentRemotes[0];
-      const remoteInfo = parseRemoteRepoInfo(remote?.url || remote?.push_url);
+      const upstream = currentRemotes.find((r) => r.name.toLowerCase() === 'upstream');
+      const origin = currentRemotes.find((r) => r.name.toLowerCase() === 'origin');
+      const primaryRemote = upstream || currentRemotes.find((r) => r.name === activeRemote) || origin || currentRemotes[0];
+      const primaryInfo = parseRemoteRepoInfo(primaryRemote?.url || primaryRemote?.push_url);
 
-      if (!remoteInfo?.projectPath) {
+      if (!primaryInfo?.projectPath) {
         setPullRequests([]);
         return;
       }
 
-      const projectPath = remoteInfo.projectPath;
-      const serverUrl = remoteInfo.serverUrl;
+      const projectPath = primaryInfo.projectPath;
+      const serverUrl = primaryInfo.serverUrl;
       const provider =
-        remoteInfo.provider !== 'unknown' ? remoteInfo.provider : user?.provider || 'github';
+        primaryInfo.provider !== 'unknown' ? primaryInfo.provider : user?.provider || 'github';
 
       const res = await PullRequestService.listOpenPullRequests(projectPath, serverUrl, provider);
-      setPullRequests(res || []);
+      let combinedPRs = res || [];
+
+      // If user also has another remote (e.g. origin fork vs upstream parent)
+      const secondaryRemote = upstream ? (origin && origin !== upstream ? origin : null) : null;
+      if (secondaryRemote) {
+        const secInfo = parseRemoteRepoInfo(secondaryRemote.url || secondaryRemote.push_url);
+        if (secInfo?.projectPath && secInfo.projectPath.toLowerCase() !== projectPath.toLowerCase()) {
+          try {
+            const secRes = await PullRequestService.listOpenPullRequests(
+              secInfo.projectPath,
+              secInfo.serverUrl,
+              secInfo.provider !== 'unknown' ? secInfo.provider : provider
+            );
+            if (secRes && secRes.length > 0) {
+              const existingIds = new Set(combinedPRs.map((p) => p.id));
+              for (const p of secRes) {
+                if (!existingIds.has(p.id)) {
+                  combinedPRs.push(p);
+                }
+              }
+            }
+          } catch {}
+        }
+      }
+
+      combinedPRs.sort((a, b) => Number(b.iid || b.id || 0) - Number(a.iid || a.id || 0));
+      setPullRequests(combinedPRs);
     } catch (err: unknown) {
       const msg = getErrorMessage(err);
       console.error('Error fetching pull requests:', err);
@@ -308,6 +436,7 @@ export const BranchDropdown: React.FC = () => {
 
   const [visibleLocalCount, setVisibleLocalCount] = useState(60);
   const [visibleRemoteCount, setVisibleRemoteCount] = useState(60);
+  const [visiblePRCount, setVisiblePRCount] = useState(40);
 
   useEffect(() => {
     if (isOpen && activeRepoPath) {
@@ -325,6 +454,7 @@ export const BranchDropdown: React.FC = () => {
   useEffect(() => {
     setVisibleLocalCount(60);
     setVisibleRemoteCount(60);
+    setVisiblePRCount(40);
   }, [filterQuery, activeTab]);
 
   const handleBranchListScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -413,14 +543,12 @@ export const BranchDropdown: React.FC = () => {
       useTaskStore.getState().updateTaskProgress(taskId, {
         stage: 'Finalizing',
         percent: 90,
-        detail: 'Syncing submodules & LFS objects...',
+        detail: 'Syncing repository state...',
       });
 
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
 
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
 
       useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {
@@ -446,9 +574,7 @@ export const BranchDropdown: React.FC = () => {
       setNewBranchName('');
       setShowCreateModal(false);
 
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     } finally {
@@ -547,6 +673,27 @@ export const BranchDropdown: React.FC = () => {
       );
     });
   }, [pullRequests, queryLower]);
+
+  const displayedPullRequests = useMemo(() => {
+    return filteredPullRequests.slice(0, visiblePRCount);
+  }, [filteredPullRequests, visiblePRCount]);
+
+  const handlePRListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 100) {
+      if (visiblePRCount < filteredPullRequests.length) {
+        setVisiblePRCount((prev) => Math.min(prev + 40, filteredPullRequests.length));
+      }
+    }
+  };
+
+  const totalOpenPRCount = useMemo(() => {
+    return pullRequests[0]?.total_count || pullRequests.length;
+  }, [pullRequests]);
+
+  const resolvedPRRepoName = useMemo(() => {
+    return pullRequests[0]?.repo_full_name || activeProjectPath || 'repository';
+  }, [pullRequests, activeProjectPath]);
 
   const menuWidth = 390;
   const leftPos = triggerRect
@@ -650,8 +797,8 @@ export const BranchDropdown: React.FC = () => {
                       ),
                       badge: isLoadingPRs ? (
                         <Loader2 className="w-2.5 h-2.5 animate-spin text-emerald-400" />
-                      ) : pullRequests.length > 0 ? (
-                        pullRequests.length
+                      ) : totalOpenPRCount > 0 ? (
+                        totalOpenPRCount
                       ) : undefined,
                       badgeVariant: 'emerald',
                     },
@@ -871,7 +1018,10 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Tab Body: Pull Requests View */}
             {activeTab === 'pull-requests' && (
-              <div className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 scrollbar-thin">
+              <div
+                onScroll={handlePRListScroll}
+                className="flex-1 overflow-y-auto p-2 space-y-2 min-h-0 scrollbar-thin"
+              >
                 {isLoadingPRs && pullRequests.length === 0 ? (
                   <div className="py-8 flex flex-col items-center justify-center gap-2 text-text-muted">
                     <Loader2 className="w-5 h-5 animate-spin text-commito-coral" />
@@ -932,92 +1082,50 @@ export const BranchDropdown: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-1.5">
-                    {/* Section Header */}
-                    {activeProjectPath && (
-                      <div className="px-1.5 pt-0.5 pb-1 text-[10.5px] font-semibold text-text-muted select-none truncate">
-                        Pull requests in{' '}
-                        <span className="text-text-primary font-mono">{activeProjectPath}</span>
+                    {/* Section Header with dynamic Count and resolved parent repository */}
+                    <div className="px-1.5 pt-0.5 pb-1 flex items-center justify-between text-[10.5px] font-semibold text-text-muted select-none">
+                      <div className="flex items-center gap-1.5 truncate min-w-0 flex-1">
+                        <span className="shrink-0">Pull requests in</span>
+                        <span
+                          className="text-text-primary font-mono truncate"
+                          title={resolvedPRRepoName}
+                        >
+                          {resolvedPRRepoName}
+                        </span>
                       </div>
-                    )}
+                      <span className="font-mono text-[9.5px] px-1.5 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border/50 shrink-0 ml-2">
+                        {filterQuery
+                          ? `${filteredPullRequests.length} of ${totalOpenPRCount}`
+                          : `${totalOpenPRCount} open`}
+                      </span>
+                    </div>
 
                     <div className="space-y-1.5 p-0.5">
-                      {filteredPullRequests.map((pr) => {
-                        const isCurrent = isCurrentPR(pr.source_branch);
-                        const prNumber = pr.iid || pr.id;
-                        const numberPrefix = user?.provider === 'github' ? '#' : '!';
+                      {displayedPullRequests.map((pr) => (
+                        <PullRequestRow
+                          key={pr.id}
+                          pr={pr}
+                          isCurrent={isCurrentPR(pr.source_branch)}
+                          provider={user?.provider || 'github'}
+                          onSelect={handleSelectPullRequest}
+                          onOpenBrowser={(url, e) => {
+                            e.stopPropagation();
+                            openUrl(url).catch(() => {});
+                          }}
+                        />
+                      ))}
 
-                        return (
-                          <div
-                            key={pr.id}
-                            onClick={() => handleSelectPullRequest(pr)}
-                            className={`group flex items-start justify-between gap-2.5 p-2.5 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
-                              isCurrent
-                                ? 'bg-base-1 border-border-strong shadow-xs'
-                                : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
-                            }`}
-                            title={`Open Pull Request ${numberPrefix}${prNumber} in Git Desktop`}
-                          >
-                            <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                              <div className="w-5 h-5 rounded-sm bg-emerald-500/15 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5">
-                                <GitPullRequest className="w-3 h-3" />
-                              </div>
-                              <div className="min-w-0 flex-1 space-y-1">
-                                <div className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors">
-                                  {pr.title}
-                                </div>
-
-                                <div className="flex items-center gap-2 flex-wrap text-[10.5px] text-text-muted">
-                                  <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs">
-                                    {numberPrefix}
-                                    {prNumber}
-                                  </span>
-
-                                  <div className="flex items-center gap-1 font-mono text-[10px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
-                                    <GitFork className="w-2.5 h-2.5 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">
-                                      {pr.source_branch}
-                                    </span>
-                                    <ArrowRight className="w-2 h-2 text-text-faint" />
-                                    <span className="truncate max-w-[90px]">
-                                      {pr.target_branch}
-                                    </span>
-                                  </div>
-
-                                  <span className="truncate flex items-center gap-1">
-                                    <User className="w-2.5 h-2.5 text-text-faint" />
-                                    <span>{pr.author_name}</span>
-                                  </span>
-
-                                  <span>• {formatRelativeTime(pr.created_at)}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Right: Checkmark if current, plus external link */}
-                            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-                              {isCurrent && (
-                                <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
-                                  <span>CURRENT</span>
-                                  <Check className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                              {pr.web_url && pr.web_url !== '#' && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openUrl(pr.web_url).catch(() => {});
-                                  }}
-                                  className="p-1 text-text-muted hover:text-text-primary rounded-sm hover:bg-base-2 transition opacity-0 group-hover:opacity-100 cursor-pointer"
-                                  title="Open in browser"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      {filteredPullRequests.length > visiblePRCount && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setVisiblePRCount((c) => Math.min(c + 40, filteredPullRequests.length))
+                          }
+                          className="w-full py-1.5 text-center text-[10.5px] font-mono text-commito-coral hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                        >
+                          Show more ({filteredPullRequests.length - visiblePRCount} remaining)...
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}

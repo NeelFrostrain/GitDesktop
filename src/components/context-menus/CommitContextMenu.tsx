@@ -121,8 +121,7 @@ export const CommitContextMenu: React.FC<CommitContextMenuProps> = ({ commit, x,
       useLogStore
         .getState()
         .addLog('info', 'Git', `Checked out commit ${commit.short_sha} (Detached HEAD)`);
-      const res = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(res);
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     }

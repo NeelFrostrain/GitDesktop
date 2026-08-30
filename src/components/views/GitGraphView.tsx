@@ -70,6 +70,7 @@ export const GitGraphView: React.FC = () => {
     selectedCommitSha,
     setSelectedCommitSha,
     setCurrentNavView,
+    repoSyncCounter,
   } = useGitStore();
 
   const [commits, setCommits] = useState<CommitInfo[]>([]);
@@ -165,7 +166,7 @@ export const GitGraphView: React.FC = () => {
 
   useEffect(() => {
     loadInitialCommits();
-  }, [loadInitialCommits]);
+  }, [loadInitialCommits, status?.current_branch, repoSyncCounter]);
 
   // Copy SHA to clipboard
   const handleCopySha = (sha: string, e: React.MouseEvent) => {

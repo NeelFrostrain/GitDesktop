@@ -294,35 +294,12 @@ impl GitHubClient {
         })
     }
 
-    pub async fn get_open_pull_requests(
+    fn parse_github_prs(
         &self,
-        owner_repo: &str,
-    ) -> Result<Vec<crate::auth::gitlab::MergeRequest>, AppError> {
-        let clean_path = owner_repo
-            .trim_matches('/')
-            .trim_end_matches(".git")
-            .trim_matches('/');
-        let url = format!("{}/repos/{}/pulls?state=open&per_page=50", GITHUB_API_URL, clean_path);
-        let resp = self.client.get(&url).send().await?;
-
-        if !resp.status().is_success() {
-            let err_text = resp.text().await.unwrap_or_default();
-            crate::log_error!(
-                crate::core::logging::LogCategory::Git,
-                format!("GitHub PRs fetch error for '{}': {}", clean_path, err_text);
-                meta: serde_json::json!({ "url": url, "error": err_text })
-            );
-            return Err(AppError::Network(format!(
-                "Failed to fetch GitHub pull requests: {}",
-                err_text
-            )));
-        }
-
-        let pr_array: Vec<serde_json::Value> = resp
-            .json()
-            .await
-            .map_err(|e| AppError::Network(format!("Failed to parse GitHub PRs JSON: {}", e)))?;
-
+        pr_array: &[serde_json::Value],
+        repo_full_name: Option<&str>,
+        total_count: Option<u64>,
+    ) -> Vec<crate::auth::gitlab::MergeRequest> {
         let mut results = Vec::new();
         for item in pr_array {
             let number = item.get("number").and_then(|v| v.as_u64()).unwrap_or(0);
@@ -445,8 +422,104 @@ impl GitHubClient {
                 labels: Some(labels),
                 milestone,
                 is_draft: Some(is_draft),
+                repo_full_name: repo_full_name.map(|s| s.to_string()),
+                total_count,
             });
         }
+        results
+    }
+
+    pub async fn get_open_pull_requests(
+        &self,
+        owner_repo: &str,
+    ) -> Result<Vec<crate::auth::gitlab::MergeRequest>, AppError> {
+        let clean_path = owner_repo
+            .trim_matches('/')
+            .trim_end_matches(".git")
+            .trim_matches('/');
+
+        // 1. Inspect repository metadata to detect parent if it is a fork
+        let mut parent_repo_opt: Option<String> = None;
+        let repo_info_url = format!("{}/repos/{}", GITHUB_API_URL, clean_path);
+        if let Ok(repo_resp) = self.client.get(&repo_info_url).send().await {
+            if repo_resp.status().is_success() {
+                if let Ok(repo_json) = repo_resp.json::<serde_json::Value>().await {
+                    let is_fork = repo_json.get("fork").and_then(|v| v.as_bool()).unwrap_or(false);
+                    let parent_name = repo_json
+                        .get("parent")
+                        .and_then(|p| p.get("full_name"))
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .or_else(|| {
+                            repo_json
+                                .get("source")
+                                .and_then(|p| p.get("full_name"))
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                        });
+
+                    if is_fork || parent_name.is_some() {
+                        parent_repo_opt = parent_name;
+                    }
+                }
+            }
+        }
+
+        let effective_repo = parent_repo_opt.clone().unwrap_or_else(|| clean_path.to_string());
+
+        // 2. Fetch exact total open PR count via Search API
+        let mut total_open_count: Option<u64> = None;
+        let search_url = format!("{}/search/issues?q=repo:{}+is:pr+is:open&per_page=1", GITHUB_API_URL, effective_repo);
+        if let Ok(search_resp) = self.client.get(&search_url).send().await {
+            if search_resp.status().is_success() {
+                if let Ok(search_json) = search_resp.json::<serde_json::Value>().await {
+                    if let Some(cnt) = search_json.get("total_count").and_then(|v| v.as_u64()) {
+                        total_open_count = Some(cnt);
+                    }
+                }
+            }
+        }
+
+        // 3. Fetch open pull requests from effective (parent/primary) repository
+        let pulls_url = format!("{}/repos/{}/pulls?state=open&per_page=100", GITHUB_API_URL, effective_repo);
+        let pulls_resp = self.client.get(&pulls_url).send().await;
+
+        let mut results = Vec::new();
+        let mut fetched_ids = std::collections::HashSet::new();
+
+        if let Ok(resp) = pulls_resp {
+            if resp.status().is_success() {
+                if let Ok(pr_array) = resp.json::<Vec<serde_json::Value>>().await {
+                    let count_to_use = total_open_count.unwrap_or(pr_array.len() as u64);
+                    let parsed = self.parse_github_prs(&pr_array, Some(&effective_repo), Some(count_to_use));
+                    for pr in parsed {
+                        fetched_ids.insert(pr.id);
+                        results.push(pr);
+                    }
+                }
+            }
+        }
+
+        // 4. If repository was a fork, also fetch direct PRs from clean_path if different
+        if clean_path.to_lowercase() != effective_repo.to_lowercase() {
+            let direct_url = format!("{}/repos/{}/pulls?state=open&per_page=100", GITHUB_API_URL, clean_path);
+            if let Ok(direct_resp) = self.client.get(&direct_url).send().await {
+                if direct_resp.status().is_success() {
+                    if let Ok(pr_array) = direct_resp.json::<Vec<serde_json::Value>>().await {
+                        let parsed = self.parse_github_prs(&pr_array, Some(&effective_repo), total_open_count);
+                        for pr in parsed {
+                            if !fetched_ids.contains(&pr.id) {
+                                fetched_ids.insert(pr.id);
+                                results.push(pr);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Sort pull requests with newest number first
+        results.sort_by(|a, b| b.iid.cmp(&a.iid));
 
         Ok(results)
     }
@@ -553,6 +626,8 @@ impl GitHubClient {
             labels: None,
             milestone: None,
             is_draft: None,
+            repo_full_name: Some(owner_repo.to_string()),
+            total_count: None,
         })
     }
 
@@ -668,6 +743,8 @@ impl GitHubClient {
             labels: None,
             milestone: None,
             is_draft: None,
+            repo_full_name: Some(owner_repo.to_string()),
+            total_count: None,
         })
     }
 

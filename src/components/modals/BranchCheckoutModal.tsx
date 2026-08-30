@@ -28,15 +28,14 @@ export const BranchCheckoutModal: React.FC<BranchCheckoutModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { activeRepoPath, setStatus, setError } = useGitStore();
+  const { activeRepoPath, setError } = useGitStore();
   const [isProcessing, setIsProcessing] = useState(false);
 
   if (!isOpen) return null;
 
   const refreshRepoStatus = async () => {
     if (!activeRepoPath) return;
-    const newStatus = await GitService.getRepoStatus(activeRepoPath);
-    setStatus(newStatus);
+    await useGitStore.getState().reloadActiveRepo();
   };
 
   // Option 1: Bring Changes (Stash -> Checkout -> Pop)

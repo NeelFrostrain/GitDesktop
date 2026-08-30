@@ -27,7 +27,6 @@ import { ConfirmDialog } from '../common/ConfirmDialog';
 export const BranchesView: React.FC = () => {
   const {
     activeRepoPath,
-    setStatus,
     branches,
     setBranches,
     setError,
@@ -67,10 +66,7 @@ export const BranchesView: React.FC = () => {
     try {
       await GitService.checkoutBranch(activeRepoPath, branchName);
       useLogStore.getState().addLog('success', 'Git', `Checked out branch '${branchName}'`);
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CHECKOUT_ERROR'));
     }
@@ -87,10 +83,7 @@ export const BranchesView: React.FC = () => {
         .addLog('success', 'Git', `Created branch '${newBranchName.trim()}' and checked out`);
       setNewBranchName('');
       setShowCreateModal(false);
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'CREATE_BRANCH_ERROR'));
     }
@@ -106,10 +99,7 @@ export const BranchesView: React.FC = () => {
         .addLog('info', 'Git', `Renamed branch '${oldName}' to '${renameValue.trim()}'`);
       setEditingBranch(null);
       setRenameValue('');
-
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
-      setStatus(newStatus);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'RENAME_BRANCH_ERROR'));
     }
@@ -123,7 +113,7 @@ export const BranchesView: React.FC = () => {
     try {
       await GitService.deleteBranch(activeRepoPath, name, true);
       useLogStore.getState().addLog('info', 'Git', `Deleted branch '${name}'`);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'DELETE_BRANCH_ERROR'));
     }
@@ -137,7 +127,7 @@ export const BranchesView: React.FC = () => {
       useLogStore
         .getState()
         .addLog('success', 'Git', `Pushed branch '${branchName}' to origin with upstream set`);
-      loadBranches();
+      await useGitStore.getState().reloadActiveRepo();
     } catch (error: unknown) {
       setError(toAppError(error, 'PUSH_BRANCH_ERROR'));
     }

@@ -198,6 +198,8 @@ export interface GitState {
   setActiveTab: (tab: 'changes' | 'history') => void;
   setDiffViewMode: (mode: 'unified' | 'split' | 'edit') => void;
   setCurrentNavView: (view: NavView) => void;
+  repoSyncCounter: number;
+  reloadActiveRepo: (full?: boolean) => Promise<void>;
 
   isMissingRepoModalOpen: boolean;
   missingRepoPath: string | null;
@@ -321,6 +323,47 @@ export const useGitStore = create<GitState>((set, get) => ({
   isPulling: false,
   lastFetchedTimestamp: null,
   error: null,
+  repoSyncCounter: 0,
+
+  reloadActiveRepo: async (full = false) => {
+    const { activeRepoPath } = get();
+    if (!activeRepoPath) return;
+
+    try {
+      if (full) {
+        await GitService.fetchRemote(activeRepoPath).catch(() => {});
+      }
+
+      const res = await GitService.getRepoStatus(activeRepoPath);
+      get().setStatus(res);
+
+      const [branches, tags, submodules] = await Promise.all([
+        GitService.listBranches(activeRepoPath).catch(() => []),
+        GitService.listTags(activeRepoPath).catch(() => []),
+        GitService.listSubmodules(activeRepoPath).catch(() => []),
+      ]);
+
+      if (branches && branches.length > 0) get().setBranches(branches);
+      if (tags) get().setTags(tags);
+      if (submodules) get().setSubmodules(submodules);
+
+      await get().loadBranchStashes();
+
+      // Trigger reactive components (History, Graph, Diff)
+      set((s) => ({ repoSyncCounter: s.repoSyncCounter + 1 }));
+
+      // Adjust selectedFile if no longer valid
+      const currentFiles = res.files || [];
+      const currentSelected = get().selectedFile;
+      if (currentSelected && !currentFiles.some((f) => f.path === currentSelected)) {
+        set({ selectedFile: currentFiles.length > 0 ? currentFiles[0].path : null });
+      }
+    } catch (err) {
+      useLogStore
+        .getState()
+        .addLog('warning', 'Git', `Failed to sync repo state: ${getErrorMessage(err)}`);
+    }
+  },
 
   setActiveRepoPath: (path) => {
     if (path) {

@@ -40,8 +40,15 @@ export const HistoryPanel: React.FC = () => {
   const [isLoadingInitial, setIsLoadingInitial] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { activeTab, activeRepoPath, selectedCommitSha, setSelectedCommitSha, setTags } =
-    useGitStore();
+  const {
+    activeTab,
+    activeRepoPath,
+    selectedCommitSha,
+    setSelectedCommitSha,
+    setTags,
+    status,
+    repoSyncCounter,
+  } = useGitStore();
 
   const isFetchingRef = useRef(false);
 
@@ -72,9 +79,14 @@ export const HistoryPanel: React.FC = () => {
       if (res && res.length > 0) {
         setCommits(res);
         setHasMore(res.length === PAGE_SIZE);
+        const hasSelected = selectedCommitSha && res.some((c) => c.sha === selectedCommitSha);
+        if (!hasSelected) {
+          setSelectedCommitSha(res[0].sha);
+        }
       } else {
         setCommits([]);
         setHasMore(false);
+        setSelectedCommitSha(null);
       }
     } catch {
       setCommits(sampleCommits);
@@ -82,13 +94,13 @@ export const HistoryPanel: React.FC = () => {
     } finally {
       setIsLoadingInitial(false);
     }
-  }, [activeRepoPath, setTags]);
+  }, [activeRepoPath, setTags, selectedCommitSha, setSelectedCommitSha]);
 
   useEffect(() => {
     if (activeTab === 'history') {
       loadInitialCommits();
     }
-  }, [activeTab, activeRepoPath, loadInitialCommits]);
+  }, [activeTab, activeRepoPath, status?.current_branch, repoSyncCounter, loadInitialCommits]);
 
   // Load next batch on scroll
   const handleLoadMore = useCallback(async () => {

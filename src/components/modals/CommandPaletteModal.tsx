@@ -186,9 +186,12 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
           id: `branch-${b.name}`,
           title: `Switch to branch: ${b.name}`,
           category: 'Branches',
-          action: () => {
+          action: async () => {
             if (activeRepoPath) {
-              GitService.checkoutBranch(activeRepoPath, b.name);
+              try {
+                await GitService.checkoutBranch(activeRepoPath, b.name);
+                await useGitStore.getState().reloadActiveRepo();
+              } catch {}
             }
           },
           keywords: ['checkout', 'branch', b.name],
