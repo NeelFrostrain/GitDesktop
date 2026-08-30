@@ -100,7 +100,21 @@ export function useRepositorySync() {
     GitService.validateRemoteOrigin(activeRepoPath)
       .then((validation) => {
         if (!isMounted) return;
-        if (!validation.has_remote || !validation.is_valid) {
+        // Only override has_remote when the remote is confirmed deleted/missing on the server.
+        // Do NOT override on transient network/auth failures (is_valid=false but is_deleted_or_missing=false)
+        // because that would stomp over fresh status set immediately after a successful publish.
+        if (!validation.has_remote) {
+          // No remote configured locally at all
+          const current = useGitStore.getState().status;
+          if (current && current.has_remote) {
+            setStatus({
+              ...current,
+              has_remote: false,
+              remote_url: null,
+            });
+          }
+        } else if (validation.is_deleted_or_missing) {
+          // Remote is configured but has been deleted from the server
           const current = useGitStore.getState().status;
           if (current) {
             setStatus({
@@ -111,10 +125,12 @@ export function useRepositorySync() {
             log().addLog(
               'warning',
               'Remote',
-              "Remote repository was not found or is inaccessible on the server. Click 'Publish repository' to reconnect or re-publish."
+              "Remote repository was not found on the server (it may have been deleted or renamed). Click 'Publish repository' to reconnect or re-publish."
             );
           }
         }
+        // If is_valid=false but NOT is_deleted_or_missing, it's a transient probe failure
+        // (auth/network issue). Silently ignore — don't mutate the current status.
       })
       .catch(() => {});
 

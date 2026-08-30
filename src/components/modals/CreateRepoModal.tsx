@@ -14,6 +14,7 @@ import {
   Folder,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
+import { useRepoStore } from '../../store/repoStore';
 import { useLogStore } from '../../store/useLogStore';
 import { Dropdown } from '../common/Dropdown';
 import { ConfirmDialog } from '../common/ConfirmDialog';
@@ -61,6 +62,7 @@ export const CreateRepoModal: React.FC = () => {
     setStatus,
     setError,
   } = useGitStore();
+  const { addRepo } = useRepoStore();
 
   const [name, setName] = useState('');
   const [parentPath, setParentPath] = useState(() => {
@@ -141,9 +143,15 @@ export const CreateRepoModal: React.FC = () => {
         .getState()
         .addLog('success', 'Git', `Created new local repository at '${createdPath}'`);
 
+      // Persist to repo registry so it appears on the Home Dashboard
+      await addRepo(createdPath).catch(() => {});
+
       setActiveRepoPath(createdPath);
       const statusRes = await GitService.getRepoStatus(createdPath);
       setStatus(statusRes);
+
+      // Navigate into the new repo's workspace view
+      useGitStore.getState().setCurrentNavView('changes');
 
       setIsCreateRepoModalOpen(false);
     } catch (err: unknown) {

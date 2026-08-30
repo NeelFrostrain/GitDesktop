@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
+import { useRepoStore } from '../../store/repoStore';
+import { useRemoteStore } from '../../store/remoteStore';
 import { useAccounts, useAccountServicesStore } from '../../features/account-services';
 import { GitService } from '../../services/git/gitService';
 import { AccountService } from '../../services/accounts/accountService';
@@ -289,9 +291,16 @@ export const PublishRepoModal: React.FC = () => {
         .getState()
         .addLog('success', 'Remote', `Successfully published repository to ${result.remote_url}`);
 
-      // Refresh repository status
+      // Refresh the active repo status (updates has_remote, remote_url, ahead/behind)
       const updatedStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(updatedStatus);
+
+      // Refresh the header remote list so the Globe button and SmartGitActionButton update immediately
+      useRemoteStore.getState().loadRemotes(activeRepoPath);
+
+      // Also refresh the Home Dashboard card and ensure the repo is registered
+      useRepoStore.getState().refreshStatus(activeRepoPath);
+      useRepoStore.getState().addRepo(activeRepoPath).catch(() => {});
 
       setIsPublishRepoModalOpen(false);
     } catch (err: unknown) {
