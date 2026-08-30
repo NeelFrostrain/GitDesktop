@@ -49,6 +49,114 @@ function formatRelativeTime(dateStr: string): string {
   }
 }
 
+interface LocalBranchRowProps {
+  branchItem: BranchInfo & { remoteTracking: string | null; remotePrefix: string | null };
+  isCurrent: boolean;
+  onSelect: (name: string) => void;
+}
+
+const LocalBranchRow = React.memo<LocalBranchRowProps>(({ branchItem, isCurrent, onSelect }) => {
+  return (
+    <div
+      onClick={() => onSelect(branchItem.name)}
+      className={`group relative flex items-center justify-between gap-2 px-3 py-1.5 border-l-2 cursor-pointer transition-colors select-none ${
+        isCurrent
+          ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
+          : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
+      }`}
+    >
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div
+          className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
+            isCurrent
+              ? 'bg-commito-coral/20 text-commito-coral'
+              : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
+          }`}
+        >
+          <GitBranch className="w-3 h-3" />
+        </div>
+
+        <div className="flex items-center gap-1.5 min-w-0 truncate">
+          <span
+            className={`truncate text-xs font-mono transition-colors ${
+              isCurrent
+                ? 'font-bold text-commito-coral'
+                : 'font-medium text-text group-hover:text-text-primary'
+            }`}
+          >
+            {branchItem.name}
+          </span>
+
+          {branchItem.remoteTracking && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
+              title={`Tracks remote '${branchItem.remoteTracking}'`}
+            >
+              <Globe className="w-2.5 h-2.5 flex-shrink-0" />
+              <span className="truncate max-w-[70px]">
+                {branchItem.remotePrefix || 'origin'}
+              </span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {isCurrent ? (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral text-white tracking-wider leading-none shadow-2xs select-none">
+            CURRENT
+          </span>
+          <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+        </div>
+      ) : (
+        <span className="text-[10.5px] font-sans font-semibold text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/15 px-1.5 py-0.5 rounded-xs">
+          <span>Switch</span>
+          <ArrowRight className="w-2.5 h-2.5" />
+        </span>
+      )}
+    </div>
+  );
+});
+
+interface RemoteBranchRowProps {
+  branchItem: BranchInfo;
+  onSelect: (name: string) => void;
+}
+
+const RemoteBranchRow = React.memo<RemoteBranchRowProps>(({ branchItem, onSelect }) => {
+  const slashIdx = branchItem.name.indexOf('/');
+  const prefix = slashIdx !== -1 ? branchItem.name.slice(0, slashIdx + 1) : '';
+  const nameWithoutPrefix =
+    slashIdx !== -1 ? branchItem.name.slice(slashIdx + 1) : branchItem.name;
+
+  return (
+    <div
+      onClick={() => onSelect(branchItem.name)}
+      className="group relative flex items-center justify-between gap-2 px-3 py-1.5 border-l-2 border-l-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-colors select-none"
+    >
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-5 h-5 rounded-xs bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
+          <Globe className="w-3 h-3" />
+        </div>
+        <div className="min-w-0 truncate font-mono text-xs">
+          {prefix && (
+            <span className="text-text-muted text-[11px] font-normal">
+              {prefix}
+            </span>
+          )}
+          <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
+            {nameWithoutPrefix}
+          </span>
+        </div>
+      </div>
+
+      <span className="text-[10px] font-sans font-medium text-gitlab-blue opacity-0 group-hover:opacity-100 transition-opacity bg-gitlab-blue/10 border border-gitlab-blue/30 px-1.5 py-0.5 rounded-xs">
+        Checkout
+      </span>
+    </div>
+  );
+});
+
 /**
  * Dropdown component displaying current branch, Branches vs. Pull Requests tabs,
  * search filtering, smooth branch checkout, and inline PR inspection.
@@ -198,13 +306,38 @@ export const BranchDropdown: React.FC = () => {
     }
   };
 
+  const [visibleLocalCount, setVisibleLocalCount] = useState(60);
+  const [visibleRemoteCount, setVisibleRemoteCount] = useState(60);
+
   useEffect(() => {
     if (isOpen && activeRepoPath) {
-      loadBranches();
-      loadPullRequests();
+      if (branches.length === 0) {
+        loadBranches();
+      }
+      if (activeTab === 'pull-requests' && pullRequests.length === 0) {
+        loadPullRequests();
+      }
       setTimeout(() => searchInputRef.current?.focus(), 50);
     }
-  }, [isOpen, activeRepoPath]);
+  }, [isOpen, activeRepoPath, activeTab]);
+
+  // Reset pagination when search query or tab changes
+  useEffect(() => {
+    setVisibleLocalCount(60);
+    setVisibleRemoteCount(60);
+  }, [filterQuery, activeTab]);
+
+  const handleBranchListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 120) {
+      if (visibleRemoteCount < remoteOnlyBranches.length) {
+        setVisibleRemoteCount((prev) => Math.min(prev + 60, remoteOnlyBranches.length));
+      }
+      if (visibleLocalCount < localBranches.length) {
+        setVisibleLocalCount((prev) => Math.min(prev + 60, localBranches.length));
+      }
+    }
+  };
 
   // Handle click outside to dismiss dropdown
   useEffect(() => {
@@ -329,11 +462,6 @@ export const BranchDropdown: React.FC = () => {
     return slashIdx !== -1 ? remoteBranchName.slice(slashIdx + 1) : remoteBranchName;
   };
 
-  const getRemotePrefix = (remoteBranchName: string): string => {
-    const slashIdx = remoteBranchName.indexOf('/');
-    return slashIdx !== -1 ? remoteBranchName.slice(0, slashIdx) : 'origin';
-  };
-
   const queryLower = filterQuery.trim().toLowerCase();
 
   // 1. All valid remote branches (excluding symbolic refs like origin/HEAD)
@@ -341,38 +469,69 @@ export const BranchDropdown: React.FC = () => {
     return branches.filter((b: BranchInfo) => b.is_remote && !b.name.endsWith('/HEAD'));
   }, [branches]);
 
-  // 2. Set of local branch names
+  // 2. Fast O(1) Map for remote branch names -> clean name and prefix
+  const remoteBranchMap = useMemo(() => {
+    const map = new Map<string, { fullName: string; prefix: string }>();
+    for (let i = 0; i < validRemoteBranches.length; i++) {
+      const b = validRemoteBranches[i];
+      const slashIdx = b.name.indexOf('/');
+      const clean = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+      const prefix = slashIdx !== -1 ? b.name.slice(0, slashIdx) : 'origin';
+      if (!map.has(clean)) {
+        map.set(clean, { fullName: b.name, prefix });
+      }
+    }
+    return map;
+  }, [validRemoteBranches]);
+
+  // 3. Set of local branch names
   const localBranchNames = useMemo(() => {
-    return new Set(branches.filter((b: BranchInfo) => !b.is_remote).map((b: BranchInfo) => b.name));
+    const set = new Set<string>();
+    for (let i = 0; i < branches.length; i++) {
+      if (!branches[i].is_remote) set.add(branches[i].name);
+    }
+    return set;
   }, [branches]);
 
-  // 3. Local branches merged with remote tracking indicator
+  // 4. Local branches with O(1) remote tracking lookup
   const localBranches = useMemo(() => {
-    return branches
-      .filter((b: BranchInfo) => !b.is_remote)
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower))
-      .map((b: BranchInfo) => {
-        const matchingRemote = validRemoteBranches.find((r: BranchInfo) => {
-          return getCleanRemoteBranchName(r.name) === b.name;
-        });
+    const list: (BranchInfo & { remoteTracking: string | null; remotePrefix: string | null })[] = [];
+    for (let i = 0; i < branches.length; i++) {
+      const b = branches[i];
+      if (b.is_remote) continue;
+      if (queryLower && !b.name.toLowerCase().includes(queryLower)) continue;
 
-        return {
-          ...b,
-          remoteTracking: matchingRemote ? matchingRemote.name : null,
-          remotePrefix: matchingRemote ? getRemotePrefix(matchingRemote.name) : null,
-        };
+      const remoteMeta = remoteBranchMap.get(b.name);
+      list.push({
+        ...b,
+        remoteTracking: remoteMeta ? remoteMeta.fullName : null,
+        remotePrefix: remoteMeta ? remoteMeta.prefix : null,
       });
-  }, [branches, validRemoteBranches, queryLower]);
+    }
+    return list;
+  }, [branches, remoteBranchMap, queryLower]);
 
-  // 4. Remote-only branches (remote branches that do not exist locally)
+  // 5. Remote-only branches (remote branches that do not exist locally) with O(1) check
   const remoteOnlyBranches = useMemo(() => {
-    return validRemoteBranches
-      .filter((b: BranchInfo) => {
-        const clean = getCleanRemoteBranchName(b.name);
-        return !localBranchNames.has(clean);
-      })
-      .filter((b: BranchInfo) => b.name.toLowerCase().includes(queryLower));
+    const list: BranchInfo[] = [];
+    for (let i = 0; i < validRemoteBranches.length; i++) {
+      const b = validRemoteBranches[i];
+      const slashIdx = b.name.indexOf('/');
+      const clean = slashIdx !== -1 ? b.name.slice(slashIdx + 1) : b.name;
+      if (localBranchNames.has(clean)) continue;
+      if (queryLower && !b.name.toLowerCase().includes(queryLower)) continue;
+      list.push(b);
+    }
+    return list;
   }, [validRemoteBranches, localBranchNames, queryLower]);
+
+  const displayedLocalBranches = useMemo(() => {
+    return localBranches.slice(0, visibleLocalCount);
+  }, [localBranches, visibleLocalCount]);
+
+  const displayedRemoteBranches = useMemo(() => {
+    return remoteOnlyBranches.slice(0, visibleRemoteCount);
+  }, [remoteOnlyBranches, visibleRemoteCount]);
 
   // Pull Requests Filtering
   const filteredPullRequests = useMemo(() => {
@@ -582,7 +741,10 @@ export const BranchDropdown: React.FC = () => {
 
             {/* Tab Body: Branches View */}
             {activeTab === 'branches' && (
-              <div className="flex-1 overflow-y-auto p-2 space-y-2.5 min-h-0 scrollbar-thin">
+              <div
+                onScroll={handleBranchListScroll}
+                className="flex-1 overflow-y-auto p-2 space-y-2.5 min-h-0 scrollbar-thin"
+              >
                 {/* Local Branches Section */}
                 <div className="space-y-1">
                   <button
@@ -618,70 +780,25 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col -mx-2">
-                        {localBranches.map((branchItem) => {
-                          const isCurrent = branchItem.name === currentBranch;
-                          return (
-                            <div
-                              key={branchItem.name}
-                              onClick={() => handleSelectBranch(branchItem.name)}
-                              className={`group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 cursor-pointer transition-all duration-100 select-none ${
-                                isCurrent
-                                  ? 'bg-base-2 border-l-commito-coral text-text-primary font-semibold shadow-2xs'
-                                  : 'border-l-transparent text-text-muted hover:text-text-primary hover:bg-base-1/70'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div
-                                  className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
-                                    isCurrent
-                                      ? 'bg-commito-coral/20 text-commito-coral'
-                                      : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
-                                  }`}
-                                >
-                                  <GitBranch className="w-3 h-3" />
-                                </div>
-
-                                <div className="flex items-center gap-1.5 min-w-0 truncate">
-                                  <span
-                                    className={`truncate text-xs font-mono transition-colors ${
-                                      isCurrent
-                                        ? 'font-bold text-commito-coral'
-                                        : 'font-medium text-text group-hover:text-text-primary'
-                                    }`}
-                                  >
-                                    {branchItem.name}
-                                  </span>
-
-                                  {branchItem.remoteTracking && (
-                                    <span
-                                      className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
-                                      title={`Tracks remote '${branchItem.remoteTracking}'`}
-                                    >
-                                      <Globe className="w-2.5 h-2.5 flex-shrink-0" />
-                                      <span className="truncate max-w-[70px]">
-                                        {branchItem.remotePrefix || 'origin'}
-                                      </span>
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-
-                              {isCurrent ? (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <span className="text-[9px] font-mono font-extrabold uppercase px-1.5 py-0.5 rounded-xs bg-commito-coral text-white tracking-wider leading-none shadow-2xs select-none">
-                                    CURRENT
-                                  </span>
-                                  <Check className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                                </div>
-                              ) : (
-                                <span className="text-[10.5px] font-sans font-semibold text-commito-coral opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-commito-coral/15 px-1.5 py-0.5 rounded-xs">
-                                  <span>Switch</span>
-                                  <ArrowRight className="w-2.5 h-2.5" />
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {displayedLocalBranches.map((branchItem) => (
+                          <LocalBranchRow
+                            key={branchItem.name}
+                            branchItem={branchItem}
+                            isCurrent={branchItem.name === currentBranch}
+                            onSelect={handleSelectBranch}
+                          />
+                        ))}
+                        {localBranches.length > visibleLocalCount && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleLocalCount((c) => Math.min(c + 60, localBranches.length))
+                            }
+                            className="w-full py-1.5 text-center text-[10.5px] font-mono text-commito-coral hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                          >
+                            Show more ({localBranches.length - visibleLocalCount} remaining)...
+                          </button>
+                        )}
                       </div>
                     ))}
                 </div>
@@ -726,43 +843,26 @@ export const BranchDropdown: React.FC = () => {
                       </div>
                     ) : (
                       <div className="flex flex-col -mx-2">
-                        {remoteOnlyBranches.map((remoteBranchItem: BranchInfo) => {
-                          const slashIdx = remoteBranchItem.name.indexOf('/');
-                          const prefix =
-                            slashIdx !== -1 ? remoteBranchItem.name.slice(0, slashIdx + 1) : '';
-                          const nameWithoutPrefix =
-                            slashIdx !== -1
-                              ? remoteBranchItem.name.slice(slashIdx + 1)
-                              : remoteBranchItem.name;
-
-                          return (
-                            <div
-                              key={remoteBranchItem.name}
-                              onClick={() => handleSelectBranch(remoteBranchItem.name)}
-                              className="group relative flex items-center justify-between gap-2 px-3 py-2 border-l-2 border-l-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-all duration-100 select-none"
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                                <div className="w-5 h-5 rounded-xs bg-gitlab-blue/10 text-gitlab-blue flex items-center justify-center shrink-0 group-hover:bg-gitlab-blue/20 transition-colors">
-                                  <Globe className="w-3 h-3" />
-                                </div>
-                                <div className="min-w-0 truncate font-mono text-xs">
-                                  {prefix && (
-                                    <span className="text-text-muted text-[11px] font-normal">
-                                      {prefix}
-                                    </span>
-                                  )}
-                                  <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
-                                    {nameWithoutPrefix}
-                                  </span>
-                                </div>
-                              </div>
-
-                              <span className="text-[10px] font-sans font-medium text-gitlab-blue opacity-0 group-hover:opacity-100 transition-opacity bg-gitlab-blue/10 border border-gitlab-blue/30 px-1.5 py-0.5 rounded-xs">
-                                Checkout
-                              </span>
-                            </div>
-                          );
-                        })}
+                        {displayedRemoteBranches.map((remoteBranchItem: BranchInfo) => (
+                          <RemoteBranchRow
+                            key={remoteBranchItem.name}
+                            branchItem={remoteBranchItem}
+                            onSelect={handleSelectBranch}
+                          />
+                        ))}
+                        {remoteOnlyBranches.length > visibleRemoteCount && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setVisibleRemoteCount((c) =>
+                                Math.min(c + 60, remoteOnlyBranches.length)
+                              )
+                            }
+                            className="w-full py-1.5 text-center text-[10.5px] font-mono text-gitlab-blue hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
+                          >
+                            Show more ({remoteOnlyBranches.length - visibleRemoteCount} remaining)...
+                          </button>
+                        )}
                       </div>
                     ))}
                 </div>
