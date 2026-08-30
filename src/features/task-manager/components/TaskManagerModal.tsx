@@ -208,7 +208,7 @@ export const TaskManagerModal: React.FC = () => {
               return (
                 <div
                   key={task.id}
-                  className={`p-3 rounded-sm border transition bg-base-1/50 space-y-2 ${
+                  className={`p-2.5 rounded-sm border transition bg-base-1/50 space-y-1.5 ${
                     isRunning
                       ? 'border-border-strong bg-base-1/80 shadow-2xs'
                       : isCompleted
@@ -251,23 +251,31 @@ export const TaskManagerModal: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Right side: Percent badge or Duration */}
-                    <div className="text-right shrink-0">
+                    {/* Right side: Percent badge, Duration, or Dismiss button */}
+                    <div className="flex items-center gap-2 shrink-0">
                       {isRunning ? (
                         <span className="font-mono text-commito-coral font-bold text-xs">
                           {task.progress.percent}%
                         </span>
-                      ) : (
+                      ) : isCompleted ? (
                         <span className="text-[10.5px] text-text-muted font-mono">
                           {formatDuration(task.startedAt, task.finishedAt)}
                         </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => removeTask(task.id)}
+                          className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
+                        >
+                          Dismiss
+                        </button>
                       )}
                     </div>
                   </div>
 
                   {/* Active Progress Track (if running) */}
                   {isRunning && (
-                    <div className="space-y-1.5 pt-0.5">
+                    <div className="space-y-1 pt-0.5">
                       <div className="w-full h-1 bg-base-0 rounded-full overflow-hidden border border-border/80 relative">
                         <div
                           className="h-full bg-commito-coral transition-all duration-200 ease-out rounded-full relative"
@@ -277,16 +285,25 @@ export const TaskManagerModal: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Detail text & Estimated Time Remaining (ETA) */}
+                      {/* Detail text & Estimated Time Remaining (ETA) + Inline Cancel */}
                       <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
-                        <span className="truncate max-w-[70%]">
+                        <span className="truncate max-w-[55%]">
                           {task.progress.detail || task.progress.stage || 'Downloading repository objects...'}
                         </span>
-                        <div className="flex items-center gap-1 shrink-0 text-commito-coral">
-                          <Clock className="w-2.5 h-2.5 shrink-0 opacity-80" />
-                          <span className="font-semibold">
-                            {formatEta(task.startedAt, task.progress.percent) || 'Estimating...'}
-                          </span>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="flex items-center gap-1 text-commito-coral">
+                            <Clock className="w-2.5 h-2.5 shrink-0 opacity-80" />
+                            <span className="font-semibold">
+                              {formatEta(task.startedAt, task.progress.percent) || 'Estimating...'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => cancelTask(task.id)}
+                            className="h-5 px-1.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10px] font-medium text-text-muted hover:text-git-removed transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
+                          >
+                            Cancel
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -311,7 +328,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleShowInExplorer(task)}
-                          className="h-7 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
+                          className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[11px] font-medium text-text-secondary hover:text-text-primary transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer active:scale-98"
                           title="Open folder in Windows Explorer"
                         >
                           <FolderOpen className="w-3 h-3 text-text-muted" />
@@ -320,7 +337,7 @@ export const TaskManagerModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenRepo(task)}
-                          className="h-7 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-xs text-[11px] font-medium transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer shadow-xs active:scale-98"
+                          className="h-6.5 px-3 bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral/90 text-white rounded-xs text-[11px] font-medium transition inline-flex items-center justify-center gap-1.5 leading-none cursor-pointer shadow-xs active:scale-98"
                           title="Open in GitDesktop"
                         >
                           <span>Open in GitDesktop</span>
@@ -329,29 +346,6 @@ export const TaskManagerModal: React.FC = () => {
                       </div>
                     </div>
                   )}
-
-                  {/* Actions for running, failed, or cancelled tasks */}
-                  {isRunning ? (
-                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/60">
-                      <button
-                        type="button"
-                        onClick={() => cancelTask(task.id)}
-                        className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-git-removed transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
-                      >
-                        Cancel Task
-                      </button>
-                    </div>
-                  ) : (isFailed || isCancelled) ? (
-                    <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/60">
-                      <button
-                        type="button"
-                        onClick={() => removeTask(task.id)}
-                        className="h-6.5 px-2.5 bg-base-2 hover:bg-base-3 border border-border rounded-xs text-[10.5px] font-medium text-text-muted hover:text-text-primary transition inline-flex items-center justify-center leading-none cursor-pointer active:scale-98"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  ) : null}
                 </div>
               );
             })
