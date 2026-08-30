@@ -189,7 +189,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
         {/* Top Header */}
         <div className="h-11 px-3 bg-base-1/90 border-b border-border/80 flex items-center justify-between gap-1.5 shrink-0">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-text-primary">
-            <Sparkles className="w-4 h-4 text-commito-coral" />
+            {/* <Sparkles className="w-4 h-4 text-commito-coral" /> */}
             <span>AI Coding Agent</span>
           </div>
           <button

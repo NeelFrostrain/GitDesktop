@@ -377,10 +377,11 @@ export const ContributionHeatmap: React.FC = () => {
         {/* Heatmap Footer Bar: Active Account & Scale */}
         <div className="mt-2.5 pt-2 border-t border-border/50 flex flex-wrap items-center justify-between gap-3 text-[11px] text-text-muted font-sans">
           <div className="flex items-center gap-2">
-            {getActiveAccountProvider() === 'all' ? (
-              <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+            {/* {getActiveAccountProvider() === 'all' ? (
+              // <Layers className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+              ""
             ) : getActiveAccountProvider() === 'local' ? (
-              <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
+              // <FolderGit2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
             ) : (
               <span
                 className={`text-[8.5px] font-mono font-bold uppercase px-1.5 py-0.2 rounded-xs border shrink-0 ${
@@ -393,7 +394,7 @@ export const ContributionHeatmap: React.FC = () => {
               >
                 {getActiveAccountProvider()}
               </span>
-            )}
+            )} */}
             <button
               type="button"
               onClick={() => setSelectedDate(null)}

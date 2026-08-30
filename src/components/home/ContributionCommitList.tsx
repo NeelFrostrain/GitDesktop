@@ -48,7 +48,7 @@ export const ContributionCommitList: React.FC = () => {
       {/* Header with Title and Clear Filter */}
       <div className="flex items-center justify-between gap-2 px-0.5">
         <div className="flex items-center gap-1.5 min-w-0">
-          <Calendar className="w-3.5 h-3.5 text-commito-coral shrink-0" />
+          {/* <Calendar className="w-3.5 h-3.5 text-commito-coral shrink-0" /> */}
           <span className="text-xs font-semibold text-text-secondary tracking-tight truncate">
             {selectedDate ? (
               <>
