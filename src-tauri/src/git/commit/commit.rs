@@ -301,29 +301,8 @@ pub fn delete_branch(repo_path: &str, branch_name: &str, force: bool) -> Result<
     Ok(())
 }
 
-pub fn push_branch(repo_path: &str, branch_name: &str, set_upstream: bool) -> Result<(), AppError> {
-    use crate::git::remote::{apply_git_auth_args_pub, get_git_auth_info};
-
-    let auth_info = get_git_auth_info(repo_path);
-    let mut cmd = silent_git_command();
-    cmd.current_dir(repo_path);
-    apply_git_auth_args_pub(&mut cmd, &auth_info);
-
-    cmd.arg("push");
-    if set_upstream {
-        cmd.arg("-u");
-    }
-    cmd.arg("origin").arg(branch_name);
-
-    let output = cmd.output()?;
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(AppError::Git(format!(
-            "Failed to push branch: {}",
-            stderr.trim()
-        )));
-    }
-    Ok(())
+pub fn push_branch(repo_path: &str, branch_name: &str, _set_upstream: bool) -> Result<(), AppError> {
+    crate::git::remote::push_specific_remote(repo_path, "origin", branch_name, false)
 }
 
 pub fn discard_file_changes(repo_path: &str, file_path: &str) -> Result<(), AppError> {

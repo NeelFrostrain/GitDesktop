@@ -586,6 +586,23 @@ pub fn push_specific_remote(
         let err_msg = combined.trim().to_string();
         let lower = err_msg.to_lowercase();
 
+        // If push failed specifically because git-lfs pre-push hook couldn't find 'git-lfs' on PATH
+        if lower.contains("git-lfs") && (lower.contains("not found") || lower.contains("pre-push")) {
+            let mut fallback_cmd = silent_git_command();
+            fallback_cmd.current_dir(repo_path);
+            apply_git_auth_args(&mut fallback_cmd, &auth_info);
+            fallback_cmd.arg("push").arg("-u").arg("--no-verify");
+            if force {
+                fallback_cmd.arg("--force-with-lease");
+            }
+            fallback_cmd.arg(clean_remote).arg(clean_branch);
+            if let Ok(fb_out) = fallback_cmd.output() {
+                if fb_out.status.success() {
+                    return Ok(());
+                }
+            }
+        }
+
         if lower.contains("repository not found")
             || lower.contains("fatal: repository")
             || lower.contains("could not read from remote repository")
@@ -838,8 +855,36 @@ fn parse_git_clone_progress(line: &str) -> Option<CloneProgressPayload> {
         return None;
     }
 
-    if trimmed.contains("Receiving objects:") {
-        let percent = extract_percent(trimmed).unwrap_or(50);
+    if trimmed.contains("Filtering content:") || trimmed.contains("Downloading LFS") || trimmed.contains("Git LFS:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (90 + (sub_percent * 9 / 100)).min(99);
+        return Some(CloneProgressPayload {
+            stage: "Downloading LFS assets".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Downloading LFS assets ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Updating files:") || trimmed.contains("Checking out files:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (88 + (sub_percent * 10 / 100)).min(98);
+        return Some(CloneProgressPayload {
+            stage: "Checking out files".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Checking out files ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Resolving deltas:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (75 + (sub_percent * 13 / 100)).min(88);
+        return Some(CloneProgressPayload {
+            stage: "Resolving deltas".to_string(),
+            percent: overall,
+            detail: trimmed.to_string(),
+            message: format!("Resolving deltas ({}%)", sub_percent),
+        });
+    } else if trimmed.contains("Receiving objects:") {
+        let sub_percent = extract_percent(trimmed).unwrap_or(50);
+        let overall = (15 + (sub_percent * 60 / 100)).min(75);
         let detail = if let Some(comma_idx) = trimmed.find(',') {
             trimmed[comma_idx + 1..].trim().to_string()
         } else {
@@ -847,41 +892,27 @@ fn parse_git_clone_progress(line: &str) -> Option<CloneProgressPayload> {
         };
         return Some(CloneProgressPayload {
             stage: "Receiving objects".to_string(),
-            percent,
+            percent: overall,
             detail,
-            message: format!("Receiving objects ({}%)", percent),
-        });
-    } else if trimmed.contains("Resolving deltas:") {
-        let percent = extract_percent(trimmed).unwrap_or(85);
-        return Some(CloneProgressPayload {
-            stage: "Resolving deltas".to_string(),
-            percent,
-            detail: trimmed.to_string(),
-            message: format!("Resolving deltas ({}%)", percent),
-        });
-    } else if trimmed.contains("Updating files:") || trimmed.contains("Checking out files:") {
-        let percent = extract_percent(trimmed).unwrap_or(95);
-        return Some(CloneProgressPayload {
-            stage: "Checking out files".to_string(),
-            percent,
-            detail: trimmed.to_string(),
-            message: format!("Checking out files ({}%)", percent),
+            message: format!("Receiving objects ({}%)", sub_percent),
         });
     } else if trimmed.contains("Compressing objects:") {
-        let percent = extract_percent(trimmed).unwrap_or(25);
+        let sub_percent = extract_percent(trimmed).unwrap_or(25);
+        let overall = (10 + (sub_percent * 5 / 100)).min(15);
         return Some(CloneProgressPayload {
             stage: "Compressing objects".to_string(),
-            percent: (15 + (percent * 20 / 100)).min(35),
+            percent: overall,
             detail: trimmed.to_string(),
-            message: format!("Compressing objects ({}%)", percent),
+            message: format!("Compressing objects ({}%)", sub_percent),
         });
     } else if trimmed.contains("Counting objects:") {
-        let percent = extract_percent(trimmed).unwrap_or(10);
+        let sub_percent = extract_percent(trimmed).unwrap_or(10);
+        let overall = (sub_percent * 10 / 100).max(3).min(10);
         return Some(CloneProgressPayload {
             stage: "Counting objects".to_string(),
-            percent: (percent * 15 / 100).max(5).min(15),
+            percent: overall,
             detail: trimmed.to_string(),
-            message: format!("Counting objects ({}%)", percent),
+            message: format!("Counting objects ({}%)", sub_percent),
         });
     } else if trimmed.contains("Cloning into") {
         return Some(CloneProgressPayload {
@@ -895,6 +926,30 @@ fn parse_git_clone_progress(line: &str) -> Option<CloneProgressPayload> {
     None
 }
 
+use std::sync::atomic::{AtomicU32, Ordering};
+static ACTIVE_CLONE_PID: AtomicU32 = AtomicU32::new(0);
+
+pub fn cancel_active_clone_process() -> bool {
+    let pid = ACTIVE_CLONE_PID.swap(0, Ordering::SeqCst);
+    if pid > 0 {
+        #[cfg(windows)]
+        {
+            let _ = crate::git::command::silent_command("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
+        }
+        #[cfg(unix)]
+        {
+            let _ = std::process::Command::new("kill")
+                .args(["-9", &pid.to_string()])
+                .output();
+        }
+        true
+    } else {
+        false
+    }
+}
+
 fn run_git_clone_with_progress(
     mut cmd: std::process::Command,
     app: Option<&tauri::AppHandle>,
@@ -904,43 +959,55 @@ fn run_git_clone_with_progress(
     use tauri::Emitter;
 
     cmd.arg("--progress");
+    cmd.stdin(Stdio::null());
     cmd.stderr(Stdio::piped());
-    cmd.stdout(Stdio::piped());
+    cmd.stdout(Stdio::null());
 
     let mut child = cmd.spawn()?;
+    let child_pid = child.id();
+    ACTIVE_CLONE_PID.store(child_pid, Ordering::SeqCst);
+
     let stderr = child.stderr.take();
 
     let mut all_stderr = Vec::new();
 
     if let Some(mut pipe) = stderr {
-        let mut buffer = Vec::new();
-        let mut byte_buf = [0u8; 1];
+        let mut line_buf = Vec::with_capacity(1024);
+        let mut chunk = [0u8; 8192];
 
-        while let Ok(n) = pipe.read(&mut byte_buf) {
+        while let Ok(n) = pipe.read(&mut chunk) {
             if n == 0 {
                 break;
             }
-            let b = byte_buf[0];
-            buffer.push(b);
-            all_stderr.push(b);
+            let bytes = &chunk[..n];
+            all_stderr.extend_from_slice(bytes);
 
-            if b == b'\r' || b == b'\n' {
-                if let Ok(line) = String::from_utf8(buffer.clone()) {
-                    if let Some(progress) = parse_git_clone_progress(&line) {
-                        if let Some(app_handle) = app {
-                            let _ = app_handle.emit("git:clone:progress", &progress);
+            for &b in bytes {
+                if b == b'\r' || b == b'\n' {
+                    if !line_buf.is_empty() {
+                        if let Ok(line) = std::str::from_utf8(&line_buf) {
+                            if let Some(progress) = parse_git_clone_progress(line) {
+                                if let Some(app_handle) = app {
+                                    let _ = app_handle.emit("git:clone:progress", &progress);
+                                }
+                            }
                         }
+                        line_buf.clear();
                     }
+                } else {
+                    line_buf.push(b);
                 }
-                buffer.clear();
             }
         }
     }
 
-    let output = child.wait_with_output()?;
+    let status = child.wait();
+    ACTIVE_CLONE_PID.store(0, Ordering::SeqCst);
+    let status = status?;
+
     Ok(std::process::Output {
-        status: output.status,
-        stdout: output.stdout,
+        status,
+        stdout: Vec::new(),
         stderr: all_stderr,
     })
 }
@@ -1001,63 +1068,78 @@ pub fn clone_repository(
         }
     }
 
+    // First attempt: Standard high-performance clone with extraHeader auth
     let mut cmd = silent_git_command();
-    // High-performance flags for ultra-fast cloning on Windows
     cmd.arg("-c").arg("core.fscache=true");
     cmd.arg("-c").arg("core.preloadIndex=true");
     cmd.arg("-c").arg("pack.threads=0");
     cmd.arg("-c").arg("http.postBuffer=524288000");
     cmd.arg("-c").arg("protocol.version=2");
     apply_git_auth_args(&mut cmd, &auth_info);
-    cmd.arg("clone").arg(&target_clone_url).arg(local_path);
+    cmd.arg("clone").arg(clean_url).arg(local_path);
 
     let output = run_git_clone_with_progress(cmd, app)?;
 
-    // If first attempt with injected token failed (e.g. 404 on OAuth restricted org forks),
-    // automatically fallback to system Git / Git Credential Manager (working terminal auth)
-    if !output.status.success() {
+    if output.status.success() {
+        return Ok(());
+    }
+
+    // Second attempt (if extraHeader failed): Injected URL credentials
+    if needs_remote_sanitize {
         if path.exists() {
             let _ = std::fs::remove_dir_all(path);
         }
-        let mut fallback_cmd = silent_git_command();
-        fallback_cmd.arg("-c").arg("core.fscache=true");
-        fallback_cmd.arg("-c").arg("core.preloadIndex=true");
-        fallback_cmd.arg("-c").arg("pack.threads=0");
-        fallback_cmd.arg("-c").arg("http.postBuffer=524288000");
-        fallback_cmd.arg("-c").arg("protocol.version=2");
-        fallback_cmd.arg("clone").arg(clean_url).arg(local_path);
-        if let Ok(fb_out) = run_git_clone_with_progress(fallback_cmd, app) {
-            if fb_out.status.success() {
+        let mut url_auth_cmd = silent_git_command();
+        url_auth_cmd.arg("-c").arg("core.fscache=true");
+        url_auth_cmd.arg("-c").arg("core.preloadIndex=true");
+        url_auth_cmd.arg("-c").arg("pack.threads=0");
+        url_auth_cmd.arg("-c").arg("http.postBuffer=524288000");
+        url_auth_cmd.arg("-c").arg("protocol.version=2");
+        url_auth_cmd.arg("clone").arg(&target_clone_url).arg(local_path);
+        if let Ok(url_out) = run_git_clone_with_progress(url_auth_cmd, app) {
+            if url_out.status.success() {
+                // Sanitize origin remote URL so credentials are never saved in local .git/config
+                let mut clean_remote_cmd = silent_git_command();
+                clean_remote_cmd
+                    .arg("-C")
+                    .arg(local_path)
+                    .arg("remote")
+                    .arg("set-url")
+                    .arg("origin")
+                    .arg(clean_url);
+                let _ = clean_remote_cmd.output();
                 return Ok(());
             }
         }
-
-        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-        let redacted_stderr = if let Some(ref t) = auth_info.token {
-            stderr.replace(t.trim(), "******")
-        } else {
-            stderr
-        };
-        return Err(AppError::Git(format!(
-            "Failed to clone repository: {}",
-            redacted_stderr
-        )));
     }
 
-    // Sanitize origin remote URL so credentials are never saved in local .git/config
-    if needs_remote_sanitize {
-        let mut clean_remote_cmd = silent_git_command();
-        clean_remote_cmd
-            .arg("-C")
-            .arg(local_path)
-            .arg("remote")
-            .arg("set-url")
-            .arg("origin")
-            .arg(clean_url);
-        let _ = clean_remote_cmd.output();
+    // Third attempt: Fallback to system Git / Git Credential Manager
+    if path.exists() {
+        let _ = std::fs::remove_dir_all(path);
+    }
+    let mut fallback_cmd = silent_git_command();
+    fallback_cmd.arg("-c").arg("core.fscache=true");
+    fallback_cmd.arg("-c").arg("core.preloadIndex=true");
+    fallback_cmd.arg("-c").arg("pack.threads=0");
+    fallback_cmd.arg("-c").arg("http.postBuffer=524288000");
+    fallback_cmd.arg("-c").arg("protocol.version=2");
+    fallback_cmd.arg("clone").arg(clean_url).arg(local_path);
+    if let Ok(fb_out) = run_git_clone_with_progress(fallback_cmd, app) {
+        if fb_out.status.success() {
+            return Ok(());
+        }
     }
 
-    Ok(())
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let redacted_stderr = if let Some(ref t) = auth_info.token {
+        stderr.replace(t.trim(), "******")
+    } else {
+        stderr
+    };
+    Err(AppError::Git(format!(
+        "Failed to clone repository: {}",
+        redacted_stderr
+    )))
 }
 
 fn fs_is_not_empty(path: &Path) -> bool {

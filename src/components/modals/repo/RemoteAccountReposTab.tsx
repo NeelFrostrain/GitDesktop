@@ -161,6 +161,30 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
 
     const cloneUrl = repo.http_url_to_repo || repo.ssh_url_to_repo;
 
+    // Check if repository already exists locally
+    try {
+      const existingStatus = await GitService.getRepoStatus(targetFolder);
+      if (existingStatus) {
+        await addRepo(targetFolder);
+        await openRepo(targetFolder);
+        setActiveRepoPath(targetFolder);
+        setStatus(existingStatus);
+        useToastStore.getState().showToast({
+          type: 'info',
+          title: 'Repository Opened',
+          message: `'${repo.name}' already exists locally at '${targetFolder}'. Opened repository!`,
+        });
+        useLogStore
+          .getState()
+          .addLog('info', 'Git', `Repository '${repo.name}' already exists at '${targetFolder}'. Opened existing repository.`);
+        setCloningRepoId(null);
+        onClose();
+        return;
+      }
+    } catch {
+      // Folder is not an existing Git repo, proceed to clone
+    }
+
     const taskId = useTaskStore.getState().addTask({
       type: 'clone',
       title: `Cloning ${repoName}`,

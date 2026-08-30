@@ -217,6 +217,9 @@ pub async fn download_and_install_mingit(
     // Verify installation
     let info = detect_git_runtime();
     if info.is_available {
+        // Asynchronously ensure Git LFS binary is also installed
+        let _ = download_and_install_git_lfs().await;
+
         emit_progress(
             "completed",
             total_bytes,
@@ -230,4 +233,70 @@ pub async fn download_and_install_mingit(
         emit_progress("error", 0, 0, 0.0, &err_msg);
         Err(AppError::Filesystem(err_msg))
     }
+}
+
+pub async fn download_and_install_git_lfs() -> Result<(), AppError> {
+    let mingit_dir = get_mingit_dir();
+    let target_cmd_lfs = mingit_dir.join("cmd").join("git-lfs.exe");
+    let target_mingw_lfs = mingit_dir.join("mingw64").join("bin").join("git-lfs.exe");
+
+    if target_cmd_lfs.exists() && target_mingw_lfs.exists() {
+        return Ok(());
+    }
+
+    let url = "https://github.com/git-lfs/git-lfs/releases/download/v3.6.0/git-lfs-windows-amd64-v3.6.0.zip";
+    let client = reqwest::Client::builder()
+        .user_agent("GitDesktop-LfsDownloader/1.0")
+        .build()
+        .map_err(|e| AppError::Network(format!("Failed to build HTTP client: {}", e)))?;
+
+    let res = client.get(url).send().await.map_err(|e| {
+        AppError::Network(format!("Failed to download Git LFS: {}", e))
+    })?;
+
+    if !res.status().is_success() {
+        return Err(AppError::Network(format!("HTTP error downloading Git LFS: {}", res.status())));
+    }
+
+    let bytes = res.bytes().await.map_err(|e| {
+        AppError::Network(format!("Failed to read Git LFS response: {}", e))
+    })?;
+
+    tokio::task::spawn_blocking(move || -> Result<(), AppError> {
+        let cursor = Cursor::new(bytes);
+        let mut archive = zip::ZipArchive::new(cursor).map_err(|e| {
+            AppError::Filesystem(format!("Failed to read Git LFS zip archive: {}", e))
+        })?;
+
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i).map_err(|e| {
+                AppError::Filesystem(format!("Failed to read Git LFS entry: {}", e))
+            })?;
+
+            if let Some(name) = file.enclosed_name() {
+                if name.file_name().and_then(|f| f.to_str()) == Some("git-lfs.exe") {
+                    let mut content = Vec::new();
+                    io::copy(&mut file, &mut content).map_err(|e| {
+                        AppError::Filesystem(format!("Failed to extract git-lfs.exe: {}", e))
+                    })?;
+
+                    if let Some(parent) = target_cmd_lfs.parent() {
+                        let _ = fs::create_dir_all(parent);
+                    }
+                    let _ = fs::write(&target_cmd_lfs, &content);
+
+                    if let Some(parent) = target_mingw_lfs.parent() {
+                        let _ = fs::create_dir_all(parent);
+                    }
+                    let _ = fs::write(&target_mingw_lfs, &content);
+                    break;
+                }
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| AppError::Filesystem(format!("Git LFS extraction task failed: {}", e)))??;
+
+    Ok(())
 }

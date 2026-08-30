@@ -94,6 +94,7 @@ pub fn run() {
             logout_gitlab,
             fetch_user_repositories,
             clone_repository,
+            cancel_git_operation,
             get_open_merge_requests,
             create_merge_request,
             update_merge_request,

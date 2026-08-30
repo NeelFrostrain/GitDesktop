@@ -217,6 +217,29 @@ export const CloneRepoModal: React.FC = () => {
     e.preventDefault();
     if (!url.trim() || isCloning) return;
 
+    // Check if repository already exists locally
+    try {
+      const existingStatus = await GitService.getRepoStatus(fullDestinationPath);
+      if (existingStatus) {
+        await addRepo(fullDestinationPath);
+        await openRepo(fullDestinationPath);
+        setActiveRepoPath(fullDestinationPath);
+        setStatus(existingStatus);
+        useToastStore.getState().showToast({
+          type: 'info',
+          title: 'Repository Opened',
+          message: `'${repoName}' already exists locally at '${fullDestinationPath}'. Opened repository!`,
+        });
+        useLogStore
+          .getState()
+          .addLog('info', 'Git', `Repository '${repoName}' already exists at '${fullDestinationPath}'. Opened existing repository.`);
+        setIsCloneRepoModalOpen(false);
+        return;
+      }
+    } catch {
+      // Folder is not an existing Git repo, proceed to clone
+    }
+
     setIsCloning(true);
     setCloneStartedAt(Date.now());
     setLocalError(null);

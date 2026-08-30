@@ -391,6 +391,11 @@ pub async fn clone_repository(
 }
 
 #[command]
+pub async fn cancel_git_operation() -> Result<bool, AppError> {
+    Ok(remote::cancel_active_clone_process())
+}
+
+#[command]
 pub async fn get_open_merge_requests(
     project_id: String,
     server_url: Option<String>,

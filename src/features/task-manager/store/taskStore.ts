@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { AppTask, TaskProgress, TaskType, CloneProgressPayload } from '../types';
 
@@ -161,7 +162,13 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }));
   },
 
-  cancelTask: (id) => {
+  cancelTask: async (id) => {
+    try {
+      await invoke('cancel_git_operation');
+    } catch (err) {
+      console.warn('Failed to kill active git process:', err);
+    }
+
     set((state) => ({
       tasks: state.tasks.map((t) => {
         if (t.id === id) {
