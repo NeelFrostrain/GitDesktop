@@ -40,18 +40,20 @@ export const HistoryPanel: React.FC = () => {
   const {
     activeTab,
     activeRepoPath,
-    selectedCommitSha,
     setSelectedCommitSha,
+    tags,
     setTags,
+    user,
     status,
     repoSyncCounter,
   } = useGitStore(
     useShallow((s) => ({
       activeTab: s.activeTab,
       activeRepoPath: s.activeRepoPath,
-      selectedCommitSha: s.selectedCommitSha,
       setSelectedCommitSha: s.setSelectedCommitSha,
+      tags: s.tags,
       setTags: s.setTags,
+      user: s.user,
       status: s.status,
       repoSyncCounter: s.repoSyncCounter,
     }))
@@ -76,19 +78,21 @@ export const HistoryPanel: React.FC = () => {
       const cached = RepoCacheService.getCommits(activeRepoPath);
       if (cached && cached.length > 0) {
         setCommits(cached);
-        if (!selectedCommitSha) {
+        const currentSha = useGitStore.getState().selectedCommitSha;
+        if (!currentSha) {
           setSelectedCommitSha(cached[0].sha);
         }
       }
     }
-  }, [activeRepoPath]);
+  }, [activeRepoPath, setSelectedCommitSha]);
 
   // Load initial batch of commits
   const loadInitialCommits = useCallback(async () => {
     if (!activeRepoPath) {
       setCommits(sampleCommits);
       setHasMore(false);
-      if (sampleCommits.length > 0 && !selectedCommitSha) {
+      const currentSha = useGitStore.getState().selectedCommitSha;
+      if (sampleCommits.length > 0 && !currentSha) {
         setSelectedCommitSha(sampleCommits[0].sha);
       }
       return;
@@ -113,7 +117,8 @@ export const HistoryPanel: React.FC = () => {
         RepoCacheService.setCommits(activeRepoPath, res);
         setCommits(res);
         setHasMore(res.length === PAGE_SIZE);
-        const hasSelected = selectedCommitSha && res.some((c) => c.sha === selectedCommitSha);
+        const currentSha = useGitStore.getState().selectedCommitSha;
+        const hasSelected = currentSha && res.some((c) => c.sha === currentSha);
         if (!hasSelected) {
           setSelectedCommitSha(res[0].sha);
         }
@@ -128,7 +133,7 @@ export const HistoryPanel: React.FC = () => {
     } finally {
       setIsLoadingInitial(false);
     }
-  }, [activeRepoPath, setTags, selectedCommitSha, setSelectedCommitSha]);
+  }, [activeRepoPath, setTags, setSelectedCommitSha]);
 
   useEffect(() => {
     if (activeTab === 'history') {
@@ -175,8 +180,7 @@ export const HistoryPanel: React.FC = () => {
   }, [activeRepoPath, hasMore, isLoadingMore, isLoadingInitial, commits.length]);
 
   const [activeQuickFilter, setActiveQuickFilter] = useState<CommitQuickFilter>('all');
-  const { user, tags } = useGitStore();
-  const { verifiedCommits } = useSigningStore();
+  const verifiedCommits = useSigningStore((s) => s.verifiedCommits);
 
   const filteredCommits = commits.filter((c) => {
     // 1. Text filter

@@ -21,6 +21,8 @@ import { StashedChangesView } from './diff/StashedChangesView';
  */
 const DIFF_CACHE_CAPACITY = 40;
 const diffMemoryCache = new Map<string, DiffResult>();
+const commitDetailsMemoryCache = new Map<string, CommitDetails>();
+const commitDiffMemoryCache = new Map<string, DiffResult>();
 
 export const DiffViewer: React.FC = () => {
   const {
@@ -55,8 +57,14 @@ export const DiffViewer: React.FC = () => {
     }
     return null;
   });
-  const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(null);
+  const [commitDetails, setCommitDetails] = useState<CommitDetails | null>(() => {
+    if (activeRepoPath && selectedCommitSha && activeTab === 'history') {
+      return commitDetailsMemoryCache.get(`${activeRepoPath}:${selectedCommitSha}`) || null;
+    }
+    return null;
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingCommit, setIsLoadingCommit] = useState(false);
 
   // Editor mode state & handle
   const [editorState, setEditorState] = useState<{
@@ -74,13 +82,6 @@ export const DiffViewer: React.FC = () => {
   const [expandedHistoryFiles, setExpandedHistoryFiles] = useState<Record<string, DiffResult>>({});
   const [loadingHistoryFiles, setLoadingHistoryFiles] = useState<Record<string, boolean>>({});
   const [openFiles, setOpenFiles] = useState<Record<string, boolean>>({});
-
-  // Reset history file diffs on commit / repo switch to keep memory lean
-  useEffect(() => {
-    setExpandedHistoryFiles({});
-    setLoadingHistoryFiles({});
-    setOpenFiles({});
-  }, [activeRepoPath, selectedCommitSha]);
 
   // Derive isStaged as a reactive memo dependency
   const isStaged = useMemo(() => {
@@ -168,14 +169,28 @@ export const DiffViewer: React.FC = () => {
       window.removeEventListener('focus', handleFocusSync);
       document.removeEventListener('visibilitychange', handleFocusSync);
     };
-  }, [activeRepoPath, selectedFile, activeTab, setError]);
+  }, [activeRepoPath, selectedFile, activeTab, setError, isStaged]);
 
   const fetchCommitFileDiff = useCallback(
     async (sha: string, filePath: string) => {
-      if (!activeRepoPath || expandedHistoryFiles[filePath]) return;
+      if (!activeRepoPath) return;
+      const fileCacheKey = `${activeRepoPath}:${sha}:${filePath}`;
+      const cached = commitDiffMemoryCache.get(fileCacheKey);
+      if (cached) {
+        setExpandedHistoryFiles((prev) =>
+          prev[filePath] === cached ? prev : { ...prev, [filePath]: cached }
+        );
+        return;
+      }
+
       setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: true }));
       try {
         const res = await GitService.getCommitFileDiff(activeRepoPath, sha, filePath);
+        if (commitDiffMemoryCache.size >= DIFF_CACHE_CAPACITY * 2) {
+          const oldestKey = commitDiffMemoryCache.keys().next().value;
+          if (oldestKey) commitDiffMemoryCache.delete(oldestKey);
+        }
+        commitDiffMemoryCache.set(fileCacheKey, res);
         setExpandedHistoryFiles((prev) => ({ ...prev, [filePath]: res }));
       } catch (err: unknown) {
         setError(toAppError(err, 'GIT_ERROR'));
@@ -183,7 +198,7 @@ export const DiffViewer: React.FC = () => {
         setLoadingHistoryFiles((prev) => ({ ...prev, [filePath]: false }));
       }
     },
-    [activeRepoPath, expandedHistoryFiles, setError]
+    [activeRepoPath, setError]
   );
 
   // Fetch commit details when selected commit changes in History tab
@@ -195,19 +210,49 @@ export const DiffViewer: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-    GitService.getCommitDetails(activeRepoPath, selectedCommitSha)
-      .then((details) => {
-        setCommitDetails(details);
-        // Expand first modified file by default
-        if (details.changed_files.length > 0) {
-          const firstFile = details.changed_files[0];
-          setOpenFiles({ [firstFile]: true });
-          fetchCommitFileDiff(selectedCommitSha, firstFile);
-        }
-      })
-      .catch((err: unknown) => setError(toAppError(err, 'GIT_ERROR')))
-      .finally(() => setIsLoading(false));
+    let isDisposed = false;
+    const cacheKey = `${activeRepoPath}:${selectedCommitSha}`;
+    const cachedDetails = commitDetailsMemoryCache.get(cacheKey);
+
+    if (cachedDetails) {
+      setCommitDetails(cachedDetails);
+      setIsLoadingCommit(false);
+      if (cachedDetails.changed_files.length > 0) {
+        const firstFile = cachedDetails.changed_files[0];
+        setOpenFiles({ [firstFile]: true });
+        fetchCommitFileDiff(selectedCommitSha, firstFile);
+      }
+    } else {
+      setIsLoadingCommit(true);
+      setExpandedHistoryFiles({});
+      setOpenFiles({});
+
+      GitService.getCommitDetails(activeRepoPath, selectedCommitSha)
+        .then((details) => {
+          if (isDisposed) return;
+          if (commitDetailsMemoryCache.size >= DIFF_CACHE_CAPACITY) {
+            const oldestKey = commitDetailsMemoryCache.keys().next().value;
+            if (oldestKey) commitDetailsMemoryCache.delete(oldestKey);
+          }
+          commitDetailsMemoryCache.set(cacheKey, details);
+          setCommitDetails(details);
+          if (details.changed_files.length > 0) {
+            const firstFile = details.changed_files[0];
+            setOpenFiles({ [firstFile]: true });
+            fetchCommitFileDiff(selectedCommitSha, firstFile);
+          }
+        })
+        .catch((err: unknown) => {
+          if (!isDisposed) setError(toAppError(err, 'GIT_ERROR'));
+        })
+        .finally(() => {
+          if (!isDisposed) setIsLoadingCommit(false);
+        });
+    }
+
+    return () => {
+      isDisposed = true;
+    };
   }, [activeRepoPath, selectedCommitSha, activeTab, setError, fetchCommitFileDiff]);
 
   const toggleFileExpansion = (filePath: string) => {
@@ -343,7 +388,7 @@ export const DiffViewer: React.FC = () => {
       );
     }
 
-    if (isLoading) {
+    if (isLoadingCommit && !commitDetails) {
       return (
         <div className="h-full flex items-center justify-center text-text-muted text-sm">
           Loading commit details...

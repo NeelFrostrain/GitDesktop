@@ -60,8 +60,8 @@ export const CommitCard: React.FC<CommitCardProps> = React.memo(({
       tags: s.tags,
     }))
   );
-  const { verifiedCommits, verifyCommit } = useSigningStore();
-  const verification = verifiedCommits[commit.sha];
+  const verification = useSigningStore((s) => s.verifiedCommits[commit.sha]);
+  const verifyCommit = useSigningStore((s) => s.verifyCommit);
 
   // Match any tags pointing to this commit
   const commitTags = tags.filter(
