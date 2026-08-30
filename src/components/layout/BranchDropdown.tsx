@@ -16,9 +16,8 @@ import {
   RefreshCw,
   AlertCircle,
   ArrowRight,
-  User,
-  GitFork,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { useRemoteStore } from '../../store/remoteStore';
@@ -70,33 +69,19 @@ const LocalBranchRow = React.memo<LocalBranchRowProps>(({ branchItem, isCurrent,
         <div
           className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 transition-colors ${
             isCurrent
-              ? 'bg-commito-coral/20 text-commito-coral'
-              : 'bg-base-1 text-text-muted group-hover:text-commito-coral group-hover:bg-commito-coral/10'
+              ? 'bg-commito-coral text-white shadow-xs'
+              : 'bg-base-3 text-text-muted group-hover:bg-base-3/80 group-hover:text-text-primary'
           }`}
         >
           <GitBranch className="w-3 h-3" />
         </div>
-
-        <div className="flex items-center gap-1.5 min-w-0 truncate">
-          <span
-            className={`truncate text-xs font-mono transition-colors ${
-              isCurrent
-                ? 'font-bold text-commito-coral'
-                : 'font-medium text-text group-hover:text-text-primary'
-            }`}
-          >
+        <div className="min-w-0 truncate font-mono text-xs">
+          <span className="truncate block font-semibold leading-tight text-text-primary">
             {branchItem.name}
           </span>
-
           {branchItem.remoteTracking && (
-            <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-gitlab-blue/10 text-gitlab-blue border border-gitlab-blue/20 text-[9.5px] font-mono flex-shrink-0"
-              title={`Tracks remote '${branchItem.remoteTracking}'`}
-            >
-              <Globe className="w-2.5 h-2.5 flex-shrink-0" />
-              <span className="truncate max-w-[70px]">
-                {branchItem.remotePrefix || 'origin'}
-              </span>
+            <span className="truncate block text-[9.5px] text-text-muted font-normal leading-tight">
+              tracks {branchItem.remoteTracking}
             </span>
           )}
         </div>
@@ -179,64 +164,57 @@ const PullRequestRow = React.memo<PullRequestRowProps>(
     return (
       <div
         onClick={() => onSelect(pr)}
-        className={`group relative flex items-start justify-between gap-2.5 p-2 rounded-sm border cursor-pointer transition-all duration-150 select-none ${
-          isCurrent
-            ? 'bg-base-1 border-commito-coral/50 shadow-xs'
-            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
-        }`}
-        title={`Open Pull Request ${numberPrefix}${prNumber}: ${pr.title}`}
+        className="group relative flex items-center justify-between gap-2.5 px-3 py-2 border-l-2 border-l-transparent hover:bg-base-1/70 text-text-muted hover:text-text-primary cursor-pointer transition-colors select-none"
       >
-        <div className="flex items-start gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <div
-            className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 mt-0.5 ${
+            className={`w-5 h-5 rounded-xs flex items-center justify-center shrink-0 ${
               isDraft
-                ? 'bg-base-2 text-text-muted border border-border/60'
-                : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                ? 'bg-base-3 text-text-muted'
+                : 'bg-git-added-bg text-git-added border border-git-added/30'
             }`}
           >
             <GitPullRequest className="w-3 h-3" />
           </div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <span className="text-xs font-semibold text-text-primary truncate leading-tight group-hover:text-commito-coral transition-colors flex-1">
-                {pr.title}
-              </span>
-              {isDraft && (
-                <span className="text-[9px] font-semibold uppercase px-1 py-0.2 rounded-xs bg-base-2 text-text-muted border border-border/60 shrink-0">
-                  Draft
-                </span>
-              )}
-            </div>
 
-            <div className="flex items-center gap-1.5 flex-wrap text-[10.5px] text-text-muted">
-              <span className="font-mono font-bold text-commito-coral bg-commito-coral/10 border border-commito-coral/25 px-1 py-0.2 rounded-xs leading-none">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 truncate">
+              <span className="font-mono text-xs font-semibold text-text-muted group-hover:text-commito-coral transition-colors shrink-0">
                 {numberPrefix}
                 {prNumber}
               </span>
-
-              <div className="flex items-center gap-1 font-mono text-[9.5px] text-text-muted bg-base-1 px-1.5 py-0.2 rounded-xs border border-border/50">
-                <GitFork className="w-2.5 h-2.5 text-text-faint shrink-0" />
-                <span className="truncate max-w-[90px]" title={pr.source_branch}>
-                  {pr.source_branch}
-                </span>
-                <ArrowRight className="w-2 h-2 text-text-faint shrink-0" />
-                <span className="truncate max-w-[90px]" title={pr.target_branch}>
-                  {pr.target_branch}
-                </span>
-              </div>
-
-              <span className="truncate flex items-center gap-1">
-                <User className="w-2.5 h-2.5 text-text-faint shrink-0" />
-                <span>{pr.author_name}</span>
+              <span className="font-sans text-xs font-semibold text-text-primary truncate">
+                {pr.title}
               </span>
+            </div>
 
-              <span>• {formatRelativeTime(pr.created_at)}</span>
+            <div className="flex items-center gap-2 text-[10px] text-text-faint mt-0.5 font-mono truncate">
+              <span className="text-text-muted truncate max-w-[120px]">
+                {pr.source_branch}
+              </span>
+              <span>→</span>
+              <span className="text-text-muted truncate max-w-[120px]">
+                {pr.target_branch}
+              </span>
+              {pr.author_name && (
+                <>
+                  <span>•</span>
+                  <span className="text-text-muted truncate">
+                    {pr.author_name}
+                  </span>
+                </>
+              )}
+              {pr.created_at && (
+                <>
+                  <span>•</span>
+                  <span>{formatRelativeTime(pr.created_at)}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right: Checkmark if current, plus external link */}
-        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+        <div className="flex items-center gap-1.5 shrink-0">
           {isCurrent && (
             <span className="px-1.5 py-0.5 rounded-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[9px] font-mono font-bold flex items-center gap-0.5">
               <span>CURRENT</span>
@@ -273,8 +251,25 @@ export const BranchDropdown: React.FC = () => {
     setIsMergeRequestModalOpen,
     openMergeRequestModal,
     user,
-  } = useGitStore();
-  const { remotes, activeRemote, loadRemotes } = useRemoteStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      status: s.status,
+      branches: s.branches,
+      setBranches: s.setBranches,
+      setError: s.setError,
+      setIsMergeRequestModalOpen: s.setIsMergeRequestModalOpen,
+      openMergeRequestModal: s.openMergeRequestModal,
+      user: s.user,
+    }))
+  );
+  const { remotes, activeRemote, loadRemotes } = useRemoteStore(
+    useShallow((s) => ({
+      remotes: s.remotes,
+      activeRemote: s.activeRemote,
+      loadRemotes: s.loadRemotes,
+    }))
+  );
 
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'branches' | 'pull-requests'>('branches');

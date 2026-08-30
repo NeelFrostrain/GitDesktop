@@ -14,6 +14,7 @@ import {
   Settings2,
   GitBranch,
 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { useRemoteStore } from '../../store/remoteStore';
 import { useTerminalStore } from '../../features/terminal/store/terminalStore';
@@ -39,13 +40,43 @@ export const Header: React.FC = () => {
     setIsCreateReleaseModalOpen,
     setEditingRelease,
     setIsConfigModalOpen,
-  } = useGitStore();
+  } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      error: s.error,
+      setError: s.setError,
+      currentNavView: s.currentNavView,
+      setCurrentNavView: s.setCurrentNavView,
+      setIsMergeRequestModalOpen: s.setIsMergeRequestModalOpen,
+      setIsCreateTagModalOpen: s.setIsCreateTagModalOpen,
+      setIsCreateReleaseModalOpen: s.setIsCreateReleaseModalOpen,
+      setEditingRelease: s.setEditingRelease,
+      setIsConfigModalOpen: s.setIsConfigModalOpen,
+    }))
+  );
 
-  const { remotes, activeRemote, setActiveRemote, loadRemotes } = useRemoteStore();
+  const { remotes, activeRemote, setActiveRemote, loadRemotes } = useRemoteStore(
+    useShallow((s) => ({
+      remotes: s.remotes,
+      activeRemote: s.activeRemote,
+      setActiveRemote: s.setActiveRemote,
+      loadRemotes: s.loadRemotes,
+    }))
+  );
 
-  const { isOpen: isTerminalOpen, toggleIsOpen: toggleTerminal } = useTerminalStore();
+  const { isOpen: isTerminalOpen, toggleIsOpen: toggleTerminal } = useTerminalStore(
+    useShallow((s) => ({
+      isOpen: s.isOpen,
+      toggleIsOpen: s.toggleIsOpen,
+    }))
+  );
 
-  const { isOpen: isAiAgentOpen, toggleIsOpen: toggleAiAgent } = useAiAgentStore();
+  const { isOpen: isAiAgentOpen, toggleIsOpen: toggleAiAgent } = useAiAgentStore(
+    useShallow((s) => ({
+      isOpen: s.isOpen,
+      toggleIsOpen: s.toggleIsOpen,
+    }))
+  );
 
   const headerRef = useRef<HTMLElement>(null);
   const [headerWidth, setHeaderWidth] = useState<number>(1000);

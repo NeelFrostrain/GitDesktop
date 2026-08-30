@@ -1,12 +1,21 @@
 import React, { useState } from 'react';
 import { ChevronsUpDown, FolderGit2 } from 'lucide-react';
+import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
 import { RepoDrawer } from '../layout/RepoDrawer';
 import { Tabs } from '../common/Tabs';
 import { ChangesEmptySpaceContextMenu } from '../context-menus/ChangesEmptySpaceContextMenu';
 
 export const RepositoryHeader: React.FC = () => {
-  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore();
+  const { activeRepoPath, status, branches, activeTab, setActiveTab } = useGitStore(
+    useShallow((s) => ({
+      activeRepoPath: s.activeRepoPath,
+      status: s.status,
+      branches: s.branches,
+      activeTab: s.activeTab,
+      setActiveTab: s.setActiveTab,
+    }))
+  );
   const [isRepoDrawerOpen, setIsRepoDrawerOpen] = useState(false);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
