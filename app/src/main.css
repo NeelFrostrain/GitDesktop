@@ -1,0 +1,1139 @@
+/* ==========================================================================
+   Git Desktop App — Unified CSS Theme Architecture
+   Single Source of Truth for Visual Design System, Design Tokens,
+   Tailwind CSS v4 @theme Bridge, Global Styles, Controls & Scrollbars.
+   ========================================================================== */
+
+/* ==========================================================================
+   1. Imports
+   ========================================================================== */
+@import '@fontsource/inter/300.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
+@import '@xterm/xterm/css/xterm.css';
+@import 'tailwindcss';
+
+/* ==========================================================================
+   2. Runtime Theme Variables (:root / Default: Commito Dark)
+   ========================================================================== */
+:root {
+  color-scheme: dark;
+  /* --- Unified Surfaces & Backgrounds --- */
+  --surface: #181818; /* Main workspace canvas background */
+  --surface-subtle: #131313; /* Deep sidebar & frame background */
+  --surface-elevated: #201e22; /* Elevated cards, panels & modals */
+  --surface-hover: #2b292f; /* Hover state on rows, items and cards */
+  --surface-active: #382221; /* Pressed/selected active background */
+
+  /* Legacy surface aliases */
+  --app-bg-primary: var(--surface);
+  --app-bg-secondary: var(--surface-subtle);
+  --app-bg-tertiary: var(--surface-elevated);
+  --app-bg-elevated: var(--surface-elevated);
+  --app-surface-hover: var(--surface-hover);
+  --app-surface-active: var(--surface-active);
+
+  /* --- Unified Borders --- */
+  --border: #29272b; /* Default border color */
+  --border-subtle: #201e22; /* Subtle inner border / divider */
+  --border-strong: #3d3a42; /* Emphasized border / active focus */
+
+  /* --- Unified Scrollbars --- */
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.22);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.32);
+
+  /* Legacy border aliases */
+  --app-border: var(--border);
+  --app-border-subtle: var(--border-subtle);
+  --app-border-strong: var(--border-strong);
+
+  /* --- Unified Typography & Text Colors --- */
+  --text: #e6e4e8; /* Main heading and body text */
+  --text-subtle: #b3b0b8; /* Secondary labels, breadcrumbs */
+  --text-muted: #85818c; /* Muted, timestamp & placeholder text */
+  --text-faint: #5c5863; /* Faint hints and icons */
+  --text-disabled: #5c5863; /* Disabled control text */
+  --text-on-accent: #ffffff; /* Text rendered on top of accent buttons */
+
+  /* Legacy text aliases */
+  --app-text-primary: var(--text);
+  --app-text-secondary: var(--text-subtle);
+  --app-text-muted: var(--text-muted);
+  --app-text-faint: var(--text-faint);
+  --app-text-disabled: var(--text-disabled);
+  --app-text-on-accent: var(--text-on-accent);
+
+  /* --- Unified Semantic Accent & Status --- */
+  --accent: #e05638; /* Primary brand accent */
+  --accent-hover: #f06344; /* Primary accent hover */
+  --accent-active: #c74327; /* Primary accent active */
+  --accent-muted: rgba(224, 86, 56, 0.15); /* Low-opacity accent highlight */
+  --focus-ring: #e05638; /* Focus ring indicator */
+
+  /* Legacy accent aliases */
+  --app-accent: var(--accent);
+  --app-accent-hover: var(--accent-hover);
+  --app-accent-active: var(--accent-active);
+  --app-accent-muted: var(--accent-muted);
+  --app-focus-ring: var(--focus-ring);
+
+  --success: #22c55e; /* Success status */
+  --warning: #eab308; /* Warning status */
+  --danger: #ef4444; /* Danger / error status */
+  --info: #3b82f6; /* Informational status */
+
+  /* Legacy status aliases */
+  --app-success: var(--success);
+  --app-warning: var(--warning);
+  --app-danger: var(--danger);
+  --app-error: var(--danger);
+  --app-info: var(--info);
+
+  /* --- Git Semantic Status Colors --- */
+  --git-branch: #e05638;
+  --git-tag: #c084fc;
+  --git-remote: #38bdf8;
+  --git-local: var(--text);
+  --git-added: #22c55e;
+  --git-modified: #eab308;
+  --git-deleted: #ef4444;
+  --git-removed: #ef4444;
+  --git-renamed: #3b82f6;
+  --git-conflict: #f97316;
+  --git-ahead: #22c55e;
+  --git-behind: #ef4444;
+  --git-clean: #22c55e;
+  --git-dirty: #eab308;
+
+  --git-added-bg: rgba(34, 197, 94, 0.15);
+  --git-removed-bg: rgba(239, 68, 68, 0.15);
+  --git-modified-bg: rgba(234, 179, 8, 0.15);
+  --git-conflict-bg: rgba(249, 115, 22, 0.15);
+
+  /* --- Diff Specific Colors --- */
+  --diff-add-bg: rgba(34, 197, 94, 0.15);
+  --diff-add-text: #4ade80;
+  --diff-remove-bg: rgba(239, 68, 68, 0.15);
+  --diff-remove-text: #f87171;
+  --diff-modified-bg: rgba(234, 179, 8, 0.15);
+  --diff-highlight: #38bdf8;
+
+  /* --- Brand Tokens: Commito --- */
+  --brand-commito-coral: #e05638;
+  --brand-commito-coral-hover: #f06344;
+  --brand-commito-active-bg: #382221;
+  --brand-commito-active-text: #f5a494;
+  --brand-commito-green: #22c55e;
+  --brand-commito-card: #201e22;
+
+  /* --- Brand Tokens: GitLab --- */
+  --brand-gitlab-orange: #e05638;
+  --brand-gitlab-purple: #7b58cf;
+  --brand-gitlab-purple-light: #3a2d6b;
+  --brand-gitlab-teal: #22c55e;
+  --brand-gitlab-blue: #1f75cb;
+  --provider-gitlab: #e24329;
+
+  /* --- Brand Tokens: GitHub --- */
+  --brand-github-dark-bg: #171719;
+  --brand-github-dark-sidebar: #1f1e24;
+  --brand-github-dark-header: #28272d;
+  --brand-github-dark-border: #36353d;
+  --brand-github-dark-hover: #33323a;
+  --brand-github-dark-accent: #1f75cb;
+  --brand-github-dark-success: #108548;
+  --brand-github-dark-danger: #dd2b0e;
+  --brand-github-dark-warning: #c17d10;
+  --brand-github-dark-text: #e1e0e5;
+  --brand-github-dark-heading: #ffffff;
+  --provider-github: #2da44e;
+
+  /* --- Terminal Canvas & Text --- */
+  --terminal-bg: #131313;
+  --terminal-fg: var(--text);
+  --terminal-cursor: #e05638;
+  --terminal-selection: #382221;
+
+  /* Terminal 8 Standard ANSI Colors */
+  --terminal-ansi-black: #171619;
+  --terminal-ansi-red: #f87171;
+  --terminal-ansi-green: #4ade80;
+  --terminal-ansi-yellow: #facc15;
+  --terminal-ansi-blue: #60a5fa;
+  --terminal-ansi-magenta: #c084fc;
+  --terminal-ansi-cyan: #38bdf8;
+  --terminal-ansi-white: #e6e4e8;
+
+  /* Terminal 8 Bright ANSI Colors */
+  --terminal-ansi-bright-black: #85818c;
+  --terminal-ansi-bright-red: #fca5a5;
+  --terminal-ansi-bright-green: #86efac;
+  --terminal-ansi-bright-yellow: #fde047;
+  --terminal-ansi-bright-blue: #93c5fd;
+  --terminal-ansi-bright-magenta: #d8b4fe;
+  --terminal-ansi-bright-cyan: #7dd3fc;
+  --terminal-ansi-bright-white: #ffffff;
+
+  /* App Log Level Colors (Terminal streaming logger) */
+  --log-debug: #85818c;
+  --log-info: #38bdf8;
+  --log-success: #4ade80;
+  --log-warn: #facc15;
+  --log-error: #f87171;
+
+  /* --- Typography Tokens --- */
+  --app-font-family:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --app-font-size: 13px;
+  --app-font-size-sm: 11px;
+  --app-font-size-lg: 15px;
+  --app-font-weight-normal: 400;
+  --app-font-weight-medium: 500;
+  --app-font-weight-bold: 600;
+  --app-line-height: 1.5;
+  --terminal-font-family:
+    'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, Monaco, Consolas, monospace;
+  --terminal-font-size: 13px;
+
+  /* --- Spacing, Radii & Dimensions --- */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+  --app-radius-sm: var(--radius-sm);
+  --app-radius-md: var(--radius-md);
+  --app-radius-lg: var(--radius-lg);
+  --app-radius-xl: var(--radius-xl);
+  --app-spacing-unit: 4px;
+  --app-sidebar-width: 260px;
+  --app-row-height: 38px;
+
+  /* --- Shadows & Overlays --- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.6);
+  --shadow-overlay: 0 20px 40px 0 rgba(0, 0, 0, 0.7);
+  --shadow-popover: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  --shadow-dialog: 0 10px 30px 0 rgba(0, 0, 0, 0.7);
+  --shadow-command-palette: 0 16px 40px 0 rgba(0, 0, 0, 0.75);
+
+  --app-shadow-sm: var(--shadow-sm);
+  --app-shadow-md: var(--shadow-md);
+  --app-shadow-lg: var(--shadow-lg);
+
+  /* --- Motion & Transitions --- */
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 350ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+
+  --app-transition-fast: var(--duration-fast);
+  --app-transition-normal: var(--duration-normal);
+
+  /* --- Density Mode --- */
+  --app-density: comfortable;
+
+  /* --- UI Scale & Layout --- */
+  --app-ui-scale: 100%;
+  --app-ui-scale-value: 1;
+
+  /* --- Scrollbar Tokens --- */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.09);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.2);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.3);
+  --scrollbar-track: transparent;
+}
+
+/* UI Scale: uses native browser/WebView zoom to scale interface density
+   without shrinking the viewport or causing black margins. */
+html {
+  width: 100%;
+  height: 100%;
+  zoom: var(--app-ui-scale-value, 1);
+}
+
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   3. Tailwind v4 Token Bridge
+   Binds runtime CSS custom properties into Tailwind utility classes.
+   ========================================================================== */
+@theme {
+  /* Unified Semantic Surfaces & Backgrounds */
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+
+  /* Legacy base-* classes */
+  --color-base-0: var(--app-bg-secondary);
+  --color-base-1: var(--app-bg-primary);
+  --color-base-2: var(--app-bg-elevated);
+  --color-base-3: var(--app-surface-hover);
+
+  /* Unified Semantic Borders */
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+
+  /* Unified Semantic Text */
+  --color-text: var(--text);
+  --color-text-subtle: var(--text-subtle);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-text-disabled: var(--text-disabled);
+  --color-text-on-accent: var(--text-on-accent);
+  --color-text-onAccent: var(--text-on-accent);
+
+  /* Legacy text-* classes */
+  --color-text-primary: var(--app-text-primary);
+  --color-text-secondary: var(--app-text-secondary);
+
+  /* Unified Semantic Accent & Status */
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-active: var(--accent-active);
+  --color-accent-muted: var(--accent-muted);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-error: var(--danger);
+  --color-info: var(--info);
+
+  /* Diff Specific */
+  --color-diff-add-bg: var(--diff-add-bg);
+  --color-diff-add-text: var(--diff-add-text);
+  --color-diff-remove-bg: var(--diff-remove-bg);
+  --color-diff-remove-text: var(--diff-remove-text);
+  --color-diff-modified-bg: var(--diff-modified-bg);
+  --color-diff-highlight: var(--diff-highlight);
+
+  /* Git Diff & Status */
+  --color-git-branch: var(--git-branch);
+  --color-git-tag: var(--git-tag);
+  --color-git-remote: var(--git-remote);
+  --color-git-local: var(--git-local);
+  --color-git-added: var(--git-added);
+  --color-git-modified: var(--git-modified);
+  --color-git-deleted: var(--git-deleted);
+  --color-git-removed: var(--git-removed);
+  --color-git-renamed: var(--git-renamed);
+  --color-git-conflict: var(--git-conflict);
+  --color-git-ahead: var(--git-ahead);
+  --color-git-behind: var(--git-behind);
+  --color-git-clean: var(--git-clean);
+  --color-git-dirty: var(--git-dirty);
+
+  --color-git-added-bg: var(--git-added-bg);
+  --color-git-removed-bg: var(--git-removed-bg);
+  --color-git-modified-bg: var(--git-modified-bg);
+  --color-git-conflict-bg: var(--git-conflict-bg);
+
+  /* Brand Tokens: Commito */
+  --color-commito-coral: var(--brand-commito-coral);
+  --color-commito-coralLight: var(--brand-commito-coral-hover);
+  --color-commito-active-bg: var(--brand-commito-active-bg);
+  --color-commito-active-text: var(--brand-commito-active-text);
+  --color-commito-green: var(--brand-commito-green);
+  --color-commito-card: var(--brand-commito-card);
+
+  /* Brand Tokens: GitLab */
+  --color-gitlab-orange: var(--brand-gitlab-orange);
+  --color-gitlab-purple: var(--brand-gitlab-purple);
+  --color-gitlab-purple-light: var(--brand-gitlab-purple-light);
+  --color-gitlab-teal: var(--brand-gitlab-teal);
+  --color-gitlab-blue: var(--brand-gitlab-blue);
+
+  /* Brand Tokens: GitHub */
+  --color-github-dark-bg: var(--brand-github-dark-bg);
+  --color-github-dark-sidebar: var(--brand-github-dark-sidebar);
+  --color-github-dark-header: var(--brand-github-dark-header);
+  --color-github-dark-border: var(--brand-github-dark-border);
+  --color-github-dark-hover: var(--brand-github-dark-hover);
+  --color-github-dark-accent: var(--brand-github-dark-accent);
+  --color-github-dark-success: var(--brand-github-dark-success);
+  --color-github-dark-danger: var(--brand-github-dark-danger);
+  --color-github-dark-warning: var(--brand-github-dark-warning);
+  --color-github-dark-text: var(--brand-github-dark-text);
+  --color-github-dark-heading: var(--brand-github-dark-heading);
+
+  /* Provider Tokens */
+  --color-provider-github: var(--provider-github);
+  --color-provider-gitlab: var(--provider-gitlab);
+
+  /* Terminal Colors */
+  --color-terminal-bg: var(--terminal-bg);
+  --color-terminal-fg: var(--terminal-fg);
+  --color-terminal-cursor: var(--terminal-cursor);
+  --color-terminal-selection: var(--terminal-selection);
+
+  /* Spacing and Radii */
+  --radius-xs: 2px;
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-pill: var(--radius-pill);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-popover: var(--shadow-popover);
+  --shadow-dialog: var(--shadow-dialog);
+  --shadow-command-palette: var(--shadow-command-palette);
+}
+
+/* ==========================================================================
+   4. Global Base Elements & Typography
+   ========================================================================== */
+html,
+body,
+#root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--surface);
+  color: var(--text);
+  font-family: var(--app-font-family);
+  line-height: var(--app-line-height);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+/* ==========================================================================
+   5. Scrollbar Styles & Utilities
+   ========================================================================== */
+*::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  transition: background-color 0.15s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: rgba(255, 255, 255, 0.32);
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 3.5px;
+  height: 3.5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Utility: .scrollbar-none */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ==========================================================================
+   Global UI Focus & Outline Overrides
+   Eliminate browser default white focus rings / outlines across all elements.
+   ========================================================================== */
+*,
+*::before,
+*::after {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+*:focus,
+*:focus-visible,
+*:focus-within {
+  outline: none !important;
+}
+
+button,
+input,
+select,
+textarea,
+a,
+[tabindex] {
+  outline: none !important;
+}
+
+button:focus,
+button:focus-visible,
+input:focus,
+input:focus-visible,
+select:focus,
+select:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+a:focus,
+a:focus-visible,
+[tabindex]:focus,
+[tabindex]:focus-visible {
+  outline: none !important;
+}
+
+/* ==========================================================================
+   6. Unified Markdown Presentation Styling (.agent-markdown & .markdown-body)
+   ========================================================================== */
+.agent-markdown,
+.markdown-body {
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--text);
+  word-break: break-word;
+}
+
+.agent-markdown p,
+.markdown-body p {
+  margin-bottom: 0.65rem;
+}
+
+.agent-markdown p:last-child,
+.markdown-body p:last-child {
+  margin-bottom: 0;
+}
+
+.agent-markdown h1,
+.agent-markdown h2,
+.agent-markdown h3,
+.agent-markdown h4,
+.agent-markdown h5,
+.agent-markdown h6,
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  color: #ffffff;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-top: 0.9rem;
+  margin-bottom: 0.4rem;
+  display: block;
+  line-height: 1.4;
+}
+
+.agent-markdown h1,
+.markdown-body h1 {
+  font-size: 1.1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 0.3rem;
+}
+
+.agent-markdown h2,
+.markdown-body h2 {
+  font-size: 0.975rem;
+}
+
+.agent-markdown h3,
+.markdown-body h3 {
+  font-size: 0.875rem;
+  color: #f1f0f5;
+}
+
+.agent-markdown ul,
+.markdown-body ul {
+  padding-left: 1.25rem !important;
+  margin-top: 0.35rem;
+  margin-bottom: 0.65rem;
+  list-style-type: disc !important;
+}
+
+.agent-markdown ol,
+.markdown-body ol {
+  padding-left: 1.25rem !important;
+  margin-top: 0.35rem;
+  margin-bottom: 0.65rem;
+  list-style-type: decimal !important;
+}
+
+.agent-markdown li,
+.markdown-body li {
+  margin-bottom: 0.3rem;
+  line-height: 1.55;
+  display: list-item !important;
+}
+
+.agent-markdown li::marker,
+.markdown-body li::marker {
+  color: var(--commito-coral, #e05638);
+}
+
+.agent-markdown ul ul,
+.markdown-body ul ul {
+  list-style-type: circle !important;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.agent-markdown ul ol,
+.markdown-body ul ol,
+.agent-markdown ol ol,
+.markdown-body ol ol {
+  list-style-type: lower-roman !important;
+  margin-top: 0.2rem;
+  margin-bottom: 0.2rem;
+}
+
+.agent-markdown blockquote,
+.markdown-body blockquote {
+  border-left: 3px solid var(--commito-coral, #e05638);
+  background: rgba(224, 86, 56, 0.06);
+  padding: 0.5rem 0.85rem;
+  border-radius: 0 0.375rem 0.375rem 0;
+  margin: 0.6rem 0;
+  color: var(--text-subtle);
+}
+
+.agent-markdown code,
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.875em;
+  color: #ff8e72;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  word-break: break-word;
+  display: inline;
+}
+
+.agent-markdown pre,
+.markdown-body pre {
+  background: #0d0c10 !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.375rem;
+  padding: 0.65rem 0.85rem;
+  margin: 0.5rem 0;
+  overflow-x: auto;
+}
+
+.agent-markdown pre code,
+.markdown-body pre code {
+  background: transparent !important;
+  color: #e2e8f0;
+  padding: 0 !important;
+  border: none !important;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  border-radius: 0;
+  display: block;
+}
+
+.agent-markdown table,
+.markdown-body table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0.65rem 0;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 0.775rem;
+}
+
+.agent-markdown th,
+.markdown-body th {
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.45rem 0.75rem;
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.agent-markdown td,
+.markdown-body td {
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-subtle);
+}
+
+.agent-markdown tr:last-child td,
+.markdown-body tr:last-child td {
+  border-bottom: none;
+}
+
+.agent-markdown tr:nth-child(even),
+.markdown-body tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.agent-markdown a,
+.markdown-body a {
+  color: var(--commito-coral, #e05638);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(224, 86, 56, 0.5);
+  transition: all 0.15s ease;
+}
+
+.agent-markdown a:hover,
+.markdown-body a:hover {
+  color: #ff7d61;
+  border-bottom-style: solid;
+}
+
+.agent-markdown hr,
+.markdown-body hr {
+  border: none;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.12), transparent);
+  margin: 0.85rem 0;
+}
+
+/* Audio wave equalizer bars */
+@keyframes audioWave {
+  0%,
+  100% {
+    height: 3px;
+  }
+  50% {
+    height: 13px;
+  }
+}
+
+.animate-audio-wave-1 {
+  animation: audioWave 0.8s ease-in-out infinite;
+}
+.animate-audio-wave-2 {
+  animation: audioWave 0.8s ease-in-out 0.2s infinite;
+}
+.animate-audio-wave-3 {
+  animation: audioWave 0.8s ease-in-out 0.4s infinite;
+}
+
+/* AI Thinking pulse glow */
+
+/* Progress Bar indeterminate sliding wave */
+@keyframes progressIndeterminate {
+  0% {
+    transform: translateX(-100%) scaleX(0.2);
+  }
+  50% {
+    transform: translateX(0%) scaleX(0.75);
+  }
+  100% {
+    transform: translateX(100%) scaleX(0.2);
+  }
+}
+
+.animate-progress-indeterminate {
+  animation: progressIndeterminate 1.3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  width: 100%;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* --- Image Preview Checkerboard & Studio Patterns --- */
+.studio-canvas-bg {
+  background-color: #0c0c0f;
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(224, 86, 56, 0.06) 0%, transparent 65%),
+    radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    20px 20px;
+}
+
+.studio-card-frame {
+  background: rgba(20, 20, 24, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    0 12px 36px -4px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.checkerboard-pattern {
+  background-color: #121215;
+  background-image:
+    linear-gradient(45deg, #1c1c22 25%, transparent 25%),
+    linear-gradient(-45deg, #1c1c22 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #1c1c22 75%),
+    linear-gradient(-45deg, transparent 75%, #1c1c22 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
+}
+
+.checkerboard-pattern-light {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #e5e7eb 25%, transparent 25%),
+    linear-gradient(-45deg, #e5e7eb 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
+    linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
+}
+
+/* --- Buttons (.btn) --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.08s ease;
+  user-select: none;
+  border: 1px solid transparent;
+  text-decoration: none;
+  outline: none;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-xs {
+  height: 24px;
+  padding: 0 8px;
+  font-size: 11px;
+  gap: 4px;
+  border-radius: 3px;
+}
+
+.btn-sm {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.btn-md {
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  gap: 6px;
+  border-radius: 4px;
+}
+
+.btn-lg {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  gap: 8px;
+  border-radius: 5px;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: #ffffff;
+  border-color: rgba(224, 86, 56, 0.85);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--accent-hover);
+}
+
+.btn-secondary {
+  background-color: var(--surface-elevated);
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: #ffffff;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-subtle);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background-color: var(--surface-hover);
+  color: var(--text);
+}
+
+.btn-danger {
+  background-color: var(--danger);
+  color: #ffffff;
+  border-color: rgba(239, 68, 68, 0.85);
+}
+.btn-danger:hover:not(:disabled) {
+  background-color: #dc2626;
+}
+
+.btn-success {
+  background-color: var(--success);
+  color: #ffffff;
+  border-color: rgba(34, 197, 94, 0.85);
+}
+.btn-success:hover:not(:disabled) {
+  background-color: #16a34a;
+}
+
+/* --- Badges (.badge) --- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  line-height: 1;
+}
+
+.badge-success {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: var(--git-added);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.badge-error,
+.badge-danger {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: var(--git-removed);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.badge-warning {
+  background-color: rgba(234, 179, 8, 0.15);
+  color: var(--git-modified);
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+.badge-info {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: var(--info);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.badge-accent {
+  background-color: rgba(224, 86, 56, 0.15);
+  color: var(--accent);
+  border-color: rgba(224, 86, 56, 0.35);
+}
+
+.badge-neutral {
+  background-color: var(--surface-hover);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+/* --- Chips (.chip) --- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  line-height: 1.4;
+}
+
+.chip-branch {
+  background-color: rgba(59, 130, 246, 0.12);
+  color: #60a5fa;
+  border-color: rgba(59, 130, 246, 0.3);
+  font-weight: 600;
+}
+
+.chip-tag {
+  background-color: rgba(245, 158, 11, 0.12);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+  font-weight: 700;
+}
+
+.chip-commit {
+  background-color: var(--surface-subtle);
+  color: var(--text-subtle);
+  border-color: var(--border);
+}
+
+.chip-stat {
+  font-weight: 700;
+  font-family: ui-monospace, monospace;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+}
+
+/* --- Inputs (.input-field) --- */
+.input-field {
+  width: 100%;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 10px;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+  outline: none;
+}
+
+.input-field:hover {
+  border-color: var(--border-strong);
+  background-color: var(--surface);
+}
+
+.input-field:focus {
+  border-color: var(--border-strong);
+  background-color: var(--surface);
+}
+
+.input-search {
+  padding-left: 28px;
+}
+
+/* --- Cards & Panels (.card-panel) --- */
+.card-panel {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.card-panel-subtle {
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background-color: var(--surface-subtle);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.panel-body {
+  padding: 12px;
+}
+
+.panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background-color: var(--surface-subtle);
+}
+
+/* --- Modals (.modal-overlay, .modal-box) --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.modal-box {
+  background-color: var(--surface-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
