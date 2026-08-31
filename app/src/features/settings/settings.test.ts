@@ -62,7 +62,7 @@ describe('useSettingsStore State Management', () => {
   it('tracks modifications and returns effective values', async () => {
     const store = useSettingsStore.getState();
     expect(store.isModified('ai.model')).toBe(false);
-    expect(store.getEffectiveValue('ai.model')).toBe('gemini-2.5-flash-lite');
+    expect(store.getEffectiveValue('ai.model')).toBe('gemini-3.5-flash-lite');
 
     await store.setSettingValue('ai.model', 'gemini-3.1-flash-lite');
     expect(useSettingsStore.getState().isModified('ai.model')).toBe(true);
@@ -70,7 +70,7 @@ describe('useSettingsStore State Management', () => {
 
     await store.resetSettingValue('ai.model');
     expect(useSettingsStore.getState().isModified('ai.model')).toBe(false);
-    expect(useSettingsStore.getState().getEffectiveValue('ai.model')).toBe('gemini-2.5-flash-lite');
+    expect(useSettingsStore.getState().getEffectiveValue('ai.model')).toBe('gemini-3.5-flash-lite');
   });
 
   it('handles UI scale setting value updates and DOM zoom scaling', async () => {

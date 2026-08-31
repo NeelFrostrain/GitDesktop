@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Palette } from 'lucide-react';
+// import { Palette } from 'lucide-react';
 import { useTheme, type ThemePresetId } from '../../../shared/theme/ThemeContext';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { Dropdown, type DropdownOption } from '../../../components/common/Dropdown';
@@ -49,7 +49,7 @@ export const ThemeSelectorTab: React.FC = () => {
       <div className="p-3.5 bg-base-1/60 border border-border rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <Palette className="w-4 h-4 text-commito-coral" />
+            {/* <Palette className="w-4 h-4 text-commito-coral" /> */}
             <h3 className="text-xs font-semibold text-text-primary">Color Theme</h3>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-xs bg-base-2 border border-border text-text-muted">
               {activeThemeDef.isDark ? 'Dark' : 'Light'}
@@ -61,7 +61,7 @@ export const ThemeSelectorTab: React.FC = () => {
         </div>
 
         {/* Custom Styled Theme Dropdown */}
-        <div className="shrink-0 w-60">
+        <div className="shrink-0 w-64">
           <Dropdown<ThemePresetId>
             options={themeOptions}
             value={activeTheme}
@@ -162,7 +162,6 @@ export const ThemeSelectorTab: React.FC = () => {
       <div className="p-3.5 bg-base-1/40 border border-border/80 rounded-sm space-y-2.5">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 font-semibold text-text-primary">
-            {/* <Eye className="w-3.5 h-3.5 text-commito-coral" /> */}
             <span>Active Color Tokens</span>
           </div>
           <span className="text-[10px] text-text-muted font-mono">

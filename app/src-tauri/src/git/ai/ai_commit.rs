@@ -5,7 +5,7 @@ use std::fs;
 use std::path::Path;
 
 const GEMINI_API_BASE: &str = "https://generativelanguage.googleapis.com/v1beta/models";
-pub const DEFAULT_MODEL: &str = "gemini-2.0-flash";
+pub const DEFAULT_MODEL: &str = "gemini-3.5-flash-lite";
 const MAX_DIFF_CHARS: usize = 28000;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -414,11 +414,11 @@ pub async fn generate_ai_commit_message(
   // Candidate Google Gemini models with automatic fallback
   let mut candidate_models = vec![initial_model.clone()];
   for fallback in [
-    "gemini-2.0-flash",
-    "gemini-1.5-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
-    "gemini-2.0-flash-thinking-exp-01-21",
+    "gemini-3.5-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-3.7-flash",
   ] {
     if !candidate_models.contains(&fallback.to_string()) {
       candidate_models.push(fallback.to_string());

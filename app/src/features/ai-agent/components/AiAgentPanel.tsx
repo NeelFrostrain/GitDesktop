@@ -23,82 +23,34 @@ import { Button } from '../../../components/common/Button';
 
 const MODEL_OPTIONS = [
   {
-    id: 'gemini-3.7-flash',
-    name: 'Gemini 3.7 Flash',
-    badge: 'State-of-Art',
-    desc: 'Hybrid reasoning with ultra-fast latency for code & diffs.',
-  },
-  {
-    id: 'gemini-3.7-pro',
-    name: 'Gemini 3.7 Pro',
-    badge: 'Deep Reason',
-    desc: 'Deep reasoning model for architecture, PR reviews, and complex Git operations.',
-  },
-  {
-    id: 'gemini-3.6-flash-lite',
-    name: 'Gemini 3.6 Flash Lite',
-    badge: 'Ultra Fast',
-    desc: 'Next-generation lightweight reasoning with sub-second execution.',
-  },
-  {
     id: 'gemini-3.5-flash-lite',
     name: 'Gemini 3.5 Flash Lite',
+    badge: 'Ultra Fast',
+    desc: 'Recommended: Sub-second latency (~800ms) with generous free tier quotas.',
+  },
+  {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
     badge: 'Next-Gen',
-    desc: 'Next-generation lightweight reasoning model.',
+    desc: 'Google flagship next-gen multimodal model with state-of-the-art code analysis.',
+  },
+  {
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    badge: 'Fast',
+    desc: 'High-speed multimodal reasoning model for large diffs and repository reviews.',
   },
   {
     id: 'gemini-3.1-flash-lite',
     name: 'Gemini 3.1 Flash Lite',
     badge: 'High-Speed',
-    desc: 'Balanced reasoning and rapid latency for diffs.',
+    desc: 'Balanced reasoning speed and rapid latency for diffs.',
   },
   {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash Lite',
-    badge: 'Ultra Fast',
-    desc: 'Lightning fast execution, optimized for live chat and free tier quotas.',
-  },
-  {
-    id: 'gemini-2.5-flash',
-    name: 'Gemini 2.5 Flash',
-    badge: 'Fast',
-    desc: 'Next-generation multimodal reasoning model with fast execution.',
-  },
-  {
-    id: 'gemini-2.5-pro',
-    name: 'Gemini 2.5 Pro',
-    badge: 'Pro Reasoning',
-    desc: 'Deep reasoning model for architecture, multi-file edits, and PR reviews.',
-  },
-  {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    badge: 'Flash',
-    desc: 'Deep semantic understanding across codebases and Git repositories.',
-  },
-  {
-    id: 'gemini-2.0-flash-lite',
-    name: 'Gemini 2.0 Flash Lite',
-    badge: 'Low Latency',
-    desc: 'Sub-second generation times with concise formatting.',
-  },
-  {
-    id: 'gemini-2.0-flash-thinking-exp-01-21',
-    name: 'Gemini 2.0 Flash Thinking',
-    badge: 'Thinking',
-    desc: 'Experimental step-by-step reasoning for intricate logic & refactoring.',
-  },
-  {
-    id: 'gemini-1.5-pro',
-    name: 'Gemini 1.5 Pro',
-    badge: '1.5 Pro',
-    desc: 'Extensive multi-million token context window for massive diffs.',
-  },
-  {
-    id: 'gemini-1.5-flash',
-    name: 'Gemini 1.5 Flash',
-    badge: '1.5 Flash',
-    desc: 'Proven reliable reasoning with rapid response times.',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    badge: 'State-of-Art',
+    desc: 'Deep reasoning model with thinking capabilities for intricate codebases and PR reviews.',
   },
 ];
 
