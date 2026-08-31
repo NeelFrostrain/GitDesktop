@@ -329,7 +329,7 @@ export const GitHookModal: React.FC = () => {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none">
       <div
-        className="flex flex-col w-full max-w-5xl h-[86vh] bg-surface-elevated border border-border rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
+        className="flex flex-col w-full max-w-5xl h-[86vh] bg-surface-elevated border border-border rounded-sm shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}

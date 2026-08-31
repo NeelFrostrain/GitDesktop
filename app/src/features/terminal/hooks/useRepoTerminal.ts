@@ -80,7 +80,7 @@ export function useRepoTerminal(
       cursorBlink: true,
       cursorStyle: 'bar',
       fontSize: 12.5,
-      fontFamily: 'JetBrains Mono, Fira Code, Consolas, monospace',
+      fontFamily: '"JetBrains Mono", Consolas, "Courier New", monospace',
       letterSpacing: 0,
       lineHeight: 1.25,
       scrollback: 5000,
@@ -191,6 +191,9 @@ export function useRepoTerminal(
 
     fitAndRefresh();
     const fitTimer = setTimeout(fitAndRefresh, 80);
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+      document.fonts.ready.then(fitAndRefresh).catch(() => {});
+    }
 
     let isEffectActive = true;
 
