@@ -648,7 +648,7 @@ export const App: React.FC = () => {
           <OnboardingScreen onComplete={() => setIsOnboardingOpen(false)} />
         </Suspense>
       ) : (
-      <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans">
+      <div className="flex flex-col h-full w-full bg-base-0 text-text-primary overflow-hidden select-none font-sans">
         {/* Custom Application Titlebar */}
         <Titlebar />
 

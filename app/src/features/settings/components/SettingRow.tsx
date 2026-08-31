@@ -1,7 +1,10 @@
 import React from 'react';
 import { SettingDefinition } from '../lib/settingsSchema';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { RotateCcw } from 'lucide-react';
+import { RotateCcw, Minus, Plus } from 'lucide-react';
+import { Tabs } from '../../../components/common/Tabs';
+import { Button } from '../../../components/common/Button';
+import { Dropdown, type DropdownOption } from '../../../components/common/Dropdown';
 
 interface SettingRowProps {
   setting: SettingDefinition;
@@ -46,75 +49,87 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
       case 'number': {
         const num = typeof value === 'number' ? value : Number(setting.default);
         const isUiScale = setting.id === 'app.ui_scale';
-        const presets = isUiScale ? [80, 90, 100, 110, 120] : null;
+        const min = setting.min ?? 80;
+        const max = setting.max ?? 120;
+        const step = setting.step ?? 5;
+
+        const presets = isUiScale
+          ? [
+              { id: '80', label: '80%' },
+              { id: '90', label: '90%' },
+              { id: '100', label: '100%' },
+              { id: '110', label: '110%' },
+              { id: '120', label: '120%' },
+            ]
+          : null;
+
+        const handleStep = (delta: number) => {
+          const next = Math.max(min, Math.min(max, num + delta));
+          setSettingValue(setting.id, next);
+        };
 
         return (
-          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2.5">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {/* Custom Segmented Presets */}
             {presets && (
-              <div className="flex items-center gap-0.5 bg-base-2/80 p-0.5 rounded-sm border border-border/70">
-                {presets.map((preset) => {
-                  const isSelected = Math.round(num) === preset;
-                  return (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setSettingValue(setting.id, preset)}
-                      className={`px-2 py-0.5 rounded-xs text-[10.5px] font-mono font-medium transition cursor-pointer ${
-                        isSelected
-                          ? 'bg-commito-coral text-white font-bold shadow-xs'
-                          : 'text-text-muted hover:text-text-primary hover:bg-base-3'
-                      }`}
-                    >
-                      {preset}%
-                    </button>
-                  );
-                })}
+              <div className="shrink-0">
+                <Tabs
+                  tabs={presets}
+                  activeTab={String(Math.round(num))}
+                  onChange={(val) => setSettingValue(setting.id, parseInt(val, 10))}
+                  size="xs"
+                  variant="segmented"
+                />
               </div>
             )}
-            <div className="flex items-center gap-2.5 w-44">
-              <input
-                type="range"
-                min={setting.min ?? 0}
-                max={setting.max ?? 100}
-                step={setting.step ?? 1}
-                value={num}
-                onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value))}
-                className="flex-1 accent-commito-coral cursor-pointer h-1.5 bg-base-2 rounded-xs"
-              />
-              <div className="flex items-center gap-1 min-w-[48px] justify-end">
-                <input
-                  type="number"
-                  min={setting.min}
-                  max={setting.max}
-                  step={setting.step}
-                  value={num}
-                  onChange={(e) => setSettingValue(setting.id, parseFloat(e.target.value) || 0)}
-                  className="w-12 h-7 px-1.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-[11.5px] font-mono text-text-primary text-right focus:outline-none focus:border-border-strong"
-                />
-                {setting.unit && (
-                  <span className="text-[10.5px] font-mono text-text-muted select-none">
-                    {setting.unit}
-                  </span>
-                )}
-              </div>
+
+            {/* Stepper Controls */}
+            <div className="flex items-center gap-1.5 bg-base-1 border border-border rounded-sm p-1 shadow-2xs">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-xs"
+                disabled={num <= min}
+                onClick={() => handleStep(-step)}
+                title={`Decrease (${-step}${setting.unit || ''})`}
+              >
+                <Minus className="w-3 h-3 text-text-muted" />
+              </Button>
+
+              {/* Value Badge */}
+              <span className="min-w-[42px] px-2 py-0.5 rounded-xs bg-base-0 border border-border text-center font-mono text-[11px] font-bold text-commito-coral select-none shadow-xs">
+                {Math.round(num)}{setting.unit || ''}
+              </span>
+
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon-xs"
+                disabled={num >= max}
+                onClick={() => handleStep(step)}
+                title={`Increase (+${step}${setting.unit || ''})`}
+              >
+                <Plus className="w-3 h-3 text-text-muted" />
+              </Button>
             </div>
           </div>
         );
       }
 
       case 'select': {
+        const selectOptions: DropdownOption[] = (setting.options || []).map((opt) => ({
+          value: String(opt.value),
+          label: opt.label,
+        }));
         return (
-          <select
-            value={String(value ?? setting.default)}
-            onChange={(e) => setSettingValue(setting.id, e.target.value)}
-            className="h-7 px-2.5 bg-base-2 border border-border/70 hover:border-border-strong rounded-xs text-xs text-text-primary focus:outline-none focus:border-border-strong cursor-pointer max-w-[240px]"
-          >
-            {setting.options?.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-base-2 text-text-primary">
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div className="w-52">
+            <Dropdown
+              options={selectOptions}
+              value={String(value ?? setting.default)}
+              onChange={(val) => setSettingValue(setting.id, val)}
+              size="sm"
+            />
+          </div>
         );
       }
 

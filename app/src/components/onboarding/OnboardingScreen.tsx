@@ -171,7 +171,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   };
 
   return (
-    <div className="h-screen w-screen bg-base-0 flex flex-col items-center justify-center p-6 select-none font-sans overflow-y-auto animate-in fade-in duration-200">
+    <div className="h-full w-full bg-base-0 flex flex-col items-center justify-center p-6 select-none font-sans overflow-y-auto animate-in fade-in duration-200">
       {/* Background Subtle Gradient Accents */}
       <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-40" />
 
