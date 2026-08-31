@@ -42,7 +42,21 @@ if (keyContent) {
   console.log(`  \x1b[33m⚠\x1b[0m No Signing Private Key found. Binary will not be auto-signed.`);
 }
 
-// 2. Run Tauri Build
+// 2. Clean old Tauri bundle output folder before building
+const targetBundleDir = path.join(appDir, 'src-tauri', 'target', 'release', 'bundle');
+const fallbackBundleDir = path.join(appDir, 'src-tauri', 'target', 'bundle');
+
+console.log(`\n\x1b[34m🧹 Cleaning old Tauri bundle output folders...\x1b[0m`);
+if (fs.existsSync(targetBundleDir)) {
+  fs.rmSync(targetBundleDir, { recursive: true, force: true });
+  console.log(`  \x1b[32m✔\x1b[0m Cleaned \x1b[90m${targetBundleDir}\x1b[0m`);
+}
+if (fs.existsSync(fallbackBundleDir)) {
+  fs.rmSync(fallbackBundleDir, { recursive: true, force: true });
+  console.log(`  \x1b[32m✔\x1b[0m Cleaned \x1b[90m${fallbackBundleDir}\x1b[0m`);
+}
+
+// 3. Run Tauri Build
 console.log(`\n\x1b[34m🔨 Running Tauri Build...\x1b[0m\n`);
 
 const buildEnv = {
@@ -63,7 +77,7 @@ if (buildResult.status !== 0) {
   process.exit(buildResult.status || 1);
 }
 
-// 3. Create fresh versioned output folder on root directory (clean any existing contents)
+// 4. Create fresh versioned output folder on root directory (clean any existing contents)
 const releaseFolderName = `release-v${version}`;
 const releaseFolderPath = path.join(rootDir, releaseFolderName);
 
@@ -74,12 +88,21 @@ fs.mkdirSync(releaseFolderPath, { recursive: true });
 
 console.log(`\n\x1b[32m📁 Preparing Fresh Release Folder:\x1b[0m \x1b[36m${releaseFolderPath}\x1b[0m\n`);
 
-// 4. Scan bundle outputs from target/release/bundle
+// 5. Scan bundle outputs from target/release/bundle
 const bundleDir = path.join(appDir, 'src-tauri', 'target', 'release', 'bundle');
 const msiDir = path.join(bundleDir, 'msi');
 const nsisDir = path.join(bundleDir, 'nsis');
 
 const copiedFiles: string[] = [];
+
+// Helper to check version match in filename
+const isVersionMatch = (fileName: string): boolean => {
+  const match = fileName.match(/_(\d+\.\d+\.\d+)[_-]/);
+  if (match && match[1] !== version) {
+    return false;
+  }
+  return true;
+};
 
 // Helper to sign fresh on the fly
 const signBinary = (filePath: string): string => {
@@ -121,13 +144,14 @@ const copyArtifact = (src: string, destFileName?: string) => {
   return destPath;
 };
 
-// 4a. Collect & Copy MSI
+// 5a. Collect & Copy MSI
 let primaryMsiFileName = '';
 let primaryMsiSignature = '';
 
 if (fs.existsSync(msiDir)) {
   const files = fs.readdirSync(msiDir);
   for (const file of files) {
+    if (!isVersionMatch(file)) continue;
     const srcPath = path.join(msiDir, file);
     if (fs.statSync(srcPath).isFile()) {
       if (file.endsWith('.msi')) {
@@ -143,13 +167,14 @@ if (fs.existsSync(msiDir)) {
   }
 }
 
-// 4b. Collect & Copy NSIS EXE
+// 5b. Collect & Copy NSIS EXE
 let primaryExeFileName = '';
 let primaryExeSignature = '';
 
 if (fs.existsSync(nsisDir)) {
   const files = fs.readdirSync(nsisDir);
   for (const file of files) {
+    if (!isVersionMatch(file)) continue;
     const srcPath = path.join(nsisDir, file);
     if (fs.statSync(srcPath).isFile()) {
       if (file.endsWith('.exe')) {
