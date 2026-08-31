@@ -1,59 +1,21 @@
 {
-  "name": "git-desktop",
+  "name": "git-desktop-workspace",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "workspaces": [
+    "app"
+  ],
   "scripts": {
-    "dev:app": "tauri dev",
-    "build:app": "tauri build",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "preview": "vite preview",
-    "tauri": "tauri",
-    "format": "prettier --write .",
-    "lint": "eslint --cache ."
-  },
-  "dependencies": {
-    "@monaco-editor/react": "^4.7.0",
-    "@tanstack/react-query": "^5.66.0",
-    "@tanstack/react-virtual": "^3.14.10",
-    "@tauri-apps/api": "^2.2.0",
-    "@tauri-apps/plugin-deep-link": "^2.4.9",
-    "@tauri-apps/plugin-dialog": "^2.2.0",
-    "@tauri-apps/plugin-opener": "^2.2.0",
-    "@tauri-apps/plugin-shell": "^2.2.0",
-    "@xterm/addon-fit": "^0.11.0",
-    "@xterm/addon-search": "^0.16.0",
-    "@xterm/xterm": "^6.0.0",
-    "fdir": "^6.5.0",
-    "lucide-react": "^0.475.0",
-    "marked": "^18.0.11",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "zustand": "^5.0.3"
+    "dev": "bun run --cwd app dev",
+    "dev:app": "bun run --cwd app dev:app",
+    "build": "bun run --cwd app build",
+    "build:app": "bun run --cwd app build:app",
+    "typecheck": "bun run --cwd app typecheck",
+    "lint": "bun run --cwd app lint",
+    "format": "bun run --cwd app format",
+    "test": "bun run --cwd app test",
+    "tauri": "bun run --cwd app tauri"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "@eslint/json": "^2.0.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "@tauri-apps/cli": "^2.2.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.2.0",
-    "@types/react": "^19.0.8",
-    "@types/react-dom": "^19.0.3",
-    "@vitejs/plugin-react": "^4.3.4",
-    "eslint": "^9.0.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.24",
-    "jsdom": "^26.0.0",
-    "prettier": "^3.7.4",
-    "tailwindcss": "^4.3.3",
-    "typescript": "~5.8.3",
-    "typescript-eslint": "^8.68.0",
-    "vite": "^6.1.0",
-    "vitest": "^3.0.5"
+    "@types/bun": "latest"
   }
 }
