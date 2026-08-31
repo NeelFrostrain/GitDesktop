@@ -1280,20 +1280,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               {/* Option 1: Push Immediately Toggle */}
               <div
                 onClick={() => !isSubmitting && !isDeleting && setPushImmediately(!pushImmediately)}
-                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                  pushImmediately
-                    ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
-                    : 'bg-base-1/50 border-border hover:bg-base-1'
-                }`}
+                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
-                      pushImmediately
-                        ? 'bg-commito-coral/15 text-commito-coral border border-commito-coral/30'
-                        : 'bg-base-0 text-text-muted border border-border'
-                    }`}
-                  >
+                  <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
                     <Upload className="w-3 h-3" />
                   </div>
                   <div className="min-w-0">
@@ -1332,30 +1322,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     setIsPrerelease(false);
                   }
                 }}
-                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                  isLatest
-                    ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
-                    : 'bg-base-1/50 border-border hover:bg-base-1'
-                }`}
+                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
-                      isLatest
-                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-base-0 text-text-muted border border-border'
-                    }`}
-                  >
+                  <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
                     <Sparkles className="w-3 h-3" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                       <span>Set as latest release</span>
-                      {isLatest && (
-                        <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
-                          Latest
-                        </span>
-                      )}
                     </div>
                     <p className="text-[10.5px] text-text-muted mt-1 leading-none">
                       Marks this as the primary release version
@@ -1387,30 +1362,15 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     setIsLatest(false);
                   }
                 }}
-                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 ${
-                  isPrerelease
-                    ? 'bg-purple-500/5 border-purple-500/35 shadow-2xs'
-                    : 'bg-base-1/50 border-border hover:bg-base-1'
-                }`}
+                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-6 h-6 rounded-xs flex items-center justify-center shrink-0 transition ${
-                      isPrerelease
-                        ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
-                        : 'bg-base-0 text-text-muted border border-border'
-                    }`}
-                  >
+                  <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
                     <FlaskConical className="w-3 h-3" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                       <span>Mark as pre-release</span>
-                      {isPrerelease && (
-                        <span className="px-1.5 py-0.2 bg-purple-500/15 text-purple-300 text-[9px] font-bold rounded-xs border border-purple-500/30">
-                          Pre-release
-                        </span>
-                      )}
                     </div>
                     <p className="text-[10.5px] text-text-muted mt-1 leading-none">
                       Beta, alpha, or release candidate

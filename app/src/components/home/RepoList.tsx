@@ -378,15 +378,15 @@ export const RepoList: React.FC = () => {
               <button
                 type="button"
                 onClick={handleCreateRepo}
-                className="border border-dashed border-border hover:border-commito-coral bg-base-1/25 hover:bg-base-1/50 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-colors duration-75 group min-h-[110px] shadow-2xs outline-none focus:outline-none"
+                className="border border-dashed border-border/80 hover:border-commito-coral/70 bg-base-1/25 hover:bg-base-1/60 rounded-sm p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] group min-h-[110px] shadow-2xs outline-none focus:outline-none"
               >
-                <div className="w-6 h-6 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/40 transition-colors mb-1.5 shadow-2xs">
-                  <Plus className="w-3.5 h-3.5" />
+                <div className="w-6.5 h-6.5 rounded-sm bg-base-1 border border-border flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/50 group-hover:bg-commito-coral/10 group-hover:scale-110 transition-all duration-200 mb-1.5 shadow-2xs">
+                  <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200 ease-out" />
                 </div>
-                <span className="text-[11.5px] font-semibold text-text-secondary group-hover:text-text-primary transition-colors">
+                <span className="text-[11.5px] font-semibold text-text-secondary group-hover:text-commito-coral transition-colors duration-150">
                   Create or Add Repository
                 </span>
-                <span className="text-[10px] text-text-muted mt-0.5">
+                <span className="text-[10px] text-text-muted group-hover:text-text-secondary transition-colors duration-150 mt-0.5">
                   Start fresh or open local directory
                 </span>
               </button>
@@ -406,10 +406,12 @@ export const RepoList: React.FC = () => {
             <button
               type="button"
               onClick={handleCreateRepo}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-base-1/30 hover:bg-base-1/60 border border-dashed border-border hover:border-commito-coral rounded-sm cursor-pointer transition-colors duration-75 text-text-muted hover:text-text-primary text-xs font-medium group outline-none focus:outline-none"
+              className="flex items-center justify-center gap-2.5 px-4 py-2.5 bg-base-1/30 hover:bg-base-1/60 border border-dashed border-border/80 hover:border-commito-coral/70 rounded-sm cursor-pointer transition-all duration-200 ease-out hover:-translate-y-0.5 hover:shadow-xs active:scale-[0.995] text-text-muted hover:text-text-primary text-xs font-medium group outline-none focus:outline-none"
             >
-              <Plus className="w-3.5 h-3.5 flex-shrink-0 group-hover:text-commito-coral transition-colors" />
-              <span className="group-hover:text-commito-coral transition-colors font-medium">
+              <div className="w-4.5 h-4.5 rounded-xs bg-base-1 border border-border/70 flex items-center justify-center text-text-muted group-hover:text-commito-coral group-hover:border-commito-coral/50 group-hover:bg-commito-coral/10 group-hover:scale-110 transition-all duration-200 shadow-2xs">
+                <Plus className="w-3 h-3 flex-shrink-0 group-hover:rotate-90 transition-transform duration-200 ease-out" />
+              </div>
+              <span className="group-hover:text-commito-coral transition-colors duration-150 font-semibold text-text-secondary">
                 Create or Add New Repository
               </span>
             </button>

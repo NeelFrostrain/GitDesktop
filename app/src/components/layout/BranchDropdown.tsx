@@ -790,9 +790,9 @@ export const BranchDropdown: React.FC = () => {
           </span>
 
           {currentPR && (
-            <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.2 rounded-xs bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
+            <span className="inline-flex items-center gap-1 text-[9.5px] font-mono font-semibold px-1 py-0.5 rounded-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 leading-none">
               <span>#{currentPR.iid || currentPR.id}</span>
-              <Check className="w-2.5 h-2.5 text-emerald-400" />
+              {/* <Check className="w-2.5 h-2.5 text-emerald-400" /> */}
             </span>
           )}
 

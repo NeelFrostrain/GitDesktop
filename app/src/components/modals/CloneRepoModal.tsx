@@ -688,20 +688,11 @@ export const CloneRepoModal: React.FC = () => {
                         if (isCloning) return;
                         setSaveCredentials(!saveCredentials);
                       }}
-                      className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
-                        saveCredentials
-                          ? 'bg-emerald-500/5 border-emerald-500/35 shadow-2xs'
-                          : 'bg-base-1/50 border-border hover:bg-base-1'
-                      }`}
+                      className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 select-none"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                           <span>Remember credentials in system keyring</span>
-                          {saveCredentials && (
-                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9px] font-bold rounded-xs border border-emerald-500/30">
-                              Saved
-                            </span>
-                          )}
                         </div>
                         <p className="text-[11px] text-text-muted mt-1 leading-none">
                           Securely persist username and token in OS credential vault
@@ -739,12 +730,12 @@ export const CloneRepoModal: React.FC = () => {
 
               {/* 4. Clone Settings Section */}
               <div className="space-y-3">
-                {/* Branch / Tag Input */}
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-text-secondary">
-                    <span>
-                      Branch / Tag{' '}
-                      <span className="text-text-muted font-normal text-[11px]">(optional)</span>
+                {/* Branch / Tag Override */}
+                <div className="space-y-1 pt-0.5">
+                  <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wider block">
+                    <span>Branch / Tag</span>
+                    <span className="text-[10px] text-text-muted/70 lowercase font-normal ml-1 font-mono">
+                      (optional)
                     </span>
                   </label>
                   <input
@@ -752,6 +743,7 @@ export const CloneRepoModal: React.FC = () => {
                     value={specificBranch}
                     onChange={(e) => setSpecificBranch(e.target.value)}
                     placeholder="e.g. main, dev, or release/v1.0"
+                    disabled={isCloning}
                     className="w-full h-8 px-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary/90 placeholder:text-text-muted/60 focus:outline-none transition shadow-2xs font-sans"
                   />
                 </div>
@@ -764,20 +756,11 @@ export const CloneRepoModal: React.FC = () => {
                       if (isCloning) return;
                       setRecurseSubmodules(!recurseSubmodules);
                     }}
-                    className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
-                      recurseSubmodules
-                        ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
-                        : 'bg-base-1/50 border-border hover:bg-base-1'
-                    }`}
+                    className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 select-none"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                         <span>Recurse submodules</span>
-                        {recurseSubmodules && (
-                          <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
-                            Active
-                          </span>
-                        )}
                       </div>
                       <p className="text-[11px] text-text-muted mt-1 leading-none">
                         Automatically initialize and clone all nested submodules
@@ -806,20 +789,11 @@ export const CloneRepoModal: React.FC = () => {
                       if (isCloning) return;
                       setIsShallowClone(!isShallowClone);
                     }}
-                    className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
-                      isShallowClone
-                        ? 'bg-sky-500/5 border-sky-500/35 shadow-2xs'
-                        : 'bg-base-1/50 border-border hover:bg-base-1'
-                    }`}
+                    className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 select-none"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                         <span>Shallow clone (--depth 1)</span>
-                        {isShallowClone && (
-                          <span className="px-1.5 py-0.2 bg-sky-500/15 text-sky-400 text-[9px] font-bold rounded-xs border border-sky-500/30">
-                            Fast
-                          </span>
-                        )}
                       </div>
                       <p className="text-[11px] text-text-muted mt-1 leading-none">
                         Fetch only the latest commit without downloading full commit history

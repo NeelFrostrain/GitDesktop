@@ -33,14 +33,12 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               </span>
             )}
           </div>
-          <p className="text-[11px] text-text-muted mt-1 leading-normal">
-            {setting.description}
-          </p>
+          <p className="text-[11px] text-text-muted mt-1 leading-normal">{setting.description}</p>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {/* Standardized Rectangular Toggle Switch */}
-                    {modified && (
+          {modified && (
             <button
               type="button"
               onClick={(e) => {
@@ -152,7 +150,8 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
               {/* Value Badge */}
               <span className="min-w-[42px] px-2 py-0.5 rounded-xs bg-base-0 border border-border text-center font-mono text-[11px] font-bold text-commito-coral select-none shadow-xs">
-                {Math.round(num)}{setting.unit || ''}
+                {Math.round(num)}
+                {setting.unit || ''}
               </span>
 
               <Button

@@ -302,20 +302,11 @@ export const CreateRepoModal: React.FC = () => {
               {/* Initialize with README toggle */}
               <div
                 onClick={() => setInitReadme(!initReadme)}
-                className={`p-2.5 rounded-sm border transition cursor-pointer flex items-center justify-between gap-3 select-none ${
-                  initReadme
-                    ? 'bg-commito-coral/5 border-commito-coral/35 shadow-2xs'
-                    : 'bg-base-1/50 border-border hover:bg-base-1'
-                }`}
+                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 select-none"
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
                     <span>Initialize with README.md</span>
-                    {initReadme && (
-                      <span className="px-1.5 py-0.2 bg-commito-coral/15 text-commito-coral text-[9px] font-bold rounded-xs border border-commito-coral/30">
-                        Active
-                      </span>
-                    )}
                   </div>
                   <p className="text-[11px] text-text-muted mt-1 leading-none">
                     Creates an initial README file to document the repository
