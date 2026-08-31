@@ -16,6 +16,60 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
   const value = getEffectiveValue(setting.id);
   const modified = isModified(setting.id);
 
+  // 1. Boolean settings render with clean simple toggle row
+  if (setting.type === 'boolean') {
+    const checked = Boolean(value ?? setting.default);
+    return (
+      <div
+        onClick={() => setSettingValue(setting.id, !checked)}
+        className="p-2.5 mb-2 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 select-none group"
+      >
+        <div className="min-w-0 flex-1">
+          <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 flex-wrap leading-none">
+            <span>{setting.label}</span>
+            {modified && (
+              <span className="px-1.5 py-0.2 bg-base-2 text-text-muted text-[9px] font-mono font-bold rounded-xs border border-border">
+                Modified
+              </span>
+            )}
+          </div>
+          <p className="text-[11px] text-text-muted mt-1 leading-normal">
+            {setting.description}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Standardized Rectangular Toggle Switch */}
+                    {modified && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                resetSettingValue(setting.id);
+              }}
+              className="p-1 text-text-muted hover:text-commito-coral hover:bg-base-2 rounded-xs transition cursor-pointer"
+              title={`Reset "${setting.label}" to default`}
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+          )}
+          <div
+            className={`relative inline-flex items-center w-7.5 h-4 rounded-xs px-0.5 border transition-colors shrink-0 ${
+              checked ? 'bg-commito-coral border-commito-coral' : 'bg-base-2 border-border'
+            }`}
+          >
+            <div
+              className={`w-3 h-3 rounded-xs bg-white transition-transform duration-150 shadow-2xs ${
+                checked ? 'translate-x-3' : 'translate-x-0'
+              }`}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Multi-type controls (color, number, select, text)
   const renderControl = () => {
     switch (setting.type) {
       case 'color': {
@@ -130,27 +184,6 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
               size="sm"
             />
           </div>
-        );
-      }
-
-      case 'boolean': {
-        const checked = Boolean(value ?? setting.default);
-        return (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={checked}
-            onClick={() => setSettingValue(setting.id, !checked)}
-            className={`w-9 h-4.5 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${
-              checked ? 'bg-commito-coral' : 'bg-base-3 border border-border/80'
-            }`}
-          >
-            <div
-              className={`bg-white w-3.5 h-3.5 rounded-full shadow-sm transform transition-transform ${
-                checked ? 'translate-x-4.5' : 'translate-x-0'
-              }`}
-            />
-          </button>
         );
       }
 

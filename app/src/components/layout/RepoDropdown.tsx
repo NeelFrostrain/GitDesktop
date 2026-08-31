@@ -150,11 +150,11 @@ function RepoRow({
       <div className="flex items-center gap-2.5 min-w-0">
         <FolderGit2
           className={`w-3.5 h-3.5 flex-shrink-0 ${
-            isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-text-secondary'
+            isActive ? 'text-commito-coral' : 'text-text-muted group-hover:text-commito-coral'
           }`}
         />
         <div className="min-w-0">
-          <span className="block truncate text-xs font-bold leading-snug">{name}</span>
+          <span className="block truncate text-xs font-bold leading-snug group-hover:text-commito-coral transition-colors">{name}</span>
           <span
             className="block truncate text-[10px] text-text-muted font-mono leading-tight"
             title={path}
@@ -201,7 +201,7 @@ function CloudRepoRow({ repo, onClone }: { repo: UnifiedRepo; onClone: () => voi
           <Globe className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
         )}
         <div className="min-w-0">
-          <span className="block truncate text-xs font-bold leading-snug">{repo.name}</span>
+          <span className="block truncate text-xs font-bold leading-snug group-hover:text-commito-coral transition-colors">{repo.name}</span>
           <span className="block truncate text-[10px] text-text-muted font-mono leading-tight">
             {repo.path_with_namespace}
           </span>

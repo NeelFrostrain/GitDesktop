@@ -11,6 +11,7 @@ import { SystemService } from '../../services/system/systemService';
 import { GitService } from '../../services/git/gitService';
 import { toAppError, getErrorMessage } from '../../shared/utils/errorUtils';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useSettingsStore } from '../../features/settings/store/useSettingsStore';
 
 const GITIGNORE_TEMPLATES = [
   { value: 'None', label: 'None (No .gitignore)' },
@@ -62,7 +63,9 @@ export const CreateRepoModal: React.FC = () => {
     }
   });
   const [description, setDescription] = useState('');
-  const [initReadme, setInitReadme] = useState(true);
+  const [initReadme, setInitReadme] = useState(() =>
+    Boolean(useSettingsStore.getState().getEffectiveValue('git.init_readme') ?? true)
+  );
   const [gitignoreTemplate, setGitignoreTemplate] = useState('None');
   const [licenseTemplate, setLicenseTemplate] = useState('None');
   const [isCreating, setIsCreating] = useState(false);

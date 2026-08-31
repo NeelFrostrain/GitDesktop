@@ -1,5 +1,5 @@
 export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
-export type SettingCategory = 'appearance' | 'ai' | 'legal';
+export type SettingCategory = 'general' | 'appearance' | 'ai' | 'legal';
 
 export type SettingScope = 'app' | 'repo';
 
@@ -30,6 +30,11 @@ export const CATEGORY_METADATA: Record<
   SettingCategory,
   { label: string; icon: string; subcategories: string[] }
 > = {
+  general: {
+    label: 'General',
+    icon: 'Settings',
+    subcategories: ['Git & Workflow', 'Initialization Options'],
+  },
   appearance: {
     label: 'Appearance & Themes',
     icon: 'Palette',
@@ -48,6 +53,62 @@ export const CATEGORY_METADATA: Record<
 };
 
 export const SETTINGS_SCHEMA: SettingDefinition[] = [
+  // ==========================================
+  // GENERAL & WORKFLOW
+  // ==========================================
+  {
+    id: 'git.auto_push',
+    label: 'Auto-push after commit',
+    description: 'Automatically push commits to the remote branch immediately after committing.',
+    category: 'general',
+    subcategory: 'Git & Workflow',
+    type: 'boolean',
+    default: false,
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'git.init_readme',
+    label: 'Initialize with README.md',
+    description: 'Creates an initial README file to document the repository.',
+    category: 'general',
+    subcategory: 'Initialization Options',
+    type: 'boolean',
+    default: true,
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'git.auto_fetch',
+    label: 'Background Auto-Fetch',
+    description: 'Periodically fetch remote branches in the background to keep tracking status updated.',
+    category: 'general',
+    subcategory: 'Git & Workflow',
+    type: 'boolean',
+    default: true,
+    scope: 'app',
+  },
+  {
+    id: 'git.prune_on_fetch',
+    label: 'Prune remote branches on fetch',
+    description: 'Automatically remove remote-tracking references that no longer exist on the remote.',
+    category: 'general',
+    subcategory: 'Git & Workflow',
+    type: 'boolean',
+    default: false,
+    scope: 'app',
+  },
+  {
+    id: 'git.confirm_discard',
+    label: 'Confirm before discarding changes',
+    description: 'Show a confirmation dialog before discarding uncommitted file changes.',
+    category: 'general',
+    subcategory: 'Git & Workflow',
+    type: 'boolean',
+    default: true,
+    scope: 'app',
+  },
+
   // ==========================================
   // APPEARANCE & THEMES
   // ==========================================

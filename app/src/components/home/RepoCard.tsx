@@ -240,7 +240,7 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
           <div
             onClick={handleCardClick}
             onContextMenu={handleContextMenu}
-            className={`group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 transition-colors duration-150 ease-out cursor-pointer flex items-center justify-between gap-3 select-none shadow-2xs overflow-hidden outline-none focus:outline-none ${
+            className={`group px-3.5 py-2.5 bg-base-1/50 border border-border hover:border-border-strong rounded-sm hover:bg-base-1 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.995] transition-all duration-150 ease-out cursor-pointer flex items-center justify-between gap-3 select-none shadow-2xs overflow-hidden outline-none focus:outline-none ${
               repo.pinned ? 'border-border-strong bg-base-1/80' : ''
             }`}
           >

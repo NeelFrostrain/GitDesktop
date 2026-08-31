@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useGitStore } from '../store/useGitStore';
 import { useLogStore } from '../store/useLogStore';
+import { useSettingsStore } from '../features/settings/store/useSettingsStore';
 import { GitService } from '../services/git/gitService';
 import { toAppError } from '../shared/utils/errorUtils';
 import { useTaskStore } from '../features/task-manager';
@@ -87,17 +88,38 @@ export function useCommitForm() {
         allowEmpty: commitOptions.allowEmpty,
       });
 
+      const committedSummary = commitSummary;
       setCommitSummary('');
       setCommitDescription('');
-      useLogStore.getState().addLog('success', 'Git', `Committed: ${commitSummary}`);
+      useLogStore.getState().addLog('success', 'Git', `Committed: ${committedSummary}`);
 
-      const newStatus = await GitService.getRepoStatus(activeRepoPath);
+      let newStatus = await GitService.getRepoStatus(activeRepoPath);
       setStatus(newStatus);
+
+      // Auto-push to remote branch if git.auto_push is enabled in General settings
+      const autoPush = Boolean(useSettingsStore.getState().getEffectiveValue('git.auto_push'));
+      if (autoPush) {
+        useTaskStore.getState().updateTaskProgress(taskId, {
+          stage: 'Auto-Pushing',
+          percent: 85,
+          detail: 'Auto-pushing commit to remote branch...',
+        });
+        try {
+          const branchToPush = useGitStore.getState().status?.current_branch || 'HEAD';
+          await GitService.pushToRemote(activeRepoPath, branchToPush);
+          useLogStore.getState().addLog('success', 'Git', `Auto-pushed commits to ${branchToPush}`);
+          newStatus = await GitService.getRepoStatus(activeRepoPath);
+          setStatus(newStatus);
+        } catch (pushErr: unknown) {
+          const pushMsg = toAppError(pushErr, 'GIT_ERROR').message;
+          useLogStore.getState().addLog('warning', 'Git', `Auto-push skipped/failed: ${pushMsg}`);
+        }
+      }
 
       useTaskStore.getState().updateTaskProgress(taskId, {
         stage: 'Completed',
         percent: 100,
-        detail: `Committed: ${commitSummary}`,
+        detail: `Committed: ${committedSummary}`,
       });
       useTaskStore.getState().completeTask(taskId);
     } catch (error: unknown) {

@@ -4,6 +4,13 @@ import { searchSettings } from './lib/fuzzySearch';
 import { useSettingsStore } from './store/useSettingsStore';
 
 describe('Settings Schema & Token Coverage', () => {
+  it('contains General category with valid workflow & initialization subcategories', () => {
+    expect(CATEGORY_METADATA.general).toBeDefined();
+    expect(CATEGORY_METADATA.general.label).toBe('General');
+    expect(CATEGORY_METADATA.general.subcategories).toContain('Git & Workflow');
+    expect(CATEGORY_METADATA.general.subcategories).toContain('Initialization Options');
+  });
+
   it('contains AI & Commit-AI category with valid metadata', () => {
     expect(CATEGORY_METADATA.ai).toBeDefined();
     expect(CATEGORY_METADATA.ai.label).toBe('AI & Commit-AI');
@@ -21,6 +28,15 @@ describe('Settings Schema & Token Coverage', () => {
       expect(setting.description).toBeTruthy();
       expect(setting.default).toBeDefined();
     }
+  });
+
+  it('includes General Git and initialization settings', () => {
+    const settingIds = SETTINGS_SCHEMA.map((s) => s.id);
+    expect(settingIds).toContain('git.auto_push');
+    expect(settingIds).toContain('git.init_readme');
+    expect(settingIds).toContain('git.auto_fetch');
+    expect(settingIds).toContain('git.prune_on_fetch');
+    expect(settingIds).toContain('git.confirm_discard');
   });
 
   it('includes AI model and API key definitions', () => {
@@ -89,6 +105,20 @@ describe('useSettingsStore State Management', () => {
     expect(useSettingsStore.getState().getEffectiveValue('app.ui_scale')).toBe(100);
     expect(document.documentElement.getAttribute('data-ui-scale')).toBe('100');
     expect(document.documentElement.style.getPropertyValue('--app-ui-scale-value')).toBe('1');
+  });
+
+  it('tracks modifications and toggles for boolean settings like auto_push and init_readme', async () => {
+    const store = useSettingsStore.getState();
+    expect(store.isModified('git.auto_push')).toBe(false);
+    expect(store.getEffectiveValue('git.auto_push')).toBe(false);
+
+    await store.setSettingValue('git.auto_push', true);
+    expect(useSettingsStore.getState().isModified('git.auto_push')).toBe(true);
+    expect(useSettingsStore.getState().getEffectiveValue('git.auto_push')).toBe(true);
+
+    await store.resetSettingValue('git.auto_push');
+    expect(useSettingsStore.getState().isModified('git.auto_push')).toBe(false);
+    expect(useSettingsStore.getState().getEffectiveValue('git.auto_push')).toBe(false);
   });
 
   it('opens and closes modal with category selection', () => {
