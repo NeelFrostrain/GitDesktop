@@ -1,10 +1,10 @@
 {
   "version": "0.1.0",
   "notes": "Release notes for Git Desktop v0.1.0",
-  "pub_date": "2026-08-31T16:58:31.906Z",
+  "pub_date": "2026-08-31T17:04:00.308Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "PLACEHOLDER_SIGNATURE_GENERATE_WITH_TAURI_BUILD",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUa1hOTkM2YmtMRUFRMm1aSnVwWWNiSEF5K3BtdVQvdmxSQU8wMTZJb3NHYllPalIxNUNpRE5mSCtYRlZDam1JN2M4N0dHRkdXR0ZqQ0NOR2U4a0hIeFQ0a1c1Z3c4QVFBPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MTk1ODM5CWZpbGU6R2l0IERlc2t0b3BfMC4xLjBfeDY0X2VuLVVTLm1zaQpRUWVnMWllMnNsckNSakE1b0Exd3BzWWJxa2NOOVg1L0ExVmhEdE1QblJraUw1TzNRR2VydHUyYWNnSHZWenFGYWRaTlRCM3lLc2RHQ2YvOGI1SitCdz09Cg==",
       "url": "https://github.com/cyronicstudio/git-desktop/releases/download/v0.1.0/Git.Desktop_0.1.0_x64_en-US.msi"
     }
   }
