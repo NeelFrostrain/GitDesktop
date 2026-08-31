@@ -261,6 +261,97 @@ async fn get_github_client_for_account(account_id: Option<&str>) -> Result<GitHu
     GitHubClient::new(token.as_deref())
 }
 
+pub async fn get_bitbucket_client() -> Result<crate::integrations::bitbucket::BitbucketClient, AppError> {
+    let mut bitbucket_token = None;
+
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    if let Some(acc) = provider_accounts
+        .iter()
+        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && a.is_active)
+        .or_else(|| provider_accounts.iter().find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket))
+    {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token(&acc.id).await {
+            if !tok.trim().is_empty() {
+                bitbucket_token = Some(tok);
+            }
+        }
+    }
+
+    if bitbucket_token.is_none() {
+        let accounts = keyring::list_accounts();
+        if let Some(a) = accounts
+            .iter()
+            .find(|a| a.provider == "bitbucket" && a.is_active)
+            .or_else(|| accounts.iter().find(|a| a.provider == "bitbucket"))
+        {
+            if !a.token.trim().is_empty() {
+                bitbucket_token = Some(a.token.clone());
+            }
+        }
+    }
+
+    if bitbucket_token.is_none() {
+        bitbucket_token = get_git_credential_token("bitbucket.org");
+    }
+
+    if bitbucket_token.is_none() {
+        if let Ok(env_t) = std::env::var("BITBUCKET_TOKEN").or_else(|_| std::env::var("BB_TOKEN")) {
+            if !env_t.trim().is_empty() {
+                bitbucket_token = Some(env_t.trim().to_string());
+            }
+        }
+    }
+
+    crate::integrations::bitbucket::BitbucketClient::new(bitbucket_token.as_deref())
+}
+
+pub async fn get_azure_client(instance_url: Option<String>) -> Result<crate::integrations::azure::AzureDevOpsClient, AppError> {
+    let mut azure_token = None;
+
+    let provider_accounts = crate::domain::accounts::token_store::list_accounts();
+    if let Some(acc) = provider_accounts
+        .iter()
+        .find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Azure && a.is_active)
+        .or_else(|| provider_accounts.iter().find(|a| a.provider == crate::domain::accounts::provider::ProviderKind::Azure))
+    {
+        if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token(&acc.id).await {
+            if !tok.trim().is_empty() {
+                azure_token = Some(tok);
+            }
+        }
+    }
+
+    if azure_token.is_none() {
+        let accounts = keyring::list_accounts();
+        if let Some(a) = accounts
+            .iter()
+            .find(|a| a.provider == "azure" && a.is_active)
+            .or_else(|| accounts.iter().find(|a| a.provider == "azure"))
+        {
+            if !a.token.trim().is_empty() {
+                azure_token = Some(a.token.clone());
+            }
+        }
+    }
+
+    if azure_token.is_none() {
+        azure_token = get_git_credential_token("dev.azure.com");
+    }
+
+    if azure_token.is_none() {
+        if let Ok(env_t) = std::env::var("AZURE_DEVOPS_EXT_PAT")
+            .or_else(|_| std::env::var("AZURE_TOKEN"))
+            .or_else(|_| std::env::var("SYSTEM_ACCESSTOKEN"))
+        {
+            if !env_t.trim().is_empty() {
+                azure_token = Some(env_t.trim().to_string());
+            }
+        }
+    }
+
+    crate::integrations::azure::AzureDevOpsClient::new(instance_url.as_deref(), azure_token.as_deref())
+}
+
 /// Helper: convert GitLabProject to UnifiedRepo
 fn gitlab_project_to_unified(p: GitLabProject) -> UnifiedRepo {
     UnifiedRepo {
@@ -320,6 +411,7 @@ pub async fn fetch_user_repositories(
             crate::domain::accounts::provider::ProviderKind::Github => "github".to_string(),
             crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket".to_string(),
             crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab".to_string(),
+            crate::domain::accounts::provider::ProviderKind::Azure => "azure".to_string(),
         }
     } else if let Some(prov) = provider {
         prov.to_lowercase()
@@ -395,51 +487,87 @@ pub async fn cancel_git_operation() -> Result<bool, AppError> {
     Ok(remote::cancel_active_clone_process())
 }
 
+fn resolve_provider_and_project_id(
+    project_id: &str,
+    server_url: Option<&str>,
+    provider: Option<&str>,
+) -> (String, String) {
+    let mut clean_id = project_id.trim().to_string();
+    let explicit_provider = provider.map(|p| p.trim().to_lowercase());
+
+    if let Some(p) = explicit_provider {
+        if p == "github" || p == "bitbucket" || p == "azure" || p == "gitlab" {
+            clean_id = clean_id
+                .replacen("github.com/", "", 1)
+                .replacen("bitbucket.org/", "", 1)
+                .replacen("dev.azure.com/", "", 1)
+                .replacen("gitlab.com/", "", 1);
+            return (clean_id, p);
+        }
+    }
+
+    if clean_id.starts_with("github.com/") || server_url.map(|u| u.contains("github")).unwrap_or(false) {
+        clean_id = clean_id.replacen("github.com/", "", 1);
+        return (clean_id, "github".to_string());
+    }
+
+    if clean_id.starts_with("bitbucket.org/") || server_url.map(|u| u.contains("bitbucket")).unwrap_or(false) {
+        clean_id = clean_id.replacen("bitbucket.org/", "", 1);
+        return (clean_id, "bitbucket".to_string());
+    }
+
+    if clean_id.starts_with("dev.azure.com/")
+        || clean_id.contains(".visualstudio.com")
+        || server_url.map(|u| u.contains("azure") || u.contains("visualstudio")).unwrap_or(false)
+    {
+        clean_id = clean_id.replacen("dev.azure.com/", "", 1);
+        return (clean_id, "azure".to_string());
+    }
+
+    if let Some(a) = keyring::get_active_account() {
+        if a.provider == "github" || a.provider == "bitbucket" || a.provider == "azure" {
+            return (clean_id, a.provider);
+        }
+    }
+
+    (clean_id, "gitlab".to_string())
+}
+
 #[command]
 pub async fn get_open_merge_requests(
     project_id: String,
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<Vec<MergeRequest>, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
-
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
-        }
-    }
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
     if clean_project_id.is_empty()
         || clean_project_id == "1"
         || clean_project_id == "origin"
-        || (is_github && !clean_project_id.contains('/'))
+        || (active_provider != "gitlab" && !clean_project_id.contains('/'))
     {
         return Err(AppError::Validation(
             "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
         ));
     }
 
-    if is_github {
-        let client = get_github_client().await?;
-        client.get_open_pull_requests(&clean_project_id).await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client.get_open_merge_requests(&clean_project_id).await
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client.get_open_pull_requests(&clean_project_id).await
+        }
+        "bitbucket" => {
+            let client = get_bitbucket_client().await?;
+            client.get_open_pull_requests(&clean_project_id).await
+        }
+        "azure" => {
+            let client = get_azure_client(server_url).await?;
+            client.get_open_pull_requests(&clean_project_id).await
+        }
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client.get_open_merge_requests(&clean_project_id).await
+        }
     }
 }
 
@@ -453,55 +581,61 @@ pub async fn create_merge_request(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<MergeRequest, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
-
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
-        }
-    }
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
     if clean_project_id.is_empty()
         || clean_project_id == "1"
         || clean_project_id == "origin"
-        || (is_github && !clean_project_id.contains('/'))
+        || (active_provider != "gitlab" && !clean_project_id.contains('/'))
     {
         return Err(AppError::Validation(
             "No remote repository configured on this repo. Please add a valid remote URL (e.g. https://github.com/owner/repo).".to_string(),
         ));
     }
 
-    if is_github {
-        let client = get_github_client().await?;
-        client
-            .create_pull_request(
-                &clean_project_id,
-                &source_branch,
-                &target_branch,
-                &title,
-                description.as_deref(),
-            )
-            .await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client
-            .create_merge_request(&clean_project_id, &source_branch, &target_branch, &title)
-            .await
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client
+                .create_pull_request(
+                    &clean_project_id,
+                    &source_branch,
+                    &target_branch,
+                    &title,
+                    description.as_deref(),
+                )
+                .await
+        }
+        "bitbucket" => {
+            let client = get_bitbucket_client().await?;
+            client
+                .create_pull_request(
+                    &clean_project_id,
+                    &source_branch,
+                    &target_branch,
+                    &title,
+                    description.as_deref(),
+                )
+                .await
+        }
+        "azure" => {
+            let client = get_azure_client(server_url).await?;
+            client
+                .create_pull_request(
+                    &clean_project_id,
+                    &source_branch,
+                    &target_branch,
+                    &title,
+                    description.as_deref(),
+                )
+                .await
+        }
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client
+                .create_merge_request(&clean_project_id, &source_branch, &target_branch, &title)
+                .await
+        }
     }
 }
 
@@ -517,53 +651,35 @@ pub async fn update_merge_request(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<MergeRequest, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client
+                .update_pull_request(
+                    &clean_project_id,
+                    mr_id,
+                    title.as_deref(),
+                    description.as_deref(),
+                    target_branch.as_deref(),
+                    state.as_deref(),
+                )
+                .await
         }
-    }
-
-    if is_github {
-        let client = get_github_client().await?;
-        client
-            .update_pull_request(
-                &clean_project_id,
-                mr_id,
-                title.as_deref(),
-                description.as_deref(),
-                target_branch.as_deref(),
-                state.as_deref(),
-            )
-            .await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client
-            .update_merge_request(
-                &clean_project_id,
-                mr_id,
-                title.as_deref(),
-                description.as_deref(),
-                target_branch.as_deref(),
-                state.as_deref(),
-            )
-            .await
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client
+                .update_merge_request(
+                    &clean_project_id,
+                    mr_id,
+                    title.as_deref(),
+                    description.as_deref(),
+                    target_branch.as_deref(),
+                    state.as_deref(),
+                )
+                .await
+        }
     }
 }
 
@@ -587,34 +703,25 @@ pub async fn get_pull_request_comments(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<Vec<crate::auth::github::PullRequestComment>, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client.get_pull_request_comments(&clean_project_id, mr_id).await
         }
-    }
-
-    if is_github {
-        let client = get_github_client().await?;
-        client.get_pull_request_comments(&clean_project_id, mr_id).await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client.get_merge_request_comments(&clean_project_id, mr_id).await
+        "bitbucket" => {
+            let client = get_bitbucket_client().await?;
+            client.get_comments(&clean_project_id, mr_id).await
+        }
+        "azure" => {
+            let client = get_azure_client(server_url).await?;
+            client.get_comments(&clean_project_id, mr_id).await
+        }
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client.get_merge_request_comments(&clean_project_id, mr_id).await
+        }
     }
 }
 
@@ -626,34 +733,25 @@ pub async fn add_pull_request_comment(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<crate::auth::github::PullRequestComment, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client.add_pull_request_comment(&clean_project_id, mr_id, &body).await
         }
-    }
-
-    if is_github {
-        let client = get_github_client().await?;
-        client.add_pull_request_comment(&clean_project_id, mr_id, &body).await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client.add_merge_request_comment(&clean_project_id, mr_id, &body).await
+        "bitbucket" => {
+            let client = get_bitbucket_client().await?;
+            client.add_comment(&clean_project_id, mr_id, &body).await
+        }
+        "azure" => {
+            let client = get_azure_client(server_url).await?;
+            client.add_comment(&clean_project_id, mr_id, &body).await
+        }
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client.add_merge_request_comment(&clean_project_id, mr_id, &body).await
+        }
     }
 }
 
@@ -667,29 +765,9 @@ pub async fn edit_pull_request_comment(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<PullRequestComment, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
-        }
-    }
-
-    if is_github {
+    if active_provider == "github" {
         let client = get_github_client().await?;
         client.edit_pull_request_comment(&clean_project_id, comment_id, &body).await
     } else {
@@ -707,29 +785,9 @@ pub async fn delete_pull_request_comment(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<bool, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
-        }
-    }
-
-    if is_github {
+    if active_provider == "github" {
         let client = get_github_client().await?;
         client.delete_pull_request_comment(&clean_project_id, comment_id).await
     } else {
@@ -751,46 +809,49 @@ pub async fn merge_pull_request(
     server_url: Option<String>,
     provider: Option<String>,
 ) -> Result<bool, AppError> {
-    let mut clean_project_id = project_id.trim().to_string();
-    let mut is_github = provider.as_deref() == Some("github");
+    let (clean_project_id, active_provider) = resolve_provider_and_project_id(&project_id, server_url.as_deref(), provider.as_deref());
 
-    if clean_project_id.starts_with("github.com/") {
-        clean_project_id = clean_project_id.replacen("github.com/", "", 1);
-        is_github = true;
-    }
-    if server_url
-        .as_deref()
-        .map(|u| u.contains("github"))
-        .unwrap_or(false)
-    {
-        is_github = true;
-    }
-    if !is_github && provider.is_none() {
-        if let Some(a) = keyring::get_active_account() {
-            if a.provider == "github" {
-                is_github = true;
-            }
+    match active_provider.as_str() {
+        "github" => {
+            let client = get_github_client().await?;
+            client.merge_pull_request(
+                &clean_project_id,
+                mr_id,
+                merge_method.as_deref(),
+                commit_title.as_deref(),
+                commit_message.as_deref(),
+            ).await
         }
-    }
-
-    if is_github {
-        let client = get_github_client().await?;
-        client.merge_pull_request(
-            &clean_project_id,
-            mr_id,
-            merge_method.as_deref(),
-            commit_title.as_deref(),
-            commit_message.as_deref(),
-        ).await
-    } else {
-        let client = get_gitlab_client(server_url).await?;
-        client.merge_merge_request(
-            &clean_project_id,
-            mr_id,
-            squash,
-            should_remove_source_branch,
-            commit_message.as_deref(),
-        ).await
+        "bitbucket" => {
+            let client = get_bitbucket_client().await?;
+            client.merge_pull_request(
+                &clean_project_id,
+                mr_id,
+                commit_message.as_deref(),
+                merge_method.as_deref(),
+                should_remove_source_branch,
+            ).await
+        }
+        "azure" => {
+            let client = get_azure_client(server_url).await?;
+            client.merge_pull_request(
+                &clean_project_id,
+                mr_id,
+                commit_message.as_deref(),
+                merge_method.as_deref(),
+                should_remove_source_branch,
+            ).await
+        }
+        _ => {
+            let client = get_gitlab_client(server_url).await?;
+            client.merge_merge_request(
+                &clean_project_id,
+                mr_id,
+                squash,
+                should_remove_source_branch,
+                commit_message.as_deref(),
+            ).await
+        }
     }
 }
 
@@ -891,6 +952,7 @@ pub fn log_action_cmd(level: String, category: String, message: String, details:
         details_str
     );
 }
+
 
 #[command]
 pub async fn open_in_terminal_cmd(repo_path: String) -> Result<(), AppError> {

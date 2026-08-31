@@ -662,6 +662,7 @@ pub async fn get_valid_token(account_id: &str) -> Result<Option<String>, AppErro
                         .refresh_token(&account, &ref_tok)
                         .await
                 }
+                ProviderKind::Azure => Ok(account.clone()),
             };
 
             match refreshed {

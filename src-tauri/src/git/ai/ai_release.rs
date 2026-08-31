@@ -595,6 +595,8 @@ Commits to analyze ({meaningful_count} commits):
     let candidate_models = vec![
         raw_model,
         "gemini-2.5-flash-lite".to_string(),
+        "gemini-2.5-flash".to_string(),
+        "gemini-2.5-pro".to_string(),
         "gemini-2.0-flash".to_string(),
         "gemini-1.5-flash".to_string(),
     ];

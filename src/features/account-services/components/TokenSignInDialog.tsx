@@ -20,7 +20,7 @@ import { useAccountServicesStore } from '../store/accountStore';
 import { Button } from '../../../components/common/Button';
 import { ProviderAccount } from '../types';
 
-export type ProviderKey = 'gitlab' | 'github' | 'bitbucket';
+export type ProviderKey = 'gitlab' | 'github' | 'bitbucket' | 'azure';
 
 export interface ProviderConfig {
   id: ProviderKey;
@@ -65,6 +65,10 @@ const PROVIDER_SCOPES: Record<ProviderKey, ScopeItem[]> = {
     { name: 'Account: Read', description: 'Access user profile and email address', required: true },
     { name: 'Repositories: Read & Write', description: 'Clone, pull, commit, and push repositories', required: true },
     { name: 'Pull requests: Read & Write', description: 'Inspect, create, and review Pull Requests', required: true },
+  ],
+  azure: [
+    { name: 'Code: Read & Write', description: 'Access, clone, commit, and manage Git repositories & PRs', required: true },
+    { name: 'Project & Team: Read', description: 'Read organization projects and team membership', required: false },
   ],
 };
 
@@ -115,6 +119,17 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
     }
     if (provider.id === 'bitbucket') {
       return 'https://bitbucket.org/account/settings/app-passwords/';
+    }
+    if (provider.id === 'azure') {
+      const clean = (instanceUrl || provider.defaultUrl).trim().replace(/\/+$/, '');
+      try {
+        const parsed = new URL(clean);
+        const pathParts = parsed.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0) {
+          return `${parsed.origin}/${pathParts[0]}/_usersSettings/tokens`;
+        }
+      } catch {}
+      return 'https://aex.dev.azure.com/me';
     }
     return cleanUrl;
   };
@@ -212,7 +227,9 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
                 <p className="text-[11px] text-text-muted mt-0.5">
                   {provider.id === 'bitbucket'
                     ? 'Generate an App Password from your Bitbucket Settings.'
-                    : `Create a Personal Access Token on ${provider.name}.`}
+                    : provider.id === 'azure'
+                      ? 'Generate a Personal Access Token (PAT) from your Azure DevOps Organization.'
+                      : `Create a Personal Access Token on ${provider.name}.`}
                 </p>
               </div>
 
@@ -227,31 +244,94 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
               </Button>
             </div>
 
-            {/* Step-by-Step Instructions */}
-            <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
-              <div className="flex items-start gap-2">
-                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
-                <span>Click <strong>Open Token Page</strong> to navigate directly to token settings in your browser.</span>
+            {/* Provider-Specific Step-by-Step Instructions */}
+            {provider.id === 'azure' && (
+              <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
+                  <span>Click <strong>Open Token Page</strong> to open your Azure DevOps Personal Access Tokens page.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
+                  <span>Click <strong>+ New Token</strong> and set Name as <strong>GitDesktop</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
+                  <span>Under <strong>Organization</strong>, ensure your organization is selected, and set <strong>Expiration</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
+                  <span>Under <strong>Scopes</strong>, select <strong>Code (Read & Write)</strong> to enable cloning, commits, and Pull Requests.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">5.</span>
+                  <span>Click <strong>Create</strong>, copy the generated token string, and paste it into the field below.</span>
+                </div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
-                <span>Set token name as <strong>GitDesktop</strong>.</span>
+            )}
+
+            {provider.id === 'gitlab' && (
+              <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
+                  <span>Click <strong>Open Token Page</strong> to navigate to User Settings &gt; Access Tokens.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
+                  <span>Set token name as <strong>GitDesktop</strong> and clear or choose an Expiration date.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
+                  <span>Check scopes: <strong>api</strong>, <strong>read_user</strong>, <strong>read_repository</strong>, and <strong>write_repository</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
+                  <span>Click <strong>Create personal access token</strong>, copy the token, and paste it below.</span>
+                </div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                <span>
-                  Set <strong>Expiration</strong> to <strong>"No expiration"</strong> (or clear the expiry date on GitLab) so your access does not expire.
-                </span>
+            )}
+
+            {provider.id === 'github' && (
+              <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
+                  <span>Click <strong>Open Token Page</strong> to open GitHub Personal Access Tokens (Classic).</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
+                  <span>Set Note as <strong>GitDesktop</strong> and select your preferred Expiration.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
+                  <span>Select scopes: <strong>repo</strong>, <strong>read:user</strong>, <strong>user:email</strong>, and <strong>workflow</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
+                  <span>Click <strong>Generate token</strong>, copy the generated token, and paste it below.</span>
+                </div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
-                <span>Select the required permission scopes shown below.</span>
+            )}
+
+            {provider.id === 'bitbucket' && (
+              <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
+                  <span>Click <strong>Open Token Page</strong> to open Bitbucket Personal Settings &gt; App Passwords.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
+                  <span>Click <strong>Create app password</strong> and label it <strong>GitDesktop</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
+                  <span>Check permissions: <strong>Account (Read)</strong>, <strong>Repositories (Read & Write)</strong>, and <strong>Pull requests (Read & Write)</strong>.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
+                  <span>Click <strong>Create</strong>, copy the password, and enter your Bitbucket Username and App Password below.</span>
+                </div>
               </div>
-              <div className="flex items-start gap-2">
-                <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">5.</span>
-                <span>Click <strong>Generate / Create</strong>, copy the generated token, and paste it below.</span>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Required Scopes Collapsible Card */}
@@ -384,7 +464,9 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
                       ? 'glpat-xxxxxxxxxxxxxxxxxxxx'
                       : provider.id === 'github'
                         ? 'ghp_xxxxxxxxxxxxxxxxxxxx'
-                        : 'Enter Bitbucket App Password'
+                        : provider.id === 'azure'
+                          ? 'Enter Azure DevOps PAT (e.g. 52-char token)'
+                          : 'Enter Bitbucket App Password'
                   }
                   className="w-full bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm px-2.5 py-1.5 pr-9 text-xs text-text-primary font-mono placeholder:text-text-muted/40 focus:outline-none transition"
                   required

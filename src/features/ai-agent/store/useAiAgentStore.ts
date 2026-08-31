@@ -96,6 +96,8 @@ const getStoredAgentName = (): string => {
   }
 };
 
+let activeAbortController: AbortController | null = null;
+
 export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   isOpen: false,
   agentName: getStoredAgentName(),
@@ -140,6 +142,10 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
   },
 
   cancelRequest: () => {
+    if (activeAbortController) {
+      activeAbortController.abort();
+      activeAbortController = null;
+    }
     set({ status: 'idle', error: null });
   },
 
@@ -309,9 +315,12 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     const trimmed = content.trim();
     if (!trimmed) return;
 
+    if (activeAbortController) activeAbortController.abort();
+    const abortController = new AbortController();
+    activeAbortController = abortController;
+
     let { activeSessionId, sessions } = get();
 
-    // If no active session, create one
     if (!activeSessionId || !sessions.some((s) => s.id === activeSessionId)) {
       activeSessionId = get().createSession();
       sessions = get().sessions;
@@ -328,18 +337,23 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       attachments: attachments.length > 0 ? attachments : undefined,
     };
 
-    // Update session state with user message immediately
+    const assistantMsgId = `msg-agent-${Date.now()}`;
+    const initialAssistantMsg: AgentMessage = {
+      id: assistantMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+    };
+
     const updatedSessionsWithUser = sessions.map((s) => {
       if (s.id === activeSessionId) {
-        // Auto-generate title if first message
         const isFirstUserMessage = s.messages.filter((m) => m.role === 'user').length === 0;
         const newTitle = isFirstUserMessage ? trimmed.slice(0, 32) : s.title;
-
         return {
           ...s,
           title: newTitle,
           updatedAt: Date.now(),
-          messages: [...s.messages, userMessage],
+          messages: [...s.messages, userMessage, initialAssistantMsg],
         };
       }
       return s;
@@ -353,7 +367,6 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     });
     saveStoredSessions(updatedSessionsWithUser, activeSessionId);
 
-    // Retrieve settings
     const settingsStore = useSettingsStore.getState();
     const rawKeys =
       settingsStore.getEffectiveValue('ai.gemini_api_keys') ||
@@ -369,29 +382,19 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys
-        .map(String)
-        .map((k) => k.trim())
-        .filter(Boolean);
+      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed))
-          keyPool = parsed
-            .map(String)
-            .map((k) => k.trim())
-            .filter(Boolean);
+        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
         else keyPool = [rawKeys.trim()];
-      } catch {
-        keyPool = [rawKeys.trim()];
-      }
+      } catch { keyPool = [rawKeys.trim()]; }
     }
 
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
       keyPool.unshift(activeKey.trim());
     }
 
-    // Collect Git Context
     let repoContextPrompt = '';
     if (activeRepo) {
       try {
@@ -400,22 +403,33 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       } catch {}
     }
 
-    // Get current session messages
     const currentSession = updatedSessionsWithUser.find((s) => s.id === activeSessionId);
-    const historyMessages = currentSession ? currentSession.messages : [userMessage];
+    const historyMessages = currentSession ? currentSession.messages.filter(m => m.id !== assistantMsgId) : [userMessage];
 
     try {
-      const response = await GeminiAgentService.sendChatMessage({
+      const response = await GeminiAgentService.streamChatMessage({
         apiKeyPool: keyPool,
         activeApiKey: activeKey,
         model: selectedModel,
         messages: historyMessages,
         repoContextPrompt,
         agentName: get().agentName || 'AI Git Agent',
-      });
+      }, (_chunk, fullText) => {
+        set((state) => ({
+          sessions: state.sessions.map((s) => {
+            if (s.id === activeSessionId) {
+              return {
+                ...s,
+                messages: s.messages.map((m) => m.id === assistantMsgId ? { ...m, content: fullText } : m),
+              };
+            }
+            return s;
+          }),
+        }));
+      }, abortController.signal);
 
-      const assistantMessage: AgentMessage = {
-        id: `msg-agent-${Date.now()}`,
+      const finalAssistantMessage: AgentMessage = {
+        id: assistantMsgId,
         role: 'assistant',
         content: response.text,
         timestamp: Date.now(),
@@ -429,60 +443,48 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
             return {
               ...s,
               updatedAt: Date.now(),
-              messages: [...s.messages, assistantMessage],
+              messages: s.messages.map((m) => (m.id === assistantMsgId ? finalAssistantMessage : m)),
             };
           }
           return s;
         });
-
         saveStoredSessions(finalSessions, activeSessionId);
-        return {
-          sessions: finalSessions,
-          status: 'idle',
-          error: null,
-        };
+        return { sessions: finalSessions, status: 'idle', error: null };
       });
 
-      useLogStore
-        .getState()
-        .addLog(
-          'info',
-          'System',
-          `[AI-Agent] Agent responded using ${response.modelUsed} (${response.toolCalls.length} tool suggestions)`
-        );
+      useLogStore.getState().addLog('info', 'System', `[AI-Agent] Agent responded using ${response.modelUsed}`);
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return set({ status: 'idle' });
       const errorMsg = err instanceof Error ? err.message : String(err);
       const errorAssistantMessage: AgentMessage = {
-        id: `msg-error-${Date.now()}`,
+        id: assistantMsgId,
         role: 'assistant',
-        content: `⚠️ **Agent Error:** ${errorMsg}\n\n*Please ensure you have a valid Google Gemini API Key configured in Settings > AI.*`,
+        content: `⚠️ **Agent Error:** ${errorMsg}`,
         timestamp: Date.now(),
-        error: errorMsg,
       };
-
       set((state) => {
         const finalSessions = state.sessions.map((s) => {
           if (s.id === activeSessionId) {
             return {
               ...s,
-              updatedAt: Date.now(),
-              messages: [...s.messages, errorAssistantMessage],
+              messages: s.messages.map((m) => m.id === assistantMsgId ? errorAssistantMessage : m),
             };
           }
           return s;
         });
-
         saveStoredSessions(finalSessions, activeSessionId);
-        return {
-          sessions: finalSessions,
-          status: 'error',
-          error: errorMsg,
-        };
+        return { sessions: finalSessions, status: 'error', error: errorMsg };
       });
+    } finally {
+      if (activeAbortController === abortController) activeAbortController = null;
     }
   },
 
   regenerateMessage: async (targetMsgId: string) => {
+    if (activeAbortController) activeAbortController.abort();
+    const abortController = new AbortController();
+    activeAbortController = abortController;
+
     const { activeSessionId, sessions } = get();
     if (!activeSessionId) return;
 
@@ -493,30 +495,15 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     if (msgIndex === -1) return;
 
     const targetMsg = currentSession.messages[msgIndex];
-    let historyBefore: AgentMessage[] = [];
-
-    if (targetMsg.role === 'user') {
-      historyBefore = currentSession.messages.slice(0, msgIndex + 1);
-    } else {
-      // If regenerating an assistant response, slice up to this response
-      historyBefore = currentSession.messages.slice(0, msgIndex);
-      // If this was the first message in session, treat it as a prompt to evaluate
-      if (historyBefore.length === 0) {
-        historyBefore = [{ ...targetMsg, role: 'user' }];
-      }
-    }
-
+    let historyBefore = targetMsg.role === 'user' ? currentSession.messages.slice(0, msgIndex + 1) : currentSession.messages.slice(0, msgIndex);
     if (historyBefore.length === 0) return;
+
+    const assistantMsgId = `msg-agent-${Date.now()}`;
+    const initialAssistantMsg: AgentMessage = { id: assistantMsgId, role: 'assistant', content: '', timestamp: Date.now() };
 
     set((state) => {
       const updated = state.sessions.map((s) => {
-        if (s.id === activeSessionId) {
-          return {
-            ...s,
-            updatedAt: Date.now(),
-            messages: historyBefore,
-          };
-        }
+        if (s.id === activeSessionId) return { ...s, updatedAt: Date.now(), messages: [...historyBefore, initialAssistantMsg] };
         return s;
       });
       saveStoredSessions(updated, activeSessionId);
@@ -525,31 +512,28 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     const activeRepo = currentSession.repoPath || useGitStore.getState().activeRepoPath;
 
-    const settings = useSettingsStore.getState();
-    const rawKeys = settings.getEffectiveValue('ai.gemini_api_keys');
-    const activeKey = String(settings.getEffectiveValue('ai.active_api_key') || '');
-    const selectedModel = String(settings.getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite');
+    const settingsStore = useSettingsStore.getState();
+    const rawKeys =
+      settingsStore.getEffectiveValue('ai.gemini_api_keys') ||
+      settingsStore.getEffectiveValue('ai.google_api_keys');
+    const activeKey = String(
+      settingsStore.getEffectiveValue('ai.active_api_key') ||
+        settingsStore.getEffectiveValue('ai.gemini_api_key') ||
+        ''
+    );
+    const selectedModel = String(
+      settingsStore.getEffectiveValue('ai.model') || 'gemini-2.5-flash-lite'
+    );
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys
-        .map(String)
-        .map((k) => k.trim())
-        .filter(Boolean);
+      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) {
-          keyPool = parsed
-            .map(String)
-            .map((k) => k.trim())
-            .filter(Boolean);
-        } else {
-          keyPool = [rawKeys.trim()];
-        }
-      } catch {
-        keyPool = [rawKeys.trim()];
-      }
+        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        else keyPool = [rawKeys.trim()];
+      } catch { keyPool = [rawKeys.trim()]; }
     }
 
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
@@ -565,17 +549,35 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     try {
-      const response = await GeminiAgentService.sendChatMessage({
-        apiKeyPool: keyPool,
-        activeApiKey: activeKey,
-        model: selectedModel,
-        messages: historyBefore,
-        repoContextPrompt,
-        agentName: get().agentName || 'AI Git Agent',
-      });
+      const response = await GeminiAgentService.streamChatMessage(
+        {
+          apiKeyPool: keyPool,
+          activeApiKey: activeKey,
+          model: selectedModel,
+          messages: historyBefore,
+          repoContextPrompt,
+          agentName: get().agentName || 'AI Git Agent',
+        },
+        (_chunk, fullText) => {
+          set((state) => ({
+            sessions: state.sessions.map((s) => {
+              if (s.id === activeSessionId) {
+                return {
+                  ...s,
+                  messages: s.messages.map((m) =>
+                    m.id === assistantMsgId ? { ...m, content: fullText } : m
+                  ),
+                };
+              }
+              return s;
+            }),
+          }));
+        },
+        abortController.signal
+      );
 
-      const newAssistantMessage: AgentMessage = {
-        id: `msg-agent-${Date.now()}`,
+      const finalAssistantMessage: AgentMessage = {
+        id: assistantMsgId,
         role: 'assistant',
         content: response.text,
         timestamp: Date.now(),
@@ -589,73 +591,42 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
             return {
               ...s,
               updatedAt: Date.now(),
-              messages: [...s.messages, newAssistantMessage],
+              messages: s.messages.map((m) =>
+                m.id === assistantMsgId ? finalAssistantMessage : m
+              ),
             };
           }
           return s;
         });
-
         saveStoredSessions(finalSessions, activeSessionId);
-        return {
-          sessions: finalSessions,
-          status: 'idle',
-          error: null,
-        };
+        return { sessions: finalSessions, status: 'idle', error: null };
       });
-
-      // Automatic execution based on configured security mode
-      const currentMode = get().securityMode;
-      if (response.toolCalls && response.toolCalls.length > 0) {
-        for (const tool of response.toolCalls) {
-          if (currentMode === 'full_access') {
-            // Full access: automatically execute tool operations
-            setTimeout(() => {
-              get().executeToolCall(tool.id, true);
-            }, 300);
-          } else if (currentMode === 'sandboxed') {
-            // Sandboxed: auto-apply safe file creations/modifications; commands & deletes require confirmation
-            if (
-              tool.name === 'write_file' ||
-              tool.name === 'create_file' ||
-              tool.name === 'edit_file'
-            ) {
-              setTimeout(() => {
-                get().executeToolCall(tool.id);
-              }, 300);
-            }
-          }
-          // Strict: requires review for all operations (waits for user to click button)
-        }
-      }
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return set({ status: 'idle' });
       const errorMsg = err instanceof Error ? err.message : String(err);
       const errorAssistantMessage: AgentMessage = {
-        id: `msg-error-${Date.now()}`,
+        id: assistantMsgId,
         role: 'assistant',
-        content: `⚠️ **Agent Error:** ${errorMsg}\n\n*Please ensure you have a valid Google Gemini API Key configured in Settings > AI.*`,
+        content: `⚠️ **Agent Error:** ${errorMsg}`,
         timestamp: Date.now(),
-        error: errorMsg,
       };
-
       set((state) => {
         const finalSessions = state.sessions.map((s) => {
           if (s.id === activeSessionId) {
             return {
               ...s,
-              updatedAt: Date.now(),
-              messages: [...s.messages, errorAssistantMessage],
+              messages: s.messages.map((m) =>
+                m.id === assistantMsgId ? errorAssistantMessage : m
+              ),
             };
           }
           return s;
         });
-
         saveStoredSessions(finalSessions, activeSessionId);
-        return {
-          sessions: finalSessions,
-          status: 'error',
-          error: errorMsg,
-        };
+        return { sessions: finalSessions, status: 'error', error: errorMsg };
       });
+    } finally {
+      if (activeAbortController === abortController) activeAbortController = null;
     }
   },
 

@@ -609,6 +609,7 @@ pub async fn get_contributions_calendar(
             ProviderKind::Gitlab => "gitlab",
             ProviderKind::Github => "github",
             ProviderKind::Bitbucket => "bitbucket",
+            ProviderKind::Azure => "azure",
         };
         (p_str.to_string(), acct.handle.clone(), acct.display_name.clone(), acct.avatar_url.clone())
     } else {
@@ -625,6 +626,7 @@ pub async fn get_contributions_calendar(
                     ProviderKind::Gitlab => fetch_gitlab_calendar(&acct.instance_url, &acct.handle, token.as_deref()).await,
                     ProviderKind::Github => fetch_github_calendar(&acct.handle, token.as_deref()).await,
                     ProviderKind::Bitbucket => fetch_bitbucket_calendar(&acct.handle, token.as_deref()).await,
+                    ProviderKind::Azure => std::collections::HashMap::new(),
                 };
                 for (d, cnt) in m {
                     *remote_counts.entry(d).or_insert(0) += cnt;
@@ -636,6 +638,7 @@ pub async fn get_contributions_calendar(
                 ProviderKind::Gitlab => fetch_gitlab_calendar(&acct.instance_url, &acct.handle, token.as_deref()).await,
                 ProviderKind::Github => fetch_github_calendar(&acct.handle, token.as_deref()).await,
                 ProviderKind::Bitbucket => fetch_bitbucket_calendar(&acct.handle, token.as_deref()).await,
+                ProviderKind::Azure => std::collections::HashMap::new(),
             };
         }
     }

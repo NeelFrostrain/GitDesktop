@@ -7,6 +7,7 @@ pub enum ProviderKind {
     Gitlab,
     Github,
     Bitbucket,
+    Azure,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]

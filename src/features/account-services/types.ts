@@ -1,4 +1,4 @@
-export type ProviderKind = 'gitlab' | 'github' | 'bitbucket' | 'custom';
+export type ProviderKind = 'gitlab' | 'github' | 'bitbucket' | 'azure' | 'custom';
 
 export type TokenStatus = 'valid' | 'expiring_soon' | 'expired' | 'needs_reauth';
 

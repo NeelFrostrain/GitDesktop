@@ -31,7 +31,8 @@ pub fn get_file_diff(
     let repo = Repository::open(repo_path)
         .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
 
-    let full_path = Path::new(repo_path).join(file_path);
+    let clean_path = file_path.trim_end_matches('/').trim_end_matches('\\');
+    let full_path = Path::new(repo_path).join(clean_path);
 
     let file_size_bytes = if full_path.exists() {
         fs::metadata(&full_path).map(|m| m.len()).unwrap_or(0)
@@ -98,10 +99,16 @@ pub fn get_file_diff(
     };
 
     let mut opts = DiffOptions::new();
-    opts.pathspec(file_path);
+    if full_path.is_dir() {
+        let glob = format!("{}/*", clean_path.replace('\\', "/"));
+        opts.pathspec(glob);
+        opts.recurse_untracked_dirs(true);
+    } else {
+        opts.pathspec(clean_path);
+        opts.recurse_untracked_dirs(false);
+    }
     opts.include_untracked(true);
     opts.show_untracked_content(true);
-    opts.recurse_untracked_dirs(false); // Do not walk untracked subtrees for targeted file diff
 
     let head_tree = repo.head().and_then(|h| h.peel_to_tree()).ok();
 

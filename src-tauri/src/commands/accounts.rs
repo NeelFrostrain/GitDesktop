@@ -81,6 +81,7 @@ pub async fn accounts_remove(account_id: String) -> Result<(), AppError> {
                     let provider = BitbucketAuthProvider;
                     let _ = tokio::runtime::Handle::current().block_on(provider.revoke_token(acc));
                 }
+                ProviderKind::Azure => {}
             }
         }
         token_store::remove_account(&aid)
@@ -124,6 +125,11 @@ pub async fn accounts_start_oauth(
                 .clone()
                 .unwrap_or_else(|| p.default_instance_url().to_string());
             p.start_oauth(&target)?
+        }
+        "azure" => {
+            return Err(AppError::Validation(
+                "Azure DevOps authenticates using Personal Access Tokens (PAT). Please click 'Use Token' to connect your account.".to_string(),
+            ));
         }
         _ => {
             return Err(AppError::Validation(format!(
@@ -672,6 +678,79 @@ pub async fn accounts_connect_with_token(
                     "account".to_string(),
                     "repository".to_string(),
                     "pullrequest".to_string(),
+                ],
+                expires_at: None,
+                refresh_token_expires_at: None,
+            };
+
+            token_store::save_account(acc.clone(), token, None)?;
+            acc
+        }
+        "azure" => {
+            let clean_url = instance_url
+                .filter(|u| !u.trim().is_empty())
+                .unwrap_or_else(|| "https://dev.azure.com".to_string())
+                .trim_end_matches('/')
+                .to_string();
+
+            let mut headers = HeaderMap::new();
+            headers.insert(USER_AGENT, HeaderValue::from_static("git-desktop"));
+            headers.insert(ACCEPT, HeaderValue::from_static("application/json"));
+
+            let auth_str = format!(":{}", token.trim());
+            let encoded = base64::engine::general_purpose::STANDARD.encode(auth_str.as_bytes());
+            headers.insert(
+                AUTHORIZATION,
+                HeaderValue::from_str(&format!("Basic {}", encoded))
+                    .map_err(|_| AppError::Validation("Invalid token".to_string()))?,
+            );
+
+            // Fetch user profile from Azure DevOps
+            let profile_url = "https://app.vssps.visualstudio.com/_apis/profile/profiles/me?api-version=7.1-preview.1";
+            let profile_resp = client
+                .get(profile_url)
+                .headers(headers.clone())
+                .send()
+                .await;
+
+            let (user_handle, display_name, email_str) = if let Ok(resp) = profile_resp {
+                if resp.status().is_success() {
+                    let v: serde_json::Value = resp.json().await.unwrap_or_default();
+                    let d_name = v.get("displayName").and_then(|s| s.as_str()).unwrap_or("Azure User").to_string();
+                    let p_alias = v.get("publicAlias").and_then(|s| s.as_str()).map(|s| s.to_string());
+                    let email = v.get("emailAddress").and_then(|s| s.as_str()).unwrap_or("").to_string();
+                    let handle = p_alias.unwrap_or_else(|| {
+                        if !email.is_empty() {
+                            email.split('@').next().unwrap_or("azure_user").to_string()
+                        } else {
+                            username.clone().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| "azure_user".to_string())
+                        }
+                    });
+                    (handle, d_name, email)
+                } else {
+                    let u_h = username.clone().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| "azure_user".to_string());
+                    (u_h.clone(), u_h, "".to_string())
+                }
+            } else {
+                let u_h = username.clone().filter(|u| !u.trim().is_empty()).unwrap_or_else(|| "azure_user".to_string());
+                (u_h.clone(), u_h, "".to_string())
+            };
+
+            let account_id = format!("azure:dev.azure.com:{}", user_handle);
+
+            let acc = ProviderAccount {
+                id: account_id,
+                provider: ProviderKind::Azure,
+                instance_url: clean_url,
+                handle: format!("@{}", user_handle),
+                display_name,
+                avatar_url: "".to_string(),
+                commit_email: email_str,
+                is_active: false,
+                token_status: TokenStatus::Valid,
+                scopes: vec![
+                    "vso.code_full".to_string(),
+                    "vso.project".to_string(),
                 ],
                 expires_at: None,
                 refresh_token_expires_at: None,

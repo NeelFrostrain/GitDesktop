@@ -14,12 +14,21 @@ pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> 
         index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
     } else {
         for file in &files {
-            let path = Path::new(file);
+            let clean_str = file.trim_end_matches('/').trim_end_matches('\\');
+            if clean_str.is_empty() {
+                continue;
+            }
+            let path = Path::new(clean_str);
             let full_path = Path::new(repo_path).join(path);
             if full_path.exists() {
-                index.add_path(path)?;
+                if full_path.is_dir() {
+                    let glob = format!("{}/*", clean_str.replace('\\', "/"));
+                    let _ = index.add_all([&glob].iter(), IndexAddOption::DEFAULT, None);
+                } else {
+                    index.add_path(path)?;
+                }
             } else {
-                index.remove_path(path)?;
+                let _ = index.remove_path(path);
             }
         }
     }
@@ -32,18 +41,24 @@ pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError
     let repo = Repository::open(repo_path)?;
     let head = repo.head().and_then(|h| h.peel_to_commit()).ok();
 
+    let clean_files: Vec<String> = files
+        .into_iter()
+        .map(|f| f.trim_end_matches('/').trim_end_matches('\\').to_string())
+        .filter(|f| !f.is_empty())
+        .collect();
+
     if let Some(commit) = head {
         // Normal case: repo has at least one commit — use libgit2 reset
-        repo.reset_default(Some(commit.as_object()), files)?;
+        repo.reset_default(Some(commit.as_object()), &clean_files)?;
         let mut index = repo.index()?;
         index.write()?;
     } else {
         // Brand-new repo with no commits yet — HEAD doesn't exist.
         // Use `git rm --cached` to remove files from the index.
-        let file_args: Vec<&str> = files.iter().map(|s| s.as_str()).collect();
+        let file_args: Vec<&str> = clean_files.iter().map(|s| s.as_str()).collect();
         if !file_args.is_empty() {
             let mut cmd = silent_git_command();
-            cmd.arg("rm").arg("--cached").arg("--");
+            cmd.arg("rm").arg("-r").arg("--cached").arg("--");
             for f in &file_args {
                 cmd.arg(f);
             }

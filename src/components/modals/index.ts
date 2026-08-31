@@ -20,3 +20,4 @@ export { CreateReleaseModal } from './CreateReleaseModal';
 export { PublishRepoModal } from './PublishRepoModal';
 export { RemoteNotFoundModal } from './RemoteNotFoundModal';
 export { MissingRepoModal } from './MissingRepoModal';
+export { GitHookModal } from './GitHookModal';

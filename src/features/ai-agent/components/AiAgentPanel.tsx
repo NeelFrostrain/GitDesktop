@@ -13,7 +13,6 @@ import {
   Terminal,
   FileCode,
   Zap,
-  Sparkles,
   Loader2,
 } from 'lucide-react';
 import { useAiAgentStore } from '../store/useAiAgentStore';
@@ -24,10 +23,22 @@ import { Button } from '../../../components/common/Button';
 
 const MODEL_OPTIONS = [
   {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash Lite',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    badge: 'State-of-Art',
+    desc: 'Hybrid reasoning with ultra-fast latency for code & diffs.',
+  },
+  {
+    id: 'gemini-3.7-pro',
+    name: 'Gemini 3.7 Pro',
+    badge: 'Deep Reason',
+    desc: 'Deep reasoning model for architecture, PR reviews, and complex Git operations.',
+  },
+  {
+    id: 'gemini-3.6-flash-lite',
+    name: 'Gemini 3.6 Flash Lite',
     badge: 'Ultra Fast',
-    desc: 'Lightning fast execution, free tier quotas.',
+    desc: 'Next-generation lightweight reasoning with sub-second execution.',
   },
   {
     id: 'gemini-3.5-flash-lite',
@@ -42,22 +53,52 @@ const MODEL_OPTIONS = [
     desc: 'Balanced reasoning and rapid latency for diffs.',
   },
   {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    badge: 'Ultra Fast',
+    desc: 'Lightning fast execution, optimized for live chat and free tier quotas.',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    badge: 'Fast',
+    desc: 'Next-generation multimodal reasoning model with fast execution.',
+  },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    badge: 'Pro Reasoning',
+    desc: 'Deep reasoning model for architecture, multi-file edits, and PR reviews.',
+  },
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    badge: 'Flash',
+    desc: 'Deep semantic understanding across codebases and Git repositories.',
+  },
+  {
     id: 'gemini-2.0-flash-lite',
     name: 'Gemini 2.0 Flash Lite',
     badge: 'Low Latency',
     desc: 'Sub-second generation times with concise formatting.',
   },
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    badge: 'Flash',
-    desc: 'Deep semantic understanding across codebases.',
+    id: 'gemini-2.0-flash-thinking-exp-01-21',
+    name: 'Gemini 2.0 Flash Thinking',
+    badge: 'Thinking',
+    desc: 'Experimental step-by-step reasoning for intricate logic & refactoring.',
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    badge: '1.5 Pro',
+    desc: 'Extensive multi-million token context window for massive diffs.',
   },
   {
     id: 'gemini-1.5-flash',
     name: 'Gemini 1.5 Flash',
     badge: '1.5 Flash',
-    desc: 'Proven fast reasoning with large context window.',
+    desc: 'Proven reliable reasoning with rapid response times.',
   },
 ];
 
@@ -460,10 +501,6 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
         {/* Empty Welcome State */}
         {(!activeSession?.messages || activeSession.messages.length === 0) && (
           <div className="h-full flex flex-col items-center justify-center text-center p-4 select-none space-y-3 my-auto">
-            <div className="w-9 h-9 rounded-sm bg-base-1 border border-border flex items-center justify-center text-commito-coral shadow-2xs">
-              <Sparkles className="w-4.5 h-4.5" />
-            </div>
-
             <div className="space-y-0.5 max-w-[260px]">
               <h3 className="text-xs font-semibold text-text-primary">AI Assistant</h3>
               <p className="text-[11px] text-text-muted leading-relaxed">

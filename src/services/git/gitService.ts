@@ -678,4 +678,61 @@ export class GitService {
   static async removeInvalidRepos(): Promise<string[]> {
     return invoke<string[]>('remove_invalid_repos_cmd');
   }
+
+  /* -------------------------------------------------------------------------- */
+  /* Git Hooks Management                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Lists all Git hooks and their enabled status for a repository.
+   */
+  static async listHooks(repoPath: string): Promise<import('../../types/git').GitHookInfo[]> {
+    return invoke<import('../../types/git').GitHookInfo[]>('list_git_hooks_cmd', { repoPath });
+  }
+
+  /**
+   * Saves or updates a Git hook script.
+   */
+  static async saveHook(
+    repoPath: string,
+    hookName: string,
+    scriptContent: string,
+    enabled: boolean
+  ): Promise<void> {
+    return invoke<void>('save_git_hook_cmd', {
+      repoPath,
+      hookName,
+      scriptContent,
+      enabled,
+    });
+  }
+
+  /**
+   * Toggles a Git hook enabled/disabled.
+   */
+  static async toggleHook(repoPath: string, hookName: string, enabled: boolean): Promise<void> {
+    return invoke<void>('toggle_git_hook_cmd', { repoPath, hookName, enabled });
+  }
+
+  /**
+   * Deletes a Git hook file.
+   */
+  static async deleteHook(repoPath: string, hookName: string): Promise<void> {
+    return invoke<void>('delete_git_hook_cmd', { repoPath, hookName });
+  }
+
+  /**
+   * Test executes a Git hook in the repository context and captures stdout, stderr, and exit code.
+   */
+  static async runHookTest(
+    repoPath: string,
+    hookName: string,
+    sampleArgs?: string[]
+  ): Promise<import('../../types/git').HookTestResult> {
+    return invoke<import('../../types/git').HookTestResult>('run_git_hook_test_cmd', {
+      repoPath,
+      hookName,
+      sampleArgs: sampleArgs || [],
+    });
+  }
 }

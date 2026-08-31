@@ -33,3 +33,4 @@ dist-ssr
 .eslintcache
 SECURITY_BUG_OPTIMIZATION_AUDIT.md
 src-tauri/target_clippy/
+APP_ANALYSIS.md

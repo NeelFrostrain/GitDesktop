@@ -464,3 +464,30 @@ export interface ReleaseInfo {
   web_url?: string;
   assets?: ReleaseAsset[];
 }
+
+/**
+ * Git repository hook information.
+ */
+export interface GitHookInfo {
+  name: string;
+  description: string;
+  category: string;
+  enabled: boolean;
+  exists: boolean;
+  is_executable: boolean;
+  script_content: string;
+  file_path: string;
+  default_template?: string;
+}
+
+/**
+ * Execution result from running a test Git hook script.
+ */
+export interface HookTestResult {
+  exit_code: number;
+  success: boolean;
+  stdout: string;
+  stderr: string;
+  duration_ms: number;
+}
+

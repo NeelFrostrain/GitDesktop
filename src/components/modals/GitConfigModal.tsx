@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { X, FileCode, Save, Wrench, Plus } from 'lucide-react';
+import { X, FileCode, Save, Wrench, Plus, ShieldCheck } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
 import { useLogStore } from '../../store/useLogStore';
 import { GitConfigItem } from '../../types/git';
@@ -172,6 +172,19 @@ export const GitConfigModal: React.FC = () => {
           >
             <Wrench className="w-3.5 h-3.5" />
             <span>Repo Git Config</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setIsConfigModalOpen(false);
+              useGitStore.getState().setIsHooksModalOpen(true);
+            }}
+            className="px-3.5 py-1.5 rounded-sm text-xs font-bold flex items-center gap-1.5 transition cursor-pointer bg-base-2 text-text-secondary hover:text-text-primary hover:bg-base-3 ml-auto"
+            title="Open Git Hook Visualizer"
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-commito-coral" />
+            <span>Git Hooks Manager</span>
           </button>
         </div>
 

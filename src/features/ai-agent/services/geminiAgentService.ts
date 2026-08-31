@@ -26,6 +26,18 @@ export class GeminiAgentService {
    * Sends a structured conversation to the Gemini API with key rotation, TOON format optimization, and tool call extraction.
    */
   static async sendChatMessage(options: GeminiAgentRequestOptions): Promise<GeminiAgentResponse> {
+    return this.streamChatMessage(options);
+  }
+
+  /**
+   * Streams chat completions from Google Gemini API via Server-Sent Events (SSE),
+   * providing live word-by-word token callbacks, API key rotation, and tool call parsing.
+   */
+  static async streamChatMessage(
+    options: GeminiAgentRequestOptions,
+    onChunk?: (chunk: string, fullText: string) => void,
+    signal?: AbortSignal
+  ): Promise<GeminiAgentResponse> {
     const {
       apiKeyPool = [],
       activeApiKey = '',
@@ -101,7 +113,6 @@ export class GeminiAgentService {
 
       const lastContent = contents[contents.length - 1];
       if (lastContent && lastContent.role === role) {
-        // Merge adjacent messages of the same role into a single multi-part turn
         lastContent.parts[0].text += `\n\n${partText}`;
       } else {
         contents.push({
@@ -111,7 +122,6 @@ export class GeminiAgentService {
       }
     }
 
-    // Gemini API requires the conversation contents to start with role 'user'
     while (contents.length > 0 && contents[0].role !== 'user') {
       contents.shift();
     }
@@ -134,56 +144,128 @@ export class GeminiAgentService {
 
     let lastError: Error | null = null;
 
-    // Try keys in rotation
-    for (const apiKey of keysToTry) {
-      try {
-        const url = `${API_BASE}/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
-
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!response.ok) {
-          const errBody = await response.text();
-          let parsedMessage = errBody;
-          try {
-            const json = JSON.parse(errBody);
-            if (json.error?.message) parsedMessage = json.error.message;
-          } catch {}
-
-          // If rate limited or quota exceeded, rotate to next key
-          if (response.status === 429 || response.status === 403) {
-            lastError = new Error(`Key rate limited or quota exceeded: ${parsedMessage}`);
-            continue;
-          }
-
-          throw new Error(`Gemini API error (${response.status}): ${parsedMessage}`);
-        }
-
-        const data = await response.json();
-        const candidate = data.candidates?.[0];
-        const rawText =
-          candidate?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') ||
-          'I completed the analysis, but no response text was returned.';
-
-        // Extract executable tool calls from response code blocks & file markers
-        const toolCalls = this.extractToolCalls(rawText);
-
-        return {
-          text: rawText,
-          toolCalls,
-          modelUsed: model,
-          usedApiKey: apiKey,
-        };
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        // Continue to next key if available
+    // Candidate fallback models if selected model returns 404 or is unavailable
+    const modelsToTry = [model];
+    for (const fb of [
+      'gemini-2.5-flash-lite',
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-1.5-flash',
+    ]) {
+      if (!modelsToTry.includes(fb)) {
+        modelsToTry.push(fb);
       }
     }
 
-    throw lastError || new Error('Failed to generate response using configured API keys.');
+    // Try keys in rotation and fallback models on 404
+    for (const apiKey of keysToTry) {
+      for (const targetModel of modelsToTry) {
+        if (signal?.aborted) {
+          throw new DOMException('Generation stopped by user', 'AbortError');
+        }
+
+        try {
+          const streamUrl = `${API_BASE}/${targetModel}:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+
+          const response = await fetch(streamUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            signal,
+          });
+
+          if (!response.ok) {
+            const errBody = await response.text();
+            let parsedMessage = errBody;
+            try {
+              const json = JSON.parse(errBody);
+              if (json.error?.message) parsedMessage = json.error.message;
+            } catch {}
+
+            if (response.status === 404) {
+              lastError = new Error(`Model ${targetModel} not found (404), trying fallback...`);
+              continue; // Try next fallback model
+            }
+
+            if (response.status === 429 || response.status === 403) {
+              lastError = new Error(`Key rate limited or quota exceeded: ${parsedMessage}`);
+              break; // Switch API key
+            }
+
+            throw new Error(`Gemini API error (${response.status}): ${parsedMessage}`);
+          }
+
+          if (!response.body) {
+            throw new Error('Response body is null, cannot stream SSE data.');
+          }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let accumulatedText = '';
+        let sseBuffer = '';
+
+        try {
+          while (true) {
+            if (signal?.aborted) {
+              await reader.cancel();
+              break;
+            }
+
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            sseBuffer += decoder.decode(value, { stream: true });
+            const lines = sseBuffer.split('\n');
+            sseBuffer = lines.pop() || '';
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (trimmed.startsWith('data: ')) {
+                const dataJson = trimmed.slice(6).trim();
+                if (!dataJson || dataJson === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(dataJson);
+                  const candidate = parsed.candidates?.[0];
+                  const chunkText =
+                    candidate?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
+
+                  if (chunkText) {
+                    accumulatedText += chunkText;
+                    if (onChunk) {
+                      onChunk(chunkText, accumulatedText);
+                    }
+                  }
+                } catch {
+                  // Partial JSON chunk, will be resolved with next line or ignored
+                }
+              }
+            }
+          }
+        } finally {
+          reader.releaseLock();
+        }
+
+        const finalText = accumulatedText.trim() || 'I completed the request, but no response was returned.';
+        const toolCalls = this.extractToolCalls(finalText);
+
+        return {
+          text: finalText,
+          toolCalls,
+          modelUsed: targetModel,
+          usedApiKey: apiKey,
+        };
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          throw err;
+        }
+        lastError = err instanceof Error ? err : new Error(String(err));
+      }
+    }
+  }
+
+  throw lastError || new Error('Failed to stream response using configured API keys.');
   }
 
   /**

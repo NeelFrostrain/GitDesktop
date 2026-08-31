@@ -280,6 +280,11 @@ pub fn run() {
             save_file_content_cmd,
             create_directory_cmd,
             rename_file_cmd,
+            list_git_hooks_cmd,
+            save_git_hook_cmd,
+            toggle_git_hook_cmd,
+            delete_git_hook_cmd,
+            run_git_hook_test_cmd,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,7 +1,7 @@
 /**
  * Supported cloud Git providers and custom identities.
  */
-export type Provider = 'gitlab' | 'github' | 'bitbucket' | 'custom';
+export type Provider = 'gitlab' | 'github' | 'bitbucket' | 'azure' | 'custom';
 
 /**
  * GitLab API user entity.

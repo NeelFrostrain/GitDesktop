@@ -1314,3 +1314,70 @@ pub async fn generate_ai_release_notes_cmd(
 
     Ok(res)
 }
+
+// =========================================================================
+// Git Hooks Subsystem Commands
+// =========================================================================
+
+#[command]
+pub async fn list_git_hooks_cmd(
+    repo_path: String,
+) -> Result<Vec<crate::git::workspace::hooks::GitHookInfo>, AppError> {
+    tokio::task::spawn_blocking(move || crate::git::workspace::hooks::list_git_hooks(&repo_path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn save_git_hook_cmd(
+    repo_path: String,
+    hook_name: String,
+    script_content: String,
+    enabled: bool,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::workspace::hooks::save_git_hook(&repo_path, &hook_name, &script_content, enabled)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn toggle_git_hook_cmd(
+    repo_path: String,
+    hook_name: String,
+    enabled: bool,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::workspace::hooks::toggle_git_hook(&repo_path, &hook_name, enabled)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn delete_git_hook_cmd(
+    repo_path: String,
+    hook_name: String,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::workspace::hooks::delete_git_hook(&repo_path, &hook_name)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn run_git_hook_test_cmd(
+    repo_path: String,
+    hook_name: String,
+    sample_args: Option<Vec<String>>,
+) -> Result<crate::git::workspace::hooks::HookTestResult, AppError> {
+    let args = sample_args.unwrap_or_default();
+    tokio::task::spawn_blocking(move || {
+        crate::git::workspace::hooks::run_git_hook_test(&repo_path, &hook_name, args)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+

@@ -144,6 +144,11 @@ const GitConfigModal = lazy(() =>
     default: m.GitConfigModal,
   }))
 );
+const GitHookModal = lazy(() =>
+  import('./components/modals/GitHookModal').then((m) => ({
+    default: m.GitHookModal,
+  }))
+);
 const CommandPaletteModal = lazy(() =>
   import('./components/modals/CommandPaletteModal').then((m) => ({
     default: m.CommandPaletteModal,
@@ -720,6 +725,7 @@ export const App: React.FC = () => {
           <ReflogModal />
           <PatchModal />
           <GitConfigModal />
+          <GitHookModal />
           <RewriteHistoryModal />
           <CreateTagModal
             isOpen={isCreateTagModalOpen}

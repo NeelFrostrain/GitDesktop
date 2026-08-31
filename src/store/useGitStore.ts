@@ -141,6 +141,7 @@ export interface GitState {
   isConflictResolverModalOpen: boolean;
   isPatchModalOpen: boolean;
   isConfigModalOpen: boolean;
+  isHooksModalOpen: boolean;
   isRewriteModalOpen: boolean;
   isCreateTagModalOpen: boolean;
   tagModalTargetCommitSha: string | null;
@@ -224,6 +225,7 @@ export interface GitState {
   setIsConflictResolverModalOpen: (open: boolean) => void;
   setIsPatchModalOpen: (open: boolean) => void;
   setIsConfigModalOpen: (open: boolean) => void;
+  setIsHooksModalOpen: (open: boolean) => void;
   setIsRewriteModalOpen: (open: boolean) => void;
   setIsCreateTagModalOpen: (open: boolean) => void;
   setTagModalTargetCommitSha: (sha: string | null) => void;
@@ -309,6 +311,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   isConflictResolverModalOpen: false,
   isPatchModalOpen: false,
   isConfigModalOpen: false,
+  isHooksModalOpen: false,
   isRewriteModalOpen: false,
   isCreateTagModalOpen: false,
   tagModalTargetCommitSha: null,
@@ -882,6 +885,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     set({ isConflictResolverModalOpen }),
   setIsPatchModalOpen: (isPatchModalOpen) => set({ isPatchModalOpen }),
   setIsConfigModalOpen: (isConfigModalOpen) => set({ isConfigModalOpen }),
+  setIsHooksModalOpen: (isHooksModalOpen) => set({ isHooksModalOpen }),
   setIsRewriteModalOpen: (isRewriteModalOpen) => set({ isRewriteModalOpen }),
   setIsCreateTagModalOpen: (isCreateTagModalOpen) => set({ isCreateTagModalOpen }),
   setTagModalTargetCommitSha: (tagModalTargetCommitSha) => set({ tagModalTargetCommitSha }),

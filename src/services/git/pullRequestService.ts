@@ -238,33 +238,46 @@ export class PullRequestService {
 }
 
 /**
- * Utility to parse repository path (owner/repo or group/subgroup/repo) and provider from remote URL.
+ * Utility to parse repository path (owner/repo, group/subgroup/repo, workspace/repo, or org/project/repo) and provider from remote URL.
  */
 export function parseRemoteRepoInfo(remoteUrl?: string | null): {
   projectPath: string;
-  provider: 'github' | 'gitlab' | 'unknown';
+  provider: 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'unknown';
   serverUrl?: string;
 } | null {
   if (!remoteUrl) return null;
   const clean = remoteUrl.trim().replace(/\.git\/?$/, '');
 
-  // 1. Match HTTPS/HTTP format: https://github.com/owner/repo or https://gitlab.com/group/project
+  // Helper to determine provider and normalized serverUrl from host
+  const determineProviderAndServer = (host: string): { provider: 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'unknown'; serverUrl: string } => {
+    const h = host.toLowerCase();
+    if (h.includes('github')) return { provider: 'github', serverUrl: 'https://github.com' };
+    if (h.includes('bitbucket')) return { provider: 'bitbucket', serverUrl: 'https://bitbucket.org' };
+    if (h.includes('dev.azure.com') || h.includes('.visualstudio.com')) return { provider: 'azure', serverUrl: 'https://dev.azure.com' };
+    if (h.includes('gitlab')) return { provider: 'gitlab', serverUrl: `https://${host}` };
+    return { provider: 'unknown', serverUrl: `https://${host}` };
+  };
+
+  // 1. Match HTTPS/HTTP format: https://github.com/owner/repo or https://dev.azure.com/org/project/_git/repo
   if (clean.startsWith('http://') || clean.startsWith('https://')) {
     try {
       const url = new URL(clean);
       const host = url.hostname.toLowerCase();
-      const projectPath = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      const isGitHub = host.includes('github');
-      const isGitLab = host.includes('gitlab');
-      const provider = isGitHub ? 'github' : isGitLab ? 'gitlab' : 'unknown';
-      const serverUrl = isGitHub ? 'https://github.com' : `${url.protocol}//${url.host}`;
+      let projectPath = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+      
+      // Azure DevOps special URL path: org/project/_git/repo -> org/project/repo
+      if (host.includes('dev.azure.com') || host.includes('visualstudio.com')) {
+        projectPath = projectPath.replace('/_git/', '/');
+      }
+
+      const { provider, serverUrl } = determineProviderAndServer(host);
       return { projectPath, provider, serverUrl };
     } catch {
       return null;
     }
   }
 
-  // 2. Match SSH Protocol format: ssh://git@github.com/owner/repo or git+ssh://...
+  // 2. Match SSH Protocol format: ssh://git@bitbucket.org/workspace/repo or ssh://...
   if (clean.startsWith('ssh://') || clean.startsWith('git+ssh://')) {
     try {
       const stripped = clean.replace(/^(?:git\+)?ssh:\/\//, '');
@@ -273,14 +286,16 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
         let host = stripped.substring(0, slashIdx);
         if (host.includes('@')) host = host.split('@')[1];
         if (host.includes(':')) host = host.split(':')[0];
-        const projectPath = stripped
+        let projectPath = stripped
           .substring(slashIdx + 1)
           .replace(/^\/+/, '')
           .replace(/\/+$/, '');
-        const isGitHub = host.toLowerCase().includes('github');
-        const isGitLab = host.toLowerCase().includes('gitlab');
-        const provider = isGitHub ? 'github' : isGitLab ? 'gitlab' : 'unknown';
-        const serverUrl = isGitHub ? 'https://github.com' : `https://${host}`;
+
+        if (host.includes('dev.azure.com') || host.includes('visualstudio.com')) {
+          projectPath = projectPath.replace('/_git/', '/');
+        }
+
+        const { provider, serverUrl } = determineProviderAndServer(host);
         return { projectPath, provider, serverUrl };
       }
     } catch {
@@ -288,15 +303,19 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
     }
   }
 
-  // 3. Match SCP-like SSH format: git@github.com:owner/project or git@gitlab.com:group/project
+  // 3. Match SCP-like SSH format: git@bitbucket.org:workspace/repo or git@ssh.dev.azure.com:v3/org/project/repo
   const scpMatch = clean.match(/^(?:[\w.-]+@)?([^:/]+):(?:\d+\/)?(.+)$/);
   if (scpMatch) {
     const host = scpMatch[1].toLowerCase();
-    const projectPath = scpMatch[2].replace(/^\/+/, '').replace(/\/+$/, '');
-    const isGitHub = host.includes('github');
-    const isGitLab = host.includes('gitlab');
-    const provider = isGitHub ? 'github' : isGitLab ? 'gitlab' : 'unknown';
-    const serverUrl = isGitHub ? 'https://github.com' : `https://${host}`;
+    let projectPath = scpMatch[2].replace(/^\/+/, '').replace(/\/+$/, '');
+    
+    // Azure SSH format v3/org/project/repo -> org/project/repo
+    if (projectPath.startsWith('v3/')) {
+      projectPath = projectPath.substring(3);
+    }
+    projectPath = projectPath.replace('/_git/', '/');
+
+    const { provider, serverUrl } = determineProviderAndServer(host);
     return { projectPath, provider, serverUrl };
   }
 

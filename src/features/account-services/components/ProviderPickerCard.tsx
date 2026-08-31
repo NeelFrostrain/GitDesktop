@@ -45,6 +45,16 @@ const PROVIDERS: ProviderConfig[] = [
     borderClass: 'border-blue-800/40',
     bgClass: 'bg-blue-950/40',
   },
+  {
+    id: 'azure',
+    name: 'Azure DevOps',
+    badge: 'Cloud & Server',
+    defaultUrl: 'https://dev.azure.com',
+    description: 'Authorize with your Microsoft Azure DevOps organization or project.',
+    colorClass: 'text-sky-400',
+    borderClass: 'border-sky-800/40',
+    bgClass: 'bg-sky-950/40',
+  },
 ];
 
 export const ProviderPickerCard: React.FC = () => {
@@ -56,6 +66,7 @@ export const ProviderPickerCard: React.FC = () => {
     gitlab: 'https://gitlab.com',
     github: 'https://github.com',
     bitbucket: 'https://bitbucket.org',
+    azure: 'https://dev.azure.com',
   });
   const [expandedUrlProvider, setExpandedUrlProvider] = useState<ProviderKey | null>(null);
 
@@ -101,6 +112,27 @@ export const ProviderPickerCard: React.FC = () => {
   const handleSignIn = async (provider: ProviderConfig) => {
     setError(null);
     setSuccessMsg(null);
+
+    if (provider.id === 'azure') {
+      setTokenDialogProvider(provider);
+      const rawUrl = customUrls['azure'] || provider.defaultUrl;
+      let targetUrl = 'https://aex.dev.azure.com/me';
+      try {
+        const parsed = new URL(rawUrl.trim().replace(/\/+$/, ''));
+        const pathParts = parsed.pathname.split('/').filter(Boolean);
+        if (pathParts.length > 0) {
+          targetUrl = `${parsed.origin}/${pathParts[0]}/_usersSettings/tokens`;
+        }
+      } catch {}
+      try {
+        const { openUrl } = await import('@tauri-apps/plugin-opener');
+        await openUrl(targetUrl);
+      } catch {
+        window.open(targetUrl, '_blank');
+      }
+      return;
+    }
+
     setActiveWaitingProvider(provider.id);
 
     const instanceUrl = customUrls[provider.id] || provider.defaultUrl;
@@ -208,7 +240,7 @@ export const ProviderPickerCard: React.FC = () => {
                     <div className="flex items-center gap-2">
                       <Button
                         type="button"
-                        variant="secondary"
+                        variant={provider.id === 'azure' ? 'coral' : 'secondary'}
                         size="sm"
                         onClick={() => setTokenDialogProvider(provider)}
                         leftIcon={<Key className="w-3.5 h-3.5" />}
@@ -216,16 +248,18 @@ export const ProviderPickerCard: React.FC = () => {
                       >
                         Use Token
                       </Button>
-                      <Button
-                        type="button"
-                        variant="coral"
-                        size="sm"
-                        onClick={() => handleSignIn(provider)}
-                        leftIcon={<Globe className="w-3.5 h-3.5" />}
-                        title={`Sign in to ${provider.name} using your web browser`}
-                      >
-                        Browser
-                      </Button>
+                      {provider.id !== 'azure' && (
+                        <Button
+                          type="button"
+                          variant="coral"
+                          size="sm"
+                          onClick={() => handleSignIn(provider)}
+                          leftIcon={<Globe className="w-3.5 h-3.5" />}
+                          title={`Sign in to ${provider.name} using your web browser`}
+                        >
+                          Browser
+                        </Button>
+                      )}
                     </div>
                   )}
                 </div>

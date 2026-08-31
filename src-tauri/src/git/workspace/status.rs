@@ -74,10 +74,10 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
         Err(_) => (false, None),
     };
 
-    // Get status list optimized for large repositories (do not recursively walk untracked directories)
+    // Get status list with recurse_untracked_dirs enabled so individual files inside new directories are listed
     let mut opts = StatusOptions::new();
     opts.include_untracked(true)
-        .recurse_untracked_dirs(false)
+        .recurse_untracked_dirs(true)
         .include_ignored(false)
         .renames_head_to_index(true)
         .renames_index_to_workdir(true);

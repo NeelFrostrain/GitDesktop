@@ -36,6 +36,19 @@ export const ProviderBadge: React.FC<ProviderBadgeProps> = ({ provider, classNam
     );
   }
 
+  if (p === 'azure' || p === 'azure devops' || p === 'azure_devops') {
+    return (
+      <span
+        className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-xs bg-sky-950/40 border border-sky-800/40 text-sky-400 text-[10px] font-mono font-bold tracking-wide select-none ${className}`}
+      >
+        <svg className="w-2.5 h-2.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M0 8.877L2.247 5.81l6.434-2.383 6.945 2.658L24 1.576v18.784l-7.986 2.064-7.441-3.238L2.43 21.05 0 17.518V8.877zm8.43 7.828l7.19-2.736V8.196L8.43 5.485v11.22z" />
+        </svg>
+        <span>Azure DevOps</span>
+      </span>
+    );
+  }
+
   if (p === 'custom') {
     return (
       <span

@@ -312,11 +312,18 @@ export const MergeRequestModal: React.FC = () => {
   const providerName = useMemo(() => {
     if (targetRemoteInfo?.provider === 'github') return 'GitHub';
     if (targetRemoteInfo?.provider === 'gitlab') return 'GitLab';
+    if (targetRemoteInfo?.provider === 'bitbucket') return 'Bitbucket';
+    if (targetRemoteInfo?.provider === 'azure') return 'Azure DevOps';
     if (user?.provider === 'github') return 'GitHub';
+    if (user?.provider === 'bitbucket') return 'Bitbucket';
+    if (user?.provider === 'azure') return 'Azure DevOps';
     return 'GitLab';
   }, [targetRemoteInfo, user]);
 
-  const requestTypeLabel = providerName === 'GitHub' ? 'Pull Request' : 'Merge Request';
+  const requestTypeLabel =
+    providerName === 'GitHub' || providerName === 'Bitbucket' || providerName === 'Azure DevOps'
+      ? 'Pull Request'
+      : 'Merge Request';
 
   // Handlers for Quick Remote Connection and Direct Token Update
   const handleQuickAddRemote = async () => {

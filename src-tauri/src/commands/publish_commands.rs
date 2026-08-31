@@ -333,6 +333,19 @@ pub async fn accounts_list_namespaces(account_id: String) -> Result<Vec<Namespac
 
             Ok(namespaces)
         }
+        ProviderKind::Azure => {
+            Ok(vec![NamespaceOption {
+                id: "default".to_string(),
+                name: format!("Personal / Default ({})", clean_handle),
+                description: Some("Azure DevOps Project".to_string()),
+                kind: "project".to_string(),
+                avatar_url: if !account.avatar_url.is_empty() {
+                    Some(account.avatar_url.clone())
+                } else {
+                    None
+                },
+            }])
+        }
     }
 }
 
@@ -557,6 +570,11 @@ pub async fn repo_publish(
                 .unwrap_or(&clone_url)
                 .to_string();
 
+            (clone_url, web_url)
+        }
+        ProviderKind::Azure => {
+            let clone_url = format!("https://dev.azure.com/{}/{}/_git/{}", clean_handle, clean_handle, clean_name);
+            let web_url = format!("https://dev.azure.com/{}/{}/_git/{}", clean_handle, clean_handle, clean_name);
             (clone_url, web_url)
         }
     };

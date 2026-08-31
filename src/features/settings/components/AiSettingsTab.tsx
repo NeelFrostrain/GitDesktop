@@ -17,11 +17,25 @@ import { openUrl } from '@tauri-apps/plugin-opener';
 
 const MODEL_OPTIONS = [
   {
-    id: 'gemini-2.5-flash-lite',
-    name: 'Gemini 2.5 Flash Lite',
-    subtitle: 'Recommended • Ultra Fast',
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    subtitle: 'State-of-the-Art • Hybrid Reasoning',
+    badge: 'State-of-Art',
+    desc: 'Cutting-edge hybrid reasoning with ultra-fast latency for code generation, diff analysis, and repository planning.',
+  },
+  {
+    id: 'gemini-3.7-pro',
+    name: 'Gemini 3.7 Pro',
+    subtitle: 'Deep Reasoning • Architecture',
+    badge: 'Deep Reason',
+    desc: 'Advanced reasoning model for complex codebases, multi-file refactoring, and comprehensive PR reviews.',
+  },
+  {
+    id: 'gemini-3.6-flash-lite',
+    name: 'Gemini 3.6 Flash Lite',
+    subtitle: 'Next-Gen Lightweight',
     badge: 'Ultra Fast',
-    desc: 'Sub-second commit generation with optimized token usage and generous free quotas on Google AI Studio.',
+    desc: 'Next-generation lightweight reasoning model optimized for instant commit message generation.',
   },
   {
     id: 'gemini-3.5-flash-lite',
@@ -38,6 +52,34 @@ const MODEL_OPTIONS = [
     desc: 'Balanced reasoning speed and contextual accuracy for complex conventional commit formatting.',
   },
   {
+    id: 'gemini-2.5-flash-lite',
+    name: 'Gemini 2.5 Flash Lite',
+    subtitle: 'Recommended • Ultra Fast',
+    badge: 'Ultra Fast',
+    desc: 'Sub-second commit generation with optimized token usage and generous free quotas on Google AI Studio.',
+  },
+  {
+    id: 'gemini-2.5-flash',
+    name: 'Gemini 2.5 Flash',
+    subtitle: 'Next-Gen Multimodal',
+    badge: 'Fast',
+    desc: 'Next-generation multimodal reasoning model with ultra-fast latency for code and diffs.',
+  },
+  {
+    id: 'gemini-2.5-pro',
+    name: 'Gemini 2.5 Pro',
+    subtitle: 'Deep Reasoning • Pro Architecture',
+    badge: 'Pro Reasoning',
+    desc: 'Deep reasoning model for architecture, multi-file edits, and PR reviews.',
+  },
+  {
+    id: 'gemini-2.0-flash',
+    name: 'Gemini 2.0 Flash',
+    subtitle: 'Flagship Multimodal',
+    badge: 'Flash',
+    desc: 'Deep semantic understanding across large codebases, large PRs, and complex diff graphs.',
+  },
+  {
     id: 'gemini-2.0-flash-lite',
     name: 'Gemini 2.0 Flash Lite',
     subtitle: 'Ultra Low Latency',
@@ -45,11 +87,18 @@ const MODEL_OPTIONS = [
     desc: 'Instant commit title suggestions with concise, conventional commit message outputs.',
   },
   {
-    id: 'gemini-2.0-flash',
-    name: 'Gemini 2.0 Flash',
-    subtitle: 'Flagship Multimodal',
-    badge: 'Flagship',
-    desc: 'Deep semantic understanding across large codebases, large PRs, and complex diff graphs.',
+    id: 'gemini-2.0-flash-thinking-exp-01-21',
+    name: 'Gemini 2.0 Flash Thinking',
+    subtitle: 'Step-by-Step Reasoning',
+    badge: 'Thinking',
+    desc: 'Experimental step-by-step reasoning for intricate logic, bug reproduction, and refactoring.',
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    subtitle: 'Massive Context Window',
+    badge: '1.5 Pro',
+    desc: 'Multi-million token context window for massive repositories, diffs, and release logs.',
   },
   {
     id: 'gemini-1.5-flash',

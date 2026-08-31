@@ -53,12 +53,14 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Github && url_lower.contains("github.com"))
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && url_lower.contains("gitlab"))
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && url_lower.contains("bitbucket.org"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Azure && (url_lower.contains("dev.azure.com") || url_lower.contains(".visualstudio.com")))
             {
                 if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
                     let prov_str = match acct.provider {
                         crate::domain::accounts::provider::ProviderKind::Github => "github",
                         crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab",
                         crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket",
+                        crate::domain::accounts::provider::ProviderKind::Azure => "azure",
                     };
                     return GitAuthInfo {
                         token: Some(tok),
@@ -82,12 +84,14 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Github && url_lower.contains("github.com"))
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Gitlab && url_lower.contains("gitlab"))
                 || (acct.provider == crate::domain::accounts::provider::ProviderKind::Bitbucket && url_lower.contains("bitbucket.org"))
+                || (acct.provider == crate::domain::accounts::provider::ProviderKind::Azure && (url_lower.contains("dev.azure.com") || url_lower.contains(".visualstudio.com")))
             {
                 if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
                     let prov_str = match acct.provider {
                         crate::domain::accounts::provider::ProviderKind::Github => "github",
                         crate::domain::accounts::provider::ProviderKind::Gitlab => "gitlab",
                         crate::domain::accounts::provider::ProviderKind::Bitbucket => "bitbucket",
+                        crate::domain::accounts::provider::ProviderKind::Azure => "azure",
                     };
                     return GitAuthInfo {
                         token: Some(tok),
@@ -174,6 +178,7 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
             crate::domain::accounts::provider::ProviderKind::Github => provider == "github",
             crate::domain::accounts::provider::ProviderKind::Gitlab => provider == "gitlab",
             crate::domain::accounts::provider::ProviderKind::Bitbucket => provider == "bitbucket",
+            crate::domain::accounts::provider::ProviderKind::Azure => provider == "azure",
         };
         if matches && acct.is_active {
             if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {
@@ -192,6 +197,7 @@ pub fn get_git_auth_info_for_url(repo_path: &str, remote_url: Option<&str>) -> G
             crate::domain::accounts::provider::ProviderKind::Github => provider == "github",
             crate::domain::accounts::provider::ProviderKind::Gitlab => provider == "gitlab",
             crate::domain::accounts::provider::ProviderKind::Bitbucket => provider == "bitbucket",
+            crate::domain::accounts::provider::ProviderKind::Azure => provider == "azure",
         };
         if matches {
             if let Ok(Some(tok)) = crate::domain::accounts::token_store::get_valid_token_sync(&acct.id) {

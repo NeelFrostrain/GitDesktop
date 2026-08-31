@@ -29,19 +29,6 @@ const formatTime = (ts: number): string => {
   });
 };
 
-/**
- * Splits text into natural tokens for streaming
- */
-const tokenizeContent = (text: string): string[] => {
-  const tokens: string[] = [];
-  const regex = /(\s+|\n+|```[\s\S]*?```|`[^`\n]*`|\*\*[^*\n]*\*\*|[^\s\n`*]+)/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    tokens.push(match[0]);
-  }
-  return tokens.length > 0 ? tokens : [text];
-};
-
 export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLatest = false }) => {
   const regenerateMessage = useAiAgentStore((s) => s.regenerateMessage);
   const executeAllToolCallsChained = useAiAgentStore((s) => s.executeAllToolCallsChained);
@@ -63,81 +50,23 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
     );
   }, [message.toolCalls]);
 
-  // Tokenize message for natural token-by-token streaming
-  const tokens = useMemo(() => tokenizeContent(message.content), [message.content]);
-
-  // Only run typing typewriter effect if this message was generated in the last 4 seconds
-  const isFresh = message.role === 'assistant' && isLatest && Date.now() - message.timestamp < 4000;
-  const [displayedTokenCount, setDisplayedTokenCount] = useState<number>(() =>
-    isFresh ? 0 : tokens.length
-  );
+  // For live SSE streaming (when status is thinking and this is the active latest assistant message)
+  const isStreamingLive = message.role === 'assistant' && isLatest && isThinking;
 
   const messageRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isFresh) {
-      setDisplayedTokenCount(tokens.length);
-      return;
-    }
-
-    let isCancelled = false;
-    let index = 0;
-    const total = tokens.length;
-    if (total === 0) return;
-
-    const speedMultiplier = total > 120 ? Math.max(0.35, 120 / total) : 1;
-
-    const streamToken = () => {
-      if (isCancelled) return;
-
-      if (index >= total) {
-        setDisplayedTokenCount(total);
-        return;
-      }
-
-      const chunk = total > 80 && Math.random() > 0.45 ? 2 : 1;
-      index = Math.min(total, index + chunk);
-      setDisplayedTokenCount(index);
-
-      const latestToken = tokens[index - 1] || '';
-
-      let delay = (16 + Math.random() * 12) * speedMultiplier;
-      if (latestToken.includes('\n\n')) {
-        delay = 120 * speedMultiplier;
-      } else if (/[.!?]$/.test(latestToken.trim())) {
-        delay = 95 * speedMultiplier;
-      } else if (/[,:;]$/.test(latestToken.trim())) {
-        delay = 55 * speedMultiplier;
-      }
-
-      setTimeout(streamToken, Math.max(10, delay));
-    };
-
-    const initialTimer = setTimeout(streamToken, 60);
-    return () => {
-      isCancelled = true;
-      clearTimeout(initialTimer);
-    };
-  }, [isFresh, tokens]);
-
-  const isTyping = displayedTokenCount < tokens.length;
-  const visibleContent = isTyping ? tokens.slice(0, displayedTokenCount).join('') : message.content;
-
   // Auto-scroll chat container down as tokens stream in
   useEffect(() => {
-    if (isTyping && messageRef.current) {
+    if (isStreamingLive && messageRef.current) {
       const scrollParent = messageRef.current.closest('.overflow-y-auto');
       if (scrollParent) {
         scrollParent.scrollTop = scrollParent.scrollHeight;
       }
     }
-  }, [displayedTokenCount, isTyping]);
+  }, [isStreamingLive, message.content]);
 
-  const handleSkipTyping = () => {
-    if (isTyping) {
-      setDisplayedTokenCount(tokens.length);
-    }
-  };
+  const visibleContent = message.content;
+  const isTyping = isStreamingLive;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -300,10 +229,7 @@ export const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ message, isLat
 
       {/* Main Inner Text Content (Direct Clean Text - No Outer Box/Card) */}
       <div
-        onClick={(e) => {
-          handleSkipTyping();
-          handleContentClick(e);
-        }}
+        onClick={handleContentClick}
         className="text-xs text-text-primary leading-relaxed cursor-text select-text"
       >
         <div dangerouslySetInnerHTML={{ __html: renderedHtml }} className="agent-markdown" />
