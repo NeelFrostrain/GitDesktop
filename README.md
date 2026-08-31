@@ -1,6 +1,6 @@
 # GitDesktop
 
-> A high-performance, developer-first native Git GUI client and Commit-AI suite built with Tauri v2, Rust, React 19, and TypeScript.
+> A high-performance, developer-first native Git GUI client and Commit-AI suite built with Tauri v2, Rust, React 19, TypeScript, and Tailwind CSS v4.
 
 <!-- Metadata Row -->
 
@@ -28,7 +28,7 @@
 
 **GitDesktop** is a lightning-fast, modern Git client engineered for speed, clean aesthetics, and complex developer workflows. Powered by a high-throughput **Rust backend** (`libgit2` + native Git subsystem) and a reactive **React 19 / Vite** UI, it eliminates Git bloat, manages multiple accounts, visualizes commit history graphs, performs interactive rebasing, tracks linked worktrees, and supercharges your commit workflow with **Commit-AI** (powered by Google Gemini Flash Lite models).
 
-Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential security, hardware-accelerated terminals, and zero-latency file watching.
+Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential security, hardware-accelerated terminals, portable Git (MinGit) auto-provisioning, and zero-latency file watching.
 
 **Tech Stack:** TypeScript · React 19 · Tauri v2 · Rust · Vite 6 · Tailwind CSS 4 · Zustand · Monaco Editor · xterm.js
 
@@ -36,36 +36,48 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 ## Core Features
 
-### Commit-AI Engine (Google Gemini Flash Lite)
+### Commit-AI & Embedded AI Agent (Google Gemini)
 
 - **Context-Aware Code Diff Analysis** — Reads staged and unstaged working tree diffs (and recent commits) to generate conventional, precise commit messages.
 - **3 Curated Title Perspectives** — Delivers 3 distinct commit summaries with conventional commit types (`feat`, `fix`, `refactor`, `chore`, `perf`).
 - **Multi-Format Technical Reports** — Choose between **Full Technical Report**, **Concise Bullet Points**, or **Title-Only** directly in the commit prompt.
+- **TOON Token-Compression** — Encodes repository contexts, status tables, and file diffs in Token-Oriented Object Notation (TOON) for ultra-efficient token usage.
 - **Multi-Key API Rotation Pool** — Configure multiple Google Gemini API keys with automated failover on rate limits (HTTP 429) or token expiration.
-- **Model Fallback Engine** — Defaults to high-throughput models (`gemini-2.5-flash-lite`, `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.0-flash-lite`, `gemini-2.0-flash`) with automatic fallback to prevent workflow disruption.
-- **One-Click Apply** — Seamless in-sidebar commit flow with direct title selection and instant form population.
+- **Model Fallback Engine** — Defaults to high-throughput models (`gemini-2.5-flash-lite`, `gemini-3.5-flash-lite`, `gemini-2.0-flash`) with automatic fallback to prevent workflow disruption.
+- **Embedded AI Coding Assistant** — Chat panel capable of answering questions, running 1-click terminal commands (`\`\`\`bash`), generating files (`[FILE_WRITE]`), deleting files (`[FILE_DELETE]`), and assisting with conflict resolution.
+- **AI Release Notes Generator** — Generates rich, categorized Markdown release changelogs from repository tag diffs and commit histories.
 
 ### Repository & Workspace Management
 
-- **Multi-Repository Workspace** — Fast repository switcher with recent projects, favorite pins, and folder discovery.
+- **Multi-Repository Workspace** — Fast repository switcher with recent projects, favorite pins, folder discovery, and repository relocation.
+- **Portable Git (MinGit) Auto-Provisioning** — Detects system Git runtime automatically; silently downloads and configures portable MinGit in the background if Git is missing.
 - **Linked Git Worktrees** — Create, list, switch, and remove separate linked worktrees without branch checkout friction.
-- **Git Submodules** — Inspect, sync, and update nested Git submodules across repositories.
+- **Git Submodules** — Inspect, sync, initialize, and update nested Git submodules across repositories.
 - **Git LFS (Large File Storage)** — Track patterns, view tracked LFS files, lock/unlock assets, and monitor lock ownership.
 - **Clean Tree Guards** — Enforces non-empty commit validation and prevents accidental blank commits.
+- **Background Task Manager** — Asynchronous task runner with live download speed, byte progress metrics, and ETA calculator (`formatEta`) for long-running operations (clone, fetch, pull).
+
+### Merge Requests & Pull Requests Workspace
+
+- **Unified Code Review Hub** — Manage both **GitLab Merge Requests** and **GitHub Pull Requests** directly within the application.
+- **Discussion Threads & Inline Annotations** — View discussions, add top-level comments, reply to file-specific code lines, and toggle approvals.
+- **Diff & Commits Explorer** — Inspect commit lists and changed files with unified/split diffs before merging.
+- **Configurable Merge Strategies** — Support for *Merge Commit*, *Squash and Merge*, and *Rebase and Merge* with branch deletion options.
 
 ### History, Rebase & Mutations
 
-- **Visual Graph & Commit History** — Line-by-line graph traversal with author avatar attribution, parent commit mapping, and tag annotations.
-- **Interactive Rebase** — Visual rebase plan builder supporting `pick`, `reword`, `edit`, `squash`, `fixup`, `drop`, and commit reordering.
+- **Visual Graph & Commit History** — Interactive topological commit graph traversal with bezier lane layout, author avatars, parent commit mapping, and tag annotations.
+- **Interactive Rebase** — Visual rebase plan builder supporting `pick`, `reword`, `edit`, `squash`, `fixup`, `drop`, and drag-and-drop commit reordering.
 - **Rebase State Machine** — Dedicated controls for rebase continuation, skipping conflicts, and aborting.
-- **History Rewriting** — Direct amend, commit message modification, and multi-commit squashing.
+- **History Rewriting** — Direct amend, commit message modification, undo last commit, and multi-commit squashing.
 - **Cherry-Pick Engine** — Cherry-pick single or multiple commits across branches with conflict handling.
 - **Interactive Reflog** — Time-travel through reference logs with instant checkout and reset targets.
 
 ### Diff, Blame & Conflict Resolution
 
-- **Monaco-Powered Diff Viewer** — High-performance side-by-side and unified diff views with syntax highlighting.
-- **Line-by-Line Blame** — Author, commit SHA, timestamp, and commit summary annotations per line.
+- **Monaco-Powered Diff Viewer** — High-performance side-by-side and unified diff views with syntax highlighting across 50+ languages.
+- **Visual Image Diffing** — 2-up side-by-side, swipe slider, and onion-skin opacity modes for image asset changes.
+- **Line-by-Line Blame** — Author, commit SHA, timestamp, and commit summary annotations per line with commit popovers.
 - **Visual Conflict Resolver** — 3-way conflict viewer (ours vs. theirs vs. merged result) with 1-click accept actions.
 - **Patch Management** — Export commit patches to disk or apply external `.patch` / `.diff` files.
 
@@ -78,20 +90,23 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 ### Security & Multi-Account
 
-- **OS Keyring Integration** — Securely encrypts and stores GitLab and GitHub Personal Access Tokens in Windows Credential Manager, macOS Keychain, or Linux Secret Service.
+- **OS Keyring Integration** — Securely encrypts and stores GitLab and GitHub Personal Access Tokens and OAuth credentials in Windows Credential Manager, macOS Keychain, or Linux Secret Service.
 - **GitLab & GitHub Account Switcher** — Connect multiple GitLab (self-hosted & SaaS) and GitHub accounts with avatar synchronization.
-- **Commit Verification & Signing** — Built-in GPG and SSH commit signing configuration and verification badges.
+- **Commit Verification & Signing** — Built-in GPG and SSH commit signing configuration, key discovery, and verification badges.
 - **Author Identity Management** — Configure global or repo-local Git `user.name` and `user.email`.
 
 ### Terminal & Diagnostics
 
 - **Integrated PTY Shell** — Built-in xterm.js terminal emulator with shell auto-detection (PowerShell, bash, zsh).
-- **Real-Time Live Application Log** — Streaming log viewer with chronologically sorted event streams, log level filters, and export capabilities.
+- **Smart Autocomplete** — Context-aware Git command and branch autocompletion suggestions.
+- **Session History & Export** — Terminal command history tracking and exportable session logs.
+- **Real-Time Live Application Log** — Streaming log viewer with chronologically sorted event streams, log level filters (Debug, Info, Warn, Error), and export capabilities.
 - **Hardware GPU Acceleration** — WebGL-accelerated terminal canvas rendering.
 
-### Appearance & Theming
+### Contribution Analytics & Theming
 
-- **Dark & Custom Themes** — Precision dark mode with curated token palettes and high-contrast styling.
+- **Contribution Heatmap & Radar** — Year-long GitHub/GitLab-style contribution heatmaps and commit activity radar charts.
+- **Curated Theme Presets** — *Commito Dark* (default obsidian), *GitLab Dark*, *GitHub Dark Dimmed*, *Synthwave*, *Monokai Pro*, and *Nord Dark*.
 - **Full CSS Design Tokens** — In-app settings manager for adjusting UI scale, font families, and accent colors.
 - **Compact UI Density** — Optimized sidebar and header dimensions designed for maximum code viewing area.
 
@@ -101,15 +116,16 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 
 | Category                      | Features |
 | :---------------------------- | :------: |
-| **Commit-AI Engine**          |    6     |
+| **Commit-AI & Agent**         |    8     |
 | **Repository & Workspaces**   |    8     |
+| **Merge Requests & PRs**      |    6     |
 | **History & Rebase**          |    8     |
 | **Diff, Blame & Conflicts**   |    6     |
 | **Stash & Branching**         |    6     |
 | **Security & Authentication** |    5     |
-| **Terminal & Live Logs**      |    4     |
-| **Theming & Design Tokens**   |    5     |
-| **Total Features**            |  **48**  |
+| **Terminal & Live Logs**      |    5     |
+| **Analytics & Theming**       |    6     |
+| **Total Features**            |  **58**  |
 
 ---
 
@@ -121,8 +137,8 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 ┌─────────────────────────────────────────────────────────────┐
 │                    Frontend (React 19)                      │
 │  React 19 + TypeScript + Vite 6 + Tailwind CSS 4 + Zustand  │
-│  Monaco Diff Editor · xterm.js Terminal · Context Menus    │
-│  Features: Commit-AI · History Graph · Rebase · Settings    │
+│  Monaco Diff Editor · xterm.js Terminal · Context Menus     │
+│  Features: Commit-AI · MR Hub · Git Graph · Rebase · Stats  │
 └────────────────────────┬────────────────────────────────────┘
                          │  Tauri 2 IPC (invoke / emit)
 ┌────────────────────────▼────────────────────────────────────┐
@@ -130,11 +146,14 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 │  src-tauri/src/                                             │
 │  ├── commands/         ← Tauri IPC command bindings         │
 │  ├── auth/             ← OS Keyring & Credential storage    │
+│  ├── domain/           ← Accounts, PTY, Git Runtime, Store  │
+│  ├── activity/         ← Contribution heatmap calculations  │
+│  ├── integrations/     ← GitLab & GitHub API adapters       │
 │  └── git/              ← Domain-driven Git backend modules  │
-│      ├── ai/           ← Commit-AI Groq prompt & HTTP engine│
-│      ├── commit/       ← Commit creation, staging & signing │
+│      ├── ai/           ← Gemini Flash Lite & Release Notes  │
+│      ├── commit/       ← Commit staging & GPG/SSH signing   │
 │      ├── history/      ← Graph, blame, reflog, rebase       │
-│      ├── workspace/    ← Status, diff, stash, patch         │
+│      ├── workspace/    ← Status, diff, stash, worktrees     │
 │      ├── remote/       ← Fetch, pull, push, LFS, tags       │
 │      └── config/       ← Git config reader & writer         │
 └──────────┬──────────────────────────┬───────────────────────┘
@@ -151,39 +170,27 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 The Rust backend is structured into modular domain subsystems:
 
 ```
-src-tauri/src/git/
-├── ai/
-│   ├── ai_commit.rs           ← Groq API completion, token budgeting & auto-fallback
-│   └── mod.rs
-├── commit/
-│   ├── commit.rs              ← Commit staging, tree validation & parent linking
-│   ├── signing.rs             ← GPG & SSH commit signing
-│   └── mod.rs
-├── history/
-│   ├── history.rs             ← Commit graph traversal & log parsing
-│   ├── blame.rs               ← Line-by-line blame extraction
-│   ├── reflog.rs              ← Reflog inspection & navigation
-│   ├── rebase.rs              ← Interactive rebase engine
-│   ├── cherry_pick.rs         ← Cherry-pick execution
-│   ├── history_rewrite.rs     ← Squash, edit, reword, drop mutations
-│   └── mod.rs
-├── workspace/
-│   ├── status.rs              ← Working tree status & untracked file discovery
-│   ├── diff.rs                ← Diff generation (staged, unstaged, commit)
-│   ├── stash.rs               ← Stash list, diff, pop, apply, drop
-│   ├── patch.rs               ← Patch export & application
-│   ├── worktree.rs            ← Linked worktree management
-│   └── mod.rs
-├── remote/
-│   ├── remote.rs              ← Remote URL handling, push, pull, fetch, auth args
-│   ├── tags.rs                ← Tag list, create, delete, push
-│   ├── submodules.rs          ← Submodule sync & status
-│   ├── lfs.rs                 ← Git LFS lock and file management
-│   └── mod.rs
-├── config/
-│   ├── config.rs              ← Local & global git config get/set
-│   └── mod.rs
-└── mod.rs                     ← Clean submodule exports
+src-tauri/src/
+├── activity/                  ← Contribution heatmap & activity calculation
+├── auth/                      ← OS Keyring, GitHub & GitLab OAuth/PAT security
+├── commands/                  ← Tauri IPC command handlers (40+ endpoints)
+├── core/                      ← Shared logging bus, ring buffer & config
+├── domain/                    ← Accounts, Git runtime (MinGit), Settings, PTY
+│   ├── accounts/              ← Multi-account management & token persistence
+│   ├── git_runtime/           ← MinGit detection, download & extraction
+│   ├── settings/              ← Application preferences storage
+│   └── terminal/              ← PTY process manager, history & autocomplete
+├── git/                       ← Core Git engine modules
+│   ├── ai/                    ← Gemini Flash Lite commit & release note prompts
+│   ├── commit/                ← Commit staging, parent links, GPG/SSH signing
+│   ├── config/                ← Local and global git config operations
+│   ├── history/               ← Commit graph, blame, rebase, reflog, cherry-pick
+│   ├── remote/                ← Push/pull, remotes, tags, releases, submodules, LFS
+│   └── workspace/             ← Status, diff, stashes, patches, worktrees
+├── integrations/              ← Cloud hosting providers (GitLab, GitHub, Bitbucket)
+├── repos/                     ← Local repository registry, metadata & discovery
+├── error.rs                   ← Application error definitions & codes
+└── lib.rs                     ← Tauri builder, command registration & plugins
 ```
 
 ---
@@ -192,29 +199,31 @@ src-tauri/src/git/
 
 ### Frontend
 
-| Library            | Version | Purpose                                |
-| :----------------- | :------ | :------------------------------------- |
-| **React**          | 19.0    | Component rendering & reactive UI      |
-| **TypeScript**     | 5.8     | Full type safety                       |
-| **Vite**           | 6.1     | Rapid bundler & HMR                    |
-| **Tailwind CSS**   | 4.3     | High-performance CSS utility engine    |
-| **Zustand**        | 5.0     | Global state management stores         |
-| **Monaco Editor**  | 4.7     | Code diff & editor viewer              |
-| **xterm.js**       | 6.0     | Hardware-accelerated terminal emulator |
-| **Lucide React**   | 0.475   | Clean icon set                         |
-| **TanStack Query** | 5.66    | Async query caching                    |
+| Library | Version | Purpose |
+| :--- | :--- | :--- |
+| **React** | 19.0 | Component rendering & reactive UI with concurrent features |
+| **TypeScript** | 5.8 | End-to-end type safety |
+| **Vite** | 6.1 | Rapid bundler & Hot Module Replacement (HMR) |
+| **Tailwind CSS** | 4.3 | High-performance CSS utility engine linked to design tokens |
+| **Zustand** | 5.0 | Domain-segregated global state management stores |
+| **Monaco Editor** | 4.7 | Split and unified code diff viewer with syntax highlighting |
+| **xterm.js** | 6.0 | Hardware WebGL-accelerated terminal emulator |
+| **Lucide React** | 0.475 | Clean, consistent iconography |
+| **TanStack Query** | 5.66 | Asynchronous query caching and data synchronization |
+| **TanStack Virtual** | 3.14 | Virtualized rendering of large file trees and commit logs |
 
 ### Backend (Rust / Tauri)
 
-| Crate                  | Purpose                                                       |
-| :--------------------- | :------------------------------------------------------------ |
-| **tauri (v2)**         | Lightweight native desktop shell & IPC                        |
-| **git2**               | Native `libgit2` bindings for high-speed local git operations |
-| **keyring**            | Native OS secure credential storage (Windows / macOS / Linux) |
-| **reqwest**            | Async HTTP client for Groq AI API & cloud services            |
-| **tokio**              | Async runtime for non-blocking I/O and worker tasks           |
-| **serde / serde_json** | High-speed data serialization                                 |
-| **portable-pty**       | Cross-platform pseudo-terminal manager for embedded shell     |
+| Crate | Purpose |
+| :--- | :--- |
+| **tauri (v2)** | Lightweight native desktop shell, IPC bridge, and window management |
+| **git2** | Native `libgit2` bindings for high-speed local git operations |
+| **keyring** | Native OS secure credential storage (Windows / macOS / Linux) |
+| **reqwest** | Async HTTP client for Gemini AI, GitLab, and GitHub REST/GraphQL APIs |
+| **tokio** | Multi-threaded async runtime for non-blocking I/O and process execution |
+| **serde / serde_json** | High-speed data serialization across IPC boundaries |
+| **portable-pty** | Cross-platform pseudo-terminal manager for embedded shell |
+| **zip** | Decompression engine for portable MinGit runtime setup |
 
 ---
 
@@ -224,7 +233,7 @@ src-tauri/src/git/
 
 - **Node.js** (v20+) or **Bun** (v1.3+)
 - **Rust toolchain** (1.80+) — [Install here](https://rustup.rs/)
-- **Git** (v2.40+)
+- **Git** (v2.40+) *(Optional on Windows — GitDesktop will auto-download portable MinGit if missing)*
 - Platform-specific dependencies:
   - **Windows**: Visual Studio C++ Build Tools & WebView2 runtime
   - **macOS**: Xcode Command Line Tools (`xcode-select --install`)
@@ -280,33 +289,17 @@ src-tauri/src/git/
 
 ## Development Scripts
 
-| Script      | Command              | Purpose                                     |
-| :---------- | :------------------- | :------------------------------------------ |
-| `dev`       | `vite`               | Start Vite dev server (React frontend only) |
-| `dev:app`   | `tauri dev`          | Launch Tauri desktop app with hot reload    |
-| `build`     | `tsc && vite build`  | Production build (frontend bundle)          |
-| `build:app` | `tauri build`        | Build desktop binary & installer            |
-| `typecheck` | `tsc --noEmit`       | Check TypeScript without emitting           |
-| `test`      | `vitest run`         | Run all unit tests once                     |
-| `lint`      | `eslint --cache .`   | Lint TypeScript & React files               |
-| `format`    | `prettier --write .` | Format code with Prettier                   |
-| `preview`   | `vite preview`       | Preview production build locally            |
-
-### Quick Start Examples
-
-```bash
-# Development workflow
-bun run dev:app              # Start desktop app with hot reload
-bun run format               # Auto-format all code
-bun run lint --fix           # Auto-fix lint issues
-
-# Testing & validation
-bun run test                 # Run vitest suite
-bun run typecheck            # TypeScript check only
-
-# Production
-bun run build:app            # Full production build
-```
+| Script | Command | Purpose |
+| :--- | :--- | :--- |
+| `dev` | `vite` | Start Vite dev server (React frontend only) |
+| `dev:app` | `tauri dev` | Launch Tauri desktop app with hot reload |
+| `build` | `tsc && vite build` | Production build (frontend bundle) |
+| `build:app` | `tauri build` | Build desktop binary & installer |
+| `typecheck` | `tsc --noEmit` | Check TypeScript without emitting |
+| `test` | `vitest run` | Run all unit tests once |
+| `lint` | `eslint --cache .` | Lint TypeScript & React files |
+| `format` | `prettier --write .` | Format code with Prettier |
+| `preview` | `vite preview` | Preview production build locally |
 
 ---
 
@@ -322,7 +315,6 @@ The project uses **ESLint v9** with TypeScript, React, and React Hooks support.
 - **Run**: `bun run lint` or `bun run lint --fix`
 
 **Key rules:**
-
 - ✅ Disables `react/react-in-jsx-scope` (React 17+ doesn't require it)
 - ✅ Warns on unused props (allow `_` prefix for intentional omissions)
 - ✅ Enforces React Hooks rules
@@ -335,52 +327,29 @@ Code formatting with **Prettier v3.7**.
 
 - **Config file**: `.prettierrc.yaml`
 - **Ignore file**: `.prettierignore`
-- **Options**:
-  - 2-space indentation
-  - Single quotes
-  - Semicolons enabled
-  - LF line endings
-  - 100 character line width
+- **Options**: 2-space indentation, single quotes, semicolons enabled, LF line endings, 100 character line width.
 - **Run**: `bun run format`
-
-### TypeScript Configuration
-
-- **Config files**: `tsconfig.json`, `tsconfig.node.json`
-- **Version**: 5.8 (strict mode enabled)
-- **Target**: ES2021 (modern browsers + Node.js)
-
-### Vitest Configuration
-
-Unit testing framework for React components.
-
-- **Config file**: `vitest.config.ts`
-- **Environment**: jsdom (for DOM testing)
-- **Global test functions**: Enabled (no need to import `describe`, `it`, etc.)
-- **Coverage**: v8 provider (HTML reports)
-- **Run**: `bun run test`
 
 ---
 
-## Production Build
+## Production Build & Distribution
 
 ### Compile Desktop Binary
 
 ```bash
 # Build production bundle for your current platform
-npm run tauri build
+bun run build:app
 ```
 
 The compiled binaries and installers will be output to `src-tauri/target/release/bundle/`.
 
----
+### Distribution Matrix
 
-## Distribution
-
-| Platform    | Package Format                                  | Architecture                      | Status     |
-| :---------- | :---------------------------------------------- | :-------------------------------- | :--------- |
-| **Windows** | NSIS Installer (`.exe`), `.msi`                 | x64                               | **Stable** |
-| **macOS**   | Disk Image (`.dmg`), App Bundle (`.app`)        | Universal (Apple Silicon & Intel) | **Stable** |
-| **Linux**   | AppImage (`.AppImage`), Debian Package (`.deb`) | x64                               | **Stable** |
+| Platform | Package Format | Architecture | Status |
+| :--- | :--- | :--- | :--- |
+| **Windows** | NSIS Installer (`.exe`), `.msi` | x64 | **Stable** |
+| **macOS** | Disk Image (`.dmg`), App Bundle (`.app`) | Universal (Apple Silicon & Intel) | **Stable** |
+| **Linux** | AppImage (`.AppImage`), Debian Package (`.deb`) | x64 | **Stable** |
 
 Automated multi-platform builds are packaged via GitHub Actions workflows in `.github/workflows/`.
 
@@ -388,5 +357,5 @@ Automated multi-platform builds are packaged via GitHub Actions workflows in `.g
 
 ## License
 
-Copyright (c) 2026 Neel Frostrain. All rights reserved.
+Copyright (c) 2026 Neel Frostrain. All rights reserved.  
 Private repository & proprietary software.
