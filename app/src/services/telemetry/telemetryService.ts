@@ -24,6 +24,12 @@ export const CYRONIC_SUPPORT_EMAIL =
   (import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL as string) || 'support@cyronicstudio.com';
 export const CYRONIC_DISCORD_URL =
   (import.meta.env.VITE_CYRONIC_DISCORD_URL as string) || 'https://discord.gg/cyronicstudio';
+export const CYRONIC_ISSUES_URL =
+  (import.meta.env.VITE_CYRONIC_ISSUES_URL as string) ||
+  'https://github.com/cyronicstudio/git-desktop/issues';
+export const CYRONIC_RELEASES_URL =
+  (import.meta.env.VITE_CYRONIC_RELEASES_URL as string) ||
+  'https://github.com/cyronicstudio/git-desktop/releases';
 
 export class TelemetryService {
   /**

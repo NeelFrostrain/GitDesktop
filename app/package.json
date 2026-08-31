@@ -1,7 +1,7 @@
 {
   "name": "git-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "dev:app": "tauri dev",
@@ -23,7 +23,9 @@
     "@tauri-apps/plugin-deep-link": "^2.4.9",
     "@tauri-apps/plugin-dialog": "^2.2.0",
     "@tauri-apps/plugin-opener": "^2.2.0",
+    "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-shell": "^2.2.0",
+    "@tauri-apps/plugin-updater": "^2.11.0",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/addon-search": "^0.16.0",
     "@xterm/xterm": "^6.0.0",

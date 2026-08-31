@@ -65,16 +65,19 @@ jobs:
             librsvg2-dev
 
       - name: Install Frontend Dependencies
-        run: npm install
+        run: npm --prefix app install
 
-      - name: Build Tauri Application
+      - name: Build Tauri Application & Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          projectPath: ./app
           tagName: ${{ github.ref_name }}
           releaseName: 'GitDesktop ${{ github.ref_name }}'
           releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}

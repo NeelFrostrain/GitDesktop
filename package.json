@@ -13,7 +13,11 @@
     "lint": "bun run --cwd app lint",
     "format": "bun run --cwd app format",
     "test": "bun run --cwd app test",
-    "tauri": "bun run --cwd app tauri"
+    "tauri": "bun run --cwd app tauri",
+    "set-version": "bun run scripts/set-version.ts",
+    "version": "bun run scripts/set-version.ts",
+    "generate:latest": "bun run scripts/generate-latest-json.ts",
+    "build:release": "powershell -ExecutionPolicy Bypass -File ./Build-Release.ps1"
   },
   "devDependencies": {
     "@types/bun": "latest"

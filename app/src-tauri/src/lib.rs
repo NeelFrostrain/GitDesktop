@@ -27,6 +27,8 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_process::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .on_window_event(|_window, event| {
             if let tauri::WindowEvent::Destroyed = event {
                 crate::domain::terminal::pty::kill_all_sessions();

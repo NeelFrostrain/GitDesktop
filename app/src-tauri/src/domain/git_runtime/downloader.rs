@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fs::{self, File};
 use std::io::{self, Cursor};
 use std::path::PathBuf;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 pub const MINGIT_DOWNLOAD_URL: &str =
     "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/MinGit-2.47.1-64-bit.zip";
@@ -19,10 +19,29 @@ pub struct MinGitProgressPayload {
 }
 
 /// Searches for a pre-downloaded MinGit ZIP archive in the project or bundled paths.
-pub fn find_local_mingit_archive() -> Option<PathBuf> {
+pub fn find_local_mingit_archive(app_handle: Option<&AppHandle>) -> Option<PathBuf> {
+    // 1. Check Tauri resource_dir via AppHandle if available
+    if let Some(handle) = app_handle {
+        if let Ok(res_dir) = handle.path().resource_dir() {
+            let res_candidates = [
+                res_dir.join("MinGit-2.47.1-64-bit.zip"),
+                res_dir.join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                res_dir.join("_up_").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                res_dir.join("resources").join("MinGit-2.47.1-64-bit.zip"),
+                res_dir.join("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+            ];
+            for path in &res_candidates {
+                if path.exists() {
+                    return Some(path.clone());
+                }
+            }
+        }
+    }
+
     let candidate_paths = [
         PathBuf::from("bin").join("MinGit-2.47.1-64-bit.zip"),
         PathBuf::from("bin").join("mingit.zip"),
+        PathBuf::from("..").join("bin").join("MinGit-2.47.1-64-bit.zip"),
         PathBuf::from("src-tauri").join("bin").join("MinGit-2.47.1-64-bit.zip"),
         PathBuf::from("src-tauri").join("bin").join("mingit.zip"),
         PathBuf::from("resources").join("MinGit-2.47.1-64-bit.zip"),
@@ -45,6 +64,7 @@ pub fn find_local_mingit_archive() -> Option<PathBuf> {
                 parent.join("resources").join("mingit.zip"),
                 parent.join("resources").join("MinGit-2.47.1-64-bit.zip"),
                 parent.join("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                parent.join("resources").join("_up_").join("bin").join("MinGit-2.47.1-64-bit.zip"),
                 parent.join("MinGit-2.47.1-64-bit.zip"),
             ];
             for path in &exe_candidates {
@@ -56,6 +76,7 @@ pub fn find_local_mingit_archive() -> Option<PathBuf> {
                 let gp_candidates = [
                     grandparent.join("resources").join("MinGit-2.47.1-64-bit.zip"),
                     grandparent.join("resources").join("bin").join("MinGit-2.47.1-64-bit.zip"),
+                    grandparent.join("resources").join("_up_").join("bin").join("MinGit-2.47.1-64-bit.zip"),
                     grandparent.join("bin").join("MinGit-2.47.1-64-bit.zip"),
                 ];
                 for path in &gp_candidates {
@@ -85,7 +106,7 @@ pub async fn download_and_install_mingit(
     };
 
     // 1. Check if a pre-downloaded local ZIP archive is present in the dev directory or bundle
-    let zip_buffer: Vec<u8> = if let Some(local_zip_path) = find_local_mingit_archive() {
+    let zip_buffer: Vec<u8> = if let Some(local_zip_path) = find_local_mingit_archive(Some(app_handle)) {
         emit_progress("starting", 0, 0, 0.0, "Found pre-downloaded local MinGit archive...");
         fs::read(&local_zip_path).map_err(|e| {
             AppError::Filesystem(format!("Failed to read local MinGit archive {:?}: {}", local_zip_path, e))
