@@ -55,7 +55,7 @@ export const BranchesView: React.FC = () => {
 
   const loadBranches = async () => {
     if (!activeRepoPath) return;
-    
+
     // Check cached branches first for 0ms instant display
     const cached = RepoCacheService.getBranches(activeRepoPath);
     if (cached && cached.length > 0) {

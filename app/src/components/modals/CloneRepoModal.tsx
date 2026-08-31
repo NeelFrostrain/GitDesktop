@@ -232,7 +232,11 @@ export const CloneRepoModal: React.FC = () => {
         });
         useLogStore
           .getState()
-          .addLog('info', 'Git', `Repository '${repoName}' already exists at '${fullDestinationPath}'. Opened existing repository.`);
+          .addLog(
+            'info',
+            'Git',
+            `Repository '${repoName}' already exists at '${fullDestinationPath}'. Opened existing repository.`
+          );
         setIsCloneRepoModalOpen(false);
         return;
       }
@@ -545,10 +549,10 @@ export const CloneRepoModal: React.FC = () => {
                               a.provider === 'github'
                                 ? 'GitHub'
                                 : a.provider === 'gitlab'
-                                ? 'GitLab'
-                                : a.provider === 'bitbucket'
-                                ? 'Bitbucket'
-                                : 'Custom';
+                                  ? 'GitLab'
+                                  : a.provider === 'bitbucket'
+                                    ? 'Bitbucket'
+                                    : 'Custom';
                             return {
                               value: a.id,
                               label: `${cleanHandle} (${provName})`,
@@ -564,9 +568,7 @@ export const CloneRepoModal: React.FC = () => {
                       </div>
                     ) : (
                       <div className="p-3.5 bg-base-1 border border-border rounded-sm text-center space-y-2">
-                        <p className="text-xs text-text-secondary">
-                          No connected accounts found.
-                        </p>
+                        <p className="text-xs text-text-secondary">No connected accounts found.</p>
                         <button
                           type="button"
                           onClick={() => {
@@ -642,7 +644,11 @@ export const CloneRepoModal: React.FC = () => {
                     </div>
 
                     <p className="text-[11px] text-text-muted leading-tight">
-                      For GitHub, enter a <strong>Personal Access Token (PAT)</strong> with <code className="text-commito-coral font-mono">repo</code> permissions (classic <code className="font-mono">ghp_...</code> or fine-grained <code className="font-mono">github_pat_...</code>). Account passwords are not accepted by GitHub.
+                      For GitHub, enter a <strong>Personal Access Token (PAT)</strong> with{' '}
+                      <code className="text-commito-coral font-mono">repo</code> permissions
+                      (classic <code className="font-mono">ghp_...</code> or fine-grained{' '}
+                      <code className="font-mono">github_pat_...</code>). Account passwords are not
+                      accepted by GitHub.
                     </p>
 
                     {/* 2FA / MFA Verification Drawer */}
@@ -859,7 +865,9 @@ export const CloneRepoModal: React.FC = () => {
                         {cloneStartedAt > 0 && cloneProgress && (
                           <span className="text-[11px] text-text-muted font-mono flex items-center gap-1">
                             <Clock className="w-2.5 h-2.5 opacity-70" />
-                            <span>{formatEta(cloneStartedAt, cloneProgress.percent) || 'Estimating...'}</span>
+                            <span>
+                              {formatEta(cloneStartedAt, cloneProgress.percent) || 'Estimating...'}
+                            </span>
                           </span>
                         )}
                         <span className="font-mono text-commito-coral font-bold text-xs shrink-0">
@@ -880,7 +888,8 @@ export const CloneRepoModal: React.FC = () => {
                   </div>
                 ) : (
                   <div className="text-[11.5px] text-text-muted truncate">
-                    Will clone to <span className="font-mono text-text-secondary">{fullDestinationPath}</span>
+                    Will clone to{' '}
+                    <span className="font-mono text-text-secondary">{fullDestinationPath}</span>
                   </div>
                 )}
               </div>
@@ -903,7 +912,11 @@ export const CloneRepoModal: React.FC = () => {
                   {isCloning ? (
                     <span className="flex items-center gap-1.5">
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      <span>{cloneProgress?.percent ? `Cloning ${cloneProgress.percent}%` : 'Cloning...'}</span>
+                      <span>
+                        {cloneProgress?.percent
+                          ? `Cloning ${cloneProgress.percent}%`
+                          : 'Cloning...'}
+                      </span>
                     </span>
                   ) : (
                     <span>Clone Repository</span>

@@ -10,6 +10,7 @@ import {
   EyeOff,
   ShieldCheck,
   ChevronDown,
+  FileText,
 } from 'lucide-react';
 import { useSettingsStore } from '../store/useSettingsStore';
 import { useToastStore } from '../../../store/useToastStore';
@@ -499,6 +500,70 @@ export const AiSettingsTab: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── AI Terms & Conditions Notice ── */}
+      {showKeysSection && (
+        <div className="p-4 rounded-sm border border-border bg-base-1/50 shadow-2xs space-y-2.5">
+          <div className="flex items-center gap-2">
+            <FileText className="w-3.5 h-3.5 text-text-muted shrink-0" />
+            <h3 className="text-xs font-bold text-text-primary">AI Feature Terms & Conditions</h3>
+          </div>
+
+          <div className="space-y-2 text-[11px] text-text-secondary leading-relaxed">
+            <p>
+              <strong className="text-text-primary">API Key Responsibility.</strong>{' '}
+              Your Google Gemini API key is stored locally on your device and is never transmitted to
+              CyronicStudio servers. You are solely responsible for the security and usage of your key.
+              Do not share your key or commit it to any repository.
+            </p>
+            <p>
+              <strong className="text-text-primary">Data Sent to Google.</strong>{' '}
+              When AI commit message generation is triggered, a summary of your staged diff is sent
+              directly from your machine to the Google Gemini API. CyronicStudio does not route,
+              log, or store this data. Your use of the Gemini API is subject to{' '}
+              <button
+                type="button"
+                onClick={() => openUrl('https://ai.google.dev/gemini-api/terms')}
+                className="text-commito-coral hover:underline cursor-pointer font-medium"
+              >
+                Google&apos;s Gemini API Terms of Service
+              </button>
+              .
+            </p>
+            <p>
+              <strong className="text-text-primary">No Code Retention.</strong>{' '}
+              CyronicStudio never reads, copies, or retains your source code, commit messages, diffs,
+              or repository content for any purpose. All AI processing happens between your device
+              and Google&apos;s API directly.
+            </p>
+            <p>
+              <strong className="text-text-primary">Free Quota.</strong>{' '}
+              Google AI Studio offers a generous free tier for Gemini API usage. Charges from
+              Google for API usage beyond free limits are your responsibility and are not related
+              to GitDesktop or CyronicStudio.
+            </p>
+          </div>
+
+          <div className="pt-1 border-t border-border flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => openUrl('https://cyronicstudio.com/terms')}
+              className="text-[10.5px] text-text-muted hover:text-commito-coral hover:underline flex items-center gap-1 cursor-pointer transition"
+            >
+              <ExternalLink className="w-3 h-3" />
+              GitDesktop Terms of Service
+            </button>
+            <button
+              type="button"
+              onClick={() => openUrl('https://cyronicstudio.com/privacy')}
+              className="text-[10.5px] text-text-muted hover:text-commito-coral hover:underline flex items-center gap-1 cursor-pointer transition"
+            >
+              <ExternalLink className="w-3 h-3" />
+              Privacy Policy
+            </button>
+          </div>
+        </div>
       )}
 
       {/* ── 2. Model Configuration Subcategory (Dropdown) ── */}

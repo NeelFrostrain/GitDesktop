@@ -245,7 +245,7 @@ export const AiAgentPanel: React.FC<{ width?: number }> = ({ width: widthProp })
 
         {/* Naming Form Body */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none font-sans max-w-xs mx-auto w-full gap-5">
-          {/* <div className="w-11 h-11 rounded-md bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shadow-lg">
+          {/* <div className="w-11 h-11 rounded-sm bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shadow-lg">
             <Sparkles className="w-5 h-5 stroke-[2.2]" />
           </div> */}
 

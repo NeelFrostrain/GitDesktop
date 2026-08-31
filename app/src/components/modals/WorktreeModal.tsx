@@ -61,7 +61,9 @@ export const WorktreeModal: React.FC = () => {
     if (!newWorktreePath || newWorktreePath.includes('-')) {
       const cleanBranch = branchName.replace(/[/\\:]+/g, '-');
       const parentDir = activeRepoPath ? activeRepoPath.replace(/[/\\][^/\\]+$/, '') : '';
-      const repoBaseName = activeRepoPath ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'repo' : 'repo';
+      const repoBaseName = activeRepoPath
+        ? activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || 'repo'
+        : 'repo';
       if (parentDir) {
         setNewWorktreePath(`${parentDir}\\${repoBaseName}-${cleanBranch}`);
       }
@@ -100,9 +102,7 @@ export const WorktreeModal: React.FC = () => {
         message: `Linked worktree created at '${targetPath}'`,
       });
 
-      useLogStore
-        .getState()
-        .addLog('success', 'Worktree', `Created worktree at '${targetPath}'`);
+      useLogStore.getState().addLog('success', 'Worktree', `Created worktree at '${targetPath}'`);
       setNewWorktreePath('');
       setNewWorktreeBranch('');
       loadWorktrees();

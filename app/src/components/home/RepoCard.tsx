@@ -51,7 +51,11 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
 
     const handleCardClick = () => {
       if (isInvalid) {
-        setIsMissingRepoModalOpen(true, repo.path, status?.error_message || 'Directory not found or .git metadata missing');
+        setIsMissingRepoModalOpen(
+          true,
+          repo.path,
+          status?.error_message || 'Directory not found or .git metadata missing'
+        );
         return;
       }
       openRepo(repo.path);
@@ -261,7 +265,11 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
                   ) : (
                     <span className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[9.5px] font-mono text-git-removed font-medium">
                       <AlertCircle className="w-2.5 h-2.5 text-git-removed" />
-                      <span>{status?.error_type === 'folder_missing' ? 'Missing Folder' : 'Invalid .git'}</span>
+                      <span>
+                        {status?.error_type === 'folder_missing'
+                          ? 'Missing Folder'
+                          : 'Invalid .git'}
+                      </span>
                     </span>
                   )}
                   {repo.pinned && (
@@ -414,13 +422,17 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
               {isInvalid ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-git-removed-bg border border-git-removed/30 rounded-xs text-[9.5px] font-mono text-git-removed font-medium">
                   <AlertCircle className="w-2.5 h-2.5 text-git-removed" />
-                  <span>{status?.error_type === 'folder_missing' ? 'Missing Folder' : 'Invalid .git'}</span>
+                  <span>
+                    {status?.error_type === 'folder_missing' ? 'Missing Folder' : 'Invalid .git'}
+                  </span>
                 </div>
               ) : (
                 <>
                   <div className="inline-flex items-center gap-1 px-1.5 py-0.2 bg-base-0 border border-border rounded-xs text-[9.5px] font-mono text-text-muted">
                     <GitBranch className="w-2.5 h-2.5 text-commito-coral" />
-                    <span className="truncate max-w-[110px]">{status?.current_branch || 'main'}</span>
+                    <span className="truncate max-w-[110px]">
+                      {status?.current_branch || 'main'}
+                    </span>
                   </div>
 
                   {status && (status.ahead > 0 || status.behind > 0) && (
@@ -499,4 +511,3 @@ export const RepoCard: React.FC<RepoCardProps> = React.memo(
 );
 
 RepoCard.displayName = 'RepoCard';
-

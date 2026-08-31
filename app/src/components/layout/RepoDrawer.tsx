@@ -31,7 +31,12 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
   const addRepo = useRepoStore((s) => s.addRepo);
   const removeRepo = useRepoStore((s) => s.removeRepo);
   const pinRepo = useRepoStore((s) => s.pinRepo);
-  const { activeRepoPath, setIsCreateRepoModalOpen, setIsCloneRepoModalOpen, setIsMissingRepoModalOpen } = useGitStore();
+  const {
+    activeRepoPath,
+    setIsCreateRepoModalOpen,
+    setIsCloneRepoModalOpen,
+    setIsMissingRepoModalOpen,
+  } = useGitStore();
 
   const [filterQuery, setFilterQuery] = useState('');
   const [isAddingLocal, setIsAddingLocal] = useState(false);
@@ -128,7 +133,11 @@ export const RepoDrawer: React.FC<RepoDrawerProps> = ({ isOpen, onClose }) => {
     const status = statuses[path];
     if (status?.is_valid === false) {
       onClose();
-      setIsMissingRepoModalOpen(true, path, status.error_message || 'Repository folder or .git structure is missing');
+      setIsMissingRepoModalOpen(
+        true,
+        path,
+        status.error_message || 'Repository folder or .git structure is missing'
+      );
       return;
     }
     onClose();

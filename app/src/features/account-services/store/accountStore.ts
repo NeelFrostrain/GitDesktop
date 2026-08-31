@@ -179,11 +179,7 @@ export const useAccountServicesStore = create<AccountServicesState>((set, get) =
     } catch (err: any) {
       useLogStore
         .getState()
-        .addLog(
-          'error',
-          'Auth',
-          `Failed to connect ${provider} via token: ${err?.message || err}`
-        );
+        .addLog('error', 'Auth', `Failed to connect ${provider} via token: ${err?.message || err}`);
       throw err;
     }
   },

@@ -1,10 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Image as ImageIcon,
-  Sliders,
-  AlertCircle,
-  Loader2,
-} from 'lucide-react';
+import { Image as ImageIcon, Sliders, AlertCircle, Loader2 } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { CopyButton } from './diffUtils';
 import { GitService } from '../../../services/git/gitService';
@@ -146,7 +141,8 @@ export const ImageDiffView: React.FC<ImageDiffViewProps> = ({
         <AlertCircle className="w-8 h-8 text-danger mb-2 opacity-80" />
         <h3 className="text-sm font-bold text-text-primary mb-1">Image Preview Unavailable</h3>
         <p className="text-xs text-text-muted max-w-sm">
-          Unable to load image binary for <span className="font-mono text-text-primary">{filePath}</span>.
+          Unable to load image binary for{' '}
+          <span className="font-mono text-text-primary">{filePath}</span>.
         </p>
       </div>
     );
@@ -261,10 +257,16 @@ export const ImageDiffView: React.FC<ImageDiffViewProps> = ({
               Diff:{' '}
               <span
                 className={`font-semibold ${
-                  sizeDiff > 0 ? 'text-git-added' : sizeDiff < 0 ? 'text-git-removed' : 'text-text-muted'
+                  sizeDiff > 0
+                    ? 'text-git-added'
+                    : sizeDiff < 0
+                      ? 'text-git-removed'
+                      : 'text-text-muted'
                 }`}
               >
-                {sizeDiff > 0 ? `+${formatSizeGitHub(sizeDiff)}` : `-${formatSizeGitHub(Math.abs(sizeDiff))}`}{' '}
+                {sizeDiff > 0
+                  ? `+${formatSizeGitHub(sizeDiff)}`
+                  : `-${formatSizeGitHub(Math.abs(sizeDiff))}`}{' '}
                 ({percentChange}%)
               </span>
             </div>
@@ -317,7 +319,9 @@ export const ImageDiffView: React.FC<ImageDiffViewProps> = ({
             <div className="mt-1 text-xs font-mono text-text-muted">
               Diff:{' '}
               <span className="font-semibold text-git-added">
-                {sizeDiff > 0 ? `+${formatSizeGitHub(sizeDiff)}` : `-${formatSizeGitHub(Math.abs(sizeDiff))}`}{' '}
+                {sizeDiff > 0
+                  ? `+${formatSizeGitHub(sizeDiff)}`
+                  : `-${formatSizeGitHub(Math.abs(sizeDiff))}`}{' '}
                 ({percentChange}%)
               </span>
             </div>

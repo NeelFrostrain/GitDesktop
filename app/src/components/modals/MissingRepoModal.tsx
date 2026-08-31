@@ -118,11 +118,16 @@ export const MissingRepoModal: React.FC = () => {
               <AlertCircle className="w-3.5 h-3.5" />
             </div>
             <div className="flex items-center gap-1.5 min-w-0">
-              <h2 id="missing-repo-title" className="text-xs font-bold text-text-primary leading-none">
+              <h2
+                id="missing-repo-title"
+                className="text-xs font-bold text-text-primary leading-none"
+              >
                 Repository Not Found
               </h2>
               <span className="text-border">•</span>
-              <span className="text-[11px] text-text-muted font-mono leading-none">Invalid Path</span>
+              <span className="text-[11px] text-text-muted font-mono leading-none">
+                Invalid Path
+              </span>
             </div>
           </div>
           <button
@@ -139,7 +144,11 @@ export const MissingRepoModal: React.FC = () => {
         {/* Content Body */}
         <div className="p-4 space-y-3 bg-base-0 text-xs font-sans text-text-primary">
           <p className="text-[11.5px] text-text-secondary leading-relaxed font-normal">
-            This repository cannot be found on disk or its <code className="px-1 py-0.2 rounded-xs bg-base-1 border border-border text-text-primary font-mono text-[10.5px]">.git</code> folder is missing or corrupt. It may have been moved, deleted, or unmounted.
+            This repository cannot be found on disk or its{' '}
+            <code className="px-1 py-0.2 rounded-xs bg-base-1 border border-border text-text-primary font-mono text-[10.5px]">
+              .git
+            </code>{' '}
+            folder is missing or corrupt. It may have been moved, deleted, or unmounted.
           </p>
 
           {/* Location & Reason Box */}

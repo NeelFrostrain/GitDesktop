@@ -7,6 +7,7 @@ import { CategoryTree } from './components/CategoryTree';
 import { SettingRow } from './components/SettingRow';
 import { AiSettingsTab } from './components/AiSettingsTab';
 import { ThemeSelectorTab } from './components/ThemeSelectorTab';
+import { LegalTab } from './components/LegalTab';
 import { SettingsSearchBar } from './components/SettingsSearchBar';
 import { useGitStore } from '../../store/useGitStore';
 
@@ -218,7 +219,7 @@ export const SettingsPanel: React.FC = () => {
               </div>
             ) : (
               /* 2. Category View Mode */
-              <div className="space-y-4">
+              <div className="space-y-4 h-full flex flex-col">
                 {/* Render dedicated AppearanceTab for theme selection only when viewing All Appearance or Color Theme */}
                 {selectedCategory === 'appearance' &&
                   (!selectedSubcategory || selectedSubcategory === 'Color Theme') && (
@@ -227,6 +228,9 @@ export const SettingsPanel: React.FC = () => {
 
                 {/* Render dedicated AiSettingsTab with multi-key pool */}
                 {selectedCategory === 'ai' && <AiSettingsTab />}
+
+                {/* Render Legal tab */}
+                {selectedCategory === 'legal' && <LegalTab />}
 
                 {/* Subcategory sections */}
                 {groupedSettings

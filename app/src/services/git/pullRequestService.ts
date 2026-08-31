@@ -249,11 +249,15 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
   const clean = remoteUrl.trim().replace(/\.git\/?$/, '');
 
   // Helper to determine provider and normalized serverUrl from host
-  const determineProviderAndServer = (host: string): { provider: 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'unknown'; serverUrl: string } => {
+  const determineProviderAndServer = (
+    host: string
+  ): { provider: 'github' | 'gitlab' | 'bitbucket' | 'azure' | 'unknown'; serverUrl: string } => {
     const h = host.toLowerCase();
     if (h.includes('github')) return { provider: 'github', serverUrl: 'https://github.com' };
-    if (h.includes('bitbucket')) return { provider: 'bitbucket', serverUrl: 'https://bitbucket.org' };
-    if (h.includes('dev.azure.com') || h.includes('.visualstudio.com')) return { provider: 'azure', serverUrl: 'https://dev.azure.com' };
+    if (h.includes('bitbucket'))
+      return { provider: 'bitbucket', serverUrl: 'https://bitbucket.org' };
+    if (h.includes('dev.azure.com') || h.includes('.visualstudio.com'))
+      return { provider: 'azure', serverUrl: 'https://dev.azure.com' };
     if (h.includes('gitlab')) return { provider: 'gitlab', serverUrl: `https://${host}` };
     return { provider: 'unknown', serverUrl: `https://${host}` };
   };
@@ -264,7 +268,7 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
       const url = new URL(clean);
       const host = url.hostname.toLowerCase();
       let projectPath = url.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      
+
       // Azure DevOps special URL path: org/project/_git/repo -> org/project/repo
       if (host.includes('dev.azure.com') || host.includes('visualstudio.com')) {
         projectPath = projectPath.replace('/_git/', '/');
@@ -308,7 +312,7 @@ export function parseRemoteRepoInfo(remoteUrl?: string | null): {
   if (scpMatch) {
     const host = scpMatch[1].toLowerCase();
     let projectPath = scpMatch[2].replace(/^\/+/, '').replace(/\/+$/, '');
-    
+
     // Azure SSH format v3/org/project/repo -> org/project/repo
     if (projectPath.startsWith('v3/')) {
       projectPath = projectPath.substring(3);

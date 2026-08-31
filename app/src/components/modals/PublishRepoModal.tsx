@@ -264,7 +264,8 @@ export const PublishRepoModal: React.FC = () => {
     setIsPublishing(true);
     setLocalError(null);
 
-    const repoName = activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || name.trim() || 'Repository';
+    const repoName =
+      activeRepoPath.split(/[/\\]/).filter(Boolean).pop() || name.trim() || 'Repository';
     const taskId = useTaskStore.getState().addTask({
       type: 'publish',
       title: `Publish '${name.trim()}' to ${currentAccount?.provider || 'remote'}`,

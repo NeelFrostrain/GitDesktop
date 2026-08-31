@@ -50,25 +50,65 @@ interface TokenSignInDialogProps {
 
 const PROVIDER_SCOPES: Record<ProviderKey, ScopeItem[]> = {
   gitlab: [
-    { name: 'api', description: 'Full API access to read & write projects, MRs, and pipelines', required: true },
-    { name: 'read_user', description: 'Read user profile details and commit email', required: true },
+    {
+      name: 'api',
+      description: 'Full API access to read & write projects, MRs, and pipelines',
+      required: true,
+    },
+    {
+      name: 'read_user',
+      description: 'Read user profile details and commit email',
+      required: true,
+    },
     { name: 'read_repository', description: 'Pull and clone repositories', required: true },
     { name: 'write_repository', description: 'Push commits, branches, and tags', required: true },
   ],
   github: [
-    { name: 'repo', description: 'Full control of private and public repositories, cloning, and pushing', required: true },
-    { name: 'read:user', description: 'Read user profile and public organizations', required: true },
-    { name: 'user:email', description: 'Access user primary verified email address', required: true },
-    { name: 'workflow', description: 'Allows updating GitHub Actions workflow definitions', required: false },
+    {
+      name: 'repo',
+      description: 'Full control of private and public repositories, cloning, and pushing',
+      required: true,
+    },
+    {
+      name: 'read:user',
+      description: 'Read user profile and public organizations',
+      required: true,
+    },
+    {
+      name: 'user:email',
+      description: 'Access user primary verified email address',
+      required: true,
+    },
+    {
+      name: 'workflow',
+      description: 'Allows updating GitHub Actions workflow definitions',
+      required: false,
+    },
   ],
   bitbucket: [
     { name: 'Account: Read', description: 'Access user profile and email address', required: true },
-    { name: 'Repositories: Read & Write', description: 'Clone, pull, commit, and push repositories', required: true },
-    { name: 'Pull requests: Read & Write', description: 'Inspect, create, and review Pull Requests', required: true },
+    {
+      name: 'Repositories: Read & Write',
+      description: 'Clone, pull, commit, and push repositories',
+      required: true,
+    },
+    {
+      name: 'Pull requests: Read & Write',
+      description: 'Inspect, create, and review Pull Requests',
+      required: true,
+    },
   ],
   azure: [
-    { name: 'Code: Read & Write', description: 'Access, clone, commit, and manage Git repositories & PRs', required: true },
-    { name: 'Project & Team: Read', description: 'Read organization projects and team membership', required: false },
+    {
+      name: 'Code: Read & Write',
+      description: 'Access, clone, commit, and manage Git repositories & PRs',
+      required: true,
+    },
+    {
+      name: 'Project & Team: Read',
+      description: 'Read organization projects and team membership',
+      required: false,
+    },
   ],
 };
 
@@ -184,7 +224,7 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4 select-none animate-in fade-in duration-150 font-sans">
-      <div className="bg-base-1 border border-border rounded-md shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
+      <div className="bg-base-1 border border-border rounded-sm shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-150 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-4 py-3 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="min-w-0">
@@ -248,24 +288,48 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
             {provider.id === 'azure' && (
               <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
-                  <span>Click <strong>Open Token Page</strong> to open your Azure DevOps Personal Access Tokens page.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    1.
+                  </span>
+                  <span>
+                    Click <strong>Open Token Page</strong> to open your Azure DevOps Personal Access
+                    Tokens page.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
-                  <span>Click <strong>+ New Token</strong> and set Name as <strong>GitDesktop</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    2.
+                  </span>
+                  <span>
+                    Click <strong>+ New Token</strong> and set Name as <strong>GitDesktop</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                  <span>Under <strong>Organization</strong>, ensure your organization is selected, and set <strong>Expiration</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    3.
+                  </span>
+                  <span>
+                    Under <strong>Organization</strong>, ensure your organization is selected, and
+                    set <strong>Expiration</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
-                  <span>Under <strong>Scopes</strong>, select <strong>Code (Read & Write)</strong> to enable cloning, commits, and Pull Requests.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    4.
+                  </span>
+                  <span>
+                    Under <strong>Scopes</strong>, select <strong>Code (Read & Write)</strong> to
+                    enable cloning, commits, and Pull Requests.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">5.</span>
-                  <span>Click <strong>Create</strong>, copy the generated token string, and paste it into the field below.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    5.
+                  </span>
+                  <span>
+                    Click <strong>Create</strong>, copy the generated token string, and paste it
+                    into the field below.
+                  </span>
                 </div>
               </div>
             )}
@@ -273,20 +337,40 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
             {provider.id === 'gitlab' && (
               <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
-                  <span>Click <strong>Open Token Page</strong> to navigate to User Settings &gt; Access Tokens.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    1.
+                  </span>
+                  <span>
+                    Click <strong>Open Token Page</strong> to navigate to User Settings &gt; Access
+                    Tokens.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
-                  <span>Set token name as <strong>GitDesktop</strong> and clear or choose an Expiration date.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    2.
+                  </span>
+                  <span>
+                    Set token name as <strong>GitDesktop</strong> and clear or choose an Expiration
+                    date.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                  <span>Check scopes: <strong>api</strong>, <strong>read_user</strong>, <strong>read_repository</strong>, and <strong>write_repository</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    3.
+                  </span>
+                  <span>
+                    Check scopes: <strong>api</strong>, <strong>read_user</strong>,{' '}
+                    <strong>read_repository</strong>, and <strong>write_repository</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
-                  <span>Click <strong>Create personal access token</strong>, copy the token, and paste it below.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    4.
+                  </span>
+                  <span>
+                    Click <strong>Create personal access token</strong>, copy the token, and paste
+                    it below.
+                  </span>
                 </div>
               </div>
             )}
@@ -294,20 +378,39 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
             {provider.id === 'github' && (
               <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
-                  <span>Click <strong>Open Token Page</strong> to open GitHub Personal Access Tokens (Classic).</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    1.
+                  </span>
+                  <span>
+                    Click <strong>Open Token Page</strong> to open GitHub Personal Access Tokens
+                    (Classic).
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
-                  <span>Set Note as <strong>GitDesktop</strong> and select your preferred Expiration.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    2.
+                  </span>
+                  <span>
+                    Set Note as <strong>GitDesktop</strong> and select your preferred Expiration.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                  <span>Select scopes: <strong>repo</strong>, <strong>read:user</strong>, <strong>user:email</strong>, and <strong>workflow</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    3.
+                  </span>
+                  <span>
+                    Select scopes: <strong>repo</strong>, <strong>read:user</strong>,{' '}
+                    <strong>user:email</strong>, and <strong>workflow</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
-                  <span>Click <strong>Generate token</strong>, copy the generated token, and paste it below.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    4.
+                  </span>
+                  <span>
+                    Click <strong>Generate token</strong>, copy the generated token, and paste it
+                    below.
+                  </span>
                 </div>
               </div>
             )}
@@ -315,20 +418,41 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
             {provider.id === 'bitbucket' && (
               <div className="pt-2 border-t border-border/60 text-[11px] text-text-secondary space-y-1.5">
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">1.</span>
-                  <span>Click <strong>Open Token Page</strong> to open Bitbucket Personal Settings &gt; App Passwords.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    1.
+                  </span>
+                  <span>
+                    Click <strong>Open Token Page</strong> to open Bitbucket Personal Settings &gt;
+                    App Passwords.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">2.</span>
-                  <span>Click <strong>Create app password</strong> and label it <strong>GitDesktop</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    2.
+                  </span>
+                  <span>
+                    Click <strong>Create app password</strong> and label it{' '}
+                    <strong>GitDesktop</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">3.</span>
-                  <span>Check permissions: <strong>Account (Read)</strong>, <strong>Repositories (Read & Write)</strong>, and <strong>Pull requests (Read & Write)</strong>.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    3.
+                  </span>
+                  <span>
+                    Check permissions: <strong>Account (Read)</strong>,{' '}
+                    <strong>Repositories (Read & Write)</strong>, and{' '}
+                    <strong>Pull requests (Read & Write)</strong>.
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">4.</span>
-                  <span>Click <strong>Create</strong>, copy the password, and enter your Bitbucket Username and App Password below.</span>
+                  <span className="font-mono font-bold text-commito-coral text-[10px] w-4 text-right">
+                    4.
+                  </span>
+                  <span>
+                    Click <strong>Create</strong>, copy the password, and enter your Bitbucket
+                    Username and App Password below.
+                  </span>
                 </div>
               </div>
             )}
@@ -345,9 +469,7 @@ export const TokenSignInDialog: React.FC<TokenSignInDialogProps> = ({
                 <span className="text-xs font-semibold text-text-primary">
                   Required Permission Scopes
                 </span>
-                <span className="chip chip-stat text-[9.5px]">
-                  {scopes.length} Scopes
-                </span>
+                <span className="chip chip-stat text-[9.5px]">{scopes.length} Scopes</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] text-text-muted">
                 <span>{showScopeList ? 'Hide' : 'View Scopes'}</span>

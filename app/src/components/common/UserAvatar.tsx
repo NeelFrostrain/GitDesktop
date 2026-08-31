@@ -84,10 +84,18 @@ function md5Hex(string: string): string {
     }
     return lResult ^ lX8 ^ lY8;
   }
-  function F(x: number, y: number, z: number) { return (x & y) | (~x & z); }
-  function G(x: number, y: number, z: number) { return (x & z) | (y & ~z); }
-  function H(x: number, y: number, z: number) { return x ^ y ^ z; }
-  function I(x: number, y: number, z: number) { return y ^ (x | ~z); }
+  function F(x: number, y: number, z: number) {
+    return (x & y) | (~x & z);
+  }
+  function G(x: number, y: number, z: number) {
+    return (x & z) | (y & ~z);
+  }
+  function H(x: number, y: number, z: number) {
+    return x ^ y ^ z;
+  }
+  function I(x: number, y: number, z: number) {
+    return y ^ (x | ~z);
+  }
   function FF(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
     a = addUnsigned(a, addUnsigned(addUnsigned(F(b, c, d), x), ac));
     return addUnsigned(rotateLeft(a, s), b);
@@ -116,7 +124,8 @@ function md5Hex(string: string): string {
     while (lByteCount < lMessageLength) {
       lWordCount = (lByteCount - (lByteCount % 4)) / 4;
       lBytePosition = (lByteCount % 4) * 8;
-      lWordArray[lWordCount] = lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition);
+      lWordArray[lWordCount] =
+        lWordArray[lWordCount] | (str.charCodeAt(lByteCount) << lBytePosition);
       lByteCount++;
     }
     lWordCount = (lByteCount - (lByteCount % 4)) / 4;
@@ -127,7 +136,10 @@ function md5Hex(string: string): string {
     return lWordArray;
   }
   function wordToHex(lValue: number) {
-    let wordToHexValue = '', wordToHexValueTemp = '', lByte, lCount;
+    let wordToHexValue = '',
+      wordToHexValueTemp = '',
+      lByte,
+      lCount;
     for (lCount = 0; lCount <= 3; lCount++) {
       lByte = (lValue >>> (lCount * 8)) & 255;
       wordToHexValueTemp = '0' + lByte.toString(16);
@@ -136,13 +148,31 @@ function md5Hex(string: string): string {
     return wordToHexValue;
   }
   const x = convertToWordArray(string);
-  let a = 0x67452301, b = 0xefcdab89, c = 0x98badcfe, d = 0x10325476;
-  const S11 = 7, S12 = 12, S13 = 17, S14 = 22;
-  const S21 = 5, S22 = 9, S23 = 14, S24 = 20;
-  const S31 = 4, S32 = 11, S33 = 16, S34 = 23;
-  const S41 = 6, S42 = 10, S43 = 15, S44 = 21;
+  let a = 0x67452301,
+    b = 0xefcdab89,
+    c = 0x98badcfe,
+    d = 0x10325476;
+  const S11 = 7,
+    S12 = 12,
+    S13 = 17,
+    S14 = 22;
+  const S21 = 5,
+    S22 = 9,
+    S23 = 14,
+    S24 = 20;
+  const S31 = 4,
+    S32 = 11,
+    S33 = 16,
+    S34 = 23;
+  const S41 = 6,
+    S42 = 10,
+    S43 = 15,
+    S44 = 21;
   for (let k = 0; k < x.length; k += 16) {
-    const AA = a, BB = b, CC = c, DD = d;
+    const AA = a,
+      BB = b,
+      CC = c,
+      DD = d;
     a = FF(a, b, c, d, x[k + 0], S11, 0xd76aa478);
     d = FF(d, a, b, c, x[k + 1], S12, 0xe8c7b756);
     c = FF(c, d, a, b, x[k + 2], S13, 0x242070db);
@@ -317,9 +347,11 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
       const matchedAccount = accounts.find((a) => {
         if (normEmail && a.commit_email && a.commit_email.toLowerCase() === normEmail) return true;
         if (normEmail && a.handle && a.handle.toLowerCase() === normEmail) return true;
-        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle) return true;
+        if (normHandle && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normHandle)
+          return true;
         if (normName && a.display_name && a.display_name.toLowerCase() === normName) return true;
-        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName) return true;
+        if (normName && a.handle && a.handle.toLowerCase().replace(/^@+/, '') === normName)
+          return true;
         return false;
       });
 
@@ -367,7 +399,12 @@ export const UserAvatar: React.FC<UserAvatarProps> = ({
     }
 
     // 6. Gravatar MD5 & SHA-256 fallbacks if valid email is present
-    if (normEmail && !normEmail.includes('noreply') && !normEmail.includes('example.com') && normEmail.includes('@')) {
+    if (
+      normEmail &&
+      !normEmail.includes('noreply') &&
+      !normEmail.includes('example.com') &&
+      normEmail.includes('@')
+    ) {
       try {
         const md5 = md5Hex(normEmail);
         if (md5) {

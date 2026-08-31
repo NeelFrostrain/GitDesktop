@@ -113,8 +113,14 @@ export const FloatingTaskWidget: React.FC = () => {
         const maxX = Math.max(10, window.innerWidth - cardWidth - 16);
         const maxY = Math.max(10, window.innerHeight - cardHeight - 16);
 
-        const finalX = Math.max(16, Math.min(dragRef.current.cardX + (upEvent.clientX - dragRef.current.startX), maxX));
-        const finalY = Math.max(16, Math.min(dragRef.current.cardY + (upEvent.clientY - dragRef.current.startY), maxY));
+        const finalX = Math.max(
+          16,
+          Math.min(dragRef.current.cardX + (upEvent.clientX - dragRef.current.startX), maxX)
+        );
+        const finalY = Math.max(
+          16,
+          Math.min(dragRef.current.cardY + (upEvent.clientY - dragRef.current.startY), maxY)
+        );
 
         const finalPos = { x: finalX, y: finalY };
         setPosition(finalPos);
@@ -176,9 +182,7 @@ export const FloatingTaskWidget: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="font-mono text-commito-coral font-bold text-xs">
-            {percent}%
-          </span>
+          <span className="font-mono text-commito-coral font-bold text-xs">{percent}%</span>
           <ChevronUp className="w-3.5 h-3.5 text-text-muted group-hover:text-text-primary transition shrink-0" />
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Check, Palette, Sun, Moon, Eye } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 import { useTheme, type ThemePresetId } from '../../../shared/theme/ThemeContext';
 import { useSettingsStore } from '../store/useSettingsStore';
 
@@ -8,7 +8,7 @@ type ThemeFilter = 'all' | 'dark' | 'light';
 export const ThemeSelectorTab: React.FC = () => {
   const { availableThemes, theme: activeTheme, setTheme } = useTheme();
   const { setSettingValue } = useSettingsStore();
-  const [filter, setFilter] = useState<ThemeFilter>('all');
+  const [filter] = useState<ThemeFilter>('all');
 
   const handleThemeChange = (themeId: ThemePresetId) => {
     setTheme(themeId);
@@ -29,56 +29,6 @@ export const ThemeSelectorTab: React.FC = () => {
   return (
     <div className="space-y-5 select-none font-sans">
       {/* ── Top Header & Filter Toolbar ── */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="space-y-0.5">
-          <div className="flex items-center gap-1.5 text-xs font-bold text-text-primary tracking-tight">
-            <Palette className="w-4 h-4 text-commito-coral" />
-            <span>Application Themes</span>
-          </div>
-          <p className="text-[11px] text-text-muted">
-            Choose your preferred workspace aesthetic. Instant live preview applied across the app.
-          </p>
-        </div>
-
-        {/* Filter Pills */}
-        <div className="flex items-center bg-base-1 border border-border rounded-sm p-0.5 gap-0.5 shadow-2xs text-[11px]">
-          <button
-            type="button"
-            onClick={() => setFilter('all')}
-            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer ${
-              filter === 'all'
-                ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            All ({availableThemes.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('dark')}
-            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer flex items-center gap-1 ${
-              filter === 'dark'
-                ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <Moon className="w-3 h-3" />
-            <span>Dark</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilter('light')}
-            className={`px-2.5 py-1 rounded-sm font-medium transition cursor-pointer flex items-center gap-1 ${
-              filter === 'light'
-                ? 'bg-base-2 text-text-primary font-semibold shadow-xs'
-                : 'text-text-muted hover:text-text-primary'
-            }`}
-          >
-            <Sun className="w-3 h-3" />
-            <span>Light</span>
-          </button>
-        </div>
-      </div>
 
       {/* ── Theme Cards Grid ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">

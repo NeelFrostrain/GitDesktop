@@ -1,5 +1,5 @@
 export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
-export type SettingCategory = 'appearance' | 'ai';
+export type SettingCategory = 'appearance' | 'ai' | 'legal';
 
 export type SettingScope = 'app' | 'repo';
 
@@ -39,6 +39,11 @@ export const CATEGORY_METADATA: Record<
     label: 'AI & Commit-AI',
     icon: 'Sparkles',
     subcategories: ['API Keys & Providers', 'Model Configuration'],
+  },
+  legal: {
+    label: 'Legal',
+    icon: 'FileText',
+    subcategories: ['Terms of Service', 'Privacy Policy'],
   },
 };
 
@@ -155,7 +160,10 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     subcategory: 'Model Configuration',
     type: 'select',
     options: [
-      { label: 'Gemini 3.7 Flash (State-of-the-Art • Hybrid Reasoning)', value: 'gemini-3.7-flash' },
+      {
+        label: 'Gemini 3.7 Flash (State-of-the-Art • Hybrid Reasoning)',
+        value: 'gemini-3.7-flash',
+      },
       { label: 'Gemini 3.7 Pro (Deep Reasoning & Architecture)', value: 'gemini-3.7-pro' },
       { label: 'Gemini 3.6 Flash Lite (Next-Gen Lightweight)', value: 'gemini-3.6-flash-lite' },
       { label: 'Gemini 3.5 Flash Lite (Experimental Next-Gen)', value: 'gemini-3.5-flash-lite' },
@@ -165,7 +173,10 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
       { label: 'Gemini 2.5 Pro (Deep Reasoning & Architecture)', value: 'gemini-2.5-pro' },
       { label: 'Gemini 2.0 Flash (Flagship Multimodal & Reasoning)', value: 'gemini-2.0-flash' },
       { label: 'Gemini 2.0 Flash Lite (Ultra Low Latency)', value: 'gemini-2.0-flash-lite' },
-      { label: 'Gemini 2.0 Flash Thinking (Experimental Reasoning)', value: 'gemini-2.0-flash-thinking-exp-01-21' },
+      {
+        label: 'Gemini 2.0 Flash Thinking (Experimental Reasoning)',
+        value: 'gemini-2.0-flash-thinking-exp-01-21',
+      },
       { label: 'Gemini 1.5 Pro (Massive Context Window)', value: 'gemini-1.5-pro' },
       { label: 'Gemini 1.5 Flash (Standard Flash)', value: 'gemini-1.5-flash' },
     ],

@@ -22,6 +22,7 @@ import { DiffViewer } from './components/views/DiffViewer';
 import { ToastContainer } from './components/common/ToastContainer';
 import { PanelResizer } from './components/layout/PanelResizer';
 import { useAiAgentStore } from './features/ai-agent';
+import { TelemetryService } from './services/telemetry/telemetryService';
 
 // ── Panel width helpers ──────────────────────────────────────────────────────
 const SIDEBAR_MIN = 240;
@@ -285,6 +286,9 @@ export const App: React.FC = () => {
       .loadRepos()
       .catch(() => {});
 
+    // Lightweight anonymous active session heartbeat to CyronicStudio
+    TelemetryService.sendAppActivePing().catch(() => {});
+
     // Root-level listener for automatic OAuth loopback login success & deep links (GitLab)
     let unlistenEvent: (() => void) | undefined;
     let unlistenDeepLink: (() => void) | undefined;
@@ -414,11 +418,13 @@ export const App: React.FC = () => {
         // Fast path validation check on active repository
         const validation = await GitService.validateRepoPath(activeRepoPath);
         if (validation && validation.is_valid === false && !isDisposed) {
-          useGitStore.getState().setIsMissingRepoModalOpen(
-            true,
-            activeRepoPath,
-            validation.error_message || 'Active repository folder or .git structure is missing'
-          );
+          useGitStore
+            .getState()
+            .setIsMissingRepoModalOpen(
+              true,
+              activeRepoPath,
+              validation.error_message || 'Active repository folder or .git structure is missing'
+            );
           return;
         }
 
@@ -506,7 +512,10 @@ export const App: React.FC = () => {
   useEffect(() => {
     const handleHomeFocus = () => {
       if (currentNavView === 'home') {
-        useRepoStore.getState().loadRepos().catch(() => {});
+        useRepoStore
+          .getState()
+          .loadRepos()
+          .catch(() => {});
       }
     };
 
@@ -516,7 +525,10 @@ export const App: React.FC = () => {
     appWindow
       .onFocusChanged(({ payload: focused }) => {
         if (focused && currentNavView === 'home') {
-          useRepoStore.getState().loadRepos().catch(() => {});
+          useRepoStore
+            .getState()
+            .loadRepos()
+            .catch(() => {});
         }
       })
       .then((fn) => {
@@ -630,6 +642,12 @@ export const App: React.FC = () => {
 
   return (
     <ErrorBoundary>
+      {isOnboardingOpen ? (
+        /* ── Full-page onboarding — replaces entire app shell ── */
+        <Suspense fallback={null}>
+          <OnboardingScreen onComplete={() => setIsOnboardingOpen(false)} />
+        </Suspense>
+      ) : (
       <div className="flex flex-col h-screen w-screen bg-base-0 text-text-primary overflow-hidden select-none font-sans">
         {/* Custom Application Titlebar */}
         <Titlebar />
@@ -760,10 +778,6 @@ export const App: React.FC = () => {
             isOpen={isCommandPaletteOpen}
             onClose={() => setIsCommandPaletteOpen(false)}
           />
-          <OnboardingScreen
-            isOpen={isOnboardingOpen}
-            onComplete={() => setIsOnboardingOpen(false)}
-          />
           <TaskManagerModal />
           <FloatingTaskWidget />
         </Suspense>
@@ -771,6 +785,7 @@ export const App: React.FC = () => {
         {/* Global Toast Notifications */}
         <ToastContainer />
       </div>
+      )}
     </ErrorBoundary>
   );
 };

@@ -122,7 +122,11 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
       await get().loadRepos();
       useLogStore
         .getState()
-        .addLog('info', 'Repo', `Cleaned up ${removed.length} missing/invalid repositories from workspace`);
+        .addLog(
+          'info',
+          'Repo',
+          `Cleaned up ${removed.length} missing/invalid repositories from workspace`
+        );
       return removed;
     } catch (error: unknown) {
       const msg = getErrorMessage(error);

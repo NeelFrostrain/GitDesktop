@@ -141,11 +141,13 @@ export const RepoList: React.FC = () => {
             </div>
             <div className="flex items-center gap-1.5 min-w-0 text-xs text-text-secondary">
               <span className="font-semibold text-text-primary">
-                {invalidRepos.length} missing {invalidRepos.length === 1 ? 'repository' : 'repositories'}
+                {invalidRepos.length} missing{' '}
+                {invalidRepos.length === 1 ? 'repository' : 'repositories'}
               </span>
               <span className="text-border hidden sm:inline">•</span>
               <span className="text-text-muted hidden sm:inline truncate">
-                Folder or <code className="font-mono text-[11px] text-text-secondary">.git</code> metadata could not be located on disk.
+                Folder or <code className="font-mono text-[11px] text-text-secondary">.git</code>{' '}
+                metadata could not be located on disk.
               </span>
             </div>
           </div>

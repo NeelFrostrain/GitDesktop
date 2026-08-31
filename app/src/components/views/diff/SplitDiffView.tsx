@@ -92,3 +92,5 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
     </div>
   );
 });
+
+SplitDiffView.displayName = 'SplitDiffView';

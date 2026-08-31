@@ -490,4 +490,3 @@ export interface HookTestResult {
   stderr: string;
   duration_ms: number;
 }
-

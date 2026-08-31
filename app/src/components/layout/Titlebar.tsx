@@ -225,7 +225,7 @@ export const Titlebar: React.FC = () => {
         className="titlebar-no-drag flex items-center gap-1.5 z-50"
         onMouseDown={(e) => e.stopPropagation()}
       >
-                <TaskManagerBadge />
+        <TaskManagerBadge />
         {currentNavView !== 'home' && (
           <button
             type="button"

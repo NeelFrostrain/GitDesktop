@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Check,
-  FileText,
   X,
   ArrowRight,
   ArrowLeft,
@@ -17,14 +16,15 @@ import { useAccountServicesStore } from '../../features/account-services/store/a
 import { Button } from '../common/Button';
 import { Checkbox } from '../common/Checkbox';
 import { UserAvatar } from '../common/UserAvatar';
+import { Tabs } from '../common/Tabs';
 import {
   TokenSignInDialog,
   ProviderConfig,
   ProviderKey,
 } from '../../features/account-services/components/TokenSignInDialog';
+import { TelemetryService } from '../../services/telemetry/telemetryService';
 
 interface OnboardingScreenProps {
-  isOpen: boolean;
   onComplete: (name: string, email?: string) => void;
 }
 
@@ -61,7 +61,7 @@ const ONBOARDING_PROVIDERS: ProviderConfig[] = [
   },
 ];
 
-export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onComplete }) => {
+export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const { setUser } = useGitStore();
   const { accounts, loadAccounts, startOAuth } = useAccountServicesStore();
 
@@ -99,7 +99,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
     };
   }, [loadAccounts]);
 
-  if (!isOpen) return null;
 
   const handleStep1Continue = (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +119,8 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
     } catch {
       // ignore localStorage quota errors
     }
+
+    TelemetryService.registerOnboarding(cleanName, cleanEmail || undefined).catch(() => {});
 
     // If an account is already connected, keep it active; otherwise set local identity
     const activeAcc = accounts.find((a) => a.is_active) || accounts[0];
@@ -170,7 +171,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
   };
 
   return (
-    <div className="fixed inset-0 z-[99999] bg-base-0 flex flex-col items-center justify-center p-6 select-none font-sans overflow-y-auto animate-in fade-in duration-200">
+    <div className="h-screen w-screen bg-base-0 flex flex-col items-center justify-center p-6 select-none font-sans overflow-y-auto animate-in fade-in duration-200">
       {/* Background Subtle Gradient Accents */}
       <div className="absolute inset-0 bg-radial-gradient pointer-events-none opacity-40" />
 
@@ -415,79 +416,261 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
       {/* Embedded Terms of Service & Privacy Policy Modal */}
       {showTermsModal && (
         <div
-          className="fixed inset-0 z-[100000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100000] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-100"
           onClick={() => setShowTermsModal(null)}
         >
           <div
-            className="w-full max-w-lg bg-base-1 border border-border rounded-md shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-in zoom-in-95 duration-100"
+            className="w-full max-w-2xl bg-base-1 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-100"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="px-4 py-3 bg-base-2 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <FileText className="w-4 h-4 text-commito-coral" />
-                <h3 className="text-xs font-bold text-text-primary">
-                  {showTermsModal === 'terms' ? 'Terms of Service' : 'Privacy Policy'}
-                </h3>
+            {/* Header + tabs combined into one compact bar */}
+            <div className="px-4.5 py-2 bg-base-1 border-b border-border flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="min-w-0">
+                  <h3 className="text-xs font-bold text-text-primary leading-none">
+                    CyronicStudio · GitDesktop
+                  </h3>
+                </div>
+                <Tabs<'terms' | 'privacy'>
+                  tabs={[
+                    { id: 'terms', label: 'Terms of Service' },
+                    { id: 'privacy', label: 'Privacy Policy' },
+                  ]}
+                  activeTab={showTermsModal}
+                  onChange={setShowTermsModal}
+                  size="xs"
+                  variant="coral"
+                />
               </div>
               <button
                 type="button"
                 onClick={() => setShowTermsModal(null)}
-                className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-3 transition cursor-pointer"
+                className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Document Content */}
-            <div className="p-4 overflow-y-auto text-xs text-text-secondary leading-relaxed space-y-3 font-sans">
+            <div className="flex-1 min-h-0 overflow-y-auto p-4.5 text-xs text-text-secondary leading-relaxed space-y-4 font-sans select-text bg-base-0">
               {showTermsModal === 'terms' ? (
                 <>
-                  <p className="font-semibold text-text-primary">1. Acceptance of Terms</p>
-                  <p>
-                    By downloading, installing, or using GitDesktop, you agree to comply with and be
-                    bound by these Terms of Service. If you do not agree to these terms, do not use
-                    the application.
+                  <p className="text-[10.5px] text-text-muted">
+                    Last updated: August 2026 &nbsp;·&nbsp; Effective immediately upon installation
                   </p>
-                  <p className="font-semibold text-text-primary">2. Local Data & Git Operations</p>
-                  <p>
-                    GitDesktop operates as a client-side Git management desktop tool. All Git
-                    operations, credentials, and local commits are processed on your local device
-                    and directly between your computer and your configured Git hosting providers
-                    (e.g. GitHub, GitLab, Bitbucket).
-                  </p>
-                  <p className="font-semibold text-text-primary">3. User Responsibility</p>
-                  <p>
-                    You are solely responsible for all Git repositories, code commits, branch
-                    pushes, and credentials managed using this application.
-                  </p>
+
+                  <DocSection title="1. Acceptance of Terms">
+                    By downloading, installing, accessing, or using GitDesktop (the
+                    &quot;Software&quot;) published by CyronicStudio, you confirm that you have
+                    read, understood, and agree to be bound by these Terms of Service and our
+                    Privacy Policy. If you do not agree, you must uninstall and cease use of the
+                    Software immediately.
+                  </DocSection>
+
+                  <DocSection title="2. License Grant">
+                    CyronicStudio grants you a personal, non-exclusive, non-transferable, revocable
+                    licence to install and run GitDesktop on devices you own or control, solely for
+                    lawful Git version-control workflows. You may not sublicense, sell, rebrand, or
+                    distribute the Software or any portion thereof without prior written consent from
+                    CyronicStudio.
+                  </DocSection>
+
+                  <DocSection title="3. Local-First Architecture">
+                    GitDesktop is a client-side desktop application. All Git read/write operations
+                    — including clones, fetches, commits, pushes, merges, and rebases — are
+                    executed directly between your local machine and your chosen remote hosting
+                    providers (GitHub, GitLab, Bitbucket, Azure DevOps, or self-hosted servers).
+                    CyronicStudio does not proxy, intercept, or store your repository data.
+                  </DocSection>
+
+                  <DocSection title="4. Prohibited Uses">
+                    You agree not to use the Software to: (a) infringe third-party intellectual
+                    property rights; (b) transmit malware, ransomware, or destructive code;
+                    (c) circumvent authentication or access control mechanisms; or (d) violate any
+                    applicable local, national, or international law or regulation.
+                  </DocSection>
+
+                  <DocSection title="5. User Responsibilities">
+                    By using GitDesktop you accept sole responsibility for:
+                    <ul className="mt-2 space-y-1.5 list-none">
+                      <li className="flex items-start gap-2">
+                        <span className="text-text-muted shrink-0 font-mono text-[10px] mt-0.5">—</span>
+                        <span><strong className="text-text-primary">Repository integrity</strong> — all commits, pushes, merges, force-pushes, and history rewrites performed through the Software.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-text-muted shrink-0 font-mono text-[10px] mt-0.5">—</span>
+                        <span><strong className="text-text-primary">Credential security</strong> — safeguarding your Personal Access Tokens, SSH keys, and OAuth sessions. Do not share tokens or store them in insecure locations.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-text-muted shrink-0 font-mono text-[10px] mt-0.5">—</span>
+                        <span><strong className="text-text-primary">Access permissions</strong> — ensuring you have authorisation to read from or write to any remote repository you interact with via the Software.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-text-muted shrink-0 font-mono text-[10px] mt-0.5">—</span>
+                        <span><strong className="text-text-primary">Backups</strong> — maintaining your own backups of important repositories and local working copies. CyronicStudio is not liable for data loss resulting from Git operations.</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-text-muted shrink-0 font-mono text-[10px] mt-0.5">—</span>
+                        <span><strong className="text-text-primary">Compliance</strong> — ensuring your use of the Software and any code you manage complies with applicable licences, export controls, and organisational policies.</span>
+                      </li>
+                    </ul>
+                  </DocSection>
+
+                  <DocSection title="6. Third-Party Services">
+                    GitDesktop integrates with third-party Git hosting platforms and optional AI
+                    providers. Your use of those services is governed by their own terms of service.
+                    CyronicStudio is not responsible for third-party service availability, data
+                    handling, or outages.
+                  </DocSection>
+
+                  <DocSection title="7. Updates & Changes">
+                    CyronicStudio may release updates to the Software or these Terms at any time.
+                    Continued use of GitDesktop after an update constitutes acceptance of the
+                    revised Terms. Material changes will be communicated via in-app notifications
+                    or our Discord server.
+                  </DocSection>
+
+                  <DocSection title="8. Disclaimer of Warranties">
+                    The Software is provided &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;
+                    without warranties of any kind, express or implied, including but not limited to
+                    merchantability, fitness for a particular purpose, or non-infringement.
+                    CyronicStudio does not warrant that the Software will be error-free or
+                    uninterrupted.
+                  </DocSection>
+
+                  <DocSection title="9. Limitation of Liability">
+                    To the fullest extent permitted by applicable law, CyronicStudio and its
+                    contributors shall not be liable for any indirect, incidental, special,
+                    consequential, or punitive damages arising from your use of or inability to use
+                    the Software, including loss of data, profits, or business goodwill.
+                  </DocSection>
+
+                  <DocSection title="10. Governing Law">
+                    These Terms are governed by and construed in accordance with the laws of the
+                    jurisdiction in which CyronicStudio operates, without regard to conflict-of-law
+                    principles. Any disputes shall be subject to the exclusive jurisdiction of the
+                    courts in that jurisdiction.
+                  </DocSection>
+
+                  <DocSection title="11. Contact">
+                    For legal enquiries, please contact us at{' '}
+                    <a
+                      href={`mailto:${import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL ?? 'support@cyronicstudio.com'}`}
+                      className="text-commito-coral hover:underline"
+                    >
+                      {import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL ?? 'support@cyronicstudio.com'}
+                    </a>
+                    .
+                  </DocSection>
                 </>
               ) : (
                 <>
-                  <p className="font-semibold text-text-primary">
-                    1. Privacy First & Local Storage
+                  <p className="text-[10.5px] text-text-muted">
+                    Last updated: August 2026 &nbsp;·&nbsp; Effective immediately upon installation
                   </p>
-                  <p>
-                    GitDesktop does not sell or distribute your personal source code. Repository
-                    data, commit history, and personal settings remain stored on your local disk.
-                  </p>
-                  <p className="font-semibold text-text-primary">2. Authentication & Credentials</p>
-                  <p>
-                    Authentication tokens (such as GitHub, GitLab, or Bitbucket Personal Access Tokens)
-                    are stored securely in your operating system's native credential manager.
-                  </p>
-                  <p className="font-semibold text-text-primary">3. AI Services (Optional)</p>
-                  <p>
-                    When using optional AI features (such as AI commit message generation), diff
-                    snippets are processed securely via your chosen API provider strictly for
-                    generating summaries.
-                  </p>
+
+                  <DocSection title="1. Our Core Commitment — Zero Code Collection">
+                    <strong className="text-text-primary">
+                      CyronicStudio never inspects, reads, copies, transmits, or sells your source
+                      code, file contents, diffs, commit messages, branch names, repository
+                      structure, or credentials.
+                    </strong>{' '}
+                    All Git data is processed exclusively on your local machine and travels only to
+                    the remote hosting provider you explicitly configure.
+                  </DocSection>
+
+                  <DocSection title="2. What We Collect and Why">
+                    We collect the absolute minimum data required to operate and improve GitDesktop.
+                    There are exactly two data-collection events:
+                    <ul className="mt-2 space-y-2 list-none">
+                      <li className="flex items-start gap-2">
+                        <span className="text-commito-coral font-bold font-mono text-[10px] mt-0.5 shrink-0">A.</span>
+                        <span>
+                          <strong className="text-text-primary">App-launch heartbeat</strong> — On
+                          every cold start, GitDesktop sends an anonymous ping to our private
+                          telemetry server containing only: a randomly-generated installation ID
+                          (stored locally, never linked to you personally), the app version, and
+                          the OS platform name (e.g. &quot;windows&quot;). This lets us count
+                          active users and prioritise platform support. <em>No personal data is
+                          included.</em>
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-commito-coral font-bold font-mono text-[10px] mt-0.5 shrink-0">B.</span>
+                        <span>
+                          <strong className="text-text-primary">Onboarding registration</strong> —
+                          When you complete the onboarding screen, we transmit your chosen display
+                          name and email address to register your download. This data is used solely
+                          to count new installs, send critical security announcements, and analyse
+                          aggregate download trends. We do{' '}
+                          <strong className="text-text-primary">not</strong> share or sell this
+                          information to any third party.
+                        </span>
+                      </li>
+                    </ul>
+                    <p className="mt-2">
+                      <strong className="text-text-primary">Nothing else is collected.</strong>{' '}
+                      We do not track usage events, keystrokes, repository names, file paths,
+                      network activity, or any other telemetry beyond the two events above.
+                    </p>
+                  </DocSection>
+
+                  <DocSection title="3. Credential & Token Security">
+                    Personal Access Tokens, OAuth access tokens, and any passphrase you enter are
+                    stored exclusively in your operating system&apos;s native secure credential
+                    store — Windows Credential Manager, macOS Keychain, or the Linux Secret
+                    Service (via libsecret). They are never transmitted to CyronicStudio servers.
+                  </DocSection>
+
+                  <DocSection title="4. AI Features (Optional & User-Controlled)">
+                    If you enable optional AI features (e.g. AI-generated commit messages or
+                    release notes), diff summaries are sent directly from your machine to your
+                    configured AI provider (such as Google Gemini or OpenAI) using the API key you
+                    supply. CyronicStudio does not route, log, or store this traffic.
+                  </DocSection>
+
+                  <DocSection title="5. Data Retention & Deletion">
+                    The onboarding registration record (display name and email) is retained for up
+                    to 24 months to maintain accurate install counts. You may request deletion at
+                    any time by emailing{' '}
+                    <a
+                      href={`mailto:${import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL ?? 'support@cyronicstudio.com'}`}
+                      className="text-commito-coral hover:underline"
+                    >
+                      {import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL ?? 'support@cyronicstudio.com'}
+                    </a>{' '}
+                    with the subject line &quot;Data Deletion Request&quot;. Anonymous installation
+                    IDs are rotated or purged after 12 months of inactivity.
+                  </DocSection>
+
+                  <DocSection title="6. Changes to This Policy">
+                    We may update this Privacy Policy to reflect changes in our practices or legal
+                    requirements. Material changes will be communicated via in-app notification.
+                    Continued use of GitDesktop after the effective date constitutes acceptance.
+                  </DocSection>
                 </>
               )}
+
+
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-2.5 bg-base-2 border-t border-border flex justify-end">
+            <div className="px-4.5 py-2 bg-base-1 border-t border-border flex items-center justify-between shrink-0">
+              {/* Support chips */}
+              <div className="flex items-center gap-1.5">
+                <SupportLink
+                  label="Website"
+                  href={import.meta.env.VITE_CYRONIC_WEBSITE_URL ?? 'https://cyronicstudio.com'}
+                />
+                <SupportLink
+                  label="Support"
+                  href={`mailto:${import.meta.env.VITE_CYRONIC_SUPPORT_EMAIL ?? 'support@cyronicstudio.com'}`}
+                />
+                <SupportLink
+                  label="Discord"
+                  href={import.meta.env.VITE_CYRONIC_DISCORD_URL ?? 'https://discord.gg/cyronicstudio'}
+                />
+              </div>
               <Button
                 type="button"
                 variant="secondary"
@@ -517,3 +700,39 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ isOpen, onCo
     </div>
   );
 };
+
+/* ── Shared helper components for the legal modal ─────────────────────────── */
+
+function DocSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="font-semibold text-text-primary">{title}</p>
+      <div className="text-text-secondary leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+function SupportLink({
+  label,
+  href,
+}: {
+  label: string;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center px-2 py-0.5 rounded-xs bg-base-2 border border-border hover:border-border-strong hover:text-text-primary text-[10.5px] font-medium text-text-secondary transition"
+    >
+      {label}
+    </a>
+  );
+}

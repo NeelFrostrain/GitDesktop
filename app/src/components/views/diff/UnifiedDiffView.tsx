@@ -86,3 +86,5 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
     </div>
   );
 });
+
+UnifiedDiffView.displayName = 'UnifiedDiffView';

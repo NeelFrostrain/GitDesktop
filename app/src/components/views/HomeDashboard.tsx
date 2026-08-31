@@ -30,7 +30,9 @@ export const HomeDashboard: React.FC = () => {
   const activeAccount = accounts.find((a) => a.is_active) || accounts[0];
   const displayName = user?.name || user?.username || activeAccount?.display_name || 'Workspace';
   const handleOrEmail =
-    user?.email || activeAccount?.commit_email || (user?.username ? `@${user.username}` : 'Local Workspace');
+    user?.email ||
+    activeAccount?.commit_email ||
+    (user?.username ? `@${user.username}` : 'Local Workspace');
   const provider = user?.provider || activeAccount?.provider;
 
   return (
@@ -66,9 +68,7 @@ export const HomeDashboard: React.FC = () => {
                 </span>
               )}
             </div>
-            <p className="text-[11px] text-text-muted truncate font-mono">
-              {handleOrEmail}
-            </p>
+            <p className="text-[11px] text-text-muted truncate font-mono">{handleOrEmail}</p>
           </div>
         </div>
 

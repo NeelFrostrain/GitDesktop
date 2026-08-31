@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Loader2,
-  Globe,
-  Check,
-  ChevronDown,
-  ChevronUp,
-  AlertCircle,
-  X,
-  Key,
-} from 'lucide-react';
+import { Loader2, Globe, Check, ChevronDown, ChevronUp, AlertCircle, X, Key } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { useAccountServicesStore } from '../store/accountStore';
 import { Button } from '../../../components/common/Button';
@@ -205,9 +196,7 @@ export const ProviderPickerCard: React.FC = () => {
                 {/* Left: Info */}
                 <div className="min-w-0 flex-1 space-y-0.5">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-semibold text-xs text-text-primary">
-                      {provider.name}
-                    </span>
+                    <span className="font-semibold text-xs text-text-primary">{provider.name}</span>
                     <span
                       className={`text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-xs border ${provider.bgClass} ${provider.borderClass} ${provider.colorClass}`}
                     >
@@ -308,7 +297,8 @@ export const ProviderPickerCard: React.FC = () => {
       {/* Security Footer Note */}
       <div className="flex items-center justify-start gap-2 py-2 px-3 bg-base-1/40 border border-border rounded-sm text-[11px] text-text-muted text-center">
         <span>
-          Secure OAuth 2.0 PKCE authentication in your default browser or direct Personal Access Token login — credentials stored in your operating system's keyring.
+          Secure OAuth 2.0 PKCE authentication in your default browser or direct Personal Access
+          Token login — credentials stored in your operating system's keyring.
         </span>
       </div>
 

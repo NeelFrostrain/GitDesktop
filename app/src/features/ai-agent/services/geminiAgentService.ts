@@ -199,72 +199,75 @@ export class GeminiAgentService {
             throw new Error('Response body is null, cannot stream SSE data.');
           }
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder('utf-8');
-        let accumulatedText = '';
-        let sseBuffer = '';
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder('utf-8');
+          let accumulatedText = '';
+          let sseBuffer = '';
 
-        try {
-          while (true) {
-            if (signal?.aborted) {
-              await reader.cancel();
-              break;
-            }
+          try {
+            while (true) {
+              if (signal?.aborted) {
+                await reader.cancel();
+                break;
+              }
 
-            const { done, value } = await reader.read();
-            if (done) break;
+              const { done, value } = await reader.read();
+              if (done) break;
 
-            sseBuffer += decoder.decode(value, { stream: true });
-            const lines = sseBuffer.split('\n');
-            sseBuffer = lines.pop() || '';
+              sseBuffer += decoder.decode(value, { stream: true });
+              const lines = sseBuffer.split('\n');
+              sseBuffer = lines.pop() || '';
 
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (trimmed.startsWith('data: ')) {
-                const dataJson = trimmed.slice(6).trim();
-                if (!dataJson || dataJson === '[DONE]') continue;
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith('data: ')) {
+                  const dataJson = trimmed.slice(6).trim();
+                  if (!dataJson || dataJson === '[DONE]') continue;
 
-                try {
-                  const parsed = JSON.parse(dataJson);
-                  const candidate = parsed.candidates?.[0];
-                  const chunkText =
-                    candidate?.content?.parts?.map((p: { text?: string }) => p.text || '').join('') || '';
+                  try {
+                    const parsed = JSON.parse(dataJson);
+                    const candidate = parsed.candidates?.[0];
+                    const chunkText =
+                      candidate?.content?.parts
+                        ?.map((p: { text?: string }) => p.text || '')
+                        .join('') || '';
 
-                  if (chunkText) {
-                    accumulatedText += chunkText;
-                    if (onChunk) {
-                      onChunk(chunkText, accumulatedText);
+                    if (chunkText) {
+                      accumulatedText += chunkText;
+                      if (onChunk) {
+                        onChunk(chunkText, accumulatedText);
+                      }
                     }
+                  } catch {
+                    // Partial JSON chunk, will be resolved with next line or ignored
                   }
-                } catch {
-                  // Partial JSON chunk, will be resolved with next line or ignored
                 }
               }
             }
+          } finally {
+            reader.releaseLock();
           }
-        } finally {
-          reader.releaseLock();
-        }
 
-        const finalText = accumulatedText.trim() || 'I completed the request, but no response was returned.';
-        const toolCalls = this.extractToolCalls(finalText);
+          const finalText =
+            accumulatedText.trim() || 'I completed the request, but no response was returned.';
+          const toolCalls = this.extractToolCalls(finalText);
 
-        return {
-          text: finalText,
-          toolCalls,
-          modelUsed: targetModel,
-          usedApiKey: apiKey,
-        };
-      } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') {
-          throw err;
+          return {
+            text: finalText,
+            toolCalls,
+            modelUsed: targetModel,
+            usedApiKey: apiKey,
+          };
+        } catch (err) {
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            throw err;
+          }
+          lastError = err instanceof Error ? err : new Error(String(err));
         }
-        lastError = err instanceof Error ? err : new Error(String(err));
       }
     }
-  }
 
-  throw lastError || new Error('Failed to stream response using configured API keys.');
+    throw lastError || new Error('Failed to stream response using configured API keys.');
   }
 
   /**

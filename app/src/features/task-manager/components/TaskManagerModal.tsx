@@ -105,11 +105,7 @@ export const TaskManagerModal: React.FC = () => {
   const failedTasks = tasks.filter((t) => t.status === 'failed' || t.status === 'cancelled');
 
   const filteredTasks =
-    activeTab === 'active'
-      ? activeTasks
-      : activeTab === 'completed'
-      ? completedTasks
-      : tasks;
+    activeTab === 'active' ? activeTasks : activeTab === 'completed' ? completedTasks : tasks;
 
   const handleOpenRepo = async (task: AppTask) => {
     if (task.localPath) {
@@ -161,7 +157,10 @@ export const TaskManagerModal: React.FC = () => {
         {/* Compact Header */}
         <div className="px-4 py-2.5 bg-base-1 border-b border-border flex items-center justify-between shrink-0 select-none">
           <div className="flex items-center gap-2 min-w-0">
-            <h2 id="task-manager-title" className="text-xs font-bold text-text-primary leading-none truncate">
+            <h2
+              id="task-manager-title"
+              className="text-xs font-bold text-text-primary leading-none truncate"
+            >
               Task Manager
             </h2>
             <span className="text-border">•</span>
@@ -278,8 +277,8 @@ export const TaskManagerModal: React.FC = () => {
                     isRunning
                       ? 'border-border-strong bg-base-1/80 shadow-2xs'
                       : isCompleted
-                      ? 'border-border hover:border-border-strong'
-                      : 'border-git-removed/30 bg-git-removed-bg/10'
+                        ? 'border-border hover:border-border-strong'
+                        : 'border-git-removed/30 bg-git-removed-bg/10'
                   }`}
                 >
                   {/* Task Header Row */}
@@ -363,7 +362,9 @@ export const TaskManagerModal: React.FC = () => {
                       {/* Detail text & Estimated Time Remaining (ETA) + Inline Cancel */}
                       <div className="flex items-center justify-between text-[10.5px] text-text-muted font-mono">
                         <span className="truncate max-w-[55%]">
-                          {task.progress.detail || task.progress.stage || 'Downloading repository objects...'}
+                          {task.progress.detail ||
+                            task.progress.stage ||
+                            'Downloading repository objects...'}
                         </span>
                         <div className="flex items-center gap-2 shrink-0">
                           <div className="flex items-center gap-1 text-commito-coral">

@@ -62,7 +62,7 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 - **Unified Code Review Hub** — Manage both **GitLab Merge Requests** and **GitHub Pull Requests** directly within the application.
 - **Discussion Threads & Inline Annotations** — View discussions, add top-level comments, reply to file-specific code lines, and toggle approvals.
 - **Diff & Commits Explorer** — Inspect commit lists and changed files with unified/split diffs before merging.
-- **Configurable Merge Strategies** — Support for *Merge Commit*, *Squash and Merge*, and *Rebase and Merge* with branch deletion options.
+- **Configurable Merge Strategies** — Support for _Merge Commit_, _Squash and Merge_, and _Rebase and Merge_ with branch deletion options.
 
 ### History, Rebase & Mutations
 
@@ -106,7 +106,7 @@ Supports **Windows**, **macOS**, and **Linux** with native OS keyring credential
 ### Contribution Analytics & Theming
 
 - **Contribution Heatmap & Radar** — Year-long GitHub/GitLab-style contribution heatmaps and commit activity radar charts.
-- **Curated Theme Presets** — *Commito Dark* (default obsidian), *GitLab Dark*, *GitHub Dark Dimmed*, *Synthwave*, *Monokai Pro*, and *Nord Dark*.
+- **Curated Theme Presets** — _Commito Dark_ (default obsidian), _GitLab Dark_, _GitHub Dark Dimmed_, _Synthwave_, _Monokai Pro_, and _Nord Dark_.
 - **Full CSS Design Tokens** — In-app settings manager for adjusting UI scale, font families, and accent colors.
 - **Compact UI Density** — Optimized sidebar and header dimensions designed for maximum code viewing area.
 
@@ -199,31 +199,31 @@ src-tauri/src/
 
 ### Frontend
 
-| Library | Version | Purpose |
-| :--- | :--- | :--- |
-| **React** | 19.0 | Component rendering & reactive UI with concurrent features |
-| **TypeScript** | 5.8 | End-to-end type safety |
-| **Vite** | 6.1 | Rapid bundler & Hot Module Replacement (HMR) |
-| **Tailwind CSS** | 4.3 | High-performance CSS utility engine linked to design tokens |
-| **Zustand** | 5.0 | Domain-segregated global state management stores |
-| **Monaco Editor** | 4.7 | Split and unified code diff viewer with syntax highlighting |
-| **xterm.js** | 6.0 | Hardware WebGL-accelerated terminal emulator |
-| **Lucide React** | 0.475 | Clean, consistent iconography |
-| **TanStack Query** | 5.66 | Asynchronous query caching and data synchronization |
-| **TanStack Virtual** | 3.14 | Virtualized rendering of large file trees and commit logs |
+| Library              | Version | Purpose                                                     |
+| :------------------- | :------ | :---------------------------------------------------------- |
+| **React**            | 19.0    | Component rendering & reactive UI with concurrent features  |
+| **TypeScript**       | 5.8     | End-to-end type safety                                      |
+| **Vite**             | 6.1     | Rapid bundler & Hot Module Replacement (HMR)                |
+| **Tailwind CSS**     | 4.3     | High-performance CSS utility engine linked to design tokens |
+| **Zustand**          | 5.0     | Domain-segregated global state management stores            |
+| **Monaco Editor**    | 4.7     | Split and unified code diff viewer with syntax highlighting |
+| **xterm.js**         | 6.0     | Hardware WebGL-accelerated terminal emulator                |
+| **Lucide React**     | 0.475   | Clean, consistent iconography                               |
+| **TanStack Query**   | 5.66    | Asynchronous query caching and data synchronization         |
+| **TanStack Virtual** | 3.14    | Virtualized rendering of large file trees and commit logs   |
 
 ### Backend (Rust / Tauri)
 
-| Crate | Purpose |
-| :--- | :--- |
-| **tauri (v2)** | Lightweight native desktop shell, IPC bridge, and window management |
-| **git2** | Native `libgit2` bindings for high-speed local git operations |
-| **keyring** | Native OS secure credential storage (Windows / macOS / Linux) |
-| **reqwest** | Async HTTP client for Gemini AI, GitLab, and GitHub REST/GraphQL APIs |
-| **tokio** | Multi-threaded async runtime for non-blocking I/O and process execution |
-| **serde / serde_json** | High-speed data serialization across IPC boundaries |
-| **portable-pty** | Cross-platform pseudo-terminal manager for embedded shell |
-| **zip** | Decompression engine for portable MinGit runtime setup |
+| Crate                  | Purpose                                                                 |
+| :--------------------- | :---------------------------------------------------------------------- |
+| **tauri (v2)**         | Lightweight native desktop shell, IPC bridge, and window management     |
+| **git2**               | Native `libgit2` bindings for high-speed local git operations           |
+| **keyring**            | Native OS secure credential storage (Windows / macOS / Linux)           |
+| **reqwest**            | Async HTTP client for Gemini AI, GitLab, and GitHub REST/GraphQL APIs   |
+| **tokio**              | Multi-threaded async runtime for non-blocking I/O and process execution |
+| **serde / serde_json** | High-speed data serialization across IPC boundaries                     |
+| **portable-pty**       | Cross-platform pseudo-terminal manager for embedded shell               |
+| **zip**                | Decompression engine for portable MinGit runtime setup                  |
 
 ---
 
@@ -233,7 +233,7 @@ src-tauri/src/
 
 - **Node.js** (v20+) or **Bun** (v1.3+)
 - **Rust toolchain** (1.80+) — [Install here](https://rustup.rs/)
-- **Git** (v2.40+) *(Optional on Windows — GitDesktop will auto-download portable MinGit if missing)*
+- **Git** (v2.40+) _(Optional on Windows — GitDesktop will auto-download portable MinGit if missing)_
 - Platform-specific dependencies:
   - **Windows**: Visual Studio C++ Build Tools & WebView2 runtime
   - **macOS**: Xcode Command Line Tools (`xcode-select --install`)
@@ -289,17 +289,17 @@ src-tauri/src/
 
 ## Development Scripts
 
-| Script | Command | Purpose |
-| :--- | :--- | :--- |
-| `dev` | `vite` | Start Vite dev server (React frontend only) |
-| `dev:app` | `tauri dev` | Launch Tauri desktop app with hot reload |
-| `build` | `tsc && vite build` | Production build (frontend bundle) |
-| `build:app` | `tauri build` | Build desktop binary & installer |
-| `typecheck` | `tsc --noEmit` | Check TypeScript without emitting |
-| `test` | `vitest run` | Run all unit tests once |
-| `lint` | `eslint --cache .` | Lint TypeScript & React files |
-| `format` | `prettier --write .` | Format code with Prettier |
-| `preview` | `vite preview` | Preview production build locally |
+| Script      | Command              | Purpose                                     |
+| :---------- | :------------------- | :------------------------------------------ |
+| `dev`       | `vite`               | Start Vite dev server (React frontend only) |
+| `dev:app`   | `tauri dev`          | Launch Tauri desktop app with hot reload    |
+| `build`     | `tsc && vite build`  | Production build (frontend bundle)          |
+| `build:app` | `tauri build`        | Build desktop binary & installer            |
+| `typecheck` | `tsc --noEmit`       | Check TypeScript without emitting           |
+| `test`      | `vitest run`         | Run all unit tests once                     |
+| `lint`      | `eslint --cache .`   | Lint TypeScript & React files               |
+| `format`    | `prettier --write .` | Format code with Prettier                   |
+| `preview`   | `vite preview`       | Preview production build locally            |
 
 ---
 
@@ -315,6 +315,7 @@ The project uses **ESLint v9** with TypeScript, React, and React Hooks support.
 - **Run**: `bun run lint` or `bun run lint --fix`
 
 **Key rules:**
+
 - ✅ Disables `react/react-in-jsx-scope` (React 17+ doesn't require it)
 - ✅ Warns on unused props (allow `_` prefix for intentional omissions)
 - ✅ Enforces React Hooks rules
@@ -345,11 +346,11 @@ The compiled binaries and installers will be output to `src-tauri/target/release
 
 ### Distribution Matrix
 
-| Platform | Package Format | Architecture | Status |
-| :--- | :--- | :--- | :--- |
-| **Windows** | NSIS Installer (`.exe`), `.msi` | x64 | **Stable** |
-| **macOS** | Disk Image (`.dmg`), App Bundle (`.app`) | Universal (Apple Silicon & Intel) | **Stable** |
-| **Linux** | AppImage (`.AppImage`), Debian Package (`.deb`) | x64 | **Stable** |
+| Platform    | Package Format                                  | Architecture                      | Status     |
+| :---------- | :---------------------------------------------- | :-------------------------------- | :--------- |
+| **Windows** | NSIS Installer (`.exe`), `.msi`                 | x64                               | **Stable** |
+| **macOS**   | Disk Image (`.dmg`), App Bundle (`.app`)        | Universal (Apple Silicon & Intel) | **Stable** |
+| **Linux**   | AppImage (`.AppImage`), Debian Package (`.deb`) | x64                               | **Stable** |
 
 Automated multi-platform builds are packaged via GitHub Actions workflows in `.github/workflows/`.
 

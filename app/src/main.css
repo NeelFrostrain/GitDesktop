@@ -773,14 +773,18 @@ a:focus-visible,
   background-image:
     radial-gradient(ellipse 90% 60% at 50% 0%, rgba(224, 86, 56, 0.06) 0%, transparent 65%),
     radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 100% 100%, 20px 20px;
+  background-size:
+    100% 100%,
+    20px 20px;
 }
 
 .studio-card-frame {
   background: rgba(20, 20, 24, 0.88);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.03);
+  box-shadow:
+    0 12px 36px -4px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .checkerboard-pattern {
@@ -791,7 +795,11 @@ a:focus-visible,
     linear-gradient(45deg, transparent 75%, #1c1c22 75%),
     linear-gradient(-45deg, transparent 75%, #1c1c22 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
 }
 
 .checkerboard-pattern-light {
@@ -802,7 +810,11 @@ a:focus-visible,
     linear-gradient(45deg, transparent 75%, #e5e7eb 75%),
     linear-gradient(-45deg, transparent 75%, #e5e7eb 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0px;
 }
 
 /* --- Buttons (.btn) --- */
@@ -813,7 +825,10 @@ a:focus-visible,
   font-weight: 600;
   cursor: pointer;
   border-radius: 4px;
-  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    transform 0.08s ease;
   user-select: none;
   border: 1px solid transparent;
   text-decoration: none;
@@ -1013,7 +1028,9 @@ a:focus-visible,
   font-size: 12px;
   color: var(--text);
   padding: 6px 10px;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
   outline: none;
 }
 
@@ -1089,9 +1106,10 @@ a:focus-visible,
   border-radius: 8px;
   width: 100%;
   max-width: 540px;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    0 20px 25px -5px rgba(0, 0, 0, 0.5),
+    0 8px 10px -6px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   display: flex;
   flex-direction: column;
 }
-

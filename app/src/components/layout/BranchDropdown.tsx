@@ -112,8 +112,7 @@ interface RemoteBranchRowProps {
 const RemoteBranchRow = React.memo<RemoteBranchRowProps>(({ branchItem, onSelect }) => {
   const slashIdx = branchItem.name.indexOf('/');
   const prefix = slashIdx !== -1 ? branchItem.name.slice(0, slashIdx + 1) : '';
-  const nameWithoutPrefix =
-    slashIdx !== -1 ? branchItem.name.slice(slashIdx + 1) : branchItem.name;
+  const nameWithoutPrefix = slashIdx !== -1 ? branchItem.name.slice(slashIdx + 1) : branchItem.name;
 
   return (
     <div
@@ -125,11 +124,7 @@ const RemoteBranchRow = React.memo<RemoteBranchRowProps>(({ branchItem, onSelect
           <Globe className="w-3 h-3" />
         </div>
         <div className="min-w-0 truncate font-mono text-xs">
-          {prefix && (
-            <span className="text-text-muted text-[11px] font-normal">
-              {prefix}
-            </span>
-          )}
+          {prefix && <span className="text-text-muted text-[11px] font-normal">{prefix}</span>}
           <span className="text-text group-hover:text-text-primary font-semibold transition-colors">
             {nameWithoutPrefix}
           </span>
@@ -189,19 +184,13 @@ const PullRequestRow = React.memo<PullRequestRowProps>(
             </div>
 
             <div className="flex items-center gap-2 text-[10px] text-text-faint mt-0.5 font-mono truncate">
-              <span className="text-text-muted truncate max-w-[120px]">
-                {pr.source_branch}
-              </span>
+              <span className="text-text-muted truncate max-w-[120px]">{pr.source_branch}</span>
               <span>→</span>
-              <span className="text-text-muted truncate max-w-[120px]">
-                {pr.target_branch}
-              </span>
+              <span className="text-text-muted truncate max-w-[120px]">{pr.target_branch}</span>
               {pr.author_name && (
                 <>
                   <span>•</span>
-                  <span className="text-text-muted truncate">
-                    {pr.author_name}
-                  </span>
+                  <span className="text-text-muted truncate">{pr.author_name}</span>
                 </>
               )}
               {pr.created_at && (
@@ -236,6 +225,10 @@ const PullRequestRow = React.memo<PullRequestRowProps>(
     );
   }
 );
+
+LocalBranchRow.displayName = 'LocalBranchRow';
+RemoteBranchRow.displayName = 'RemoteBranchRow';
+PullRequestRow.displayName = 'PullRequestRow';
 
 /**
  * Dropdown component displaying current branch, Branches vs. Pull Requests tabs,
@@ -400,7 +393,11 @@ export const BranchDropdown: React.FC = () => {
 
       const upstream = currentRemotes.find((r) => r.name.toLowerCase() === 'upstream');
       const origin = currentRemotes.find((r) => r.name.toLowerCase() === 'origin');
-      const primaryRemote = upstream || currentRemotes.find((r) => r.name === activeRemote) || origin || currentRemotes[0];
+      const primaryRemote =
+        upstream ||
+        currentRemotes.find((r) => r.name === activeRemote) ||
+        origin ||
+        currentRemotes[0];
       const primaryInfo = parseRemoteRepoInfo(primaryRemote?.url || primaryRemote?.push_url);
 
       if (!primaryInfo?.projectPath) {
@@ -420,7 +417,10 @@ export const BranchDropdown: React.FC = () => {
       const secondaryRemote = upstream ? (origin && origin !== upstream ? origin : null) : null;
       if (secondaryRemote) {
         const secInfo = parseRemoteRepoInfo(secondaryRemote.url || secondaryRemote.push_url);
-        if (secInfo?.projectPath && secInfo.projectPath.toLowerCase() !== projectPath.toLowerCase()) {
+        if (
+          secInfo?.projectPath &&
+          secInfo.projectPath.toLowerCase() !== projectPath.toLowerCase()
+        ) {
           try {
             const secRes = await PullRequestService.listOpenPullRequests(
               secInfo.projectPath,
@@ -673,7 +673,8 @@ export const BranchDropdown: React.FC = () => {
 
   // 4. Local branches with O(1) remote tracking lookup
   const localBranches = useMemo(() => {
-    const list: (BranchInfo & { remoteTracking: string | null; remotePrefix: string | null })[] = [];
+    const list: (BranchInfo & { remoteTracking: string | null; remotePrefix: string | null })[] =
+      [];
     for (let i = 0; i < branches.length; i++) {
       const b = branches[i];
       if (b.is_remote) continue;
@@ -764,7 +765,9 @@ export const BranchDropdown: React.FC = () => {
           title={`Switching to branch ${switchingBranchName || ''}`}
         >
           <Loader2 className="w-3.5 h-3.5 text-commito-coral animate-spin shrink-0" />
-          <span className="text-[11px] text-text-muted shrink-0 font-medium font-sans">Switching:</span>
+          <span className="text-[11px] text-text-muted shrink-0 font-medium font-sans">
+            Switching:
+          </span>
           <span className="truncate font-mono text-xs font-semibold text-text-primary">
             {switchingBranchName || '...'}
           </span>
@@ -1059,7 +1062,8 @@ export const BranchDropdown: React.FC = () => {
                             }
                             className="w-full py-1.5 text-center text-[10.5px] font-mono text-gitlab-blue hover:bg-base-1/80 rounded-sm cursor-pointer transition select-none"
                           >
-                            Show more ({remoteOnlyBranches.length - visibleRemoteCount} remaining)...
+                            Show more ({remoteOnlyBranches.length - visibleRemoteCount}{' '}
+                            remaining)...
                           </button>
                         )}
                       </div>

@@ -382,13 +382,22 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        if (Array.isArray(parsed))
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
         else keyPool = [rawKeys.trim()];
-      } catch { keyPool = [rawKeys.trim()]; }
+      } catch {
+        keyPool = [rawKeys.trim()];
+      }
     }
 
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
@@ -404,29 +413,37 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     const currentSession = updatedSessionsWithUser.find((s) => s.id === activeSessionId);
-    const historyMessages = currentSession ? currentSession.messages.filter(m => m.id !== assistantMsgId) : [userMessage];
+    const historyMessages = currentSession
+      ? currentSession.messages.filter((m) => m.id !== assistantMsgId)
+      : [userMessage];
 
     try {
-      const response = await GeminiAgentService.streamChatMessage({
-        apiKeyPool: keyPool,
-        activeApiKey: activeKey,
-        model: selectedModel,
-        messages: historyMessages,
-        repoContextPrompt,
-        agentName: get().agentName || 'AI Git Agent',
-      }, (_chunk, fullText) => {
-        set((state) => ({
-          sessions: state.sessions.map((s) => {
-            if (s.id === activeSessionId) {
-              return {
-                ...s,
-                messages: s.messages.map((m) => m.id === assistantMsgId ? { ...m, content: fullText } : m),
-              };
-            }
-            return s;
-          }),
-        }));
-      }, abortController.signal);
+      const response = await GeminiAgentService.streamChatMessage(
+        {
+          apiKeyPool: keyPool,
+          activeApiKey: activeKey,
+          model: selectedModel,
+          messages: historyMessages,
+          repoContextPrompt,
+          agentName: get().agentName || 'AI Git Agent',
+        },
+        (_chunk, fullText) => {
+          set((state) => ({
+            sessions: state.sessions.map((s) => {
+              if (s.id === activeSessionId) {
+                return {
+                  ...s,
+                  messages: s.messages.map((m) =>
+                    m.id === assistantMsgId ? { ...m, content: fullText } : m
+                  ),
+                };
+              }
+              return s;
+            }),
+          }));
+        },
+        abortController.signal
+      );
 
       const finalAssistantMessage: AgentMessage = {
         id: assistantMsgId,
@@ -443,7 +460,9 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
             return {
               ...s,
               updatedAt: Date.now(),
-              messages: s.messages.map((m) => (m.id === assistantMsgId ? finalAssistantMessage : m)),
+              messages: s.messages.map((m) =>
+                m.id === assistantMsgId ? finalAssistantMessage : m
+              ),
             };
           }
           return s;
@@ -452,7 +471,9 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
         return { sessions: finalSessions, status: 'idle', error: null };
       });
 
-      useLogStore.getState().addLog('info', 'System', `[AI-Agent] Agent responded using ${response.modelUsed}`);
+      useLogStore
+        .getState()
+        .addLog('info', 'System', `[AI-Agent] Agent responded using ${response.modelUsed}`);
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return set({ status: 'idle' });
       const errorMsg = err instanceof Error ? err.message : String(err);
@@ -467,7 +488,9 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
           if (s.id === activeSessionId) {
             return {
               ...s,
-              messages: s.messages.map((m) => m.id === assistantMsgId ? errorAssistantMessage : m),
+              messages: s.messages.map((m) =>
+                m.id === assistantMsgId ? errorAssistantMessage : m
+              ),
             };
           }
           return s;
@@ -495,15 +518,24 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     if (msgIndex === -1) return;
 
     const targetMsg = currentSession.messages[msgIndex];
-    const historyBefore = targetMsg.role === 'user' ? currentSession.messages.slice(0, msgIndex + 1) : currentSession.messages.slice(0, msgIndex);
+    const historyBefore =
+      targetMsg.role === 'user'
+        ? currentSession.messages.slice(0, msgIndex + 1)
+        : currentSession.messages.slice(0, msgIndex);
     if (historyBefore.length === 0) return;
 
     const assistantMsgId = `msg-agent-${Date.now()}`;
-    const initialAssistantMsg: AgentMessage = { id: assistantMsgId, role: 'assistant', content: '', timestamp: Date.now() };
+    const initialAssistantMsg: AgentMessage = {
+      id: assistantMsgId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+    };
 
     set((state) => {
       const updated = state.sessions.map((s) => {
-        if (s.id === activeSessionId) return { ...s, updatedAt: Date.now(), messages: [...historyBefore, initialAssistantMsg] };
+        if (s.id === activeSessionId)
+          return { ...s, updatedAt: Date.now(), messages: [...historyBefore, initialAssistantMsg] };
         return s;
       });
       saveStoredSessions(updated, activeSessionId);
@@ -527,13 +559,22 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
 
     let keyPool: string[] = [];
     if (Array.isArray(rawKeys)) {
-      keyPool = rawKeys.map(String).map((k) => k.trim()).filter(Boolean);
+      keyPool = rawKeys
+        .map(String)
+        .map((k) => k.trim())
+        .filter(Boolean);
     } else if (typeof rawKeys === 'string' && rawKeys.trim()) {
       try {
         const parsed = JSON.parse(rawKeys);
-        if (Array.isArray(parsed)) keyPool = parsed.map(String).map((k) => k.trim()).filter(Boolean);
+        if (Array.isArray(parsed))
+          keyPool = parsed
+            .map(String)
+            .map((k) => k.trim())
+            .filter(Boolean);
         else keyPool = [rawKeys.trim()];
-      } catch { keyPool = [rawKeys.trim()]; }
+      } catch {
+        keyPool = [rawKeys.trim()];
+      }
     }
 
     if (activeKey.trim() && !keyPool.includes(activeKey.trim())) {
@@ -807,7 +848,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
       }
 
       // 4. Clean up ANSI color codes and command echo
-       
+
       let cleanOutput = capturedOutput
         // eslint-disable-next-line no-control-regex
         .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')
@@ -934,7 +975,7 @@ export const useAiAgentStore = create<AiAgentState>((set, get) => ({
     }
 
     // 5. Clean output
-     
+
     const cleanOutput = capturedOutput
       // eslint-disable-next-line no-control-regex
       .replace(/\x1b\[[0-9;?]*[a-zA-Z]/g, '')

@@ -309,11 +309,7 @@ export const DiffViewer: React.FC = () => {
 
     if (isImageFile(selectedFile)) {
       return (
-        <ImageDiffView
-          filePath={selectedFile}
-          repoPath={activeRepoPath || ''}
-          staged={isStaged}
-        />
+        <ImageDiffView filePath={selectedFile} repoPath={activeRepoPath || ''} staged={isStaged} />
       );
     }
 

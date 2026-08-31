@@ -176,7 +176,11 @@ export const RemoteAccountReposTab: React.FC<RemoteAccountReposTabProps> = ({
         });
         useLogStore
           .getState()
-          .addLog('info', 'Git', `Repository '${repo.name}' already exists at '${targetFolder}'. Opened existing repository.`);
+          .addLog(
+            'info',
+            'Git',
+            `Repository '${repo.name}' already exists at '${targetFolder}'. Opened existing repository.`
+          );
         setCloningRepoId(null);
         onClose();
         return;

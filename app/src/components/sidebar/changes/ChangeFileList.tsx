@@ -74,6 +74,8 @@ const FlatFileRow: React.FC<FlatFileRowProps> = React.memo(
   }
 );
 
+FlatFileRow.displayName = 'FlatFileRow';
+
 /**
  * List or Tree of modified, staged, and untracked files in the working directory with filter,
  * hierarchical folder expansion, item context menus, and empty-space context menu actions.
@@ -222,16 +224,19 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
     });
   };
 
-  const handleFileContextMenu = useCallback((e: React.MouseEvent, filePath: string) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedFile(filePath);
-    setFileContextMenu({
-      filePath,
-      x: e.clientX,
-      y: e.clientY,
-    });
-  }, [setSelectedFile]);
+  const handleFileContextMenu = useCallback(
+    (e: React.MouseEvent, filePath: string) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedFile(filePath);
+      setFileContextMenu({
+        filePath,
+        x: e.clientX,
+        y: e.clientY,
+      });
+    },
+    [setSelectedFile]
+  );
 
   if (filteredFiles.length === 0) {
     return (
