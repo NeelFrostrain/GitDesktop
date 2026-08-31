@@ -43,7 +43,7 @@ SETTINGS_SCHEMA.forEach((s) => defsMap.set(s.id, s));
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   isOpen: false,
   activeScope: 'app',
-  selectedCategory: 'ai',
+  selectedCategory: 'appearance',
   selectedSubcategory: null,
   searchQuery: '',
   appOverrides: {},
@@ -51,7 +51,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   activeRepoPath: null,
   isLoading: false,
 
-  openSettings: (category = 'ai', subcategory?: string) => {
+  openSettings: (category = 'appearance', subcategory?: string) => {
     set({
       isOpen: true,
       selectedCategory: category,

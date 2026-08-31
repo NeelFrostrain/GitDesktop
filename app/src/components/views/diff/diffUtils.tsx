@@ -116,10 +116,12 @@ const HIGHLIGHT_KEYWORDS = new Set([
 ]);
 
 /**
- * Lightweight regex-based syntax highlighter for diff code lines.
+ * Lightweight regex-based syntax highlighter for diff code lines with fast-path optimization.
  */
-export function highlightCodeLine(text: string): React.ReactNode {
+export function highlightCodeLine(text: string, enableHighlight = true): React.ReactNode {
   if (!text) return text;
+  // Fast path: skip expensive tokenization for massive lines or when highlighting is disabled for large diffs
+  if (!enableHighlight || text.length > 200) return text;
 
   const commentIdx = text.indexOf('//');
   if (commentIdx !== -1) {
@@ -127,7 +129,7 @@ export function highlightCodeLine(text: string): React.ReactNode {
     const commentPart = text.substring(commentIdx);
     return (
       <>
-        {highlightCodeLine(codePart)}
+        {highlightCodeLine(codePart, enableHighlight)}
         <span className="text-gray-500 italic">{commentPart}</span>
       </>
     );
@@ -175,7 +177,7 @@ export function highlightCodeLine(text: string): React.ReactNode {
       );
     }
 
-    return <span key={i}>{token}</span>;
+    return token;
   });
 }
 

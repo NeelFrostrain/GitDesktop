@@ -51,7 +51,9 @@ export const CommitDetailsHeader: React.FC<CommitDetailsHeaderProps> = ({
   const additions = commitDetails.total_additions ?? commitDetails.commit.additions ?? 0;
   const deletions = commitDetails.total_deletions ?? commitDetails.commit.deletions ?? 0;
 
-  const isAllOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+  const isAllOpen =
+    commitDetails.changed_files.length > 0 &&
+    commitDetails.changed_files.every((f) => Boolean(openFiles[f]));
 
   const tags = useGitStore((s) => s.tags);
   const commitTags = tags.filter(

@@ -155,7 +155,7 @@ export const SettingRow: React.FC<SettingRowProps> = ({ setting }) => {
 
   return (
     <div
-      className={`p-3 rounded-sm border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 group ${
+      className={`p-3 mb-2 rounded-sm border transition-all flex flex-col md:flex-row md:items-center justify-between gap-3 group ${
         modified
           ? 'bg-base-1/90 border-border-strong shadow-xs'
           : 'bg-base-1/40 border-border/50 hover:border-border/80 hover:bg-base-1/70'

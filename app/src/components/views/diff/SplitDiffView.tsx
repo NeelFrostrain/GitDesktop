@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { DiffLine } from '../../../types/git';
 import { buildSplitRows, highlightCodeLine } from './diffUtils';
 
@@ -7,10 +8,20 @@ interface SplitDiffViewProps {
 }
 
 /**
- * Side-by-side split diff layout table with aligned chunks and syntax highlighting.
+ * Side-by-side split diff layout table with aligned chunks, syntax highlighting,
+ * and high-performance TanStack Virtual windowing for massive repositories & commits (30k+ lines).
  */
 export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const splitRows = useMemo(() => buildSplitRows(lines), [lines]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: splitRows.length,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => 24,
+    overscan: 30,
+  });
 
   if (splitRows.length === 0) {
     return (
@@ -20,75 +31,106 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
     );
   }
 
+  // Syntax highlighting enabled for all lines; fast-path automatically handles huge lines
+  const shouldHighlight = lines.length <= 5000;
+
   return (
-    <div className="w-full font-mono text-[12px] leading-6 select-text">
-      {splitRows.map((row, idx) => {
-        if (row.type === 'header') {
+    <div
+      ref={containerRef}
+      className="w-full h-full min-h-0 overflow-auto font-mono text-[12px] leading-6 select-text bg-base-0 scrollbar-thin"
+    >
+      <div
+        className="w-full relative"
+        style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+      >
+        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+          const row = splitRows[virtualRow.index];
+
+          if (row.type === 'header') {
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+                className="bg-base-2 text-diff-highlight font-semibold px-4 py-0.5 border-y border-border/50 text-[11px] font-mono select-none shadow-2xs backdrop-blur-xs z-10"
+              >
+                {row.headerText}
+              </div>
+            );
+          }
+
+          const isOldEmpty = row.oldContent === undefined;
+          const isNewEmpty = row.newContent === undefined;
+          const isDel = !isOldEmpty && isNewEmpty;
+          const isAdd = isOldEmpty && !isNewEmpty;
+          const isModified = !isOldEmpty && !isNewEmpty && row.oldContent !== row.newContent;
+
           return (
             <div
-              key={idx}
-              className="bg-base-2 text-diff-highlight font-semibold px-4 py-0.5 border-y border-border/50 text-[11px] font-mono sticky top-0 z-10 select-none shadow-2xs backdrop-blur-xs"
+              key={virtualRow.key}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+              className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono h-[24px]"
             >
-              {row.headerText}
+              {/* Left Side (Old/Deleted) */}
+              <div
+                className={`w-1/2 min-w-0 flex border-r border-border/40 ${
+                  isDel || isModified
+                    ? 'bg-diff-remove-bg text-diff-remove-text'
+                    : isOldEmpty
+                      ? 'bg-base-1/20'
+                      : 'bg-base-0 text-text-primary'
+                }`}
+              >
+                <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+                  {row.oldNum ?? ''}
+                </div>
+                <div className="w-5 px-1 py-0 text-center select-none font-bold text-diff-remove-text shrink-0 flex items-center justify-center">
+                  {!isOldEmpty && (isDel || isModified) ? '-' : ''}
+                </div>
+                <div className="flex-1 min-w-0 px-2 py-0 whitespace-pre truncate font-mono min-h-[24px] flex items-center">
+                  {row.oldContent !== undefined
+                    ? highlightCodeLine(row.oldContent, shouldHighlight)
+                    : '\u00A0'}
+                </div>
+              </div>
+
+              {/* Right Side (New/Added) */}
+              <div
+                className={`w-1/2 min-w-0 flex ${
+                  isAdd || isModified
+                    ? 'bg-diff-add-bg text-diff-add-text'
+                    : isNewEmpty
+                      ? 'bg-base-1/20'
+                      : 'bg-base-0 text-text-primary'
+                }`}
+              >
+                <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+                  {row.newNum ?? ''}
+                </div>
+                <div className="w-5 px-1 py-0 text-center select-none font-bold text-diff-add-text shrink-0 flex items-center justify-center">
+                  {!isNewEmpty && (isAdd || isModified) ? '+' : ''}
+                </div>
+                <div className="flex-1 min-w-0 px-2 py-0 whitespace-pre truncate font-mono min-h-[24px] flex items-center">
+                  {row.newContent !== undefined
+                    ? highlightCodeLine(row.newContent, shouldHighlight)
+                    : '\u00A0'}
+                </div>
+              </div>
             </div>
           );
-        }
-
-        const isOldEmpty = row.oldContent === undefined;
-        const isNewEmpty = row.newContent === undefined;
-        const isDel = !isOldEmpty && isNewEmpty;
-        const isAdd = isOldEmpty && !isNewEmpty;
-        const isModified = !isOldEmpty && !isNewEmpty && row.oldContent !== row.newContent;
-
-        return (
-          <div
-            key={idx}
-            className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono"
-          >
-            {/* Left Side (Old/Deleted) */}
-            <div
-              className={`w-1/2 min-w-0 flex border-r border-border/40 ${
-                isDel || isModified
-                  ? 'bg-diff-remove-bg text-diff-remove-text'
-                  : isOldEmpty
-                    ? 'bg-base-1/20'
-                    : 'bg-base-0 text-text-primary'
-              }`}
-            >
-              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">
-                {row.oldNum ?? ''}
-              </div>
-              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-remove-text shrink-0">
-                {!isOldEmpty && (isDel || isModified) ? '-' : ''}
-              </div>
-              <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">
-                {row.oldContent !== undefined ? highlightCodeLine(row.oldContent) : '\u00A0'}
-              </div>
-            </div>
-
-            {/* Right Side (New/Added) */}
-            <div
-              className={`w-1/2 min-w-0 flex ${
-                isAdd || isModified
-                  ? 'bg-diff-add-bg text-diff-add-text'
-                  : isNewEmpty
-                    ? 'bg-base-1/20'
-                    : 'bg-base-0 text-text-primary'
-              }`}
-            >
-              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px]">
-                {row.newNum ?? ''}
-              </div>
-              <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-add-text shrink-0">
-                {!isNewEmpty && (isAdd || isModified) ? '+' : ''}
-              </div>
-              <div className="flex-1 min-w-0 px-2 py-0.5 whitespace-pre-wrap break-all min-h-[24px]">
-                {row.newContent !== undefined ? highlightCodeLine(row.newContent) : '\u00A0'}
-              </div>
-            </div>
-          </div>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 });

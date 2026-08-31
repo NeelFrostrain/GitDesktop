@@ -19,7 +19,7 @@ import { StashedChangesView } from './diff/StashedChangesView';
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
  * and historical commit inspection in Unified, Split, and Edit layout modes.
  */
-const DIFF_CACHE_CAPACITY = 40;
+const DIFF_CACHE_CAPACITY = 15;
 const diffMemoryCache = new Map<string, DiffResult>();
 const commitDetailsMemoryCache = new Map<string, CommitDetails>();
 const commitDiffMemoryCache = new Map<string, DiffResult>();
@@ -258,8 +258,18 @@ export const DiffViewer: React.FC = () => {
   const toggleFileExpansion = (filePath: string) => {
     const nextState = !openFiles[filePath];
     setOpenFiles((prev) => ({ ...prev, [filePath]: nextState }));
-    if (nextState && selectedCommitSha && !expandedHistoryFiles[filePath]) {
-      fetchCommitFileDiff(selectedCommitSha, filePath);
+    if (nextState) {
+      if (selectedCommitSha && !expandedHistoryFiles[filePath]) {
+        fetchCommitFileDiff(selectedCommitSha, filePath);
+      }
+    } else {
+      // Free memory for collapsed file diff lines
+      setExpandedHistoryFiles((prev) => {
+        if (!prev[filePath]) return prev;
+        const updated = { ...prev };
+        delete updated[filePath];
+        return updated;
+      });
     }
   };
 
@@ -401,13 +411,20 @@ export const DiffViewer: React.FC = () => {
     if (!commitDetails) return null;
 
     const handleToggleAllFiles = () => {
-      const allOpen = commitDetails.changed_files.every((f) => openFiles[f]);
+      const allOpen =
+        commitDetails.changed_files.length > 0 &&
+        commitDetails.changed_files.every((f) => Boolean(openFiles[f]));
+
+      // If all files are currently open, collapse all
+      if (allOpen) {
+        setOpenFiles({});
+        return;
+      }
+
+      // Otherwise, expand all files
       const nextState: Record<string, boolean> = {};
       commitDetails.changed_files.forEach((f) => {
-        nextState[f] = !allOpen;
-        if (!allOpen && selectedCommitSha && !expandedHistoryFiles[f]) {
-          fetchCommitFileDiff(selectedCommitSha, f);
-        }
+        nextState[f] = true;
       });
       setOpenFiles(nextState);
     };
@@ -437,77 +454,21 @@ export const DiffViewer: React.FC = () => {
               const fileName = lastSlashIndex !== -1 ? file.substring(lastSlashIndex + 1) : file;
 
               return (
-                <div
+                <HistoryFileItem
                   key={file}
-                  className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
-                    isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
-                  }`}
-                >
-                  {/* File Accordion Header */}
-                  <button
-                    onClick={() => toggleFileExpansion(file)}
-                    className="w-full px-3 py-2 text-xs font-mono text-text-primary hover:bg-base-2/80 flex items-center justify-between text-left transition cursor-pointer select-none"
-                  >
-                    <div className="flex items-center gap-2 truncate min-w-0 flex-1">
-                      <ChevronRight
-                        className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
-                          isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
-                        }`}
-                      />
-                      <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
-                      <div className="truncate min-w-0 flex items-baseline gap-0.5">
-                        {dirPath && (
-                          <span className="text-text-faint text-[11px] truncate">{dirPath}</span>
-                        )}
-                        <span className="font-semibold text-text-primary text-xs truncate">
-                          {fileName}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
-                      {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
-                        <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-base-0 border border-border">
-                          {fileStat.additions > 0 && (
-                            <span className="text-git-added">+{fileStat.additions}</span>
-                          )}
-                          {fileStat.deletions > 0 && (
-                            <span className="text-git-removed">-{fileStat.deletions}</span>
-                          )}
-                        </div>
-                      )}
-                      <CopyButton text={file} className="!h-5 !px-1.5 !text-[10px]" />
-                      {isFileLoading && (
-                        <span className="text-[10px] text-text-muted animate-pulse font-sans">
-                          Loading...
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Expanded File Diff Body */}
-                  {isOpen && (
-                    <div className="border-t border-border bg-base-0 animate-in fade-in duration-150">
-                      {isFileLoading ? (
-                        <div className="p-4 text-xs text-text-muted font-mono text-center">
-                          Fetching file changes...
-                        </div>
-                      ) : fileDiff ? (
-                        isImageFile(file) ? (
-                          <ImageDiffView
-                            filePath={file}
-                            repoPath={activeRepoPath || ''}
-                            commitSha={selectedCommitSha || undefined}
-                          />
-                        ) : diffViewMode === 'split' ? (
-                          <SplitDiffView lines={fileDiff.lines} />
-                        ) : (
-                          <UnifiedDiffView lines={fileDiff.lines} />
-                        )
-                      ) : null}
-                    </div>
-                  )}
-                </div>
+                  file={file}
+                  dirPath={dirPath}
+                  fileName={fileName}
+                  isOpen={isOpen}
+                  fileDiff={fileDiff}
+                  isFileLoading={isFileLoading}
+                  fileStat={fileStat}
+                  selectedCommitSha={selectedCommitSha}
+                  activeRepoPath={activeRepoPath}
+                  diffViewMode={diffViewMode}
+                  onToggle={() => toggleFileExpansion(file)}
+                  onRequestDiff={fetchCommitFileDiff}
+                />
               );
             })}
           </div>
@@ -525,3 +486,117 @@ export const DiffViewer: React.FC = () => {
     </main>
   );
 };
+
+interface HistoryFileItemProps {
+  file: string;
+  dirPath: string;
+  fileName: string;
+  isOpen: boolean;
+  fileDiff?: DiffResult;
+  isFileLoading: boolean;
+  fileStat?: { additions: number; deletions: number; path: string };
+  selectedCommitSha: string | null;
+  activeRepoPath: string | null;
+  diffViewMode: 'unified' | 'split' | 'edit';
+  onToggle: () => void;
+  onRequestDiff: (sha: string, file: string) => void;
+}
+
+const HistoryFileItem: React.FC<HistoryFileItemProps> = React.memo(
+  ({
+    file,
+    dirPath,
+    fileName,
+    isOpen,
+    fileDiff,
+    isFileLoading,
+    fileStat,
+    selectedCommitSha,
+    activeRepoPath,
+    diffViewMode,
+    onToggle,
+    onRequestDiff,
+  }) => {
+    // Automatically trigger on-demand fetch when this item is opened
+    useEffect(() => {
+      if (isOpen && !fileDiff && !isFileLoading && selectedCommitSha) {
+        onRequestDiff(selectedCommitSha, file);
+      }
+    }, [isOpen, fileDiff, isFileLoading, selectedCommitSha, file, onRequestDiff]);
+
+    return (
+      <div
+        className={`border rounded-sm overflow-hidden bg-base-1 transition-colors duration-150 shadow-2xs ${
+          isOpen ? 'border-border-strong' : 'border-border hover:border-border-strong'
+        }`}
+      >
+        {/* File Accordion Header */}
+        <button
+          onClick={onToggle}
+          className="w-full px-3 py-2 text-xs font-mono text-text-primary hover:bg-base-2/80 flex items-center justify-between text-left transition cursor-pointer select-none"
+        >
+          <div className="flex items-center gap-2 truncate min-w-0 flex-1">
+            <ChevronRight
+              className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${
+                isOpen ? 'rotate-90 text-commito-coral' : 'text-text-faint'
+              }`}
+            />
+            <FileCode className="w-3.5 h-3.5 text-git-added flex-shrink-0 opacity-80" />
+            <div className="truncate min-w-0 flex items-baseline gap-0.5">
+              {dirPath && <span className="text-text-faint text-[11px] truncate">{dirPath}</span>}
+              <span className="font-semibold text-text-primary text-xs truncate">{fileName}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-shrink-0 ml-3">
+            {fileStat && (fileStat.additions > 0 || fileStat.deletions > 0) && (
+              <div className="inline-flex items-center gap-1 font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-base-0 border border-border">
+                {fileStat.additions > 0 && (
+                  <span className="text-git-added">+{fileStat.additions}</span>
+                )}
+                {fileStat.deletions > 0 && (
+                  <span className="text-git-removed">-{fileStat.deletions}</span>
+                )}
+              </div>
+            )}
+            <CopyButton text={file} className="!h-5 !px-1.5 !text-[10px]" />
+            {isFileLoading && (
+              <span className="text-[10px] text-text-muted animate-pulse font-sans">
+                Loading...
+              </span>
+            )}
+          </div>
+        </button>
+
+        {/* Expanded File Diff Body with virtualized scrolling */}
+        {isOpen && (
+          <div className="border-t border-border bg-base-0 animate-in fade-in duration-150 max-h-[650px] min-h-[140px] flex flex-col overflow-hidden">
+            {isFileLoading && !fileDiff ? (
+              <div className="p-4 text-xs text-text-muted font-mono text-center">
+                Fetching file changes...
+              </div>
+            ) : fileDiff ? (
+              isImageFile(file) ? (
+                <ImageDiffView
+                  filePath={file}
+                  repoPath={activeRepoPath || ''}
+                  commitSha={selectedCommitSha || undefined}
+                />
+              ) : diffViewMode === 'split' ? (
+                <SplitDiffView lines={fileDiff.lines} />
+              ) : (
+                <UnifiedDiffView lines={fileDiff.lines} />
+              )
+            ) : (
+              <div className="p-4 text-xs text-text-muted font-mono text-center">
+                Loading diff...
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+);
+
+HistoryFileItem.displayName = 'HistoryFileItem';

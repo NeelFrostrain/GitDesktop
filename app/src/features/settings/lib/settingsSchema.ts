@@ -33,7 +33,7 @@ export const CATEGORY_METADATA: Record<
   appearance: {
     label: 'Appearance & Themes',
     icon: 'Palette',
-    subcategories: ['Color Theme', 'UI Scale', 'Fonts'],
+    subcategories: ['Color Theme', 'UI Scale'],
   },
   ai: {
     label: 'AI & Commit-AI',
@@ -90,42 +90,7 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     default: 100,
     scope: 'app',
   },
-  {
-    id: 'app.font_family',
-    label: 'UI Font Family',
-    description: 'Select the font family used throughout the interface.',
-    category: 'appearance',
-    subcategory: 'Fonts',
-    type: 'select',
-    cssVar: '--app-font-family',
-    options: [
-      { label: 'Inter (Default)', value: 'Inter' },
-      { label: 'Segoe UI', value: 'Segoe UI' },
-      { label: 'SF Pro Display', value: 'SF Pro Display' },
-      { label: 'Roboto', value: 'Roboto' },
-      { label: 'System Font Stack', value: 'system' },
-    ],
-    default: 'Inter',
-    scope: 'app',
-  },
-  {
-    id: 'app.terminal_font',
-    label: 'Terminal Font Family',
-    description: 'Monospace font used in terminal and code viewers.',
-    category: 'appearance',
-    subcategory: 'Fonts',
-    type: 'select',
-    cssVar: '--app-terminal-font-family',
-    options: [
-      { label: 'JetBrains Mono (Default)', value: 'JetBrains Mono' },
-      { label: 'Fira Code', value: 'Fira Code' },
-      { label: 'Cascadia Code', value: 'Cascadia Code' },
-      { label: 'Monaco', value: 'Monaco' },
-      { label: 'Menlo', value: 'Menlo' },
-    ],
-    default: 'JetBrains Mono',
-    scope: 'app',
-  },
+
   // ==========================================
   // AI & COMMIT-AI
   // ==========================================

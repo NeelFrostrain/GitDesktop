@@ -765,7 +765,9 @@ export const App: React.FC = () => {
           <LogModal />
           <GitLabSignInModal />
           <SigningSettings />
-          <SettingsPanel />
+          <ErrorBoundary>
+            <SettingsPanel />
+          </ErrorBoundary>
           <MinGitSetupModal
             isOpen={showInstallPrompt}
             onClose={() => setShowInstallPrompt(false)}
