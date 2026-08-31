@@ -3,7 +3,6 @@ import {
   Download,
   CheckCircle,
   AlertTriangle,
-  Terminal,
   X,
   RefreshCw,
   HardDrive,
@@ -65,9 +64,6 @@ export const MinGitSetupModal: React.FC<MinGitSetupModalProps> = ({ isOpen, onCl
         {/* Compact Unified 1-Row Header */}
         <div className="px-3.5 py-2.5 border-b border-border bg-base-1 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-5 h-5 rounded-xs bg-commito-coral/15 border border-commito-coral/30 text-commito-coral flex items-center justify-center shrink-0">
-              <Terminal className="w-3 h-3" />
-            </div>
             <div className="flex items-center gap-1.5 min-w-0">
               <h2 className="text-xs font-bold text-text-primary leading-none truncate">
                 Git Runtime Configuration

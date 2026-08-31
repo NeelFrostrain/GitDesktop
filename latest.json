@@ -1,11 +1,11 @@
 {
   "version": "0.1.1",
   "notes": "Release notes for Git Desktop v0.1.1",
-  "pub_date": "2026-08-31T16:17:21.493Z",
+  "pub_date": "2026-08-31T16:47:26.331Z",
   "platforms": {
     "windows-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUa1hOTkM2YmtMRUowdFhsalZoYmh0SHJnZ083cVA5Q1N3TFBqNHd6dTl3V1ZNL2ZHVTYwdG9BMTIvbmdDZFlmTHpxTmhncnpKL2FrSU85YWc4czJ0d1ozREs0K215cVFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MTkzMDE0CWZpbGU6R2l0IERlc2t0b3BfMC4xLjFfeDY0X2VuLVVTLm1zaQo2TXE2L0sxTnFTVUV4Q2VOcC9LMmFHb0RJN0RTUnVsTG42cE9nZW1qelZMeVlCOVRWdkxLL3Zoa3ZVUU8xcmo4bGR5SjZsUEVsWUppYWdGVWx0SEtEZz09Cg==",
-      "url": "https://github.com/cyronicstudio/git-desktop/releases/download/v0.1.1/Git%20Desktop_0.1.1_x64_en-US.msi"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVUa1hOTkM2YmtMRUp2UktrUVQwd1NSV0kzaTQzcG5nY1V4MnJYMjJBR2t2SUdOODRIZXcrSGVLQ3NxcGxhT1NtcnBHdFVCKzBJcmZ6TVd0Y1JpaHFCSHZmL0xSRDVQOHdFPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MTk0Njg2CWZpbGU6R2l0IERlc2t0b3BfMC4xLjFfeDY0X2VuLVVTLm1zaQpqUkd1cCtjSmpRRVR5YVZvVzBLR1hRc3ZUT0U3aDFEK3VJbjgwZFBLeTI5VUNlWGRKaUFTUnVvQ2gwSXo4elYrV25zSWpuaFV6MkdUMS9ISjhrY0VBQT09Cg==",
+      "url": "https://github.com/cyronicstudio/git-desktop/releases/download/v0.1.1/Git.Desktop_0.1.1_x64_en-US.msi"
     }
   }
 }

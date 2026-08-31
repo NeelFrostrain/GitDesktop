@@ -18,9 +18,7 @@ import { useSettingsStore } from '../store/useSettingsStore';
 import { Button } from '../../../components/common/Button';
 import { useGitRuntime } from '../../git-runtime/useGitRuntime';
 import { MinGitSetupModal } from '../../git-runtime/MinGitSetupModal';
-
-import { check, type Update } from '@tauri-apps/plugin-updater';
-import { relaunch } from '@tauri-apps/plugin-process';
+import { useUpdaterStore } from '../../updater';
 
 export const AboutTab: React.FC = () => {
   const { getEffectiveValue, setSettingValue } = useSettingsStore();
@@ -29,12 +27,19 @@ export const AboutTab: React.FC = () => {
   const [appName, setAppName] = useState<string>('Git Desktop');
   const [tauriVersion, setTauriVersion] = useState<string>('2.2.0');
 
-  const [isCheckingUpdates, setIsCheckingUpdates] = useState<boolean>(false);
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'up-to-date' | 'available'>('up-to-date');
-  const [lastCheckedTime, setLastCheckedTime] = useState<string>('Just now');
-  const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
-  const [isDownloadingUpdate, setIsDownloadingUpdate] = useState<boolean>(false);
-  const [updateDownloadProgress, setUpdateDownloadProgress] = useState<number>(0);
+  const {
+    isChecking: isCheckingUpdates,
+    status: updaterStatus,
+    availableUpdate,
+    downloadProgress: updateDownloadProgress,
+    errorMessage: updateErrorMessage,
+    lastCheckedTime,
+    checkForUpdates,
+    downloadAndInstall: handleDownloadAndInstall,
+  } = useUpdaterStore();
+
+  const isDownloadingUpdate = updaterStatus === 'downloading';
+  const updateStatus = updaterStatus === 'available' ? 'available' : 'up-to-date';
 
   const {
     runtimeInfo,
@@ -70,57 +75,8 @@ export const AboutTab: React.FC = () => {
     };
   }, []);
 
-  const handleCheckForUpdates = async () => {
-    setIsCheckingUpdates(true);
-    setUpdateStatus('idle');
-
-    try {
-      const update = await check();
-      if (update) {
-        setAvailableUpdate(update);
-        setUpdateStatus('available');
-      } else {
-        setAvailableUpdate(null);
-        setUpdateStatus('up-to-date');
-      }
-    } catch (err) {
-      console.warn('Native updater check (fallback to local info in dev):', err);
-      setUpdateStatus('up-to-date');
-    } finally {
-      setIsCheckingUpdates(false);
-      setLastCheckedTime(
-        new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      );
-    }
-  };
-
-  const handleDownloadAndInstall = async () => {
-    if (!availableUpdate) return;
-    setIsDownloadingUpdate(true);
-    try {
-      let downloaded = 0;
-      let contentLength = 0;
-      await availableUpdate.downloadAndInstall((event) => {
-        switch (event.event) {
-          case 'Started':
-            contentLength = event.data.contentLength || 0;
-            break;
-          case 'Progress':
-            downloaded += event.data.chunkLength;
-            if (contentLength > 0) {
-              setUpdateDownloadProgress(Math.round((downloaded / contentLength) * 100));
-            }
-            break;
-          case 'Finished':
-            break;
-        }
-      });
-      await relaunch();
-    } catch (err) {
-      console.error('Failed to download & install update:', err);
-    } finally {
-      setIsDownloadingUpdate(false);
-    }
+  const handleCheckForUpdates = () => {
+    checkForUpdates(true);
   };
 
   const handleOpenLink = (url: string) => {
@@ -186,11 +142,15 @@ export const AboutTab: React.FC = () => {
               className={`w-7 h-7 rounded-xs flex items-center justify-center shrink-0 ${
                 updateStatus === 'available'
                   ? 'bg-amber-500/15 border border-amber-500/30'
+                  : updateErrorMessage
+                  ? 'bg-amber-500/15 border border-amber-500/30'
                   : 'bg-git-added/15 border border-git-added/30'
               }`}
             >
               {updateStatus === 'available' ? (
                 <Sparkles className="w-4 h-4 text-amber-400" />
+              ) : updateErrorMessage ? (
+                <AlertTriangle className="w-4 h-4 text-amber-400" />
               ) : (
                 <CheckCircle2 className="w-4 h-4 text-git-added" />
               )}
@@ -200,6 +160,8 @@ export const AboutTab: React.FC = () => {
                 <span>
                   {updateStatus === 'available'
                     ? 'New Update Available'
+                    : updateErrorMessage
+                    ? 'Check Complete'
                     : 'Git Desktop is up to date'}
                 </span>
                 <span className="text-[10.5px] font-mono text-text-muted font-normal">
@@ -207,11 +169,16 @@ export const AboutTab: React.FC = () => {
                 </span>
               </div>
               <p className="text-[11px] text-text-muted mt-1 leading-none">
-                Last checked: {lastCheckedTime} • Release channel:{' '}
+                Last checked: {lastCheckedTime || 'Just now'} • Release channel:{' '}
                 <span className="text-text-secondary font-medium">
                   {betaChannel ? 'Beta / Preview' : 'Stable'}
                 </span>
               </p>
+              {updateErrorMessage && (
+                <p className="text-[10px] font-mono text-amber-400 mt-1 leading-none truncate" title={updateErrorMessage}>
+                  {updateErrorMessage}
+                </p>
+              )}
             </div>
           </div>
 

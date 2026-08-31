@@ -23,6 +23,7 @@ import { ToastContainer } from './components/common/ToastContainer';
 import { PanelResizer } from './components/layout/PanelResizer';
 import { useAiAgentStore } from './features/ai-agent';
 import { TelemetryService } from './services/telemetry/telemetryService';
+import { useUpdaterStore, UpdateBanner } from './features/updater';
 
 // ── Panel width helpers ──────────────────────────────────────────────────────
 const SIDEBAR_MIN = 240;
@@ -399,6 +400,14 @@ export const App: React.FC = () => {
       if (unlistenDeepLink) unlistenDeepLink();
     };
   }, [setUser, setAccounts, setError]);
+
+  // Background auto-update check on application startup (if enabled in settings)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      useUpdaterStore.getState().checkForUpdates(false).catch(() => {});
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Live repository synchronizer: keeps workspace status, working tree diffs, and repo registry in sync
   useEffect(() => {
@@ -786,6 +795,9 @@ export const App: React.FC = () => {
 
         {/* Global Toast Notifications */}
         <ToastContainer />
+
+        {/* Global Auto-Update Notification Banner */}
+        <UpdateBanner />
       </div>
       )}
     </ErrorBoundary>

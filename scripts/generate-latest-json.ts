@@ -122,6 +122,9 @@ if (!signature) {
   }
 }
 
+// GitHub Releases automatically replaces spaces with dots in asset filenames
+const githubAssetFileName = installerFileName.replace(/\s+/g, '.');
+
 const latestJson = {
   version: version,
   notes: `Release notes for Git Desktop v${version}`,
@@ -129,7 +132,7 @@ const latestJson = {
   platforms: {
     'windows-x86_64': {
       signature: signature,
-      url: `${repoUrl}/releases/download/v${version}/${encodeURIComponent(installerFileName)}`
+      url: `${repoUrl}/releases/download/v${version}/${githubAssetFileName}`
     }
   }
 };
