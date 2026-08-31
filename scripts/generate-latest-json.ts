@@ -38,19 +38,32 @@ let installerFilePath = '';
 // Helper to sign on the fly if needed
 const signFileOnTheFly = (filePath: string): string => {
   try {
-    if (keyPath && fs.existsSync(keyPath)) {
-      console.log(`  \x1b[34mℹ\x1b[0m Signing ${path.basename(filePath)} using ${keyPath}...`);
-      const cmd = `bun tauri signer sign --private-key-path "${keyPath}" --password "${keyPassword}" "${filePath}"`;
-      const output = execSync(cmd, { cwd: appDir, encoding: 'utf8' });
-      
+    let keyContent = '';
+    if (process.env.TAURI_SIGNING_PRIVATE_KEY) {
+      keyContent = process.env.TAURI_SIGNING_PRIVATE_KEY;
+    } else if (keyPath && fs.existsSync(keyPath)) {
+      keyContent = fs.readFileSync(keyPath, 'utf8');
+    }
+
+    if (keyContent) {
+      console.log(`  \x1b[34mℹ\x1b[0m Signing ${path.basename(filePath)}...`);
+      const output = execSync(`bun tauri signer sign "${filePath}"`, {
+        cwd: appDir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          TAURI_SIGNING_PRIVATE_KEY: keyContent,
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: keyPassword,
+        },
+      });
+
       // Check if .sig file was generated
       const sigPath = filePath + '.sig';
       if (fs.existsSync(sigPath)) {
         return fs.readFileSync(sigPath, 'utf8').trim();
       }
 
-      // Or parse stdout from tauri signer
-      const match = output.match(/(?:signature|content):\s*([A-Za-z0-9+/=]+)/i) || output.match(/([A-Za-z0-9+/=]{40,})/);
+      const match = output.match(/([A-Za-z0-9+/=]{80,})/);
       if (match) return match[1].trim();
     }
   } catch (err: any) {

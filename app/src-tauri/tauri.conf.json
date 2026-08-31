@@ -43,9 +43,17 @@
   "bundle": {
     "active": true,
     "targets": [
-      "msi",
-      "nsis"
+      "nsis",
+      "msi"
     ],
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      },
+      "wix": {
+        "language": ["en-US"]
+      }
+    },
     "resources": [
       "../bin/MinGit-2.47.1-64-bit.zip"
     ],

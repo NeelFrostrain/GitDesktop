@@ -8,6 +8,7 @@ const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig({
+  envDir: __dirname,
   plugins: [react(), tailwindcss()],
   test: {
     environment: 'jsdom',
