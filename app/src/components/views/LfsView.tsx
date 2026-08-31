@@ -253,29 +253,29 @@ export const LfsView: React.FC = () => {
   }, [lfsFiles, fileFilter]);
 
   return (
-    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-1.5 md:p-2 select-none space-y-5 scrollbar-thin">
+    <div className="flex-1 h-full bg-base-0 overflow-y-auto p-1.5 md:p-2 select-none space-y-4 scrollbar-thin">
       {/* ── Top Header Banner & Quick Actions ── */}
-      <div className="p-4 rounded-sm border border-border bg-base-1/50 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+      <div className="p-4 rounded-xs border border-border bg-base-1/60 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
             <Database className="w-4 h-4 text-commito-coral" />
-            <h2 className="text-sm font-bold text-text-primary tracking-tight">
+            <h2 className="text-xs font-bold text-text-primary uppercase tracking-wider">
               Git Large File Storage (LFS) & Exclusive Locks
             </h2>
           </div>
-          <p className="text-[11px] text-text-muted mt-0.5">
+          <p className="text-[11px] text-text-muted mt-1 leading-normal">
             Manage heavy binary assets, model weights, archives, and exclusive lock states across
             team members.
           </p>
         </div>
 
         {/* Global Operations Toolbar */}
-        <div className="flex items-center gap-1.5 flex-wrap shrink-0">
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
           <button
             type="button"
             onClick={handleInstallLfs}
             disabled={isOperating === 'install'}
-            className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-7.5 px-3 rounded-xs bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Run 'git lfs install' to configure local hooks"
           >
             {isOperating === 'install' ? (
@@ -290,7 +290,7 @@ export const LfsView: React.FC = () => {
             type="button"
             onClick={handleLfsPull}
             disabled={isOperating === 'pull'}
-            className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-7.5 px-3 rounded-xs bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-git-added text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Download LFS binaries for current commits"
           >
             {isOperating === 'pull' ? (
@@ -305,7 +305,7 @@ export const LfsView: React.FC = () => {
             type="button"
             onClick={handleLfsPush}
             disabled={isOperating === 'push'}
-            className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-7.5 px-3 rounded-xs bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-sky-400 text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Push all local LFS binary objects to remote"
           >
             {isOperating === 'push' ? (
@@ -320,7 +320,7 @@ export const LfsView: React.FC = () => {
             type="button"
             onClick={loadLfsData}
             disabled={isLoading}
-            className="h-7.5 px-2.5 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+            className="h-7.5 px-3 rounded-xs bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-secondary hover:text-text-primary text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Refresh LFS files & active lock status"
           >
             {isLoading ? (
@@ -334,7 +334,7 @@ export const LfsView: React.FC = () => {
       </div>
 
       {!isLfsInstalled && (
-        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-sm text-amber-400 text-xs flex items-center gap-2.5 shadow-2xs">
+        <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xs text-amber-400 text-xs flex items-center gap-2.5 shadow-2xs">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span>
             Git LFS binary was not detected on system PATH. Install Git LFS to utilize heavy binary
@@ -346,15 +346,16 @@ export const LfsView: React.FC = () => {
       {/* ── 2-Column Grid: Pattern Tracking + File Locks ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Card 1: LFS Pattern Tracking Rules */}
-        <div className="bg-base-1/50 border border-border rounded-sm p-3.5 space-y-3 shadow-2xs flex flex-col">
-          <div className="flex items-center justify-between border-b border-border/70 pb-2">
+        <div className="bg-base-1/60 border border-border rounded-xs p-4 space-y-3.5 shadow-2xs flex flex-col">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2">
             <div className="flex items-center gap-2">
               <Layers className="w-3.5 h-3.5 text-commito-coral" />
-              <h3 className="text-xs font-bold text-text-primary">Tracked File Patterns</h3>
+              <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                Tracked File Patterns
+              </h3>
             </div>
-            <span className="text-[10px] font-mono text-text-muted">
-              {trackedPatterns.length} {trackedPatterns.length === 1 ? 'rule' : 'rules'} in
-              .gitattributes
+            <span className="text-[10px] font-mono text-text-muted bg-base-0 px-1.5 py-0.2 rounded-xs border border-border">
+              {trackedPatterns.length} {trackedPatterns.length === 1 ? 'rule' : 'rules'} in .gitattributes
             </span>
           </div>
 
@@ -365,12 +366,12 @@ export const LfsView: React.FC = () => {
               placeholder="e.g. *.onnx, *.bin, *.zip, assets/*.psd"
               value={trackPattern}
               onChange={(e) => setTrackPattern(e.target.value)}
-              className="flex-1 h-7.5 px-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
+              className="flex-1 h-8 px-3 bg-base-0 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs select-text"
             />
             <button
               type="submit"
               disabled={!trackPattern.trim()}
-              className="h-7.5 px-3 rounded-sm bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral text-white font-semibold text-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50"
+              className="h-8 px-3.5 rounded-xs bg-commito-coral hover:bg-commito-coralLight active:bg-commito-coral text-white font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Track</span>
@@ -378,9 +379,11 @@ export const LfsView: React.FC = () => {
           </form>
 
           {/* Quick Presets */}
-          <div className="space-y-1">
-            <div className="text-[10.5px] font-semibold text-text-muted">Quick Binary Presets:</div>
-            <div className="flex flex-wrap gap-1">
+          <div className="space-y-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-text-muted">
+              Quick Binary Presets:
+            </div>
+            <div className="flex flex-wrap gap-1.5">
               {PRESET_PATTERNS.map((p) => {
                 const isTracked = trackedPatterns.includes(p.pattern);
                 return (
@@ -390,7 +393,7 @@ export const LfsView: React.FC = () => {
                     onClick={() =>
                       isTracked ? handleUntrackPattern(p.pattern) : handleTrackPreset(p.pattern)
                     }
-                    className={`px-2 py-0.5 rounded-xs text-[10px] font-mono transition cursor-pointer flex items-center gap-1 border shadow-2xs ${
+                    className={`px-2 py-1 rounded-xs text-[10.5px] font-mono transition cursor-pointer flex items-center gap-1.5 border shadow-2xs active:scale-95 ${
                       isTracked
                         ? 'bg-commito-coral/15 border-commito-coral/40 text-commito-coral font-bold'
                         : 'bg-base-0 hover:bg-base-2 border-border text-text-muted hover:text-text-primary'
@@ -398,8 +401,8 @@ export const LfsView: React.FC = () => {
                     title={`${p.desc} (${p.pattern})`}
                   >
                     <span>{p.label}</span>
-                    <span className="opacity-70 text-[9px]">({p.pattern})</span>
-                    {isTracked && <Check className="w-2.5 h-2.5 ml-0.5" />}
+                    <span className="opacity-70 text-[9.5px]">({p.pattern})</span>
+                    {isTracked && <Check className="w-2.5 h-2.5 text-commito-coral" />}
                   </button>
                 );
               })}
@@ -407,18 +410,18 @@ export const LfsView: React.FC = () => {
           </div>
 
           {/* Tracked Patterns List */}
-          <div className="space-y-1 max-h-48 overflow-y-auto scrollbar-thin pt-1 flex-1">
+          <div className="space-y-1.5 max-h-48 overflow-y-auto scrollbar-thin pt-1 flex-1">
             {trackedPatterns.length === 0 ? (
-              <div className="p-3 text-center rounded-sm border border-dashed border-border bg-base-0/30 text-text-muted text-xs">
+              <div className="p-6 text-center rounded-xs border border-dashed border-border/80 bg-base-0/30 text-text-muted text-xs">
                 No active tracking rules found in .gitattributes
               </div>
             ) : (
               trackedPatterns.map((pat) => (
                 <div
                   key={pat}
-                  className="px-2.5 py-1.5 bg-base-0 border border-border rounded-sm flex items-center justify-between text-xs font-mono group hover:border-border-strong transition"
+                  className="px-3 py-2 bg-base-0 border border-border hover:border-border-strong rounded-xs flex items-center justify-between text-xs font-mono group transition shadow-2xs"
                 >
-                  <span className="text-text-primary font-medium truncate">{pat}</span>
+                  <span className="text-text-primary font-medium truncate select-text">{pat}</span>
                   <button
                     type="button"
                     onClick={() => handleUntrackPattern(pat)}
@@ -434,13 +437,15 @@ export const LfsView: React.FC = () => {
         </div>
 
         {/* Card 2: Exclusive Binary File Locks */}
-        <div className="bg-base-1/50 border border-border rounded-sm p-3.5 space-y-3 shadow-2xs flex flex-col">
-          <div className="flex items-center justify-between border-b border-border/70 pb-2">
+        <div className="bg-base-1/60 border border-border rounded-xs p-4 space-y-3.5 shadow-2xs flex flex-col">
+          <div className="flex items-center justify-between border-b border-border/60 pb-2">
             <div className="flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-commito-coral" />
-              <h3 className="text-xs font-bold text-text-primary">Exclusive Binary File Locks</h3>
+              <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+                Exclusive Binary File Locks
+              </h3>
             </div>
-            <span className="text-[10px] font-mono text-text-muted">
+            <span className="text-[10px] font-mono text-text-muted bg-base-0 px-1.5 py-0.2 rounded-xs border border-border">
               {lfsLocks.length} {lfsLocks.length === 1 ? 'lock' : 'locks'} active
             </span>
           </div>
@@ -452,12 +457,12 @@ export const LfsView: React.FC = () => {
               placeholder="Path to lock, e.g. assets/textures/hero.psd"
               value={lockFilePath}
               onChange={(e) => setLockFilePath(e.target.value)}
-              className="flex-1 h-7.5 px-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
+              className="flex-1 h-8 px-3 bg-base-0 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs select-text"
             />
             <button
               type="submit"
               disabled={!lockFilePath.trim()}
-              className="h-7.5 px-3 rounded-sm bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary font-semibold text-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50"
+              className="h-8 px-3.5 rounded-xs bg-base-0 hover:bg-base-2 active:bg-base-3 border border-border text-text-primary font-semibold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
             >
               <Lock className="w-3.5 h-3.5 text-commito-coral" />
               <span>Lock</span>
@@ -467,20 +472,20 @@ export const LfsView: React.FC = () => {
           {/* Active Locks List */}
           <div className="space-y-1.5 max-h-56 overflow-y-auto scrollbar-thin pt-1 flex-1">
             {lfsLocks.length === 0 ? (
-              <div className="p-3 text-center rounded-sm border border-dashed border-border bg-base-0/30 text-text-muted text-xs">
+              <div className="p-6 text-center rounded-xs border border-dashed border-border/80 bg-base-0/30 text-text-muted text-xs">
                 No active remote file locks recorded.
               </div>
             ) : (
               lfsLocks.map((lock) => (
                 <div
                   key={lock.id}
-                  className="p-2 bg-base-0 border border-border rounded-sm flex items-center justify-between gap-2 text-xs"
+                  className="p-2.5 bg-base-0 border border-border hover:border-border-strong rounded-xs flex items-center justify-between gap-2 text-xs shadow-2xs transition"
                 >
                   <div className="min-w-0 flex-1 truncate">
-                    <div className="font-mono font-medium text-text-primary truncate">
+                    <div className="font-mono font-medium text-text-primary truncate select-text">
                       {lock.path}
                     </div>
-                    <div className="text-[10px] text-text-muted flex items-center gap-2 mt-0.5">
+                    <div className="text-[10.5px] text-text-muted flex items-center gap-2 mt-0.5">
                       <span>
                         Owner: <strong className="text-text-secondary">{lock.owner}</strong>
                       </span>
@@ -493,7 +498,7 @@ export const LfsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUnlockFile(lock.path, false)}
-                      className="px-2 py-1 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-xs text-[10.5px] font-medium flex items-center gap-1 transition cursor-pointer"
+                      className="px-2.5 py-1 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-xs text-[10.5px] font-semibold flex items-center gap-1 transition cursor-pointer active:scale-95 shadow-2xs"
                       title="Release lock normally"
                     >
                       <Unlock className="w-3 h-3 text-git-added" />
@@ -502,7 +507,7 @@ export const LfsView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => handleUnlockFile(lock.path, true)}
-                      className="px-2 py-1 bg-base-1 hover:bg-git-removed-bg hover:text-git-removed border border-border text-text-muted rounded-xs text-[10.5px] font-medium transition cursor-pointer"
+                      className="px-2.5 py-1 bg-base-1 hover:bg-git-removed-bg hover:text-git-removed border border-border text-text-muted rounded-xs text-[10.5px] font-medium transition cursor-pointer active:scale-95 shadow-2xs"
                       title="Force break lock"
                     >
                       <span>Force</span>
@@ -516,31 +521,33 @@ export const LfsView: React.FC = () => {
       </div>
 
       {/* ── Tracked LFS Working Files Table ── */}
-      <div className="bg-base-1/50 border border-border rounded-sm p-3.5 space-y-3 shadow-2xs">
-        <div className="flex items-center justify-between border-b border-border/70 pb-2 flex-wrap gap-2">
+      <div className="bg-base-1/60 border border-border rounded-xs p-4 space-y-3.5 shadow-2xs">
+        <div className="flex items-center justify-between border-b border-border/60 pb-2 flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            <Database className="w-3.5 h-3.5 text-gitlab-blue" />
-            <h3 className="text-xs font-bold text-text-primary">LFS Objects in Working Tree</h3>
+            <Database className="w-3.5 h-3.5 text-sky-400" />
+            <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+              LFS Objects in Working Tree
+            </h3>
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-xs bg-base-0 border border-border text-text-muted">
               {lfsFiles.length}
             </span>
           </div>
 
-          <div className="relative w-48">
-            <Search className="w-3 h-3 text-text-muted absolute left-2 top-2 pointer-events-none" />
+          <div className="relative w-56">
+            <Search className="w-3 h-3 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
             <input
               type="text"
               placeholder="Search LFS files..."
               value={fileFilter}
               onChange={(e) => setFileFilter(e.target.value)}
-              className="w-full h-7 pl-6.5 pr-2 bg-base-0 border border-border hover:border-border-strong focus:border-commito-coral rounded-sm text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-inner"
+              className="w-full h-7.5 pl-8 pr-2.5 bg-base-0 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none transition shadow-2xs select-text"
             />
           </div>
         </div>
 
-        <div className="space-y-1 max-h-72 overflow-y-auto scrollbar-thin">
+        <div className="space-y-1.5 max-h-72 overflow-y-auto scrollbar-thin">
           {filteredLfsFiles.length === 0 ? (
-            <div className="p-4 text-center rounded-sm border border-dashed border-border bg-base-0/30 text-text-muted text-xs">
+            <div className="p-8 text-center rounded-xs border border-dashed border-border/80 bg-base-0/30 text-text-muted text-xs">
               {fileFilter
                 ? `No LFS files matching "${fileFilter}"`
                 : 'No LFS tracked objects committed in repository yet.'}
@@ -549,15 +556,15 @@ export const LfsView: React.FC = () => {
             filteredLfsFiles.map((file) => (
               <div
                 key={file.oid + file.path}
-                className="px-3 py-2 bg-base-0 border border-border hover:border-border-strong rounded-sm flex items-center justify-between gap-3 text-xs transition"
+                className="px-3.5 py-2.5 bg-base-0 border border-border hover:border-border-strong rounded-xs flex items-center justify-between gap-3 text-xs transition shadow-2xs"
               >
                 <div className="flex items-center gap-2.5 min-w-0 flex-1">
                   {getFileIcon(file.path)}
-                  <span className="font-mono text-xs text-text-primary truncate">{file.path}</span>
+                  <span className="font-mono text-xs text-text-primary truncate select-text">{file.path}</span>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0 font-mono text-[10.5px]">
-                  <span className="text-text-muted/80 bg-base-1 border border-border px-1.5 py-0.5 rounded-xs truncate max-w-[120px]">
+                  <span className="text-text-muted/80 bg-base-1 border border-border px-1.5 py-0.5 rounded-xs truncate max-w-[120px] select-text">
                     {file.oid.slice(0, 10)}...
                   </span>
 
@@ -582,7 +589,7 @@ export const LfsView: React.FC = () => {
                         preventDefault: () => {},
                       } as React.FormEvent);
                     }}
-                    className="px-2 py-0.5 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary text-[10px] font-sans font-medium transition cursor-pointer"
+                    className="px-2.5 py-1 rounded-xs bg-base-1 hover:bg-base-2 border border-border text-text-muted hover:text-text-primary text-[10.5px] font-sans font-medium transition cursor-pointer shadow-2xs active:scale-95"
                     title="Lock this file"
                   >
                     Lock

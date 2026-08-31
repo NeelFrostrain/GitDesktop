@@ -914,19 +914,16 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
     >
       <div
         ref={modalContainerRef}
-        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
+        className="w-full max-w-3xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header (Compact Single-Row) */}
-        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 text-commito-coral flex items-center justify-center shrink-0 border border-commito-coral/30">
-              <Package className="w-3.5 h-3.5" />
-            </div> */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <h3
                 id="create-release-title"
-                className="text-xs font-bold text-text-primary leading-none"
+                className="text-xs font-bold text-text-primary uppercase tracking-wider"
               >
                 {isEditingExistingRelease ? (
                   <span>
@@ -942,7 +939,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               {selectedRemote && (
                 <>
                   <span className="text-border hidden sm:inline">•</span>
-                  <span className="text-[11px] text-text-muted truncate hidden sm:inline font-mono">
+                  <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 bg-base-2 border border-border rounded-xs text-text-secondary uppercase">
                     {selectedRemote}
                   </span>
                 </>
@@ -954,7 +951,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             type="button"
             onClick={requestClose}
             disabled={isSubmitting || isDeleting}
-            className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+            className="w-6 h-6 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex items-center justify-center disabled:opacity-50"
             title="Close (Esc)"
           >
             <X className="w-3.5 h-3.5" />
@@ -971,11 +968,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
         />
 
         {/* Split 2-Column Form Body (Resizable) */}
-        <form onSubmit={handleSubmit} className="flex-1 flex flex-row min-h-0 overflow-hidden">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-row min-h-0 overflow-hidden select-none">
           {/* Left Resizable Column: Metadata, Tag, Assets, Toggles */}
           <div
             style={{ width: `${leftPanelWidth}px` }}
-            className="shrink-0 flex flex-col min-h-0 overflow-y-auto px-3 py-3 space-y-3.5 bg-base-0"
+            className="shrink-0 flex flex-col min-h-0 overflow-y-auto p-3 md:p-3.5 space-y-3.5 bg-base-0"
           >
             {/* Section 1: Tag Source Selector (New Tag vs Existing Tag) */}
             {!initialRelease ? (
@@ -1023,13 +1020,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                       }
                     }}
                     size="xs"
+                    variant="segmented"
                     ariaLabel="Tag source selection"
                   />
                 </div>
 
                 {tagSource === 'new' ? (
                   /* New Tag & Branch Inputs */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-0.5">
                     <div className="relative">
                       <input
                         ref={inputRef}
@@ -1038,7 +1036,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         value={tagName}
                         onChange={(e) => setTagName(e.target.value)}
                         disabled={isSubmitting}
-                        className="w-full h-8 px-2.5 text-xs font-mono text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                        className="w-full h-8 px-3 text-xs font-mono text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint select-text"
                       />
                       <Tag className="w-3.5 h-3.5 text-text-faint absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                     </div>
@@ -1049,14 +1047,14 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         value={selectedBranch}
                         onChange={(val) => setSelectedBranch(val)}
                         disabled={isSubmitting}
-                        placeholder={isLoadingBranches ? 'Loading branches...' : 'Target Branch...'}
-                        size="md"
+                        placeholder={isLoadingBranches ? 'Loading...' : 'Target Branch...'}
+                        size="sm"
                       />
                     </div>
                   </div>
                 ) : (
                   /* Existing Tag Selector Dropdown */
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-0.5">
                     {tagOptions.length > 0 ? (
                       <Dropdown
                         options={tagOptions}
@@ -1073,7 +1071,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         }}
                         disabled={isSubmitting || isDeleting}
                         placeholder="Select existing tag..."
-                        size="md"
+                        size="sm"
                       />
                     ) : (
                       <div className="p-3 bg-base-1 border border-border/80 rounded-xs flex items-center justify-between gap-3 text-xs">
@@ -1084,7 +1082,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                         <button
                           type="button"
                           onClick={() => setTagSource('new')}
-                          className="h-6 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white text-[11px] font-semibold rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs"
+                          className="h-6.5 px-2.5 bg-commito-coral hover:bg-commito-coralLight text-white text-[11px] font-semibold rounded-xs flex items-center gap-1 transition cursor-pointer shrink-0 shadow-2xs active:scale-95"
                         >
                           <Plus className="w-3 h-3" />
                           <span>Create New Tag</span>
@@ -1094,9 +1092,9 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
                     {/* Summary card if the selected tag is an existing release */}
                     {activeExistingRelease && (
-                      <div className="p-2.5 bg-base-1 border border-amber-500/30 rounded-xs flex items-center justify-between gap-2 text-xs">
+                      <div className="p-2.5 bg-base-1/60 border border-amber-500/30 rounded-xs flex items-center justify-between gap-2 text-xs shadow-2xs">
                         <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-5 h-5 rounded-xs bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0">
+                          <div className="w-5.5 h-5.5 rounded-xs bg-amber-500/15 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
                             <Package className="w-3 h-3" />
                           </div>
                           <div className="min-w-0">
@@ -1111,12 +1109,12 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
                         <div className="flex items-center gap-1.5 shrink-0">
                           {activeExistingRelease.is_latest && (
-                            <span className="px-1.5 py-0.2 bg-emerald-500/15 text-emerald-400 text-[9.5px] font-bold rounded-xs border border-emerald-500/30">
+                            <span className="px-1.5 py-0.2 bg-emerald-500/10 text-emerald-400 text-[9.5px] font-bold rounded-xs border border-emerald-500/30">
                               Latest
                             </span>
                           )}
                           {activeExistingRelease.is_prerelease && (
-                            <span className="px-1.5 py-0.2 bg-purple-500/15 text-purple-300 text-[9.5px] font-bold rounded-xs border border-purple-500/30">
+                            <span className="px-1.5 py-0.2 bg-purple-500/10 text-purple-300 text-[9.5px] font-bold rounded-xs border border-purple-500/30">
                               Pre-release
                             </span>
                           )}
@@ -1131,7 +1129,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                               href={activeExistingRelease.web_url}
                               target="_blank"
                               rel="noreferrer"
-                              className="p-1 text-text-muted hover:text-commito-coral transition rounded-xs hover:bg-base-2 ml-1"
+                              className="p-1 text-text-muted hover:text-commito-coral transition rounded-xs hover:bg-base-2 ml-0.5"
                               title="View on Cloud"
                             >
                               <ExternalLink className="w-3.5 h-3.5" />
@@ -1145,7 +1143,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               </div>
             ) : (
               /* Fixed Tag Banner when opened directly from edit button */
-              <div className="p-2.5 bg-base-1 border border-border rounded-xs flex items-center justify-between">
+              <div className="p-2.5 bg-base-1/60 border border-border rounded-xs flex items-center justify-between shadow-2xs">
                 <div className="flex items-center gap-2">
                   <Tag className="w-3.5 h-3.5 text-amber-400" />
                   <span className="font-mono text-xs font-bold text-text-primary">
@@ -1157,7 +1155,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             )}
 
             {/* Section 2: Release Title Input */}
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-semibold text-text-primary block">Release Title</label>
               <input
                 type="text"
@@ -1165,20 +1163,20 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 value={releaseName}
                 onChange={(e) => setReleaseName(e.target.value)}
                 disabled={isSubmitting || isDeleting}
-                className="w-full h-8 px-2.5 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint"
+                className="w-full h-8 px-3 text-xs text-text-primary bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs focus:outline-none transition shadow-2xs placeholder:text-text-faint select-text"
               />
             </div>
 
             {/* Section 3: Attach Binaries & Release Assets */}
-            <div className="p-3 bg-base-1 border border-border rounded-sm space-y-2.5">
-              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap">
+            <div className="p-3.5 bg-base-1/60 border border-border rounded-xs space-y-2.5 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap sm:flex-nowrap pb-1 border-b border-border/60">
                 <div className="flex items-center gap-1.5 min-w-0">
                   <Paperclip className="w-3.5 h-3.5 text-commito-coral shrink-0" />
-                  <span className="text-xs font-semibold text-text-primary truncate">
+                  <span className="text-xs font-bold text-text-primary truncate">
                     Attach Binaries & Release Assets
                   </span>
                   {attachedFiles.length > 0 && (
-                    <span className="px-1.5 py-0.5 text-[10px] font-bold font-mono bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs whitespace-nowrap shrink-0 leading-none">
+                    <span className="px-1.5 py-0.2 text-[10px] font-bold font-mono bg-commito-coral/15 text-commito-coral border border-commito-coral/30 rounded-xs whitespace-nowrap shrink-0">
                       {attachedFiles.length} file
                       {attachedFiles.length > 1 ? 's' : ''}
                     </span>
@@ -1189,7 +1187,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   type="button"
                   onClick={handleChooseFiles}
                   disabled={isSubmitting || isDeleting}
-                  className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50 whitespace-nowrap shrink-0"
+                  className="h-6.5 px-2 bg-base-0 hover:bg-base-2 border border-border text-[11px] font-semibold text-text-secondary hover:text-text-primary rounded-xs flex items-center gap-1 transition cursor-pointer shadow-2xs disabled:opacity-50 whitespace-nowrap shrink-0 active:scale-95"
                 >
                   <Plus className="w-3 h-3 text-commito-coral shrink-0" />
                   <span>Add Files</span>
@@ -1202,7 +1200,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={handleChooseFiles}
-                className={`border border-dashed rounded-xs p-3 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 ${
+                className={`border border-dashed rounded-xs p-3.5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-1 shadow-2xs ${
                   isDraggingOver
                     ? 'border-commito-coral bg-commito-coral/10'
                     : 'border-border hover:border-commito-coral/60 bg-base-0/60 hover:bg-base-0'
@@ -1226,7 +1224,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                   {attachedFiles.map((file, idx) => (
                     <div
                       key={file.path + idx}
-                      className="flex items-center justify-between p-2 bg-base-0 border border-border rounded-xs text-xs gap-2 group hover:border-border-strong transition"
+                      className="flex items-center justify-between p-2 bg-base-0 border border-border rounded-xs text-xs gap-2 group hover:border-border-strong transition shadow-2xs"
                     >
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {getFileIcon(file.name)}
@@ -1272,7 +1270,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     onChange={(val) => setSelectedRemote(val)}
                     disabled={isSubmitting || isDeleting}
                     placeholder="Select Remote..."
-                    size="md"
+                    size="sm"
                   />
                 </div>
               )}
@@ -1280,11 +1278,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
               {/* Option 1: Push Immediately Toggle */}
               <div
                 onClick={() => !isSubmitting && !isDeleting && setPushImmediately(!pushImmediately)}
-                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
+                className="p-2.5 rounded-xs border border-border/70 bg-base-1/60 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 shadow-2xs"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
-                    <Upload className="w-3 h-3" />
+                    <Upload className="w-3 h-3 text-commito-coral" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
@@ -1322,11 +1320,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     setIsPrerelease(false);
                   }
                 }}
-                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
+                className="p-2.5 rounded-xs border border-border/70 bg-base-1/60 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 shadow-2xs"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles className="w-3 h-3 text-emerald-400" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
@@ -1362,11 +1360,11 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                     setIsLatest(false);
                   }
                 }}
-                className="p-2.5 rounded-sm border border-border/70 bg-base-1/50 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3"
+                className="p-2.5 rounded-xs border border-border/70 bg-base-1/60 hover:bg-base-1 hover:border-border transition cursor-pointer flex items-center justify-between gap-3 shadow-2xs"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="w-6 h-6 rounded-xs flex items-center justify-center shrink-0 bg-base-0 text-text-muted border border-border">
-                    <FlaskConical className="w-3 h-3" />
+                    <FlaskConical className="w-3 h-3 text-purple-400" />
                   </div>
                   <div className="min-w-0">
                     <div className="text-xs font-semibold text-text-primary flex items-center gap-1.5 leading-none">
@@ -1395,8 +1393,8 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
 
             {/* Error Message */}
             {error && (
-              <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-                <AlertCircle className="w-4 h-4 shrink-0" />
+              <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg/60 border border-git-removed/40 text-git-removed text-xs">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{error}</span>
               </div>
             )}
@@ -1407,7 +1405,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             onMouseDown={startResizingLeft}
             onDoubleClick={() => setLeftPanelWidth(420)}
             title="Drag to resize • Double-click to reset"
-            className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+            className={`w-1 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
               isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
             }`}
           >
@@ -1415,10 +1413,10 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           </div>
 
           {/* Right Column: Full-Height Markdown Editor & Preview */}
-          <div className="flex-1 min-w-0 p-2 md:p-3 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+          <div className="flex-1 min-w-0 p-3 md:p-3.5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
             <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
               <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                <label className="text-xs font-bold text-text-primary flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-commito-coral" />
                   <span>Release Notes & Changelog</span>
                 </label>
@@ -1444,7 +1442,7 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
                 type="button"
                 onClick={handleGenerateNotesFromCommits}
                 disabled={isSubmitting || isDeleting || isGeneratingAi}
-                className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/35 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/30 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
                 title="Use AI to analyze commits between new and previous tags to compose full release notes"
               >
                 {isGeneratingAi ? (
@@ -1462,17 +1460,17 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
             </div>
 
             {/* Editor / Preview Body */}
-            <div className="flex-1 min-h-0 flex flex-col bg-base-0 border border-border rounded-xs overflow-hidden shadow-inner">
+            <div className="flex-1 min-h-0 flex flex-col bg-base-1 border border-border rounded-xs overflow-hidden shadow-2xs">
               {activeTab === 'write' ? (
                 <textarea
                   placeholder="Describe this release, new features, bugfixes, breaking changes, and contributor mentions... (Markdown supported)"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isSubmitting || isDeleting}
-                  className="w-full h-full p-3 bg-transparent text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono resize-none leading-relaxed overflow-y-auto"
+                  className="w-full h-full p-3.5 bg-transparent text-xs text-text-primary placeholder:text-text-faint focus:outline-none transition font-mono resize-none leading-relaxed overflow-y-auto select-text"
                 />
               ) : (
-                <div className="w-full h-full p-3.5 overflow-y-auto">
+                <div className="w-full h-full p-3.5 overflow-y-auto select-text">
                   <MarkdownPreview
                     content={description}
                     emptyText="No release notes written yet. Switch to the Write tab to draft notes."
@@ -1492,8 +1490,8 @@ export const CreateReleaseModal: React.FC<CreateReleaseModalProps> = ({
           </div>
         </form>
 
-        {/* Modal Footer Actions (Slim & Space-saving) */}
-        <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 border-t border-border bg-base-1/70 shrink-0 min-h-[38px]">
+        {/* Modal Footer Actions */}
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             {isSubmitting ? (
               (() => {

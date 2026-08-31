@@ -8,7 +8,8 @@
     "dev": "bun run --cwd app dev",
     "dev:app": "bun run --cwd app dev:app",
     "build": "bun run --cwd app build",
-    "build:app": "bun run --cwd app build:app",
+    "build:app": "bun run scripts/build-app.ts",
+    "build:raw": "bun run --cwd app build:app",
     "typecheck": "bun run --cwd app typecheck",
     "lint": "bun run --cwd app lint",
     "format": "bun run --cwd app format",
@@ -17,7 +18,7 @@
     "set-version": "bun run scripts/set-version.ts",
     "version": "bun run scripts/set-version.ts",
     "generate:latest": "bun run scripts/generate-latest-json.ts",
-    "build:release": "powershell -ExecutionPolicy Bypass -File ./Build-Release.ps1"
+    "build:release": "bun run scripts/build-app.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

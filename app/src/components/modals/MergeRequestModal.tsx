@@ -1429,29 +1429,26 @@ export const MergeRequestModal: React.FC = () => {
     >
       <div
         ref={modalContainerRef}
-        className="w-full max-w-5xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
+        className="w-full max-w-3xl lg:max-w-6xl xl:max-w-7xl bg-base-0 border border-border rounded-sm shadow-2xl overflow-hidden flex flex-col h-[88vh] max-h-[850px]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header (Compact & Space-saving) */}
-        <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-base-1 shrink-0">
+        {/* Top Header */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* <div className="w-6 h-6 rounded-sm bg-commito-coral/15 border border-commito-coral/30 flex items-center justify-center text-commito-coral shrink-0">
-              <GitPullRequest className="w-3.5 h-3.5" />
-            </div> */}
-            <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-2 min-w-0 flex-wrap">
               <h2
                 id="merge-request-modal-title"
-                className="text-xs font-bold text-text-primary leading-none"
+                className="text-xs font-bold text-text-primary uppercase tracking-wider"
               >
                 {activeTab === 'edit' && editingMr
                   ? `Edit ${requestTypeLabel} #${editingMr.id}`
                   : `${requestTypeLabel}s`}
               </h2>
-              <span className="text-[10px] font-mono px-1.5 py-0.2 bg-base-2 border border-border rounded text-text-muted">
+              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.2 bg-base-2 border border-border rounded-xs text-text-secondary uppercase">
                 {providerName}
               </span>
               <span className="text-border hidden sm:inline">•</span>
-              <span className="text-[11px] text-text-muted truncate hidden sm:inline">
+              <span className="text-[11px] font-mono text-text-muted truncate hidden sm:inline">
                 {targetRemoteInfo?.projectPath || selectedRemote}
               </span>
 
@@ -1460,7 +1457,7 @@ export const MergeRequestModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setIsAccountDropdownOpen(!isAccountDropdownOpen)}
-                  className="h-6 px-2 bg-base-2 hover:bg-base-3 border border-border hover:border-border-strong rounded flex items-center gap-1.5 text-xs text-text-primary transition cursor-pointer shadow-2xs"
+                  className="h-6 px-2 bg-base-2/80 hover:bg-base-2 border border-border hover:border-border-strong rounded-xs flex items-center gap-1.5 text-xs text-text-primary transition cursor-pointer shadow-2xs"
                   title="Connected Account • Click to switch or add account"
                 >
                   {activeAccount ? (
@@ -1487,7 +1484,7 @@ export const MergeRequestModal: React.FC = () => {
                 </button>
 
                 {isAccountDropdownOpen && (
-                  <div className="absolute left-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-xl z-50 py-1 font-sans animate-in fade-in zoom-in-95 duration-100">
+                  <div className="absolute left-0 mt-1 w-64 bg-base-1 border border-border rounded-sm shadow-2xl z-50 py-1 font-sans animate-in fade-in zoom-in-95 duration-100">
                     <div className="px-3 py-1.5 border-b border-border/60 text-[10.5px] font-bold text-text-muted uppercase tracking-wider flex items-center justify-between">
                       <span>Connected Accounts</span>
                       <span className="text-text-faint font-mono">{accounts.length}</span>
@@ -1555,7 +1552,7 @@ export const MergeRequestModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Mode Switcher Tabs */}
+          {/* Mode Switcher Tabs & Close Button */}
           <div className="flex items-center gap-2 shrink-0">
             {activeTab === 'edit' ? (
               <button
@@ -1564,7 +1561,7 @@ export const MergeRequestModal: React.FC = () => {
                   setActiveTab('list');
                   setEditingMr(null);
                 }}
-                className="h-6.5 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-sm text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
+                className="h-6.5 px-2.5 bg-base-0 hover:bg-base-2 border border-border rounded-xs text-xs font-semibold text-text-secondary hover:text-text-primary flex items-center gap-1.5 transition cursor-pointer shadow-2xs"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back</span>
@@ -1598,7 +1595,7 @@ export const MergeRequestModal: React.FC = () => {
             <button
               onClick={requestClose}
               disabled={isSubmitting || isSavingEdit}
-              className="p-1 rounded-sm text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer disabled:opacity-50"
+              className="w-6 h-6 rounded-xs text-text-muted hover:text-text-primary hover:bg-base-2 transition cursor-pointer flex items-center justify-center disabled:opacity-50"
               title="Close (Esc)"
             >
               <X className="w-3.5 h-3.5" />
@@ -1616,9 +1613,10 @@ export const MergeRequestModal: React.FC = () => {
             {/* Resizable Left Column */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
-              className="shrink-0 px-1 py-2 md:py-3 md:px-1.5 space-y-4 overflow-y-auto bg-base-0 flex flex-col min-h-0"
+              className="shrink-0 p-3 md:p-3.5 space-y-3.5 overflow-y-auto bg-base-0 flex flex-col min-h-0 select-none"
             >
-              <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-3 shadow-2xs">
+              {/* Branch Comparison Card */}
+              <div className="p-3.5 bg-base-1/60 border border-border rounded-xs space-y-3 shadow-2xs">
                 <div className="flex items-center justify-between pb-2 border-b border-border/60">
                   <span className="text-[11px] font-bold uppercase tracking-wider text-text-secondary flex items-center gap-1.5">
                     <GitBranch className="w-3.5 h-3.5 text-commito-coral" />
@@ -1626,10 +1624,10 @@ export const MergeRequestModal: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-[1fr_32px_1fr] items-end gap-2.5 pt-0.5 w-full">
+                <div className="grid grid-cols-[1fr_28px_1fr] items-end gap-2 pt-0.5 w-full">
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
+                      <span className="text-[10px] font-bold text-commito-coral flex items-center gap-1 font-mono uppercase">
                         <span>Source</span>
                         <span className="text-[9px] px-1 py-0.1 bg-commito-coral/15 rounded-xs border border-commito-coral/30">
                           head
@@ -1642,7 +1640,7 @@ export const MergeRequestModal: React.FC = () => {
                       onChange={setSourceBranch}
                       disabled={isSubmitting || isLoadingBranches}
                       placeholder={isLoadingBranches ? 'Loading...' : 'Source...'}
-                      size="md"
+                      size="sm"
                     />
                   </div>
 
@@ -1654,16 +1652,16 @@ export const MergeRequestModal: React.FC = () => {
                         setSourceBranch(targetBranch);
                         setTargetBranch(temp);
                       }}
-                      className="w-8 h-8 rounded-sm bg-base-0 hover:bg-base-2 border border-border text-text-muted hover:text-commito-coral flex items-center justify-center transition cursor-pointer shadow-2xs shrink-0 active:scale-95"
+                      className="w-7 h-7 rounded-xs bg-base-0 hover:bg-base-2 border border-border text-text-muted hover:text-commito-coral flex items-center justify-center transition cursor-pointer shadow-2xs shrink-0 active:scale-95"
                       title="Swap source and target branches"
                     >
-                      <ArrowLeftRight className="w-3.5 h-3.5" />
+                      <ArrowLeftRight className="w-3 h-3" />
                     </button>
                   </div>
 
                   <div className="space-y-1 min-w-0">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10.5px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
+                      <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1 font-mono uppercase">
                         <span>Target</span>
                         <span className="text-[9px] px-1 py-0.1 bg-emerald-500/15 rounded-xs border border-emerald-500/30">
                           base
@@ -1676,7 +1674,7 @@ export const MergeRequestModal: React.FC = () => {
                       onChange={setTargetBranch}
                       disabled={isSubmitting || isLoadingBranches}
                       placeholder={isLoadingBranches ? 'Loading...' : 'Target...'}
-                      size="md"
+                      size="sm"
                     />
                   </div>
                 </div>
@@ -1684,8 +1682,9 @@ export const MergeRequestModal: React.FC = () => {
 
               {/* Title Input */}
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-text-primary block">
-                  {requestTypeLabel} Title <span className="text-commito-coral">*</span>
+                <label className="text-xs font-semibold text-text-primary flex items-center gap-1">
+                  <span>{requestTypeLabel} Title</span>
+                  <span className="text-commito-coral">*</span>
                 </label>
                 <input
                   ref={titleInputRef}
@@ -1697,7 +1696,7 @@ export const MergeRequestModal: React.FC = () => {
                     if (formError) setFormError(null);
                   }}
                   disabled={isSubmitting || isGeneratingAi}
-                  className="w-full h-8.5 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs"
+                  className="w-full h-8 px-3 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs font-mono text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint"
                   required
                 />
               </div>
@@ -1713,14 +1712,14 @@ export const MergeRequestModal: React.FC = () => {
                     value={selectedRemote}
                     onChange={setSelectedRemote}
                     disabled={isSubmitting || isGeneratingAi}
-                    size="md"
+                    size="sm"
                   />
                 </div>
               )}
 
               {/* Settings & Options */}
-              <div className="p-3.5 bg-base-1 border border-border rounded-sm space-y-2.5 shadow-2xs">
-                <span className="text-[10.5px] font-bold uppercase tracking-wider text-text-muted block pb-1 border-b border-border/60">
+              <div className="p-3.5 bg-base-1/60 border border-border rounded-xs space-y-2.5 shadow-2xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted block pb-1 border-b border-border/60">
                   Settings & Options
                 </span>
 
@@ -1769,12 +1768,12 @@ export const MergeRequestModal: React.FC = () => {
 
               {/* Branch Warning Alerts */}
               {existingPrForSource ? (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/40 rounded-sm space-y-1 text-xs">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xs space-y-1 text-xs">
                   <div className="flex items-center gap-1.5 font-bold text-amber-400">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>Existing Request Found</span>
                   </div>
-                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                  <p className="text-[11px] text-text-secondary leading-normal">
                     A pull request (
                     <span className="font-mono text-amber-400">#{existingPrForSource.id}</span>)
                     from <span className="font-mono text-commito-coral">'{sourceBranch}'</span>{' '}
@@ -1793,22 +1792,22 @@ export const MergeRequestModal: React.FC = () => {
                   </button>
                 </div>
               ) : sourceBranch === targetBranch ? (
-                <div className="p-3 bg-git-removed-bg border border-git-removed/40 rounded-sm space-y-1 text-xs text-git-removed">
+                <div className="p-3 bg-git-removed-bg/60 border border-git-removed/40 rounded-xs space-y-1 text-xs text-git-removed">
                   <div className="flex items-center gap-1.5 font-bold">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span>Identical Branches</span>
                   </div>
-                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                  <p className="text-[11px] text-text-secondary leading-normal">
                     Choose two different branches to create a {requestTypeLabel.toLowerCase()}.
                   </p>
                 </div>
               ) : (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-sm space-y-1 text-xs text-emerald-400">
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xs space-y-1 text-xs text-emerald-400">
                   <div className="flex items-center gap-1.5 font-bold">
-                    <Check className="w-4 h-4 shrink-0" />
+                    <Check className="w-3.5 h-3.5 shrink-0" />
                     <span>Branches Differ</span>
                   </div>
-                  <p className="text-[11.5px] text-text-secondary leading-normal">
+                  <p className="text-[11px] text-text-secondary leading-normal">
                     Changes on{' '}
                     <span className="font-mono text-commito-coral">'{sourceBranch}'</span> will be
                     submitted into{' '}
@@ -1823,8 +1822,8 @@ export const MergeRequestModal: React.FC = () => {
                 isAuthError ? (
                   renderAuthAlert()
                 ) : (
-                  <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg border border-git-removed/40 text-git-removed text-xs">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
+                  <div className="flex items-center gap-2 p-2.5 rounded-xs bg-git-removed-bg/60 border border-git-removed/40 text-git-removed text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">{formError}</span>
                   </div>
                 )
@@ -1836,18 +1835,18 @@ export const MergeRequestModal: React.FC = () => {
               onMouseDown={startResizingLeft}
               onDoubleClick={() => setLeftPanelWidth(360)}
               title="Drag to resize • Double-click to reset"
-              className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              className={`w-1 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
                 isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
               }`}
             >
               <div className="absolute inset-y-0 -left-1 -right-1" />
             </div>
 
-            {/* Right Column */}
-            <div className="flex-1 min-w-0 p-2 md:p-3 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5">
+            {/* Right Column (Description & Review Notes) */}
+            <div className="flex-1 min-w-0 p-3 md:p-3.5 overflow-hidden flex flex-col bg-base-1/25 min-h-0 space-y-2.5 select-none">
               <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-border/70 shrink-0">
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-semibold text-text-primary flex items-center gap-1.5">
+                  <label className="text-xs font-bold text-text-primary flex items-center gap-1.5">
                     <FileText className="w-3.5 h-3.5 text-commito-coral" />
                     <span>Description & Review Notes</span>
                   </label>
@@ -1867,7 +1866,7 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={handleGenerateAiDescription}
                   disabled={isSubmitting || isGeneratingAi || !sourceBranch}
-                  className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/35 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
+                  className="h-6.5 px-2.5 bg-commito-coral/10 hover:bg-commito-coral/20 border border-commito-coral/30 text-[11px] font-semibold text-commito-coral rounded-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs disabled:opacity-50 active:scale-95"
                   title="Generate notes analyzing commit history"
                 >
                   {isGeneratingAi ? (
@@ -1885,17 +1884,17 @@ export const MergeRequestModal: React.FC = () => {
               </div>
 
               {/* Description Input / Markdown Area */}
-              <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-sm overflow-hidden flex flex-col shadow-2xs">
+              <div className="flex-1 min-h-0 bg-base-1 border border-border rounded-xs overflow-hidden flex flex-col shadow-2xs">
                 {editorTab === 'write' ? (
                   <textarea
                     placeholder="Enter full description, checklist, or click 'Generate Notes with AI' to analyze commits between branches automatically..."
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     disabled={isSubmitting || isGeneratingAi}
-                    className="w-full h-full p-3.5 bg-transparent resize-none text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none leading-relaxed transition"
+                    className="w-full h-full p-3.5 bg-transparent resize-none text-xs font-mono text-text-primary placeholder:text-text-faint focus:outline-none leading-relaxed transition select-text"
                   />
                 ) : (
-                  <div className="w-full h-full p-3.5 overflow-y-auto">
+                  <div className="w-full h-full p-3.5 overflow-y-auto select-text">
                     <MarkdownPreview
                       content={description}
                       emptyText="No description written yet. Switch to the Write tab or click 'Generate Notes with AI'."
@@ -2106,21 +2105,21 @@ export const MergeRequestModal: React.FC = () => {
           </form>
         ) : (
           /* LIST & INSPECT OPEN REQUESTS (Master-Detail with Conversation, Commits, Files & Comments) */
-          <div className="flex-1 flex flex-row min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-row min-h-0 overflow-hidden select-none">
             {/* Left Resizable Column: Search & Request Cards List */}
             <div
               style={{ width: `${leftPanelWidth}px` }}
-              className="shrink-0 px-1 py-2 flex flex-col min-h-0 overflow-hidden space-y-2.5 bg-base-0"
+              className="shrink-0 p-3 flex flex-col min-h-0 overflow-hidden space-y-2.5 bg-base-0"
             >
               <div className="flex items-center gap-1.5">
                 <div className="relative flex-1">
-                  <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2 pointer-events-none" />
+                  <Search className="w-3.5 h-3.5 text-text-muted absolute left-2.5 top-2.5 pointer-events-none" />
                   <input
                     type="text"
                     placeholder={`Search ${requestTypeLabel.toLowerCase()}s...`}
                     value={searchFilter}
                     onChange={(e) => setSearchFilter(e.target.value)}
-                    className="w-full h-7.5 pl-7.5 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans"
+                    className="w-full h-8 pl-8 pr-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs text-text-primary focus:outline-none transition shadow-2xs placeholder:text-text-faint font-sans select-text"
                   />
                 </div>
 
@@ -2128,10 +2127,10 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={loadMergeRequests}
                   disabled={isLoadingList}
-                  className="h-7.5 px-2 bg-base-1 hover:bg-base-2 border border-border rounded-sm text-xs text-text-secondary hover:text-text-primary flex items-center gap-1 transition cursor-pointer disabled:opacity-50 shadow-2xs shrink-0"
+                  className="w-8 h-8 bg-base-1 hover:bg-base-2 border border-border rounded-xs text-xs text-text-secondary hover:text-text-primary flex items-center justify-center transition cursor-pointer disabled:opacity-50 shadow-2xs shrink-0 active:scale-95"
                   title="Refresh open requests from remote"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isLoadingList ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingList ? 'animate-spin' : ''}`} />
                 </button>
               </div>
 
@@ -2148,7 +2147,7 @@ export const MergeRequestModal: React.FC = () => {
                 ) : formError && isAuthError ? (
                   <div className="p-2">{renderAuthAlert()}</div>
                 ) : (
-                  <div className="p-6 text-center bg-base-0 border border-border rounded-sm space-y-2 flex-1 flex flex-col items-center justify-center">
+                  <div className="p-6 text-center bg-base-0 border border-border rounded-xs space-y-2 flex-1 flex flex-col items-center justify-center">
                     <CheckCircle2 className="w-6 h-6 text-emerald-400 mx-auto" />
                     <h4 className="text-xs font-bold text-text-primary">
                       No open {requestTypeLabel.toLowerCase()}s
@@ -2163,7 +2162,7 @@ export const MergeRequestModal: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setActiveTab('create')}
-                      className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-sm text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+                      className="h-6.5 px-2.5 bg-commito-coral/15 hover:bg-commito-coral/25 border border-commito-coral/35 text-commito-coral rounded-xs text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer active:scale-95"
                     >
                       <Plus className="w-3 h-3" />
                       <span>Create {requestTypeLabel}</span>
@@ -2178,17 +2177,19 @@ export const MergeRequestModal: React.FC = () => {
                       <div
                         key={mr.id}
                         onClick={() => setSelectedMrId(String(mr.id))}
-                        className={`p-2.5 rounded-sm border transition-all duration-150 cursor-pointer select-none space-y-1 text-left ${
+                        className={`p-2.5 rounded-xs border transition-all duration-150 cursor-pointer select-none space-y-1.5 text-left ${
                           isSelected
-                            ? 'bg-base-1 border-border-strong shadow-xs'
-                            : 'bg-base-1/50 border-border/60 hover:border-border-strong hover:bg-base-2/70 shadow-xs'
+                            ? 'bg-base-1 border-border-strong border-l-2 border-l-commito-coral shadow-xs'
+                            : 'bg-base-1/50 border-border/70 hover:border-border-strong hover:bg-base-2/70 shadow-2xs'
                         }`}
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <span className="px-1.5 py-0.2 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[9.5px] font-mono font-bold rounded-xs uppercase shrink-0">
+                          <span className="px-1.5 py-0.2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[9.5px] font-mono font-bold rounded-xs uppercase shrink-0">
                             {mr.state || 'OPEN'}
                           </span>
-                          <span className="text-[10.5px] font-mono text-text-faint">#{mr.id}</span>
+                          <span className="text-[10.5px] font-mono text-text-muted font-bold">
+                            #{mr.id}
+                          </span>
                         </div>
 
                         <h4
@@ -2199,12 +2200,12 @@ export const MergeRequestModal: React.FC = () => {
                           {mr.title}
                         </h4>
 
-                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-text-muted/70 pt-0.5">
+                        <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-text-muted pt-0.5">
                           <span className="truncate">
                             <span className="text-commito-coral font-semibold">
                               {mr.source_branch}
                             </span>
-                            {' → '}
+                            <span className="text-text-faint mx-1">→</span>
                             <span className="text-emerald-400 font-semibold">
                               {mr.target_branch}
                             </span>
@@ -2232,7 +2233,7 @@ export const MergeRequestModal: React.FC = () => {
               onMouseDown={startResizingLeft}
               onDoubleClick={() => setLeftPanelWidth(360)}
               title="Drag to resize • Double-click to reset"
-              className={`w-1.5 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
+              className={`w-1 h-full cursor-col-resize z-20 shrink-0 transition-colors relative group/resizer hover:bg-commito-coral/50 ${
                 isResizingLeft ? 'bg-commito-coral' : 'bg-transparent border-r border-border'
               }`}
             >
@@ -2243,12 +2244,12 @@ export const MergeRequestModal: React.FC = () => {
             <div className="flex-1 min-w-0 flex flex-col min-h-0 overflow-hidden bg-base-1/25">
               {activeSelectedMr ? (
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-                  {/* Top Inspector Header Card (Ultra-compact 2-row layout) */}
-                  <div className="px-3.5 py-2 border-b border-border bg-base-0 shrink-0 space-y-1.5 shadow-2xs">
+                  {/* Top Inspector Header Card */}
+                  <div className="px-4 py-2.5 border-b border-border bg-base-0 shrink-0 space-y-2 shadow-2xs">
                     {/* Row 1: Status Pill + #ID + Title + Action Buttons */}
-                    <div className="flex items-center justify-between gap-2.5 min-w-0">
+                    <div className="flex items-center justify-between gap-3 min-w-0">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <span className="px-1.5 py-0.5 bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 text-[10px] font-mono font-bold rounded-xs uppercase shrink-0">
+                        <span className="px-1.5 py-0.2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold rounded-xs uppercase shrink-0">
                           {activeSelectedMr.state || 'OPEN'}
                         </span>
                         <span className="text-xs font-mono text-text-muted font-bold shrink-0">
@@ -2265,7 +2266,7 @@ export const MergeRequestModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleOpenMergeModal}
-                            className="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-xs active:scale-95"
+                            className="h-6.5 px-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-xs active:scale-95"
                           >
                             <GitMerge className="w-3.5 h-3.5" />
                             <span>Merge</span>
@@ -2275,7 +2276,7 @@ export const MergeRequestModal: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenFullEditWorkspace(activeSelectedMr)}
-                          className="h-6.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs active:scale-95"
+                          className="h-6.5 px-2.5 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer shadow-2xs active:scale-95"
                         >
                           <Edit3 className="w-3 h-3 text-text-muted" />
                           <span>Edit</span>
@@ -2285,7 +2286,7 @@ export const MergeRequestModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => openUrl(activeSelectedMr.web_url!)}
-                            className="h-6.5 px-2 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
+                            className="h-6.5 px-2 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-xs text-xs font-semibold flex items-center gap-1 transition cursor-pointer shadow-2xs"
                             title={`Open on ${providerName}`}
                           >
                             <span>{providerName}</span>
@@ -2296,7 +2297,7 @@ export const MergeRequestModal: React.FC = () => {
                     </div>
 
                     {/* Row 2: Sub-Tabs on Left + Metadata Route and Additions/Deletions on Right */}
-                    <div className="flex items-center justify-between gap-3 pt-1 border-t border-border/60">
+                    <div className="flex items-center justify-between gap-3 pt-1.5 border-t border-border/60 flex-wrap">
                       <Tabs<InspectorTab>
                         tabs={[
                           {
@@ -2369,14 +2370,14 @@ export const MergeRequestModal: React.FC = () => {
                   </div>
 
                   {/* Inspector Body Content based on Sub-Tab */}
-                  <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+                  <div className="flex-1 min-h-0 overflow-y-auto p-3.5 md:p-4 space-y-4">
                     {inspectorTab === 'conversation' && (
                       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                         {/* Main Conversation Stream (col 8) */}
-                        <div className="lg:col-span-8 space-y-4">
+                        <div className="lg:col-span-8 space-y-3.5">
                           {/* PR Description Post Card */}
-                          <div className="bg-base-0 border border-border rounded-sm shadow-2xs">
-                            <div className="px-3.5 py-2 bg-base-1 border-b border-border/80 flex items-center justify-between relative rounded-t-sm">
+                          <div className="bg-base-0 border border-border rounded-xs shadow-2xs overflow-hidden">
+                            <div className="px-3.5 py-2 bg-base-1 border-b border-border/70 flex items-center justify-between relative rounded-t-xs">
                               <div className="flex items-center gap-2">
                                 {activeSelectedMr.author_avatar ? (
                                   <img
@@ -2406,7 +2407,7 @@ export const MergeRequestModal: React.FC = () => {
                                       activeCommentMenuId === 'desc' ? null : 'desc'
                                     );
                                   }}
-                                  className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
+                                  className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs transition cursor-pointer"
                                   title="Options"
                                 >
                                   <MoreHorizontal className="w-3.5 h-3.5" />
@@ -2415,7 +2416,7 @@ export const MergeRequestModal: React.FC = () => {
                                 {activeCommentMenuId === 'desc' && (
                                   <div
                                     onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                    className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-xs shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                   >
                                     <div className="py-0.5">
                                       <button
@@ -2470,7 +2471,7 @@ export const MergeRequestModal: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                            <div className="p-4 max-h-[320px] overflow-y-auto">
+                            <div className="p-4 max-h-[320px] overflow-y-auto select-text">
                               <MarkdownPreview
                                 content={activeSelectedMr.description || ''}
                                 emptyText="No description provided for this request."
@@ -2494,7 +2495,7 @@ export const MergeRequestModal: React.FC = () => {
                                   return (
                                     <div
                                       key={comment.id}
-                                      className="bg-base-0 border border-border/70 rounded-sm px-3.5 py-2 flex items-center justify-between text-xs text-text-muted"
+                                      className="bg-base-0 border border-border/70 rounded-xs px-3.5 py-2 flex items-center justify-between text-xs text-text-muted"
                                     >
                                       <span className="italic">This comment was hidden.</span>
                                       <button
@@ -2511,9 +2512,9 @@ export const MergeRequestModal: React.FC = () => {
                                 return (
                                   <div
                                     key={comment.id}
-                                    className="bg-base-0 border border-border rounded-sm shadow-2xs animate-in fade-in duration-100 relative"
+                                    className="bg-base-0 border border-border rounded-xs shadow-2xs animate-in fade-in duration-100 relative overflow-hidden"
                                   >
-                                    <div className="px-3.5 py-1.5 bg-base-1 border-b border-border/70 flex items-center justify-between text-xs relative rounded-t-sm">
+                                    <div className="px-3.5 py-1.5 bg-base-1 border-b border-border/70 flex items-center justify-between text-xs relative rounded-t-xs">
                                       <div className="flex items-center gap-2">
                                         {comment.author_avatar ? (
                                           <img
@@ -2546,7 +2547,7 @@ export const MergeRequestModal: React.FC = () => {
                                               activeCommentMenuId === comment.id ? null : comment.id
                                             );
                                           }}
-                                          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded transition cursor-pointer"
+                                          className="p-1 text-text-muted hover:text-text-primary hover:bg-base-2 rounded-xs transition cursor-pointer"
                                           title="Options"
                                         >
                                           <MoreHorizontal className="w-3.5 h-3.5" />
@@ -2555,7 +2556,7 @@ export const MergeRequestModal: React.FC = () => {
                                         {activeCommentMenuId === comment.id && (
                                           <div
                                             onClick={(e) => e.stopPropagation()}
-                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-sm shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
+                                            className="absolute right-0 top-full mt-1 z-50 w-48 bg-base-0 border border-border rounded-xs shadow-2xl py-1 text-xs text-text-primary animate-in fade-in zoom-in-95 duration-100 divide-y divide-border/60"
                                           >
                                             <div className="py-0.5">
                                               <button
@@ -2628,14 +2629,14 @@ export const MergeRequestModal: React.FC = () => {
                                           value={editingCommentBody}
                                           onChange={(e) => setEditingCommentBody(e.target.value)}
                                           disabled={isSavingCommentEdit}
-                                          className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary font-mono resize-none focus:outline-none transition"
+                                          className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs text-text-primary font-mono resize-none focus:outline-none transition select-text"
                                         />
                                         <div className="flex items-center justify-end gap-2">
                                           <button
                                             type="button"
                                             onClick={() => setEditingCommentId(null)}
                                             disabled={isSavingCommentEdit}
-                                            className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-sm text-xs font-semibold cursor-pointer"
+                                            className="h-7 px-3 bg-base-1 hover:bg-base-2 border border-border text-text-primary rounded-xs text-xs font-semibold cursor-pointer"
                                           >
                                             Cancel
                                           </button>
@@ -2645,7 +2646,7 @@ export const MergeRequestModal: React.FC = () => {
                                             disabled={
                                               isSavingCommentEdit || !editingCommentBody.trim()
                                             }
-                                            className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                            className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                                           >
                                             {isSavingCommentEdit && (
                                               <Loader2 className="w-3 h-3 animate-spin" />
@@ -2655,7 +2656,7 @@ export const MergeRequestModal: React.FC = () => {
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="p-3.5 text-xs text-text-primary">
+                                      <div className="p-3.5 text-xs text-text-primary select-text">
                                         <MarkdownPreview content={comment.body} />
                                       </div>
                                     )}
@@ -2666,7 +2667,7 @@ export const MergeRequestModal: React.FC = () => {
                           ) : null}
 
                           {/* Add a Comment Card (GitHub Style) */}
-                          <div className="bg-base-0 border border-border rounded-sm overflow-hidden shadow-2xs space-y-0">
+                          <div className="bg-base-0 border border-border rounded-xs overflow-hidden shadow-2xs space-y-0">
                             <div className="px-3.5 py-2 bg-base-1 border-b border-border flex items-center justify-between">
                               <span className="text-xs font-bold text-text-primary flex items-center gap-1.5">
                                 <MessageSquare className="w-3.5 h-3.5 text-commito-coral" />
@@ -2684,7 +2685,7 @@ export const MergeRequestModal: React.FC = () => {
                               />
                             </div>
 
-                            <div className="p-3">
+                            <div className="p-3 space-y-2">
                               {commentEditorTab === 'write' ? (
                                 <textarea
                                   ref={commentTextareaRef}
@@ -2692,10 +2693,10 @@ export const MergeRequestModal: React.FC = () => {
                                   value={newCommentText}
                                   onChange={(e) => setNewCommentText(e.target.value)}
                                   disabled={isPostingComment}
-                                  className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-sm text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition"
+                                  className="w-full h-24 p-2.5 bg-base-1 border border-border hover:border-border-strong focus:border-border-strong rounded-xs text-xs text-text-primary placeholder:text-text-faint font-mono resize-none focus:outline-none transition select-text"
                                 />
                               ) : (
-                                <div className="w-full min-h-[96px] p-2.5 bg-base-1 border border-border rounded-sm">
+                                <div className="w-full min-h-[96px] p-2.5 bg-base-1 border border-border rounded-xs select-text">
                                   <MarkdownPreview
                                     content={newCommentText}
                                     emptyText="Nothing to preview. Type a comment in the Write tab."
@@ -2703,7 +2704,7 @@ export const MergeRequestModal: React.FC = () => {
                                 </div>
                               )}
 
-                              <div className="flex items-center justify-between pt-2">
+                              <div className="flex items-center justify-between pt-1">
                                 <span className="text-[10px] text-text-muted font-mono">
                                   Markdown is supported
                                 </span>
@@ -2711,7 +2712,7 @@ export const MergeRequestModal: React.FC = () => {
                                   type="button"
                                   onClick={handlePostComment}
                                   disabled={!newCommentText.trim() || isPostingComment}
-                                  className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
+                                  className="h-7 px-3.5 bg-commito-coral hover:bg-commito-coralLight text-white rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-xs active:scale-95"
                                 >
                                   {isPostingComment ? (
                                     <>
@@ -2732,11 +2733,11 @@ export const MergeRequestModal: React.FC = () => {
 
                         {/* Right Sidebar Metadata Panel (col 4, GitHub style) */}
                         <div className="lg:col-span-4 space-y-3">
-                          <div className="p-3.5 bg-base-0 border border-border rounded-sm space-y-3 shadow-2xs text-xs font-sans">
+                          <div className="p-3.5 bg-base-0 border border-border rounded-xs space-y-3 shadow-2xs text-xs font-sans">
                             {/* Reviewers */}
                             <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1.5">
                                   <Users className="w-3.5 h-3.5 text-commito-coral" />
                                   <span>Reviewers</span>
                                 </span>
@@ -2771,7 +2772,7 @@ export const MergeRequestModal: React.FC = () => {
                             {/* Assignees */}
                             <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1.5">
                                   <User className="w-3.5 h-3.5 text-emerald-400" />
                                   <span>Assignees</span>
                                 </span>
@@ -2806,7 +2807,7 @@ export const MergeRequestModal: React.FC = () => {
                             {/* Labels */}
                             <div className="space-y-1.5 pb-2.5 border-b border-border/70">
                               <div className="flex items-center justify-between text-text-secondary font-bold text-[11px] uppercase tracking-wider">
-                                <span className="flex items-center gap-1">
+                                <span className="flex items-center gap-1.5">
                                   <Tag className="w-3.5 h-3.5 text-amber-400" />
                                   <span>Labels</span>
                                 </span>
@@ -2850,7 +2851,7 @@ export const MergeRequestModal: React.FC = () => {
                                 type="button"
                                 onClick={() => handleCloseOrReopenPr(activeSelectedMr)}
                                 disabled={isClosingPr}
-                                className="w-full h-7.5 px-3 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs"
+                                className="w-full h-7.5 px-3 bg-git-removed-bg/60 hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-xs text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 shadow-2xs active:scale-95"
                               >
                                 {isClosingPr ? (
                                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -3135,8 +3136,8 @@ export const MergeRequestModal: React.FC = () => {
           </div>
         )}
 
-        {/* Modal Footer Actions (Slim & Space-saving) */}
-        <div className="flex items-center justify-between gap-3 px-3.5 py-1.5 border-t border-border bg-base-1/70 shrink-0 min-h-[38px]">
+        {/* Modal Footer Actions */}
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-t border-border bg-base-1 shrink-0 select-none">
           <div className="flex items-center gap-2 text-xs text-text-muted font-mono">
             <span className="truncate text-[11px]">
               Target:{' '}
@@ -3153,7 +3154,7 @@ export const MergeRequestModal: React.FC = () => {
                   type="button"
                   onClick={() => handleCloseOrReopenPr(editingMr)}
                   disabled={isClosingPr || isSavingEdit}
-                  className="h-6.5 px-2.5 bg-git-removed-bg hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-sm text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50"
+                  className="h-7 px-2.5 bg-git-removed-bg/60 hover:bg-git-removed/20 border border-git-removed/40 text-git-removed rounded-xs text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 active:scale-95"
                 >
                   {isClosingPr ? (
                     <Loader2 className="w-3 h-3 animate-spin" />

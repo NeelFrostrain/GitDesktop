@@ -139,8 +139,15 @@ const latestJson = {
 
 const outputDistPath = path.join(rootDir, 'latest.json');
 fs.writeFileSync(outputDistPath, JSON.stringify(latestJson, null, 2) + '\n');
-
 console.log(`  \x1b[32m✔\x1b[0m Output: \x1b[36m${outputDistPath}\x1b[0m`);
+
+const versionFolder = path.join(rootDir, `release-v${version}`);
+if (fs.existsSync(versionFolder)) {
+  const versionFolderLatestJson = path.join(versionFolder, 'latest.json');
+  fs.writeFileSync(versionFolderLatestJson, JSON.stringify(latestJson, null, 2) + '\n');
+  console.log(`  \x1b[32m✔\x1b[0m Output: \x1b[36m${versionFolderLatestJson}\x1b[0m`);
+}
+
 console.log(`  \x1b[32m✔\x1b[0m Target Installer: \x1b[33m${installerFileName}\x1b[0m`);
 console.log('\n\x1b[32m✨ latest.json:\x1b[0m');
 console.log(JSON.stringify(latestJson, null, 2));
