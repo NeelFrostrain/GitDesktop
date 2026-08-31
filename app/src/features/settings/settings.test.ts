@@ -18,6 +18,13 @@ describe('Settings Schema & Token Coverage', () => {
     expect(CATEGORY_METADATA.ai.subcategories).toContain('Model Configuration');
   });
 
+  it('contains About & Updates category with valid metadata', () => {
+    expect(CATEGORY_METADATA.about).toBeDefined();
+    expect(CATEGORY_METADATA.about.label).toBe('About & Updates');
+    expect(CATEGORY_METADATA.about.subcategories).toContain('App Information');
+    expect(CATEGORY_METADATA.about.subcategories).toContain('Software Updates');
+  });
+
   it('ensures every setting category is valid and documented in metadata', () => {
     const validCategories = Object.keys(CATEGORY_METADATA);
 
@@ -44,6 +51,12 @@ describe('Settings Schema & Token Coverage', () => {
     expect(aiIds).toContain('ai.active_api_key');
     expect(aiIds).toContain('ai.model');
     expect(aiIds).toContain('ai.temperature');
+  });
+
+  it('includes About and Auto Update settings definitions', () => {
+    const aboutIds = SETTINGS_SCHEMA.map((s) => s.id);
+    expect(aboutIds).toContain('app.auto_update');
+    expect(aboutIds).toContain('app.beta_channel');
   });
 });
 

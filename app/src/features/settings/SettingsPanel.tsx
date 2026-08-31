@@ -8,6 +8,7 @@ import { SettingRow } from './components/SettingRow';
 import { AiSettingsTab } from './components/AiSettingsTab';
 import { ThemeSelectorTab } from './components/ThemeSelectorTab';
 import { LegalTab } from './components/LegalTab';
+import { AboutTab } from './components/AboutTab';
 import { SettingsSearchBar } from './components/SettingsSearchBar';
 import { useGitStore } from '../../store/useGitStore';
 
@@ -232,10 +233,16 @@ export const SettingsPanel: React.FC = () => {
                 {/* Render Legal tab */}
                 {selectedCategory === 'legal' && <LegalTab />}
 
+                {/* Render About tab */}
+                {selectedCategory === 'about' && <AboutTab />}
+
                 {/* Subcategory sections */}
                 {groupedSettings
                   .filter(([subcategory]) => {
-                    // Hide duplicate generic Color Theme dropdown when ThemeSelectorTab is already rendered
+                    // Hide duplicate subcategories when dedicated custom tabs are rendered
+                    if (selectedCategory === 'legal' || selectedCategory === 'about') {
+                      return false;
+                    }
                     if (
                       selectedCategory === 'appearance' &&
                       (!selectedSubcategory || selectedSubcategory === 'Color Theme') &&

@@ -1,5 +1,5 @@
 export type SettingType = 'color' | 'number' | 'text' | 'select' | 'boolean';
-export type SettingCategory = 'general' | 'appearance' | 'ai' | 'legal';
+export type SettingCategory = 'general' | 'appearance' | 'ai' | 'about' | 'legal';
 
 export type SettingScope = 'app' | 'repo';
 
@@ -44,6 +44,11 @@ export const CATEGORY_METADATA: Record<
     label: 'AI & Commit-AI',
     icon: 'Sparkles',
     subcategories: ['API Keys & Providers', 'Model Configuration'],
+  },
+  about: {
+    label: 'About & Updates',
+    icon: 'Info',
+    subcategories: ['App Information', 'Software Updates'],
   },
   legal: {
     label: 'Legal',
@@ -221,6 +226,30 @@ export const SETTINGS_SCHEMA: SettingDefinition[] = [
     max: 1.0,
     step: 0.1,
     default: 0.7,
+    scope: 'app',
+  },
+  // ==========================================
+  // ABOUT & UPDATES
+  // ==========================================
+  {
+    id: 'app.auto_update',
+    label: 'Automatically check for updates',
+    description: 'Check for new releases in the background and notify when an update is available.',
+    category: 'about',
+    subcategory: 'Software Updates',
+    type: 'boolean',
+    default: true,
+    scope: 'app',
+    commonlyUsed: true,
+  },
+  {
+    id: 'app.beta_channel',
+    label: 'Include pre-release beta builds',
+    description: 'Receive early preview updates with cutting-edge features and experimental optimizations.',
+    category: 'about',
+    subcategory: 'Software Updates',
+    type: 'boolean',
+    default: false,
     scope: 'app',
   },
 ];
