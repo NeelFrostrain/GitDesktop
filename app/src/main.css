@@ -19,6 +19,27 @@
 @import 'tailwindcss';
 
 /* ==========================================================================
+   Terminal Typography & xterm.js Font Enforcement
+   Guarantees that xterm.js DOM, canvas text layer, helpers, and rows strictly
+   render with JetBrains Mono / Cascadia Code / Consolas monospace fonts.
+   ========================================================================== */
+.xterm,
+.xterm-screen,
+.xterm-viewport,
+.xterm-rows,
+.xterm-rows *,
+.xterm-rows span,
+.xterm-rows div,
+.xterm-helpers,
+.xterm-helper-textarea {
+  font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace !important;
+  font-variant-ligatures: none;
+  letter-spacing: normal !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ==========================================================================
    2. Runtime Theme Variables (:root / Default: Commito Dark)
    ========================================================================== */
 :root {

@@ -80,7 +80,7 @@ export function useRepoTerminal(
       cursorBlink: true,
       cursorStyle: 'bar',
       fontSize: 12.5,
-      fontFamily: '"JetBrains Mono", Consolas, "Courier New", monospace',
+      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace",
       letterSpacing: 0,
       lineHeight: 1.25,
       scrollback: 5000,
@@ -183,6 +183,7 @@ export function useRepoTerminal(
 
     const fitAndRefresh = () => {
       try {
+        terminal.options.fontFamily = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace";
         fitAddon.fit();
         terminal.refresh(0, terminal.rows - 1);
         terminal.focus();
@@ -192,7 +193,11 @@ export function useRepoTerminal(
     fitAndRefresh();
     const fitTimer = setTimeout(fitAndRefresh, 80);
     if (typeof document !== 'undefined' && document.fonts?.ready) {
-      document.fonts.ready.then(fitAndRefresh).catch(() => {});
+      document.fonts.ready.then(() => {
+        if (isMountedRef.current) {
+          fitAndRefresh();
+        }
+      }).catch(() => {});
     }
 
     let isEffectActive = true;
