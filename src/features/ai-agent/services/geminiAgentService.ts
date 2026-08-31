@@ -18,7 +18,7 @@ export interface GeminiAgentResponse {
   usedApiKey: string;
 }
 
-const DEFAULT_MODEL = 'gemini-2.5-flash-lite';
+const DEFAULT_MODEL = 'gemini-2.0-flash';
 const API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export class GeminiAgentService {
@@ -147,11 +147,10 @@ export class GeminiAgentService {
     // Candidate fallback models if selected model returns 404 or is unavailable
     const modelsToTry = [model];
     for (const fb of [
-      'gemini-2.5-flash-lite',
-      'gemini-2.5-flash',
       'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
       'gemini-1.5-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-1.5-flash-8b',
     ]) {
       if (!modelsToTry.includes(fb)) {
         modelsToTry.push(fb);
