@@ -365,7 +365,7 @@ export const DiffViewer: React.FC = () => {
               onSaved={async () => {
                 if (activeRepoPath) {
                   try {
-                    const latestStatus = await GitService.getRepoStatus(activeRepoPath);
+                     const latestStatus = await GitService.getRepoStatus(activeRepoPath);
                     useGitStore.getState().setStatus(latestStatus);
                     const newDiff = await GitService.getFileDiff(
                       activeRepoPath,
@@ -498,6 +498,7 @@ interface HistoryFileItemProps {
   selectedCommitSha: string | null;
   activeRepoPath: string | null;
   diffViewMode: 'unified' | 'split' | 'edit';
+  wordWrap?: boolean;
   onToggle: () => void;
   onRequestDiff: (sha: string, file: string) => void;
 }
@@ -514,6 +515,7 @@ const HistoryFileItem: React.FC<HistoryFileItemProps> = React.memo(
     selectedCommitSha,
     activeRepoPath,
     diffViewMode,
+    wordWrap = true,
     onToggle,
     onRequestDiff,
   }) => {
@@ -583,9 +585,9 @@ const HistoryFileItem: React.FC<HistoryFileItemProps> = React.memo(
                   commitSha={selectedCommitSha || undefined}
                 />
               ) : diffViewMode === 'split' ? (
-                <SplitDiffView lines={fileDiff.lines} />
+                <SplitDiffView lines={fileDiff.lines} wordWrap={wordWrap} />
               ) : (
-                <UnifiedDiffView lines={fileDiff.lines} />
+                <UnifiedDiffView lines={fileDiff.lines} wordWrap={wordWrap} />
               )
             ) : (
               <div className="p-4 text-xs text-text-muted font-mono text-center">

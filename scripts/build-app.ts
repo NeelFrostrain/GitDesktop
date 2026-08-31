@@ -63,15 +63,16 @@ if (buildResult.status !== 0) {
   process.exit(buildResult.status || 1);
 }
 
-// 3. Create versioned output folder on root directory
+// 3. Create fresh versioned output folder on root directory (clean any existing contents)
 const releaseFolderName = `release-v${version}`;
 const releaseFolderPath = path.join(rootDir, releaseFolderName);
 
-if (!fs.existsSync(releaseFolderPath)) {
-  fs.mkdirSync(releaseFolderPath, { recursive: true });
+if (fs.existsSync(releaseFolderPath)) {
+  fs.rmSync(releaseFolderPath, { recursive: true, force: true });
 }
+fs.mkdirSync(releaseFolderPath, { recursive: true });
 
-console.log(`\n\x1b[32m📁 Preparing Release Folder:\x1b[0m \x1b[36m${releaseFolderPath}\x1b[0m\n`);
+console.log(`\n\x1b[32m📁 Preparing Fresh Release Folder:\x1b[0m \x1b[36m${releaseFolderPath}\x1b[0m\n`);
 
 // 4. Scan bundle outputs from target/release/bundle
 const bundleDir = path.join(appDir, 'src-tauri', 'target', 'release', 'bundle');
@@ -80,11 +81,11 @@ const nsisDir = path.join(bundleDir, 'nsis');
 
 const copiedFiles: string[] = [];
 
-// Helper to sign on the fly if a .sig file was missing
-const signFileOnTheFly = (filePath: string): string => {
+// Helper to sign fresh on the fly
+const signBinary = (filePath: string): string => {
   try {
     if (keyContent) {
-      console.log(`  \x1b[34mℹ\x1b[0m Generating signature for ${path.basename(filePath)}...`);
+      console.log(`  \x1b[34mℹ\x1b[0m Generating fresh signature for ${path.basename(filePath)}...`);
       const output = execSync(`bun tauri signer sign "${filePath}"`, {
         cwd: appDir,
         encoding: 'utf8',
@@ -99,8 +100,9 @@ const signFileOnTheFly = (filePath: string): string => {
       const match = output.match(/([A-Za-z0-9+/=]{80,})/);
       if (match) return match[1].trim();
     }
-  } catch (err: any) {
-    console.warn(`  \x1b[33m⚠\x1b[0m On-the-fly signing note:`, err.message || err);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    console.warn(`  \x1b[33m⚠\x1b[0m Signing note:`, errorMsg);
   }
   return '';
 };
@@ -119,7 +121,7 @@ const copyArtifact = (src: string, destFileName?: string) => {
   return destPath;
 };
 
-// Collect MSI artifacts
+// 4a. Collect & Copy MSI
 let primaryMsiFileName = '';
 let primaryMsiSignature = '';
 
@@ -128,19 +130,20 @@ if (fs.existsSync(msiDir)) {
   for (const file of files) {
     const srcPath = path.join(msiDir, file);
     if (fs.statSync(srcPath).isFile()) {
-      copyArtifact(srcPath);
-
       if (file.endsWith('.msi')) {
         primaryMsiFileName = file;
-      }
-      if (file.endsWith('.msi.sig') || (file.endsWith('.sig') && !file.includes('.exe'))) {
+        copyArtifact(srcPath);
+      } else if (file.endsWith('.msi.sig') || (file.endsWith('.sig') && !file.includes('.exe'))) {
         primaryMsiSignature = fs.readFileSync(srcPath, 'utf8').trim();
+        copyArtifact(srcPath);
+      } else if (file.endsWith('.zip')) {
+        copyArtifact(srcPath);
       }
     }
   }
 }
 
-// Collect NSIS artifacts
+// 4b. Collect & Copy NSIS EXE
 let primaryExeFileName = '';
 let primaryExeSignature = '';
 
@@ -149,50 +152,50 @@ if (fs.existsSync(nsisDir)) {
   for (const file of files) {
     const srcPath = path.join(nsisDir, file);
     if (fs.statSync(srcPath).isFile()) {
-      copyArtifact(srcPath);
-
       if (file.endsWith('.exe')) {
         primaryExeFileName = file;
-      }
-      if (file.endsWith('.exe.sig') || (file.endsWith('.sig') && file.includes('.exe'))) {
+        copyArtifact(srcPath);
+      } else if (file.endsWith('.exe.sig') || (file.endsWith('.sig') && file.includes('.exe'))) {
         primaryExeSignature = fs.readFileSync(srcPath, 'utf8').trim();
+        copyArtifact(srcPath);
+      } else if (file.endsWith('.zip')) {
+        copyArtifact(srcPath);
       }
     }
   }
 }
 
-// If MSI was found but no signature file existed, sign it now
+// 4c. Generate fresh signatures for binaries if missing
 if (primaryMsiFileName && !primaryMsiSignature) {
   const targetMsi = path.join(releaseFolderPath, primaryMsiFileName);
-  primaryMsiSignature = signFileOnTheFly(targetMsi);
+  primaryMsiSignature = signBinary(targetMsi);
   if (primaryMsiSignature) {
     const sigPath = targetMsi + '.sig';
     fs.writeFileSync(sigPath, primaryMsiSignature + '\n');
     copiedFiles.push(path.basename(sigPath));
-    console.log(`  \x1b[32m✔\x1b[0m Created \x1b[1m${path.basename(sigPath)}\x1b[0m`);
+    console.log(`  \x1b[32m✔\x1b[0m Generated \x1b[1m${path.basename(sigPath)}\x1b[0m`);
   }
 }
 
-// If NSIS exe was found but no signature file existed, sign it now
 if (primaryExeFileName && !primaryExeSignature) {
   const targetExe = path.join(releaseFolderPath, primaryExeFileName);
-  primaryExeSignature = signFileOnTheFly(targetExe);
+  primaryExeSignature = signBinary(targetExe);
   if (primaryExeSignature) {
     const sigPath = targetExe + '.sig';
     fs.writeFileSync(sigPath, primaryExeSignature + '\n');
     copiedFiles.push(path.basename(sigPath));
-    console.log(`  \x1b[32m✔\x1b[0m Created \x1b[1m${path.basename(sigPath)}\x1b[0m`);
+    console.log(`  \x1b[32m✔\x1b[0m Generated \x1b[1m${path.basename(sigPath)}\x1b[0m`);
   }
 }
 
-// 5. Generate latest.json
+// 5. Generate brand NEW latest.json (never copy old file)
 const chosenInstaller = primaryMsiFileName || primaryExeFileName || `Git Desktop_${version}_x64_en-US.msi`;
 const chosenSignature = primaryMsiSignature || primaryExeSignature || 'PLACEHOLDER_SIGNATURE';
 
-// GitHub Releases normalizes spaces to dots
+// GitHub Releases replaces spaces with dots in asset filenames
 const githubAssetFileName = chosenInstaller.replace(/\s+/g, '.');
 
-const latestJson = {
+const newLatestJson = {
   version: version,
   notes: `Release notes for Git Desktop v${version}`,
   pub_date: new Date().toISOString(),
@@ -204,17 +207,17 @@ const latestJson = {
   },
 };
 
-const latestJsonString = JSON.stringify(latestJson, null, 2) + '\n';
+const newLatestJsonString = JSON.stringify(newLatestJson, null, 2) + '\n';
 
-// Write latest.json inside release folder
+// Write fresh latest.json inside release folder
 const folderLatestJsonPath = path.join(releaseFolderPath, 'latest.json');
-fs.writeFileSync(folderLatestJsonPath, latestJsonString);
+fs.writeFileSync(folderLatestJsonPath, newLatestJsonString);
 
-// Also write latest.json at root directory for convenience
+// Overwrite root latest.json with freshly generated json
 const rootLatestJsonPath = path.join(rootDir, 'latest.json');
-fs.writeFileSync(rootLatestJsonPath, latestJsonString);
+fs.writeFileSync(rootLatestJsonPath, newLatestJsonString);
 
-console.log(`  \x1b[32m✔\x1b[0m Generated \x1b[1mlatest.json\x1b[0m in \x1b[36m${releaseFolderName}/\x1b[0m and root`);
+console.log(`  \x1b[32m✔\x1b[0m Generated brand new \x1b[1mlatest.json\x1b[0m in \x1b[36m${releaseFolderName}/\x1b[0m and root`);
 
 // 6. Summary Output
 console.log(`\n\x1b[36m═══════════════════════════════════════════════════════════════════════\x1b[0m`);

@@ -5,6 +5,7 @@ import { buildDiffHunks, highlightCodeLine } from './diffUtils';
 
 interface UnifiedDiffViewProps {
   lines: DiffLine[];
+  wordWrap?: boolean;
 }
 
 type VirtualDiffItem =
@@ -13,9 +14,9 @@ type VirtualDiffItem =
 
 /**
  * Line-by-line unified diff table with syntax highlighting, line numbers,
- * and high-performance TanStack Virtual windowing for massive repositories & commits (30k+ lines).
+ * dynamic line height measurement, word wrapping, and high-performance TanStack Virtual windowing.
  */
-export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lines }) => {
+export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lines, wordWrap = true }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Group into hunks, then flatten into virtual items
@@ -47,7 +48,7 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
     count: flattenedItems.length,
     getScrollElement: () => containerRef.current,
     estimateSize: () => 24,
-    overscan: 30,
+    overscan: 25,
   });
 
   if (flattenedItems.length === 0 || lines.length === 0) {
@@ -64,7 +65,7 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-0 overflow-auto font-mono text-[12px] leading-6 select-text bg-base-0 scrollbar-thin"
+      className="w-full h-full min-h-0 overflow-auto font-mono text-[12px] leading-5 select-text bg-base-0 scrollbar-thin"
     >
       <div
         className="w-full relative"
@@ -77,6 +78,8 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
             return (
               <div
                 key={virtualRow.key}
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualRow.index}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -112,6 +115,8 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
           return (
             <div
               key={virtualRow.key}
+              ref={rowVirtualizer.measureElement}
+              data-index={virtualRow.index}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -119,26 +124,28 @@ export const UnifiedDiffView: React.FC<UnifiedDiffViewProps> = React.memo(({ lin
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className={`flex w-full border-b border-border/20 transition-colors ${lineBg} h-[24px]`}
+              className={`flex w-full border-b border-border/20 transition-colors ${lineBg} min-h-[24px]`}
             >
               {/* Old Line Number */}
-              <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 self-stretch flex items-start justify-end">
                 {line.old_line_num ?? ''}
               </div>
 
               {/* New Line Number */}
-              <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+              <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 self-stretch flex items-start justify-end">
                 {line.new_line_num ?? ''}
               </div>
 
               {/* Prefix Column */}
-              <div className="w-6 px-1 py-0 text-center select-none font-bold shrink-0 flex items-center justify-center">
+              <div className="w-6 px-1 py-0.5 text-center select-none font-bold shrink-0 self-stretch flex items-start justify-center">
                 {prefix}
               </div>
 
               {/* Code Content */}
               <div
-                className={`flex-1 min-w-0 px-2 py-0 whitespace-pre truncate font-mono ${textColor} flex items-center`}
+                className={`flex-1 min-w-0 px-2 py-0.5 font-mono leading-5 ${textColor} ${
+                  wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-auto'
+                }`}
               >
                 {highlightCodeLine(line.content, shouldHighlight)}
               </div>

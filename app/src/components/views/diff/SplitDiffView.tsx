@@ -5,13 +5,14 @@ import { buildSplitRows, highlightCodeLine } from './diffUtils';
 
 interface SplitDiffViewProps {
   lines: DiffLine[];
+  wordWrap?: boolean;
 }
 
 /**
  * Side-by-side split diff layout table with aligned chunks, syntax highlighting,
- * and high-performance TanStack Virtual windowing for massive repositories & commits (30k+ lines).
+ * dynamic line height measurement, word wrapping, and high-performance TanStack Virtual windowing.
  */
-export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }) => {
+export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines, wordWrap = true }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const splitRows = useMemo(() => buildSplitRows(lines), [lines]);
@@ -20,7 +21,7 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
     count: splitRows.length,
     getScrollElement: () => containerRef.current,
     estimateSize: () => 24,
-    overscan: 30,
+    overscan: 25,
   });
 
   if (splitRows.length === 0) {
@@ -37,7 +38,7 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
   return (
     <div
       ref={containerRef}
-      className="w-full h-full min-h-0 overflow-auto font-mono text-[12px] leading-6 select-text bg-base-0 scrollbar-thin"
+      className="w-full h-full min-h-0 overflow-auto font-mono text-[12px] leading-5 select-text bg-base-0 scrollbar-thin"
     >
       <div
         className="w-full relative"
@@ -50,6 +51,8 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
             return (
               <div
                 key={virtualRow.key}
+                ref={rowVirtualizer.measureElement}
+                data-index={virtualRow.index}
                 style={{
                   position: 'absolute',
                   top: 0,
@@ -73,6 +76,8 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
           return (
             <div
               key={virtualRow.key}
+              ref={rowVirtualizer.measureElement}
+              data-index={virtualRow.index}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -80,7 +85,7 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
                 width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
-              className="flex w-full border-b border-border/20 leading-6 text-[12px] font-mono h-[24px]"
+              className="flex w-full border-b border-border/20 leading-5 text-[12px] font-mono min-h-[24px]"
             >
               {/* Left Side (Old/Deleted) */}
               <div
@@ -92,13 +97,17 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
                       : 'bg-base-0 text-text-primary'
                 }`}
               >
-                <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+                <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 self-stretch flex items-start justify-end">
                   {row.oldNum ?? ''}
                 </div>
-                <div className="w-5 px-1 py-0 text-center select-none font-bold text-diff-remove-text shrink-0 flex items-center justify-center">
+                <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-remove-text shrink-0 self-stretch flex items-start justify-center">
                   {!isOldEmpty && (isDel || isModified) ? '-' : ''}
                 </div>
-                <div className="flex-1 min-w-0 px-2 py-0 whitespace-pre truncate font-mono min-h-[24px] flex items-center">
+                <div
+                  className={`flex-1 min-w-0 px-2 py-0.5 font-mono leading-5 ${
+                    wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-auto'
+                  }`}
+                >
                   {row.oldContent !== undefined
                     ? highlightCodeLine(row.oldContent, shouldHighlight)
                     : '\u00A0'}
@@ -115,13 +124,17 @@ export const SplitDiffView: React.FC<SplitDiffViewProps> = React.memo(({ lines }
                       : 'bg-base-0 text-text-primary'
                 }`}
               >
-                <div className="w-12 px-2.5 py-0 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 min-h-[24px] flex items-center justify-end">
+                <div className="w-12 px-2.5 py-0.5 text-right text-text-faint select-none border-r border-border/30 bg-base-1/50 shrink-0 self-stretch flex items-start justify-end">
                   {row.newNum ?? ''}
                 </div>
-                <div className="w-5 px-1 py-0 text-center select-none font-bold text-diff-add-text shrink-0 flex items-center justify-center">
+                <div className="w-5 px-1 py-0.5 text-center select-none font-bold text-diff-add-text shrink-0 self-stretch flex items-start justify-center">
                   {!isNewEmpty && (isAdd || isModified) ? '+' : ''}
                 </div>
-                <div className="flex-1 min-w-0 px-2 py-0 whitespace-pre truncate font-mono min-h-[24px] flex items-center">
+                <div
+                  className={`flex-1 min-w-0 px-2 py-0.5 font-mono leading-5 ${
+                    wordWrap ? 'whitespace-pre-wrap break-all' : 'whitespace-pre overflow-x-auto'
+                  }`}
+                >
                   {row.newContent !== undefined
                     ? highlightCodeLine(row.newContent, shouldHighlight)
                     : '\u00A0'}
