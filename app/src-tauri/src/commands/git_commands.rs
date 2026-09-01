@@ -1011,6 +1011,45 @@ pub async fn update_submodules_cmd(repo_path: String) -> Result<(), AppError> {
 }
 
 #[command]
+pub async fn add_submodule_cmd(
+    repo_path: String,
+    url: String,
+    path: Option<String>,
+    branch: Option<String>,
+) -> Result<crate::git::submodules::SubmoduleInfo, AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::submodules::add_submodule(
+            &repo_path,
+            &url,
+            path.as_deref(),
+            branch.as_deref(),
+        )
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn remove_submodule_cmd(repo_path: String, path: String) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || crate::git::submodules::remove_submodule(&repo_path, &path))
+        .await
+        .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
+pub async fn update_single_submodule_cmd(
+    repo_path: String,
+    path: String,
+    remote: Option<bool>,
+) -> Result<(), AppError> {
+    tokio::task::spawn_blocking(move || {
+        crate::git::submodules::update_single_submodule(&repo_path, &path, remote)
+    })
+    .await
+    .map_err(|e| AppError::Unknown(e.to_string()))?
+}
+
+#[command]
 pub async fn sync_submodules_cmd(repo_path: String) -> Result<(), AppError> {
     tokio::task::spawn_blocking(move || crate::git::submodules::sync_submodules(&repo_path))
         .await

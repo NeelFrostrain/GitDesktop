@@ -36,6 +36,7 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
     setIsCreateTagModalOpen,
     setIsMergeRequestModalOpen,
     setIsWorktreeModalOpen,
+    setIsAddSubmoduleModalOpen,
   } = useGitStore();
 
   // Focus input on open
@@ -84,6 +85,13 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         category: 'Navigation',
         action: () => setCurrentNavView('stashes'),
         keywords: ['stash', 'shelve', 'wip'],
+      },
+      {
+        id: 'nav-submodules',
+        title: 'Go to Git Submodules Dashboard',
+        category: 'Navigation',
+        action: () => setCurrentNavView('submodules'),
+        keywords: ['submodule', 'submodules', 'nested', 'gitmodules'],
       },
       {
         id: 'nav-worktrees',
@@ -145,6 +153,13 @@ export const CommandPaletteModal: React.FC<CommandPaletteModalProps> = ({ isOpen
         category: 'Git Actions',
         action: () => setIsCreateTagModalOpen(true),
         keywords: ['tag', 'version', 'v1'],
+      },
+      {
+        id: 'git-add-submodule',
+        title: 'Add Git Submodule...',
+        category: 'Git Actions',
+        action: () => setIsAddSubmoduleModalOpen(true),
+        keywords: ['submodule', 'add submodule', 'nest', 'embed repo', 'gitmodules'],
       },
       {
         id: 'git-stash-wip',

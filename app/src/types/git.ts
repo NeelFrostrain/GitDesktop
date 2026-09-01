@@ -367,6 +367,7 @@ export interface SubmoduleInfo {
   head_sha: string;
   is_dirty: boolean;
   is_initialized: boolean;
+  branch?: string | null;
 }
 
 /**

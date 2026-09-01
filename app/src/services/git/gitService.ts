@@ -432,6 +432,45 @@ export class GitService {
   }
 
   /**
+   * Adds a new Git submodule to the repository.
+   */
+  static async addSubmodule(
+    repoPath: string,
+    url: string,
+    path?: string,
+    branch?: string
+  ): Promise<SubmoduleInfo> {
+    return invoke<SubmoduleInfo>('add_submodule_cmd', {
+      repoPath,
+      url,
+      path: path || null,
+      branch: branch || null,
+    });
+  }
+
+  /**
+   * Removes and de-initializes a Git submodule.
+   */
+  static async removeSubmodule(repoPath: string, path: string): Promise<void> {
+    return invoke('remove_submodule_cmd', { repoPath, path });
+  }
+
+  /**
+   * Updates a single specific submodule.
+   */
+  static async updateSingleSubmodule(
+    repoPath: string,
+    path: string,
+    remote?: boolean
+  ): Promise<void> {
+    return invoke('update_single_submodule_cmd', {
+      repoPath,
+      path,
+      remote: remote || false,
+    });
+  }
+
+  /**
    * Initializes registered submodules.
    */
   static async initSubmodules(repoPath: string): Promise<void> {

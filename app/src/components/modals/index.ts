@@ -21,3 +21,4 @@ export { PublishRepoModal } from './PublishRepoModal';
 export { RemoteNotFoundModal } from './RemoteNotFoundModal';
 export { MissingRepoModal } from './MissingRepoModal';
 export { GitHookModal } from './GitHookModal';
+export { AddSubmoduleModal } from './AddSubmoduleModal';

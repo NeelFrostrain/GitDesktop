@@ -171,6 +171,11 @@ const CreateReleaseModal = lazy(() =>
     default: m.CreateReleaseModal,
   }))
 );
+const AddSubmoduleModal = lazy(() =>
+  import('./components/modals/AddSubmoduleModal').then((m) => ({
+    default: m.AddSubmoduleModal,
+  }))
+);
 const GitUserConfigModal = lazy(() =>
   import('./components/config/GitUserConfigModal').then((m) => ({
     default: m.GitUserConfigModal,
@@ -257,6 +262,8 @@ export const App: React.FC = () => {
     setIsCreateReleaseModalOpen,
     editingRelease,
     setEditingRelease,
+    isAddSubmoduleModalOpen,
+    setIsAddSubmoduleModalOpen,
     isCreateTagModalOpen,
     setIsCreateTagModalOpen,
     tagModalTargetCommitSha,
@@ -778,6 +785,10 @@ export const App: React.FC = () => {
               setIsCreateReleaseModalOpen(false);
               setEditingRelease(null);
             }}
+          />
+          <AddSubmoduleModal
+            isOpen={isAddSubmoduleModalOpen}
+            onClose={() => setIsAddSubmoduleModalOpen(false)}
           />
           <GitUserConfigModal />
           <LogModal />

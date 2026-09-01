@@ -190,9 +190,11 @@ pub fn run() {
             set_repo_git_config_cmd,
             get_git_user_identity_cmd,
             read_gitignore_cmd,
-
             write_gitignore_cmd,
             list_submodules_cmd,
+            add_submodule_cmd,
+            remove_submodule_cmd,
+            update_single_submodule_cmd,
             init_submodules_cmd,
             update_submodules_cmd,
             sync_submodules_cmd,

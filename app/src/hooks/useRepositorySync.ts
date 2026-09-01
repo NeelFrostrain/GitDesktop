@@ -258,7 +258,7 @@ export function useRepositorySync() {
 
   const withTimeout = <T>(
     promise: Promise<T>,
-    timeoutMs = 25000,
+    timeoutMs = 180000,
     errorMsg = 'Git operation timed out'
   ): Promise<T> => {
     return Promise.race([
@@ -306,7 +306,7 @@ export function useRepositorySync() {
     try {
       await withTimeout(
         GitService.pushToRemote(activeRepoPath, status.current_branch),
-        30000,
+        300000,
         'Push timed out. Check network connection or remote credentials.'
       );
       useTaskStore.getState().updateTaskProgress(taskId, {
@@ -359,7 +359,7 @@ export function useRepositorySync() {
     try {
       const result = await withTimeout(
         GitService.pullFromRemote(activeRepoPath, status.current_branch),
-        30000,
+        180000,
         'Pull timed out. Check network connection or remote credentials.'
       );
       if (!result.success && result.conflicts.length > 0) {

@@ -13,6 +13,7 @@ import {
   Database,
   Settings2,
   GitBranch,
+  Boxes,
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../store/useGitStore';
@@ -39,6 +40,7 @@ export const Header: React.FC = () => {
     setIsCreateTagModalOpen,
     setIsCreateReleaseModalOpen,
     setEditingRelease,
+    setIsAddSubmoduleModalOpen,
     setIsConfigModalOpen,
   } = useGitStore(
     useShallow((s) => ({
@@ -51,6 +53,7 @@ export const Header: React.FC = () => {
       setIsCreateTagModalOpen: s.setIsCreateTagModalOpen,
       setIsCreateReleaseModalOpen: s.setIsCreateReleaseModalOpen,
       setEditingRelease: s.setEditingRelease,
+      setIsAddSubmoduleModalOpen: s.setIsAddSubmoduleModalOpen,
       setIsConfigModalOpen: s.setIsConfigModalOpen,
     }))
   );
@@ -165,6 +168,22 @@ export const Header: React.FC = () => {
                   title="Create Merge / Pull Request"
                 >
                   <GitPullRequest className="w-3.5 h-3.5" />
+                </button>
+
+                {/* Git Submodules Manager */}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setCurrentNavView(currentNavView === 'submodules' ? 'changes' : 'submodules')
+                  }
+                  className={`h-6.5 w-6.5 flex items-center justify-center rounded-xs transition cursor-pointer ${
+                    currentNavView === 'submodules'
+                      ? 'bg-base-2 text-gitlab-teal font-semibold'
+                      : 'text-text-muted hover:text-gitlab-teal hover:bg-base-2'
+                  }`}
+                  title="Git Submodules (Inspect, Add & Manage)"
+                >
+                  <Boxes className="w-3.5 h-3.5" />
                 </button>
 
                 {/* Git LFS & Locks Manager */}
@@ -303,6 +322,25 @@ export const Header: React.FC = () => {
                           </span>
                         </button>
 
+                        {/* Git Submodules Dashboard */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentNavView(
+                              currentNavView === 'submodules' ? 'changes' : 'submodules'
+                            );
+                            setIsMoreMenuOpen(false);
+                          }}
+                          className={`w-full px-2.5 py-1.5 flex items-center gap-2 text-left cursor-pointer transition ${
+                            currentNavView === 'submodules'
+                              ? 'bg-base-2 text-gitlab-teal font-semibold'
+                              : 'text-text-secondary hover:text-gitlab-teal hover:bg-base-2'
+                          }`}
+                        >
+                          <Boxes className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
+                          <span className="text-[11.5px] font-medium">Git Submodules</span>
+                        </button>
+
                         {/* Git LFS & Locks Manager */}
                         <button
                           type="button"
@@ -340,7 +378,20 @@ export const Header: React.FC = () => {
                     </>
                   )}
 
-                  <div className="py-0.5">
+                  <div className="py-0.5 space-y-0.5">
+                    {/* Add Submodule */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddSubmoduleModalOpen(true);
+                        setIsMoreMenuOpen(false);
+                      }}
+                      className="w-full px-2.5 py-1.5 flex items-center gap-2 text-left text-text-secondary hover:text-gitlab-teal hover:bg-base-2 cursor-pointer transition"
+                    >
+                      <Boxes className="w-3.5 h-3.5 text-gitlab-teal shrink-0" />
+                      <span className="text-[11.5px] font-medium">Add Git Submodule...</span>
+                    </button>
+
                     {/* Repository Git Config */}
                     <button
                       type="button"

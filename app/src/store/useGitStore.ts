@@ -147,6 +147,7 @@ export interface GitState {
   tagModalTargetCommitSha: string | null;
   isCreateReleaseModalOpen: boolean;
   editingRelease: ReleaseInfo | null;
+  isAddSubmoduleModalOpen: boolean;
   pendingHistoryOp: HistoryOperation | null;
   isUserConfigModalOpen: boolean;
   pendingCommitData: { summary: string; description?: string } | null;
@@ -231,6 +232,7 @@ export interface GitState {
   setTagModalTargetCommitSha: (sha: string | null) => void;
   setIsCreateReleaseModalOpen: (open: boolean) => void;
   setEditingRelease: (release: ReleaseInfo | null) => void;
+  setIsAddSubmoduleModalOpen: (open: boolean) => void;
   setPendingHistoryOp: (op: HistoryOperation | null) => void;
   setIsUserConfigModalOpen: (open: boolean) => void;
   setPendingCommitData: (data: { summary: string; description?: string } | null) => void;
@@ -317,6 +319,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   tagModalTargetCommitSha: null,
   isCreateReleaseModalOpen: false,
   editingRelease: null,
+  isAddSubmoduleModalOpen: false,
   pendingHistoryOp: null,
   isUserConfigModalOpen: false,
   pendingCommitData: null,
@@ -891,6 +894,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   setTagModalTargetCommitSha: (tagModalTargetCommitSha) => set({ tagModalTargetCommitSha }),
   setIsCreateReleaseModalOpen: (isCreateReleaseModalOpen) => set({ isCreateReleaseModalOpen }),
   setEditingRelease: (editingRelease) => set({ editingRelease }),
+  setIsAddSubmoduleModalOpen: (isAddSubmoduleModalOpen) => set({ isAddSubmoduleModalOpen }),
   setPendingHistoryOp: (pendingHistoryOp) => set({ pendingHistoryOp }),
   setIsUserConfigModalOpen: (isUserConfigModalOpen) => set({ isUserConfigModalOpen }),
   setPendingCommitData: (pendingCommitData) => set({ pendingCommitData }),
