@@ -79,10 +79,10 @@ export function useRepoTerminal(
     const term = new Terminal({
       cursorBlink: true,
       cursorStyle: 'bar',
-      fontSize: 12.5,
+      fontSize: 11,
       fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace",
       letterSpacing: 0,
-      lineHeight: 1.25,
+      lineHeight: 1.15,
       scrollback: 5000,
       theme: {
         background: '#131313', // base-0
@@ -184,6 +184,7 @@ export function useRepoTerminal(
     const fitAndRefresh = () => {
       try {
         terminal.options.fontFamily = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace";
+        terminal.options.fontSize = 11;
         fitAddon.fit();
         terminal.refresh(0, terminal.rows - 1);
         terminal.focus();

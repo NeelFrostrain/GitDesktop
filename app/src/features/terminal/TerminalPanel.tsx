@@ -249,7 +249,7 @@ export const TerminalPanel: React.FC = () => {
           >
             <div
               ref={terminalContainerRef}
-              className="w-full h-full font-mono [&_.xterm]:font-mono [&_.xterm-viewport]:bg-base-0 [&_.xterm-rows]:font-mono"
+              className="w-full h-full font-mono text-[11px] [&_.xterm]:font-mono [&_.xterm]:text-[11px] [&_.xterm-viewport]:bg-base-0 [&_.xterm-rows]:font-mono [&_.xterm-rows]:text-[11px]"
             />
 
             {/* Ghost Text Overlay if available */}

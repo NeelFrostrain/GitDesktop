@@ -1,0 +1,3 @@
+[submodule "GitDesktop"]
+	path = GitDesktop
+	url = https://github.com/CyronicStudio/GitDesktop.git
