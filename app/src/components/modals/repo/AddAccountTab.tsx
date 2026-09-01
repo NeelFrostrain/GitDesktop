@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { Key, Globe, AlertCircle, ExternalLink, RefreshCw, Lock } from 'lucide-react';
 import {
   Provider,
@@ -53,35 +52,27 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
       const clientId =
         import.meta.env.VITE_GITLAB_CLIENT_ID ||
         'e1e90ccf895458c58b7738412ac7f2ff830b89fbeab9cd7405d6e6a75005202d';
-      const redirectUri = 'http://127.0.0.1:8585/oauth/callback';
-      const authUrl = `${serverUrl}/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
-        redirectUri
-      )}&response_type=code&state=xyz&code_challenge=${pkce.challenge}&code_challenge_method=S256&scope=api+read_user+openid+profile+email+write_repository+read_repository`;
+      const clientSecret =
+        import.meta.env.VITE_GITLAB_CLIENT_SECRET ||
+        'gloas-98224a41bdac5c7dc1c80196cb2c54cd5b1555f5c7699f6f677599fa8cfe8696';
 
-      await openUrl(authUrl);
       useLogStore
         .getState()
-        .addLog('info', 'Auth', `Opened browser for OAuth authorization at ${serverUrl}`);
+        .addLog('info', 'Auth', `Opening browser for OAuth authorization at ${serverUrl}`);
 
-      // Background listener handles redirect loopback
-      invoke<GitLabUser>('start_oauth_login', {
+      // start_oauth_login spawns background loopback and opens system browser
+      await invoke('start_oauth_login', {
         serverUrl,
-        clientId,
-        clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+        challenge: pkce.challenge,
         verifier: pkce.verifier,
-        redirectUri,
-      })
-        .then(async (loggedUser) => {
-          setUser(gitLabUserToUnified(loggedUser));
-          await onAccountAdded();
-          sessionStorage.removeItem('oauth_verifier');
-          setIsOauthLoading(false);
-          useGitStore.setState({ isRepoModalOpen: false, error: null });
-        })
-        .catch((err: unknown) => {
-          setIsOauthLoading(false);
-          setLoginError(getErrorMessage(err));
-        });
+        clientId,
+        clientSecret,
+        useLoopback: true,
+      });
+
+      useLogStore
+        .getState()
+        .addLog('info', 'Auth', `Waiting for OAuth callback in browser...`);
     } catch (error: unknown) {
       setIsOauthLoading(false);
       setLoginError(getErrorMessage(error));
@@ -110,8 +101,12 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
         serverUrl,
         code: codeToUse,
         verifier,
-        clientId: import.meta.env.VITE_GITLAB_CLIENT_ID || null,
-        clientSecret: import.meta.env.VITE_GITLAB_CLIENT_SECRET || null,
+        clientId:
+          import.meta.env.VITE_GITLAB_CLIENT_ID ||
+          'e1e90ccf895458c58b7738412ac7f2ff830b89fbeab9cd7405d6e6a75005202d',
+        clientSecret:
+          import.meta.env.VITE_GITLAB_CLIENT_SECRET ||
+          'gloas-98224a41bdac5c7dc1c80196cb2c54cd5b1555f5c7699f6f677599fa8cfe8696',
       });
 
       setUser(gitLabUserToUnified(loggedUser));

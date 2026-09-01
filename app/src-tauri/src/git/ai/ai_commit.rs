@@ -171,6 +171,61 @@ pub fn get_repo_diff_text(repo_path: &str, staged_only: bool) -> Result<String, 
     }
   }
 
+  // Include submodule changes in patch text
+  if let Ok(mut submodules) = repo.submodules() {
+    for sub in submodules.iter_mut() {
+      let sub_path = sub.path().to_string_lossy().replace('\\', "/");
+      let sub_name = sub.name().unwrap_or(&sub_path);
+      let head_id = sub.head_id().map(|o| o.to_string());
+      let index_id = sub.index_id().map(|o| o.to_string());
+      let wd_id = sub.workdir_id().map(|o| o.to_string());
+
+      let sub_full_path = Path::new(repo_path).join(sub.path());
+      let actual_wd_id = if let Ok(sub_repo) = Repository::open(&sub_full_path) {
+        sub_repo.head().ok().and_then(|h| h.target()).map(|o| o.to_string()).or(wd_id)
+      } else {
+        wd_id
+      };
+
+      let is_index_present = index_id.is_some();
+      let old_commit = head_id.or(index_id.clone()).unwrap_or_else(|| "0000000".to_string());
+      let new_commit = if staged_only {
+        index_id.unwrap_or_else(|| actual_wd_id.clone().unwrap_or(old_commit.clone()))
+      } else {
+        actual_wd_id.or(index_id).unwrap_or(old_commit.clone())
+      };
+
+      if old_commit != new_commit || (staged_only && is_index_present) {
+        let short_old = if old_commit.len() >= 7 { &old_commit[..7] } else { &old_commit };
+        let short_new = if new_commit.len() >= 7 { &new_commit[..7] } else { &new_commit };
+        patch_text.push_str(&format!(
+          "\n--- Submodule: {} ({}) ---\n-Subproject commit {}\n+Subproject commit {}\nSubmodule commit updated: {} -> {}\n",
+          sub_name, sub_path, old_commit, new_commit, short_old, short_new
+        ));
+      }
+    }
+  }
+
+  // Fallback: Check repo statuses for any modified entries (including submodules / gitlinks)
+  if patch_text.trim().is_empty() {
+    if let Ok(statuses) = repo.statuses(None) {
+      for entry in statuses.iter() {
+        let st = entry.status();
+        let is_relevant = if staged_only {
+          st.is_index_new() || st.is_index_modified() || st.is_index_deleted() || st.is_index_typechange()
+        } else {
+          !st.is_ignored()
+        };
+
+        if is_relevant {
+          if let Some(path_str) = entry.path() {
+            patch_text.push_str(&format!("\nModified file or submodule: {}\n", path_str));
+          }
+        }
+      }
+    }
+  }
+
   if patch_text.len() > MAX_DIFF_CHARS {
     patch_text.truncate(MAX_DIFF_CHARS);
     patch_text.push_str("\n... [Diff truncated for AI analysis] ...");

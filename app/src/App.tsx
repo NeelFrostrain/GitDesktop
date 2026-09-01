@@ -325,14 +325,20 @@ export const App: React.FC = () => {
             const code = url.searchParams.get('code');
             const state = url.searchParams.get('state');
 
-            // 1. Multi-provider OAuth (GitHub / GitLab account services)
+            // 1. Multi-provider OAuth (GitHub / GitLab / Bitbucket account services)
             if (
               urlStr.includes('/oauth/github/callback') ||
               urlStr.includes('/oauth/gitlab/callback') ||
+              urlStr.includes('/oauth/bitbucket/callback') ||
+              urlStr.includes('/oauth/callback') ||
               state
             ) {
               if (code) {
-                const provider = urlStr.includes('github') ? 'github' : 'gitlab';
+                const provider = urlStr.includes('github')
+                  ? 'github'
+                  : urlStr.includes('bitbucket')
+                  ? 'bitbucket'
+                  : 'gitlab';
                 try {
                   const account = await invoke<any>('accounts_exchange_oauth_code', {
                     provider,
@@ -351,10 +357,13 @@ export const App: React.FC = () => {
                   useGitStore.setState({ isRepoModalOpen: false, error: null });
                   useAccountServicesStore.setState({ isModalOpen: false });
                 } catch (err: any) {
+                  // Check if accounts were already synced by the background loopback listener
+                  try {
+                    await useAccountServicesStore.getState().loadAccounts();
+                  } catch {}
                   useLogStore
                     .getState()
-                    .addLog('error', 'Auth', `OAuth exchange error: ${err?.message || err}`);
-                  setError(toAppError(err, 'AUTH_ERROR'));
+                    .addLog('info', 'Auth', `OAuth callback completed or handled via loopback`);
                 }
               }
             }

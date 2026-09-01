@@ -353,6 +353,7 @@ pub fn get_stash_file_diff(
                     is_binary: false,
                     is_large_file: false,
                     file_size_bytes: u_res.stdout.len() as u64,
+                    submodule_info: None,
                 });
             }
         }
@@ -364,5 +365,6 @@ pub fn get_stash_file_diff(
         is_binary,
         is_large_file: false,
         file_size_bytes: 0,
+        submodule_info: None,
     })
 }

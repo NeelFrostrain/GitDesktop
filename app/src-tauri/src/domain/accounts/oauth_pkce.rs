@@ -5,9 +5,14 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 
 static PKCE_STORAGE: OnceLock<Mutex<HashMap<String, PkceSession>>> = OnceLock::new();
+static RECENTLY_USED: OnceLock<Mutex<HashMap<String, (PkceSession, i64)>>> = OnceLock::new();
 
 fn get_storage() -> &'static Mutex<HashMap<String, PkceSession>> {
     PKCE_STORAGE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn get_recently_used() -> &'static Mutex<HashMap<String, (PkceSession, i64)>> {
+    RECENTLY_USED.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
 #[derive(Clone, Debug)]
@@ -21,7 +26,7 @@ pub struct PkceSession {
 }
 
 const PKCE_CHARS: &[u8] = b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
-const PKCE_SESSION_TTL_SECONDS: i64 = 10 * 60;
+const PKCE_SESSION_TTL_SECONDS: i64 = 15 * 60;
 
 pub fn generate_pkce_session(
     provider: &str,
@@ -77,11 +82,51 @@ pub fn take_pkce_session(state: &str) -> Option<PkceSession> {
 }
 
 pub fn take_valid_pkce_session(state: &str, provider: &str) -> Option<PkceSession> {
-    let session = take_pkce_session(state)?;
-    let is_fresh = chrono::Utc::now().timestamp() - session.created_at <= PKCE_SESSION_TTL_SECONDS;
-    if is_fresh && session.provider.eq_ignore_ascii_case(provider) {
-        Some(session)
-    } else {
-        None
+    let now = chrono::Utc::now().timestamp();
+    let clean_state = state.trim();
+
+    // 1. Check active storage
+    if let Ok(mut storage) = get_storage().lock() {
+        if let Some(session) = storage.remove(clean_state) {
+            let is_fresh = now - session.created_at <= PKCE_SESSION_TTL_SECONDS;
+            if is_fresh && (provider.is_empty() || session.provider.eq_ignore_ascii_case(provider)) {
+                if let Ok(mut rec) = get_recently_used().lock() {
+                    rec.insert(clean_state.to_string(), (session.clone(), now));
+                }
+                return Some(session);
+            }
+        }
     }
+
+    // 2. Check recently used cache (handles duplicate / race condition between loopback & deep link)
+    if let Ok(rec) = get_recently_used().lock() {
+        if let Some((session, used_at)) = rec.get(clean_state) {
+            if now - used_at <= 60 && (provider.is_empty() || session.provider.eq_ignore_ascii_case(provider)) {
+                return Some(session.clone());
+            }
+        }
+    }
+
+    // 3. Resilient fallback: find most recent pending session for this provider
+    if let Ok(mut storage) = get_storage().lock() {
+        let matching_key = storage
+            .iter()
+            .filter(|(_, s)| {
+                let is_fresh = now - s.created_at <= PKCE_SESSION_TTL_SECONDS;
+                is_fresh && (provider.is_empty() || s.provider.eq_ignore_ascii_case(provider))
+            })
+            .max_by_key(|(_, s)| s.created_at)
+            .map(|(k, _)| k.clone());
+
+        if let Some(key) = matching_key {
+            if let Some(session) = storage.remove(&key) {
+                if let Ok(mut rec) = get_recently_used().lock() {
+                    rec.insert(clean_state.to_string(), (session.clone(), now));
+                }
+                return Some(session);
+            }
+        }
+    }
+
+    None
 }

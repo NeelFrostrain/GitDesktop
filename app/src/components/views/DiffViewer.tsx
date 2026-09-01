@@ -14,6 +14,7 @@ import { ImageDiffView } from './diff/ImageDiffView';
 import { CleanWorkingTreeView } from './diff/CleanWorkingTreeView';
 import { FileEditorView } from './diff/FileEditorView';
 import { StashedChangesView } from './diff/StashedChangesView';
+import { SubmoduleDiffView } from './diff/SubmoduleDiffView';
 
 /**
  * Main Diff Viewer presentation component supporting both unstaged/staged working tree changes
@@ -303,6 +304,17 @@ export const DiffViewer: React.FC = () => {
     }
 
     if (!diff) return null;
+
+    if (diff.submodule_info?.is_submodule) {
+      return (
+        <SubmoduleDiffView
+          filePath={selectedFile}
+          submoduleInfo={diff.submodule_info}
+          lines={diff.lines}
+          staged={isStaged}
+        />
+      );
+    }
 
     if (diff.is_large_file) {
       return (

@@ -102,6 +102,20 @@ export interface DiffLine {
 }
 
 /**
+ * Submodule change metadata for subproject commit pointer changes.
+ */
+export interface SubmoduleDiffInfo {
+  is_submodule: boolean;
+  name: string;
+  path: string;
+  url?: string | null;
+  old_commit?: string | null;
+  new_commit?: string | null;
+  status_summary: string;
+  submodule_full_path?: string | null;
+}
+
+/**
  * Structured diff result for a file.
  */
 export interface DiffResult {
@@ -110,6 +124,7 @@ export interface DiffResult {
   is_binary: boolean;
   is_large_file: boolean;
   file_size_bytes: number;
+  submodule_info?: SubmoduleDiffInfo | null;
 }
 
 /**
