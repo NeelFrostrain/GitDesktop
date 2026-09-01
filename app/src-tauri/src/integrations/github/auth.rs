@@ -6,6 +6,7 @@ use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT}
 use serde::Deserialize;
 
 pub const GITHUB_DEFAULT_CLIENT_ID: &str = "Ov23lip7lnwBjoVPBlzU";
+pub const GITHUB_DEFAULT_CLIENT_SECRET: &str = "51b8724dd6644767fb1afa00890d1078e588b0f6";
 pub const GITHUB_DEFAULT_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
 
 #[allow(dead_code)]
@@ -47,6 +48,7 @@ impl GitHubAuthProvider {
 
     pub fn get_client_secret(&self) -> Option<String> {
         config::get_env_var("VITE_GITHUB_CLIENT_SECRET")
+            .or_else(|| Some(GITHUB_DEFAULT_CLIENT_SECRET.to_string()))
     }
 
     pub fn get_redirect_uri(&self) -> String {
