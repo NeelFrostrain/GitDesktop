@@ -1,3 +1,7 @@
 [submodule "git-desktop-public"]
 	path = git-desktop-public
 	url = https://github.com/CyronicStudio/git-desktop.git
+
+[submodule "webpage"]
+	path = webpage
+	url = https://github.com/NeelFrostrain/GitDesktopWBP.git

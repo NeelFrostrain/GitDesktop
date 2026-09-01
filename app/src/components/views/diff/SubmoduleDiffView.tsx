@@ -121,7 +121,7 @@ export const SubmoduleDiffView: React.FC<SubmoduleDiffViewProps> = ({
       <div className="max-w-2xl w-full space-y-6">
         {/* Header Title */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-git-modified/10 border border-git-modified/25 text-git-modified flex items-center justify-center shadow-xs shrink-0">
+          <div className="w-10 h-10 rounded-sm bg-git-modified/10 border border-git-modified/25 text-git-modified flex items-center justify-center shadow-xs shrink-0">
             <FolderGit2 className="w-5 h-5" />
           </div>
           <div>
@@ -135,7 +135,7 @@ export const SubmoduleDiffView: React.FC<SubmoduleDiffViewProps> = ({
         </div>
 
         {/* Remote Origin Link Notice */}
-        <div className="p-3.5 bg-base-1/80 border border-border rounded-md text-xs text-text-secondary flex items-start gap-2.5 shadow-2xs">
+        <div className="p-3.5 bg-base-1/80 border border-border rounded-sm text-xs text-text-secondary flex items-start gap-2.5 shadow-2xs">
           <Info className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
           <div className="space-y-1 min-w-0">
             <p className="leading-relaxed">
@@ -158,7 +158,7 @@ export const SubmoduleDiffView: React.FC<SubmoduleDiffViewProps> = ({
         </div>
 
         {/* Commit Change Comparison Card */}
-        <div className="p-4 bg-base-1 border border-border-strong rounded-md space-y-3 shadow-xs">
+        <div className="p-4 bg-base-1 border border-border-strong rounded-sm space-y-3 shadow-xs">
           <div className="flex items-center gap-2 text-xs font-semibold text-text-primary">
             <GitCommit className="w-4 h-4 text-commito-coral shrink-0" />
             <span>Commit Pointer Update</span>
@@ -225,7 +225,7 @@ export const SubmoduleDiffView: React.FC<SubmoduleDiffViewProps> = ({
         </div>
 
         {/* Action Card: Open in GitDesktop */}
-        <div className="p-4 bg-sky-950/20 border border-sky-800/40 rounded-md flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+        <div className="p-4 bg-sky-950/20 border border-sky-800/40 rounded-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1">
             <h3 className="text-xs font-bold text-sky-300">
               Open this submodule in Git Desktop
@@ -248,7 +248,7 @@ export const SubmoduleDiffView: React.FC<SubmoduleDiffViewProps> = ({
 
         {/* Optional raw git diff lines if any */}
         {lines.length > 0 && (
-          <div className="border border-border rounded-md overflow-hidden bg-base-1/50">
+          <div className="border border-border rounded-sm overflow-hidden bg-base-1/50">
             <div className="px-3 py-2 border-b border-border bg-base-1 text-[11px] font-mono text-text-muted flex items-center justify-between">
               <span>Raw Gitlink Change</span>
               <span className="text-[10px] text-text-faint">{filePath}</span>
