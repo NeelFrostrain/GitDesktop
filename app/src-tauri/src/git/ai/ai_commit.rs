@@ -414,6 +414,11 @@ pub async fn generate_ai_commit_message(
   // Candidate Google Gemini models with automatic fallback
   let mut candidate_models = vec![initial_model.clone()];
   for fallback in [
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-2.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash",
     "gemini-3.5-flash-lite",
     "gemini-3.6-flash",
     "gemini-3.5-flash",

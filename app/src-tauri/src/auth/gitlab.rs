@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 pub const DEFAULT_CLIENT_ID: &str =
-    "gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df";
+    "e1e90ccf895458c58b7738412ac7f2ff830b89fbeab9cd7405d6e6a75005202d";
+pub const DEFAULT_CLIENT_SECRET: &str =
+    "gloas-98224a41bdac5c7dc1c80196cb2c54cd5b1555f5c7699f6f677599fa8cfe8696";
 pub const LOOPBACK_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
 pub const DEFAULT_REDIRECT_URI: &str = "git-desktop://oauth/callback";
 

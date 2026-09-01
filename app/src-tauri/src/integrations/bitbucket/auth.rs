@@ -6,6 +6,9 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT};
 use serde::Deserialize;
 
+pub const BITBUCKET_DEFAULT_CLIENT_ID: &str = "05gvJ8RH8VjBrhncQ2lo3fJLO9sxp6dL";
+pub const BITBUCKET_DEFAULT_CLIENT_SECRET: &str =
+    "ATOARGl9fQyacCA9STFNegKBRmR_rYHjf0lYQT-IT8e6EjJhP1C3NQX1eLF5j5CJGTqoD2314137";
 pub const BITBUCKET_DEFAULT_REDIRECT_URI: &str = "http://127.0.0.1:8585/oauth/callback";
 
 #[allow(dead_code)]
@@ -61,7 +64,8 @@ pub struct BitbucketAuthProvider;
 
 impl BitbucketAuthProvider {
     pub fn get_client_id(&self) -> Result<String, AppError> {
-        let id = config::get_env_var("VITE_BITBUCKET_CLIENT_ID").unwrap_or_default();
+        let id = config::get_env_var("VITE_BITBUCKET_CLIENT_ID")
+            .unwrap_or_else(|| BITBUCKET_DEFAULT_CLIENT_ID.to_string());
         if id.trim().is_empty() {
             return Err(AppError::Auth(
                 "Bitbucket OAuth Client ID is missing. Please set VITE_BITBUCKET_CLIENT_ID in your .env file."
@@ -72,7 +76,8 @@ impl BitbucketAuthProvider {
     }
 
     pub fn get_client_secret(&self) -> Result<String, AppError> {
-        let secret = config::get_env_var("VITE_BITBUCKET_CLIENT_SECRET").unwrap_or_default();
+        let secret = config::get_env_var("VITE_BITBUCKET_CLIENT_SECRET")
+            .unwrap_or_else(|| BITBUCKET_DEFAULT_CLIENT_SECRET.to_string());
         if secret.trim().is_empty() {
             return Err(AppError::Auth(
                 "Bitbucket OAuth Client Secret is missing. Please set VITE_BITBUCKET_CLIENT_SECRET in your .env file."

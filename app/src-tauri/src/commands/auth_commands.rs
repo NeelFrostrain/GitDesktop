@@ -2,7 +2,7 @@ use crate::auth::github::{GitHubClient, GitHubUser};
 use crate::auth::gitlab::{
     exchange_code_for_token_response, generate_pkce, listen_for_oauth_callback,
     refresh_oauth_token, GitLabClient, GitLabUser, PkcePair, TokenInfo, DEFAULT_CLIENT_ID,
-    DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
+    DEFAULT_CLIENT_SECRET, DEFAULT_REDIRECT_URI, LOOPBACK_REDIRECT_URI,
 };
 use crate::auth::keyring::{self, SavedAccount};
 use crate::error::AppError;
@@ -99,7 +99,12 @@ pub async fn start_oauth_login(
     use_loopback: Option<bool>,
 ) -> Result<(), AppError> {
     let clean_url = server_url.trim_end_matches('/').to_string();
-    let cid = client_id.unwrap_or_else(|| DEFAULT_CLIENT_ID.to_string());
+    let cid = client_id
+        .or_else(|| crate::core::config::get_env_var("VITE_GITLAB_CLIENT_ID"))
+        .unwrap_or_else(|| DEFAULT_CLIENT_ID.to_string());
+    let csec = client_secret
+        .or_else(|| crate::core::config::get_env_var("VITE_GITLAB_CLIENT_SECRET"))
+        .or_else(|| Some(DEFAULT_CLIENT_SECRET.to_string()));
     let loopback = use_loopback.unwrap_or(true);
 
     let redirect_uri = if loopback {
@@ -118,7 +123,7 @@ pub async fn start_oauth_login(
             let _ = listen_for_oauth_callback(
                 surl,
                 client_id_clone,
-                client_secret,
+                csec,
                 verifier,
                 redirect_uri_clone,
                 app_handle,
@@ -149,13 +154,18 @@ pub async fn complete_oauth_login(
     client_secret: Option<String>,
     redirect_uri: Option<String>,
 ) -> Result<GitLabUser, AppError> {
-    let cid = client_id.unwrap_or_else(|| DEFAULT_CLIENT_ID.to_string());
+    let cid = client_id
+        .or_else(|| crate::core::config::get_env_var("VITE_GITLAB_CLIENT_ID"))
+        .unwrap_or_else(|| DEFAULT_CLIENT_ID.to_string());
+    let csec = client_secret
+        .or_else(|| crate::core::config::get_env_var("VITE_GITLAB_CLIENT_SECRET"))
+        .or_else(|| Some(DEFAULT_CLIENT_SECRET.to_string()));
     let red_uri = redirect_uri.unwrap_or_else(|| DEFAULT_REDIRECT_URI.to_string());
 
     let token_resp = exchange_code_for_token_response(
         &server_url,
         &cid,
-        client_secret.as_deref(),
+        csec.as_deref(),
         &code,
         &verifier,
         &red_uri,

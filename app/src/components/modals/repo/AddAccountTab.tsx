@@ -52,7 +52,7 @@ export const AddAccountTab: React.FC<AddAccountTabProps> = ({ onAccountAdded }) 
 
       const clientId =
         import.meta.env.VITE_GITLAB_CLIENT_ID ||
-        'gloas-37b1b096e127882b4ea65b3acd3f502d37bcf79ccf6d471367d0910eec5351df';
+        'e1e90ccf895458c58b7738412ac7f2ff830b89fbeab9cd7405d6e6a75005202d';
       const redirectUri = 'http://127.0.0.1:8585/oauth/callback';
       const authUrl = `${serverUrl}/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(
         redirectUri

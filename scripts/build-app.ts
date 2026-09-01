@@ -57,9 +57,29 @@ if (fs.existsSync(fallbackBundleDir)) {
 }
 
 // 3. Run Tauri Build
-console.log(`\n\x1b[34m🔨 Running Tauri Build...\x1b[0m\n`);
+// Load .env variables into build environment
+const envVars: Record<string, string> = {};
+for (const candidate of [path.join(rootDir, '.env'), path.join(appDir, '.env')]) {
+  if (fs.existsSync(candidate)) {
+    const lines = fs.readFileSync(candidate, 'utf8').split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const idx = trimmed.indexOf('=');
+      if (idx !== -1) {
+        const k = trimmed.slice(0, idx).trim();
+        let v = trimmed.slice(idx + 1).trim();
+        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+          v = v.slice(1, -1);
+        }
+        envVars[k] = v;
+      }
+    }
+  }
+}
 
 const buildEnv = {
+  ...envVars,
   ...process.env,
   ...(keyContent ? { TAURI_SIGNING_PRIVATE_KEY: keyContent } : {}),
   TAURI_SIGNING_PRIVATE_KEY_PASSWORD: keyPassword,
