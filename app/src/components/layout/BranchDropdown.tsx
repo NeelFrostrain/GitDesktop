@@ -479,12 +479,19 @@ export const BranchDropdown: React.FC = () => {
       if (cachedPRs?.prs) {
         setPullRequests(cachedPRs.prs);
         setIsLoadingPRs(false);
+      } else {
+        setPullRequests([]);
+        setIsLoadingPRs(false);
       }
+      setPrError(null);
       const cachedBranches = RepoCacheService.getBranches(activeRepoPath);
       if (cachedBranches && cachedBranches.length > 0) {
         setBranches(cachedBranches);
         setIsLoadingBranches(false);
       }
+    } else {
+      setPullRequests([]);
+      setPrError(null);
     }
   }, [activeRepoPath, setBranches]);
 

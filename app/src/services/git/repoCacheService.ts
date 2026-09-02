@@ -80,20 +80,25 @@ class RepoCacheServiceClass {
       const req = store.getAll();
 
       req.onsuccess = () => {
-        const records: Array<{ key: string; type: string; data: unknown }> = req.result || [];
+        const records: Array<{ key: string; type: string; data: unknown; timestamp?: number }> =
+          req.result || [];
+        const now = Date.now();
         for (const r of records) {
           if (!r.key || !r.type) continue;
           const repoPath = r.key;
+          const isFresh = !r.timestamp || now - r.timestamp < 10 * 60 * 1000;
           if (r.type === 'prs') {
             this.prCache.set(repoPath, r.data as CachedPRData);
-          } else if (r.type === 'branches') {
-            this.branchCache.set(repoPath, r.data as BranchInfo[]);
           } else if (r.type === 'releases') {
             this.releaseCache.set(repoPath, r.data as CachedReleaseData);
-          } else if (r.type === 'commits') {
-            this.commitCache.set(repoPath, r.data as CachedCommitData);
-          } else if (r.type === 'tags') {
-            this.tagCache.set(repoPath, r.data as CachedTagData);
+          } else if (isFresh) {
+            if (r.type === 'branches') {
+              this.branchCache.set(repoPath, r.data as BranchInfo[]);
+            } else if (r.type === 'commits') {
+              this.commitCache.set(repoPath, r.data as CachedCommitData);
+            } else if (r.type === 'tags') {
+              this.tagCache.set(repoPath, r.data as CachedTagData);
+            }
           }
         }
       };
@@ -242,6 +247,11 @@ class RepoCacheServiceClass {
     if (!repoPath) return null;
     const data = this.commitCache.get(repoPath);
     if (!data) return null;
+    // Discard commits older than 5 minutes to prevent displaying stale history
+    if (Date.now() - data.fetchedAt > 5 * 60 * 1000) {
+      this.commitCache.delete(repoPath);
+      return null;
+    }
     return data.commits;
   }
 

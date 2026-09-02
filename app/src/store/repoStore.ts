@@ -6,7 +6,6 @@ import { useGitStore } from './useGitStore';
 import { useLogStore } from './useLogStore';
 import { useContributionsStore } from './contributionsStore';
 import { GitService } from '../services/git/gitService';
-import { RepoCacheService } from '../services/git/repoCacheService';
 
 /**
  * State and actions for managing the local repository registry and dashboard summaries.
@@ -162,64 +161,5 @@ export const useRepoStore = create<RepoStoreState>((set, get) => ({
     }
 
     gitStore.setActiveRepoPath(path);
-    gitStore.setCurrentNavView('changes');
-
-    // 2. Validate path asynchronously
-    GitService.validateRepoPath(path)
-      .then((validation) => {
-        if (validation && validation.is_valid === false) {
-          get().refreshStatus(path);
-          gitStore.setIsMissingRepoModalOpen(
-            true,
-            path,
-            validation.error_message || 'Directory or .git metadata missing'
-          );
-        }
-      })
-      .catch(() => {});
-
-    try {
-      const res = await GitService.getRepoStatus(path);
-      gitStore.setStatus(res);
-      if (res.files.length > 0) {
-        gitStore.setSelectedFile(res.files[0].path);
-      }
-
-      // Background remote existence verification
-      if (res.has_remote) {
-        GitService.fetchRemote(path).catch((fetchErr: unknown) => {
-          const msg = getErrorMessage(fetchErr).toLowerCase();
-          if (
-            msg.includes('not found') ||
-            msg.includes('deleted') ||
-            msg.includes('could not read from remote') ||
-            msg.includes('does not appear to be a git repository')
-          ) {
-            gitStore.setStatus({
-              ...res,
-              has_remote: false,
-              remote_url: null,
-            });
-            useLogStore
-              .getState()
-              .addLog(
-                'warning',
-                'Remote',
-                'Remote repository was not found on server (it may have been deleted). You can now Publish this repository to link a new remote.'
-              );
-          }
-        });
-      }
-    } catch (error: unknown) {
-      useLogStore
-        .getState()
-        .addLog('warning', 'Git', `Could not inspect repo on open: ${getErrorMessage(error)}`);
-    }
-
-    // Touch last_opened_at timestamp in backend registry
-    invoke('add_repo_to_registry_cmd', { path }).catch(() => {});
-
-    // Pre-cache all cloud and local repository metadata in background
-    RepoCacheService.precacheRepository(path).catch(() => {});
   },
 }));

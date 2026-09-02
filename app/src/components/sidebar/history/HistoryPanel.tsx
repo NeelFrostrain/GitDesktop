@@ -38,7 +38,6 @@ const sampleCommits: CommitInfo[] = [
 export const HistoryPanel: React.FC = () => {
   const [commitFilter, setCommitFilter] = useState('');
   const {
-    activeTab,
     activeRepoPath,
     setSelectedCommitSha,
     tags,
@@ -48,7 +47,6 @@ export const HistoryPanel: React.FC = () => {
     repoSyncCounter,
   } = useGitStore(
     useShallow((s) => ({
-      activeTab: s.activeTab,
       activeRepoPath: s.activeRepoPath,
       setSelectedCommitSha: s.setSelectedCommitSha,
       tags: s.tags,
@@ -72,17 +70,24 @@ export const HistoryPanel: React.FC = () => {
 
   const isFetchingRef = useRef(false);
 
-  // Sync with cached commits when activeRepoPath changes
+  // Sync with cached commits or reset when activeRepoPath changes
   useEffect(() => {
-    if (activeRepoPath) {
-      const cached = RepoCacheService.getCommits(activeRepoPath);
-      if (cached && cached.length > 0) {
-        setCommits(cached);
-        const currentSha = useGitStore.getState().selectedCommitSha;
-        if (!currentSha) {
-          setSelectedCommitSha(cached[0].sha);
-        }
+    if (!activeRepoPath) {
+      setCommits([]);
+      setHasMore(false);
+      return;
+    }
+    const cached = RepoCacheService.getCommits(activeRepoPath);
+    if (cached && cached.length > 0) {
+      setCommits(cached);
+      const currentSha = useGitStore.getState().selectedCommitSha;
+      if (!currentSha) {
+        setSelectedCommitSha(cached[0].sha);
       }
+    } else {
+      setCommits([]);
+      setHasMore(true);
+      setIsLoadingInitial(true);
     }
   }, [activeRepoPath, setSelectedCommitSha]);
 
@@ -98,9 +103,7 @@ export const HistoryPanel: React.FC = () => {
       return;
     }
 
-    if (commits.length === 0) {
-      setIsLoadingInitial(true);
-    }
+    setIsLoadingInitial(true);
     setHasMore(true);
 
     try {
@@ -136,10 +139,8 @@ export const HistoryPanel: React.FC = () => {
   }, [activeRepoPath, setTags, setSelectedCommitSha]);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      loadInitialCommits();
-    }
-  }, [activeTab, activeRepoPath, status?.current_branch, repoSyncCounter, loadInitialCommits]);
+    loadInitialCommits();
+  }, [activeRepoPath, status?.current_branch, repoSyncCounter, loadInitialCommits]);
 
   // Load next batch on scroll
   const handleLoadMore = useCallback(async () => {

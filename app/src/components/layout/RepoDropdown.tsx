@@ -17,10 +17,8 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { useGitStore } from '../../store/useGitStore';
-import { useLogStore } from '../../store/useLogStore';
 import { RepoStatus } from '../../types/git';
 import { UnifiedRepo } from '../../types/gitlab';
-import { GitService } from '../../services/git/gitService';
 import { AccountService } from '../../services/accounts/accountService';
 import { SystemService } from '../../services/system/systemService';
 import { toAppError } from '../../shared/utils/errorUtils';
@@ -222,9 +220,7 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
     activeRepoPath,
     setActiveRepoPath,
     recentRepos,
-    addRecentRepo,
     removeRecentRepo,
-    setStatus,
     setError,
     setIsRepoModalOpen,
     setIsCreateRepoModalOpen,
@@ -304,11 +300,6 @@ export const RepoDropdown: React.FC<RepoDropdownProps> = ({ isOpen, onClose, tri
   const handleSelectRepoPath = async (repoPath: string) => {
     try {
       setActiveRepoPath(repoPath);
-      addRecentRepo(repoPath);
-      useLogStore.getState().addLog('info', 'Repo', `Switched repository to '${repoPath}'`);
-
-      const newStatus = await GitService.getRepoStatus(repoPath);
-      setStatus(newStatus);
     } catch (error: unknown) {
       setError(toAppError(error, 'REPO_SWITCH_ERROR'));
     }

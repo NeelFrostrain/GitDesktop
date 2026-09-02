@@ -37,6 +37,7 @@ export const DiffViewer: React.FC = () => {
     setError,
     currentBranchStash,
     isViewingStashedChanges,
+    repoSyncCounter,
   } = useGitStore(
     useShallow((s) => ({
       activeRepoPath: s.activeRepoPath,
@@ -49,6 +50,7 @@ export const DiffViewer: React.FC = () => {
       setError: s.setError,
       currentBranchStash: s.currentBranchStash,
       isViewingStashedChanges: s.isViewingStashedChanges,
+      repoSyncCounter: s.repoSyncCounter,
     }))
   );
 
@@ -156,8 +158,12 @@ export const DiffViewer: React.FC = () => {
     // 1. Initial immediate fetch
     fetchLiveDiff(true);
 
-    // 2. Continuous lightweight background sync (every 1.5s) to detect live external file edits
-    const intervalId = setInterval(() => fetchLiveDiff(false), 1500);
+    // 2. Relaxed background sync (every 8s) when visible to detect external edits without killing CPU
+    const intervalId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchLiveDiff(false);
+      }
+    }, 8000);
 
     // 3. Instant sync on window focus and document visibility
     const handleFocusSync = () => fetchLiveDiff(false);
@@ -170,7 +176,7 @@ export const DiffViewer: React.FC = () => {
       window.removeEventListener('focus', handleFocusSync);
       document.removeEventListener('visibilitychange', handleFocusSync);
     };
-  }, [activeRepoPath, selectedFile, activeTab, setError, isStaged]);
+  }, [activeRepoPath, selectedFile, activeTab, setError, isStaged, repoSyncCounter]);
 
   const fetchCommitFileDiff = useCallback(
     async (sha: string, filePath: string) => {

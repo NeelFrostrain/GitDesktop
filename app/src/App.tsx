@@ -302,6 +302,7 @@ export const App: React.FC = () => {
     let unlistenDeepLink: (() => void) | undefined;
 
     let unlistenAccountSynced: (() => void) | undefined;
+    let unlistenSingleInstance: (() => void) | undefined;
 
     listen<GitLabUser>('oauth-success', (event) => {
       if (event.payload) {
@@ -322,6 +323,21 @@ export const App: React.FC = () => {
       }
     }).then((fn) => {
       unlistenAccountSynced = fn;
+    });
+
+    listen<string[]>('single-instance-opened', async (event) => {
+      const args = event.payload;
+      if (!args || !Array.isArray(args)) return;
+      for (const arg of args.slice(1)) {
+        if (arg && !arg.startsWith('-') && !arg.includes('://')) {
+          const validation = await GitService.validateRepoPath(arg).catch(() => null);
+          if (validation && validation.is_valid) {
+            useGitStore.getState().setActiveRepoPath(arg);
+          }
+        }
+      }
+    }).then((fn) => {
+      unlistenSingleInstance = fn;
     });
 
     onOpenUrl(async (urls: string[]) => {
@@ -414,6 +430,7 @@ export const App: React.FC = () => {
       if (unlistenEvent) unlistenEvent();
       if (unlistenAccountSynced) unlistenAccountSynced();
       if (unlistenDeepLink) unlistenDeepLink();
+      if (unlistenSingleInstance) unlistenSingleInstance();
     };
   }, [setUser, setAccounts, setError]);
 
@@ -475,19 +492,6 @@ export const App: React.FC = () => {
 
     // Initial sync
     syncStatus();
-
-    // Proactively fetch branches and tags when repo loads or changes
-    GitService.listBranches(activeRepoPath)
-      .then((b) => {
-        if (!isDisposed && b) setBranches(b);
-      })
-      .catch(() => {});
-
-    GitService.listTags(activeRepoPath)
-      .then((t) => {
-        if (!isDisposed && t) setTags(t);
-      })
-      .catch(() => {});
 
     // 1. Adaptive periodic background polling for external file modifications
     let timerId: ReturnType<typeof setTimeout>;

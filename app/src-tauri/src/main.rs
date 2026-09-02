@@ -49,13 +49,13 @@ fn main() {
     attach_console_if_available();
 
     // Aggressively minimize WebView2 Chromium memory consumption
-    #[cfg(target_os = "windows")]
-    {
-        std::env::set_var(
-            "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
-            "--js-flags=\"--max-old-space-size=128\" --disable-features=Translate,OptimizationHints,MediaRouter --disable-background-networking"
-        );
-    }
+    // #[cfg(target_os = "windows")]
+    // {
+    //     std::env::set_var(
+    //         "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+    //         "--js-flags=\"--max-old-space-size=128\" --disable-features=Translate,OptimizationHints,MediaRouter --disable-background-networking"
+    //     );
+    // }
 
     git_desktop_lib::run()
 }

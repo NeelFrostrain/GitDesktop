@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { invoke } from '@tauri-apps/api/core';
 import { UnifiedUser, SavedAccount } from '../types/gitlab';
 import {
   RepoStatus,
@@ -21,6 +22,7 @@ import { useLogStore } from './useLogStore';
 import { avatarCache } from '../services/accounts/avatarCacheService';
 import { RepoCacheService } from '../services/git/repoCacheService';
 import { useTaskStore } from '../features/task-manager';
+import { useRemoteStore } from './remoteStore';
 
 /**
  * Top-level application navigation views.
@@ -373,38 +375,143 @@ export const useGitStore = create<GitState>((set, get) => ({
   },
 
   setActiveRepoPath: (path) => {
-    if (path) {
-      try {
-        localStorage.setItem('active_repo_path', path);
-      } catch {
-        // Ignore localStorage quota errors
-      }
-      get().addRecentRepo(path);
-      useLogStore.getState().addLog('info', 'Repo', `Opened repository at '${path}'`);
-    } else {
+    if (!path) {
       try {
         localStorage.removeItem('active_repo_path');
       } catch {
         // Ignore localStorage errors
       }
       useLogStore.getState().addLog('info', 'Repo', 'Closed active repository');
+      set((state) => ({
+        activeRepoPath: null,
+        status: null,
+        branches: [],
+        tags: [],
+        releases: [],
+        submodules: [],
+        stashes: [],
+        lfsFiles: [],
+        lfsLocks: [],
+        selectedFile: null,
+        stagedFiles: [],
+        hasInitializedStaging: false,
+        selectedCommitSha: null,
+        currentBranchStash: null,
+        isViewingStashedChanges: false,
+        selectedStashFile: null,
+        blameFile: null,
+        blameLines: [],
+        commitSummary: '',
+        commitDescription: '',
+        currentNavView: 'home',
+        repoSyncCounter: state.repoSyncCounter + 1,
+      }));
+      useRemoteStore.setState({ remotes: [] });
+      return;
     }
 
-    set({
+    try {
+      localStorage.setItem('active_repo_path', path);
+    } catch {
+      // Ignore localStorage quota errors
+    }
+    get().addRecentRepo(path);
+    useLogStore.getState().addLog('info', 'Repo', `Opened repository at '${path}'`);
+
+    // 1. Immediately wipe previous repository state to prevent any stale data flashing
+    set((state) => ({
       activeRepoPath: path,
+      status: null,
+      branches: [],
+      tags: [],
+      releases: [],
+      submodules: [],
+      stashes: [],
+      lfsFiles: [],
+      lfsLocks: [],
       selectedFile: null,
-      selectedCommitSha: null,
       stagedFiles: [],
       hasInitializedStaging: false,
+      selectedCommitSha: null,
       currentBranchStash: null,
       isViewingStashedChanges: false,
       selectedStashFile: null,
-      currentNavView: path ? 'workspace' : 'home',
-    });
+      blameFile: null,
+      blameLines: [],
+      commitSummary: '',
+      commitDescription: '',
+      currentNavView: 'changes',
+      repoSyncCounter: state.repoSyncCounter + 1,
+    }));
+    useRemoteStore.setState({ remotes: [] });
 
-    if (path) {
-      RepoCacheService.precacheRepository(path).catch(() => {});
-    }
+    // 2. Concurrently load all local Git metadata in parallel using ultra-fast local libgit2
+    (async () => {
+      try {
+        // Fast path validation check
+        const validation = await GitService.validateRepoPath(path).catch(() => null);
+        if (validation && validation.is_valid === false) {
+          if (get().activeRepoPath === path) {
+            get().setIsMissingRepoModalOpen(
+              true,
+              path,
+              validation.error_message || 'Active repository folder or .git structure is missing'
+            );
+          }
+          return;
+        }
+
+        const [statusRes, branchesRes, tagsRes, remotesRes, submodulesRes] = await Promise.all([
+          GitService.getRepoStatus(path).catch(() => null),
+          GitService.listBranches(path).catch(() => []),
+          GitService.listTags(path).catch(() => []),
+          GitService.listRemotes(path).catch(() => []),
+          GitService.listSubmodules(path).catch(() => []),
+        ]);
+
+        // Guard against race conditions if user switched repos while loading
+        if (get().activeRepoPath !== path) return;
+
+        if (statusRes) {
+          get().setStatus(statusRes);
+          if (statusRes.files && statusRes.files.length > 0) {
+            get().setSelectedFile(statusRes.files[0].path);
+          }
+        }
+        if (branchesRes && branchesRes.length > 0) {
+          get().setBranches(branchesRes);
+        }
+        if (tagsRes) {
+          get().setTags(tagsRes);
+        }
+        if (submodulesRes) {
+          get().setSubmodules(submodulesRes);
+        }
+        if (remotesRes && remotesRes.length > 0) {
+          useRemoteStore.setState({ remotes: remotesRes });
+          const currentActive = useRemoteStore.getState().activeRemote;
+          if (!remotesRes.some((r) => r.name === currentActive)) {
+            useRemoteStore.setState({ activeRemote: remotesRes[0].name });
+          }
+        }
+
+        // Touch backend registry
+        invoke('add_repo_to_registry_cmd', { path }).catch(() => {});
+
+        // Stashes
+        get().loadBranchStashes().catch(() => {});
+
+        // Signal components to re-render fresh
+        set((s) => ({ repoSyncCounter: s.repoSyncCounter + 1 }));
+
+        // Non-blocking background pre-fetch (PRs, releases)
+        RepoCacheService.precacheRepository(path).catch(() => {});
+      } catch (err) {
+        useLogStore
+          .getState()
+          .addLog('warning', 'Git', `Failed to open repository '${path}': ${getErrorMessage(err)}`);
+      }
+    })();
   },
 
   addRecentRepo: (path) => {

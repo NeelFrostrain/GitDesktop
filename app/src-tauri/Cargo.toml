@@ -25,6 +25,7 @@ tauri-plugin-shell = "2"
 tauri-plugin-deep-link = "2"
 tauri-plugin-updater = "2"
 tauri-plugin-process = "2"
+tauri-plugin-single-instance = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 git2 = "0.19"
@@ -42,7 +43,7 @@ uuid = { version = "1", features = ["v4"] }
 zip = { version = "2.2", default-features = false, features = ["deflate"] }
 
 [profile.release]
-opt-level = "z"
+opt-level = 3
 lto = true
 codegen-units = 1
 panic = "abort"

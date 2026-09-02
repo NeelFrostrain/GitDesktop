@@ -184,9 +184,26 @@ export const GitGraphView: React.FC = () => {
     }
   }, [activeRepoPath, hasMore, isLoadingMore, commits.length, selectedBranch]);
 
+  // Reset or rehydrate commits when activeRepoPath changes
+  useEffect(() => {
+    if (!activeRepoPath) {
+      setCommits([]);
+      setHasMore(false);
+      return;
+    }
+    const cached = RepoCacheService.getCommits(activeRepoPath);
+    if (cached && cached.length > 0) {
+      setCommits(cached);
+    } else {
+      setCommits([]);
+      setIsLoadingInitial(true);
+      setHasMore(true);
+    }
+  }, [activeRepoPath]);
+
   useEffect(() => {
     loadInitialCommits();
-  }, [loadInitialCommits, status?.current_branch, repoSyncCounter]);
+  }, [loadInitialCommits, activeRepoPath, status?.current_branch, repoSyncCounter]);
 
   // Copy SHA to clipboard
   const handleCopySha = (sha: string, e: React.MouseEvent) => {

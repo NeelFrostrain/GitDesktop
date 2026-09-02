@@ -66,7 +66,6 @@ pub fn silent_git_command() -> Command {
     cmd.arg("-c").arg("core.fscache=true");
     cmd.arg("-c").arg("core.preloadIndex=true");
     cmd.arg("-c").arg("core.untrackedCache=true");
-    cmd.arg("-c").arg("core.fsmonitor=true");
     cmd.arg("-c").arg("feature.manyFiles=true");
     cmd.arg("-c").arg("index.threads=true");
     cmd.arg("-c").arg("core.commitGraph=true");

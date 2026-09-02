@@ -107,50 +107,51 @@ export function useRepositorySync() {
         hasConflicts: false,
       };
 
-  // ── Auto-validate remote origin existence when active repo changes ──────
+  // ── Auto-validate remote origin existence when active repo changes (deferred) ──────
   useEffect(() => {
     if (!activeRepoPath) return;
 
     let isMounted = true;
-    GitService.validateRemoteOrigin(activeRepoPath)
-      .then((validation) => {
-        if (!isMounted) return;
-        // Only override has_remote when the remote is confirmed deleted/missing on the server.
-        // Do NOT override on transient network/auth failures (is_valid=false but is_deleted_or_missing=false)
-        // because that would stomp over fresh status set immediately after a successful publish.
-        if (!validation.has_remote) {
-          // No remote configured locally at all
-          const current = useGitStore.getState().status;
-          if (current && current.has_remote) {
-            setStatus({
-              ...current,
-              has_remote: false,
-              remote_url: null,
-            });
+    const timer = setTimeout(() => {
+      GitService.validateRemoteOrigin(activeRepoPath)
+        .then((validation) => {
+          if (!isMounted) return;
+          // Only override has_remote when the remote is confirmed deleted/missing on the server.
+          // Do NOT override on transient network/auth failures (is_valid=false but is_deleted_or_missing=false)
+          // because that would stomp over fresh status set immediately after a successful publish.
+          if (!validation.has_remote) {
+            // No remote configured locally at all
+            const current = useGitStore.getState().status;
+            if (current && current.has_remote) {
+              setStatus({
+                ...current,
+                has_remote: false,
+                remote_url: null,
+              });
+            }
+          } else if (validation.is_deleted_or_missing) {
+            // Remote is configured but has been deleted from the server
+            const current = useGitStore.getState().status;
+            if (current) {
+              setStatus({
+                ...current,
+                has_remote: false,
+                remote_url: null,
+              });
+              log().addLog(
+                'warning',
+                'Remote',
+                "Remote repository was not found on the server (it may have been deleted or renamed). Click 'Publish repository' to reconnect or re-publish."
+              );
+            }
           }
-        } else if (validation.is_deleted_or_missing) {
-          // Remote is configured but has been deleted from the server
-          const current = useGitStore.getState().status;
-          if (current) {
-            setStatus({
-              ...current,
-              has_remote: false,
-              remote_url: null,
-            });
-            log().addLog(
-              'warning',
-              'Remote',
-              "Remote repository was not found on the server (it may have been deleted or renamed). Click 'Publish repository' to reconnect or re-publish."
-            );
-          }
-        }
-        // If is_valid=false but NOT is_deleted_or_missing, it's a transient probe failure
-        // (auth/network issue). Silently ignore — don't mutate the current status.
-      })
-      .catch(() => {});
+        })
+        .catch(() => {});
+    }, 2500);
 
     return () => {
       isMounted = false;
+      clearTimeout(timer);
     };
   }, [activeRepoPath, setStatus, log]);
 
