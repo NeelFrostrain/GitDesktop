@@ -1,78 +1,133 @@
 use crate::auth::keyring;
 use crate::error::AppError;
 use crate::git::command::silent_git_command;
-use git2::{IndexAddOption, Repository, Signature};
+use git2::Repository;
 use std::path::Path;
 
 pub fn stage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
-    let repo = Repository::open(repo_path)
-        .map_err(|e| AppError::Git(format!("Failed to open repository: {}", e)))?;
-
-    let mut index = repo.index()?;
-
-    if files.is_empty() {
-        index.add_all(["*"].iter(), IndexAddOption::DEFAULT, None)?;
-    } else {
-        for file in &files {
-            let clean_str = file.trim_end_matches('/').trim_end_matches('\\');
-            if clean_str.is_empty() {
-                continue;
-            }
-            let path = Path::new(clean_str);
-            let full_path = Path::new(repo_path).join(path);
-            if full_path.exists() {
-                if full_path.is_dir() {
-                    let glob = format!("{}/*", clean_str.replace('\\', "/"));
-                    let _ = index.add_all([&glob].iter(), IndexAddOption::DEFAULT, None);
-                } else {
-                    index.add_path(path)?;
-                }
-            } else {
-                let _ = index.remove_path(path);
-            }
-        }
-    }
-
-    index.write()?;
-    Ok(())
-}
-
-pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
-    let repo = Repository::open(repo_path)?;
-    let head = repo.head().and_then(|h| h.peel_to_commit()).ok();
-
     let clean_files: Vec<String> = files
         .into_iter()
         .map(|f| f.trim_end_matches('/').trim_end_matches('\\').to_string())
         .filter(|f| !f.is_empty())
         .collect();
 
-    if let Some(commit) = head {
-        // Normal case: repo has at least one commit — use libgit2 reset
-        repo.reset_default(Some(commit.as_object()), &clean_files)?;
-        let mut index = repo.index()?;
-        index.write()?;
+    let repo_root = Path::new(repo_path);
+
+    if clean_files.is_empty() {
+        let mut cmd = silent_git_command();
+        cmd.arg("add").arg("-A").arg(".");
+        cmd.current_dir(repo_path);
+        let output = cmd.output()?;
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(AppError::Git(format!("Failed to stage all files: {}", stderr.trim())));
+        }
     } else {
-        // Brand-new repo with no commits yet — HEAD doesn't exist.
-        // Use `git rm --cached` to remove files from the index.
-        let file_args: Vec<&str> = clean_files.iter().map(|s| s.as_str()).collect();
-        if !file_args.is_empty() {
+        let mut existing_files = Vec::new();
+        let mut deleted_files = Vec::new();
+
+        for f in clean_files {
+            if repo_root.join(&f).exists() {
+                existing_files.push(f);
+            } else {
+                deleted_files.push(f);
+            }
+        }
+
+        // 1. Stage existing modified/untracked files
+        for chunk in existing_files.chunks(100) {
             let mut cmd = silent_git_command();
-            cmd.arg("rm").arg("-r").arg("--cached").arg("--");
-            for f in &file_args {
+            cmd.arg("add").arg("-A").arg("--");
+            for f in chunk {
                 cmd.arg(f);
             }
             cmd.current_dir(repo_path);
             let output = cmd.output()?;
             if !output.status.success() {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                return Err(AppError::Git(format!(
-                    "Failed to unstage files: {}",
-                    stderr.trim()
-                )));
+                return Err(AppError::Git(format!("Failed to stage files: {}", stderr.trim())));
+            }
+        }
+
+        // 2. Stage deleted / renamed files into the index safely with --ignore-unmatch
+        for chunk in deleted_files.chunks(100) {
+            let mut cmd = silent_git_command();
+            cmd.arg("rm").arg("-r").arg("-f").arg("--cached").arg("--ignore-unmatch").arg("--");
+            for f in chunk {
+                cmd.arg(f);
+            }
+            cmd.current_dir(repo_path);
+            let output = cmd.output()?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(AppError::Git(format!("Failed to stage deleted files: {}", stderr.trim())));
             }
         }
     }
+
+    Ok(())
+}
+
+pub fn unstage_files(repo_path: &str, files: Vec<String>) -> Result<(), AppError> {
+    let clean_files: Vec<String> = files
+        .into_iter()
+        .map(|f| f.trim_end_matches('/').trim_end_matches('\\').to_string())
+        .filter(|f| !f.is_empty())
+        .collect();
+
+    let has_head = silent_git_command()
+        .args(["rev-parse", "--verify", "HEAD"])
+        .current_dir(repo_path)
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
+    if clean_files.is_empty() {
+        if has_head {
+            let mut cmd = silent_git_command();
+            cmd.arg("reset").arg("HEAD").arg("--").arg(".");
+            cmd.current_dir(repo_path);
+            let output = cmd.output()?;
+            if !output.status.success() {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                return Err(AppError::Git(format!("Failed to unstage files: {}", stderr.trim())));
+            }
+        } else {
+            let mut cmd = silent_git_command();
+            cmd.arg("rm").arg("-r").arg("--cached").arg("--ignore-unmatch").arg("--").arg(".");
+            cmd.current_dir(repo_path);
+            let _ = cmd.output();
+        }
+    } else {
+        for chunk in clean_files.chunks(100) {
+            if has_head {
+                let mut cmd = silent_git_command();
+                cmd.arg("reset").arg("HEAD").arg("--");
+                for f in chunk {
+                    cmd.arg(f);
+                }
+                cmd.current_dir(repo_path);
+                let output = cmd.output()?;
+                if !output.status.success() {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    return Err(AppError::Git(format!("Failed to unstage files: {}", stderr.trim())));
+                }
+            } else {
+                let mut cmd = silent_git_command();
+                cmd.arg("rm").arg("-r").arg("--cached").arg("--ignore-unmatch").arg("--");
+                for f in chunk {
+                    cmd.arg(f);
+                }
+                cmd.current_dir(repo_path);
+                let output = cmd.output()?;
+                if !output.status.success() {
+                    let stderr = String::from_utf8_lossy(&output.stderr);
+                    return Err(AppError::Git(format!("Failed to unstage files: {}", stderr.trim())));
+                }
+            }
+        }
+    }
+
     Ok(())
 }
 
@@ -94,31 +149,54 @@ pub fn commit_changes(
     let is_allow_empty = allow_empty.unwrap_or(false);
     let is_sign_off = sign_off.unwrap_or(false);
 
-    let repo = Repository::open(repo_path)?;
-    let config = repo.config()?;
-
     let (name, email) = if let Some(acct) = keyring::get_account_for_repo(repo_path) {
         let name = if acct.name.trim().is_empty() || acct.name == "GitLab User" {
-            config
-                .get_string("user.name")
-                .unwrap_or_else(|_| acct.username.clone())
+            let config_name = silent_git_command()
+                .args(["config", "user.name"])
+                .current_dir(repo_path)
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            config_name.unwrap_or_else(|| acct.username.clone())
         } else {
             acct.name.clone()
         };
         let email = acct.email.unwrap_or_else(|| {
-            config
-                .get_string("user.email")
-                .unwrap_or_else(|_| format!("{}@git.local", acct.username))
+            let config_email = silent_git_command()
+                .args(["config", "user.email"])
+                .current_dir(repo_path)
+                .output()
+                .ok()
+                .and_then(|o| String::from_utf8(o.stdout).ok())
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            config_email.unwrap_or_else(|| format!("{}@git.local", acct.username))
         });
         (name, email)
     } else {
-        let name = config
-            .get_string("user.name")
-            .unwrap_or_else(|_| "Git Desktop User".to_string());
-        let email = config
-            .get_string("user.email")
-            .unwrap_or_else(|_| "user@git.local".to_string());
-        (name, email)
+        let config_name = silent_git_command()
+            .args(["config", "user.name"])
+            .current_dir(repo_path)
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "Git Desktop User".to_string());
+
+        let config_email = silent_git_command()
+            .args(["config", "user.email"])
+            .current_dir(repo_path)
+            .output()
+            .ok()
+            .and_then(|o| String::from_utf8(o.stdout).ok())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+            .unwrap_or_else(|| "user@git.local".to_string());
+
+        (config_name, config_email)
     };
 
     let mut full_message = match description {
@@ -135,65 +213,32 @@ pub fn commit_changes(
         );
     }
 
-    if is_no_verify || is_allow_empty {
-        let mut cmd = silent_git_command();
-        cmd.arg("commit");
-        if is_no_verify {
-            cmd.arg("--no-verify");
-        }
-        if is_allow_empty {
-            cmd.arg("--allow-empty");
-        }
-        // NOTE: Do NOT pass `-s` here — the sign-off trailer is already embedded
-        // in `full_message` (lines above). Passing `-s` again would produce a
-        // duplicate "Signed-off-by:" line in the commit message.
-        cmd.arg("-m").arg(&full_message);
-        cmd.current_dir(repo_path);
-
-        let output = cmd.output()?;
-        if !output.status.success() {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            return Err(AppError::Git(format!(
-                "Git commit failed: {}",
-                stderr.trim()
-            )));
-        }
-        return Ok(());
+    let mut cmd = silent_git_command();
+    cmd.arg("commit");
+    if is_no_verify {
+        cmd.arg("--no-verify");
     }
-
-    let mut index = repo.index()?;
-    let tree_id = index.write_tree()?;
-    let tree = repo.find_tree(tree_id)?;
-
-    let signature = Signature::now(&name, &email)?;
-
-    let parent_commit = repo.head().ok().and_then(|h| h.peel_to_commit().ok());
-
-    if !is_allow_empty {
-        if let Some(ref parent) = parent_commit {
-            if let Ok(parent_tree) = parent.tree() {
-                if parent_tree.id() == tree.id() {
-                    return Err(AppError::Validation(
-                        "No staged changes to commit. Please stage changes first.".to_string(),
-                    ));
-                }
-            }
-        }
+    if is_allow_empty {
+        cmd.arg("--allow-empty");
     }
+    cmd.arg("-m").arg(&full_message);
+    cmd.env("GIT_AUTHOR_NAME", &name);
+    cmd.env("GIT_AUTHOR_EMAIL", &email);
+    cmd.env("GIT_COMMITTER_NAME", &name);
+    cmd.env("GIT_COMMITTER_EMAIL", &email);
+    cmd.current_dir(repo_path);
 
-    let mut parents = Vec::new();
-    if let Some(ref parent) = parent_commit {
-        parents.push(parent);
+    let output = cmd.output()?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        let msg = if !stderr.trim().is_empty() {
+            stderr.trim()
+        } else {
+            stdout.trim()
+        };
+        return Err(AppError::Git(format!("Git commit failed: {}", msg)));
     }
-
-    repo.commit(
-        Some("HEAD"),
-        &signature,
-        &signature,
-        &full_message,
-        &tree,
-        &parents,
-    )?;
 
     Ok(())
 }

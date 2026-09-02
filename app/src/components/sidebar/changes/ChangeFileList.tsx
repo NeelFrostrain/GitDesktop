@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useGitStore } from '../../../store/useGitStore';
 import { Checkbox } from '../../common/Checkbox';
@@ -237,6 +237,15 @@ export const ChangeFileList: React.FC<ChangeFileListProps> = ({
     },
     [setSelectedFile]
   );
+
+  if (!status && activeRepoPath) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center select-none text-text-muted cursor-default">
+        <Loader2 className="w-5 h-5 text-commito-coral animate-spin mb-2" />
+        <p className="text-xs font-medium text-text-muted">Scanning repository changes...</p>
+      </div>
+    );
+  }
 
   if (filteredFiles.length === 0) {
     return (

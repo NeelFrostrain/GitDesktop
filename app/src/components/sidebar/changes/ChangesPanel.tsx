@@ -97,9 +97,11 @@ export const ChangesPanel: React.FC = () => {
               disabled={allFiles.length === 0}
             />
             <span className="text-[11.5px] font-medium text-text-subtle truncate">
-              {allFiles.length === 0
-                ? '0 of 0 changed files'
-                : `${stagedFiles.length} of ${allFiles.length} changed files`}
+              {!status
+                ? 'Scanning changes...'
+                : allFiles.length === 0
+                  ? '0 of 0 changed files'
+                  : `${stagedFiles.length} of ${allFiles.length} changed files`}
             </span>
           </div>
 

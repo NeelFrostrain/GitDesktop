@@ -93,6 +93,7 @@ pub fn get_repo_dashboard_status(path: &str) -> Result<RepoDashboardStatus, AppE
     // 2. Dirty files count (non-blocking, ignore submodules)
     let mut status_opts = StatusOptions::new();
     status_opts.include_untracked(true);
+    status_opts.recurse_untracked_dirs(true);
     status_opts.include_ignored(false);
 
     let dirty_files = repo

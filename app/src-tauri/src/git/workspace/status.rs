@@ -49,12 +49,13 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
         )));
     }
 
-    let repo = Repository::open(path).map_err(|e| {
-        AppError::Git(format!(
-            "Failed to open repository at '{}': {}",
-            repo_path, e
-        ))
-    })?;
+    let repo = match Repository::open(path) {
+        Ok(r) => r,
+        Err(_) => {
+            // Fallback to Git CLI if libgit2 cannot open the repository
+            return get_repo_status_cli(path, "HEAD".to_string(), 0, 0, false, None);
+        }
+    };
 
     // Determine current branch
     let current_branch = match repo.head() {
@@ -78,11 +79,23 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
     let mut opts = StatusOptions::new();
     opts.include_untracked(true)
         .recurse_untracked_dirs(true)
-        .include_ignored(false)
-        .renames_head_to_index(true)
-        .renames_index_to_workdir(true);
+        .include_ignored(false);
 
-    let statuses = repo.statuses(Some(&mut opts))?;
+    let statuses = match repo.statuses(Some(&mut opts)) {
+        Ok(s) => s,
+        Err(_) => {
+            // Fallback to Git CLI if libgit2 statuses fails
+            return get_repo_status_cli(
+                path,
+                current_branch,
+                ahead,
+                behind,
+                has_remote,
+                remote_url,
+            );
+        }
+    };
+
     let mut files = Vec::with_capacity(statuses.len().min(5000));
     let mut has_conflicts = false;
 
@@ -118,13 +131,110 @@ pub fn get_repo_status(repo_path: &str) -> Result<RepoStatus, AppError> {
             || s.contains(Status::INDEX_RENAMED)
             || s.contains(Status::INDEX_TYPECHANGE);
 
-        let kind = if s.contains(Status::WT_NEW) || s.contains(Status::INDEX_NEW) {
+        let kind = if s.contains(Status::WT_NEW) {
             FileStatusKind::Untracked
         } else if s.contains(Status::WT_DELETED) || s.contains(Status::INDEX_DELETED) {
             FileStatusKind::Deleted
         } else if s.contains(Status::WT_RENAMED) || s.contains(Status::INDEX_RENAMED) {
             FileStatusKind::Renamed
-        } else if is_staged {
+        } else if is_staged && !s.contains(Status::WT_MODIFIED) {
+            FileStatusKind::Staged
+        } else {
+            FileStatusKind::Modified
+        };
+
+        files.push(FileStatus {
+            path: path_str,
+            status: kind,
+            staged: is_staged,
+        });
+    }
+
+    let is_clean = files.is_empty();
+
+    Ok(RepoStatus {
+        current_branch,
+        ahead,
+        behind,
+        files,
+        is_clean,
+        has_conflicts,
+        has_remote,
+        remote_url,
+    })
+}
+
+fn get_repo_status_cli(
+    repo_path: &Path,
+    current_branch: String,
+    ahead: usize,
+    behind: usize,
+    has_remote: bool,
+    remote_url: Option<String>,
+) -> Result<RepoStatus, AppError> {
+    let output = silent_git_command()
+        .args(["status", "--porcelain=v1", "-z", "-uall"])
+        .current_dir(repo_path)
+        .output()?;
+
+    if !output.status.success() {
+        let err_msg = String::from_utf8_lossy(&output.stderr);
+        return Err(AppError::Git(format!("git status failed: {}", err_msg)));
+    }
+
+    let mut files = Vec::new();
+    let mut has_conflicts = false;
+    let stdout = output.stdout;
+    let mut i = 0;
+
+    while i < stdout.len() && files.len() < 10000 {
+        if i + 3 > stdout.len() {
+            break;
+        }
+        let x = stdout[i] as char;
+        let y = stdout[i + 1] as char;
+        i += 3; // Skip XY and space
+
+        let mut path_end = i;
+        while path_end < stdout.len() && stdout[path_end] != 0 {
+            path_end += 1;
+        }
+        let path_str = String::from_utf8_lossy(&stdout[i..path_end]).to_string();
+        i = path_end + 1;
+
+        if path_str.is_empty() {
+            continue;
+        }
+
+        // If rename, git status -z outputs: XY path\0old_path\0
+        if x == 'R' || x == 'C' || y == 'R' || y == 'C' {
+            let mut old_path_end = i;
+            while old_path_end < stdout.len() && stdout[old_path_end] != 0 {
+                old_path_end += 1;
+            }
+            i = old_path_end + 1;
+        }
+
+        let is_conflict = x == 'U' || y == 'U' || (x == 'A' && y == 'A') || (x == 'D' && y == 'D');
+        if is_conflict {
+            has_conflicts = true;
+            files.push(FileStatus {
+                path: path_str,
+                status: FileStatusKind::Conflicted,
+                staged: false,
+            });
+            continue;
+        }
+
+        let is_untracked = x == '?' && y == '?';
+        let is_staged = x != ' ' && x != '?';
+        let kind = if is_untracked {
+            FileStatusKind::Untracked
+        } else if x == 'D' || y == 'D' {
+            FileStatusKind::Deleted
+        } else if x == 'R' || y == 'R' {
+            FileStatusKind::Renamed
+        } else if is_staged && y == ' ' {
             FileStatusKind::Staged
         } else {
             FileStatusKind::Modified

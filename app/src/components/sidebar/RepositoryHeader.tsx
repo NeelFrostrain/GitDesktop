@@ -25,7 +25,7 @@ export const RepositoryHeader: React.FC = () => {
 
   const branchCount = branches.length || 1;
   const currentBranch = status?.current_branch || 'main';
-  const fileCount = status?.files?.length || 0;
+  const fileCount = status ? status.files?.length || 0 : undefined;
 
   const handleOpenRepoSwitcher = (e: React.MouseEvent) => {
     e.stopPropagation();
